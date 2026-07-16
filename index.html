@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>かんじモンRPG｜あそんで おぼえる かんじゲーム（むりょう）</title>
+<meta name="description" content="かんじモンRPG——漢字がモンスターになって登場！よみクイズで倒して、つかまえて、育てて進化。あそぶだけで漢字が覚えられる無料ブラウザゲームです。">
+<!--
+  ■ このファイルは「かんじモンのトップページ（玄関）」の作業正本（HTMLモック段階）
+  ■ 公開時のURL構成（2026-07-12ユーザー決定）：
+      top.html      → kanjimon-site/index.html   （kanjimon.jr-genius.jp/）
+      kanjimon.html → kanjimon-site/play/index.html（kanjimon.jr-genius.jp/play/）
+      ※下の「あそぶ」ボタンの href は公開コピー時に play/ に書き換えること
+  ■ 公開（コピー→commit→push）はユーザー指示があったときだけ
+-->
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700;900&display=swap');
+  :root{
+    --red:#ff6b6b;--orange:#ffa94d;--yellow:#ffd43b;--cream:#fef9ef;
+    --ink:#495057;--sub:#868e96;--line:#e9ecef;--ok:#4ade80;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    font-family:'Zen Maru Gothic',sans-serif;color:var(--ink);background:var(--cream);
+    line-height:1.7;-webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:520px;margin:0 auto;padding:0 18px}
+
+  /* ① ロゴ＋キャッチ */
+  .hero{text-align:center;padding:34px 0 10px}
+  .hero .catch{font-size:.95rem;font-weight:700;color:var(--sub);letter-spacing:.06em}
+  .hero h1{font-size:2.2rem;font-weight:900;letter-spacing:.02em;line-height:1.3;margin:2px 0 4px}
+  .hero h1 .kanji{color:var(--orange)}
+  .hero .sub{font-size:.9rem;font-weight:700;color:var(--sub)}
+  .free-badge{display:inline-block;background:var(--yellow);color:#7c4a03;font-weight:900;
+    font-size:.85rem;padding:3px 14px;border-radius:50px;margin-top:10px}
+
+  /* 看板モンスター（ゲーム本体と同じ描き方＝漢字キャラに顔を重ねる。.face-hostのfont-sizeが顔の基準） */
+  .mons{display:flex;justify-content:center;align-items:flex-end;gap:26px;margin:26px 0 10px}
+  .mons .face-host{animation:bob 2.6s ease-in-out infinite;font-size:76px}
+  .mons .face-host:nth-child(2){font-size:96px;animation-delay:.4s}
+  .mons .face-host:nth-child(3){animation-delay:.8s}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+  .face-host{position:relative;display:inline-block;line-height:1}
+  .face-host .fc{font-weight:900;line-height:1;display:inline-block;text-shadow:2px 2px 0 rgba(0,0,0,.12)}
+  .face{position:absolute;inset:0;z-index:20;pointer-events:none}
+  .face .eyes{display:flex;gap:.15em;position:absolute;top:38%;left:50%;transform:translateX(-50%)}
+  .face .eye{width:.1em;height:.125em;background:#1a1a1a;border-radius:50%;position:relative}
+  .face .eye::after{content:'';position:absolute;width:.032em;height:.032em;background:#fff;border-radius:50%;top:.02em;right:.012em}
+  .face .mouth{width:.165em;height:.08em;border-bottom:.02em solid #1a1a1a;border-radius:0 0 50% 50%;
+    position:absolute;top:54%;left:50%;transform:translateX(-50%);background:transparent}
+
+  /* ② あそぶボタン */
+  .playzone{text-align:center;padding:8px 0 30px}
+  .btn-play{display:inline-block;text-decoration:none;background:var(--orange);color:#fff;
+    font-weight:900;font-size:1.6rem;padding:18px 54px;border-radius:50px;
+    box-shadow:0 6px 0 #e8871e;transition:transform .12s}
+  .btn-play:active{transform:translateY(4px);box-shadow:0 2px 0 #e8871e}
+  .btn-play .s{display:block;font-size:.8rem;font-weight:700;opacity:.9}
+  .playzone .note{font-size:.8rem;color:var(--sub);font-weight:700;margin-top:12px}
+
+  /* 共通セクション */
+  section{padding:26px 0}
+  .sec-title{text-align:center;font-size:1.25rem;font-weight:900;margin-bottom:16px}
+  .sec-title .mark{color:var(--orange)}
+  .card{background:#fff;border:3px solid var(--line);border-radius:18px;padding:16px 18px;margin-bottom:12px}
+  .soon{display:inline-block;background:#fff3bf;color:#7c4a03;font-weight:900;font-size:.72rem;
+    padding:2px 10px;border-radius:50px;vertical-align:middle;margin-left:6px}
+
+  /* ③ カードコーナー */
+  .cardzone .card{border-color:var(--yellow);background:#fffdf5;text-align:center}
+  .cardzone p{font-size:.92rem;font-weight:700}
+  .minicards{display:flex;justify-content:center;gap:10px;margin:14px 0 6px}
+  .minicard{width:64px;height:88px;background:#fff;border:3px solid var(--orange);border-radius:10px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-weight:900;
+    box-shadow:0 3px 8px rgba(0,0,0,.08);transform:rotate(-4deg)}
+  .minicard:nth-child(2){transform:rotate(0);border-color:var(--red)}
+  .minicard:nth-child(3){transform:rotate(4deg);border-color:#38bdf8}
+  .minicard .face-host{font-size:34px}
+  .minicard .n{font-size:.6rem;color:var(--sub)}
+
+  /* ④ どんなゲーム？ */
+  .feat{display:flex;align-items:flex-start;gap:12px}
+  .feat .ico{flex:0 0 auto;width:46px;height:46px;background:var(--cream);border-radius:14px;
+    display:flex;align-items:center;justify-content:center;font-size:1.5rem}
+  .feat h3{font-size:1rem;font-weight:900;margin-bottom:2px}
+  .feat p{font-size:.88rem;color:var(--sub);font-weight:700}
+
+  /* ⑤ おうちの方へ（親ゾーン） */
+  .parents{background:#fff;border-top:3px solid var(--line);margin-top:16px}
+  .parents .sec-title{margin-top:6px}
+  .parents .card{background:#fafbfc}
+  .parents h3{font-size:.98rem;font-weight:900;margin-bottom:4px;color:#3b4550}
+  .parents p,.parents li{font-size:.9rem;line-height:1.9}
+  .parents ul{padding-left:1.3em}
+  .pricebox{border:3px dashed var(--orange);border-radius:16px;padding:14px 16px;background:#fff9f0}
+
+  /* ⑥ ドリル・教材コーナー */
+  .drill .card{text-align:center}
+  .drill p{font-size:.9rem}
+  .ad-slot{border:3px dashed var(--line);border-radius:16px;padding:22px 16px;text-align:center;
+    color:#adb5bd;font-weight:900;font-size:.85rem;background:#fafbfc}
+
+  /* ⑦ フッター */
+  footer{background:#f4efe4;margin-top:30px;padding:26px 0 34px;text-align:center}
+  footer p{font-size:.8rem;color:var(--sub);font-weight:700}
+  footer a{color:var(--sub)}
+</style>
+</head>
+<body>
+
+<!-- ① ロゴ＋キャッチ -->
+<header class="hero wrap">
+  <p class="catch">あそんで おぼえる かんじRPG</p>
+  <h1><span class="kanji">かんじ</span>モンRPG</h1>
+  <p class="sub">かんじが モンスターに なって とうじょう！</p>
+  <span class="free-badge">とうろく なし・むりょうで あそべる</span>
+  <div class="mons" aria-hidden="true">
+    <span class="face-host"><span class="fc" style="color:#15803d">木</span><span class="face"><span class="eyes"><span class="eye"></span><span class="eye"></span></span><span class="mouth"></span></span></span>
+    <span class="face-host"><span class="fc" style="color:#7f1d1d">火</span><span class="face"><span class="eyes"><span class="eye"></span><span class="eye"></span></span><span class="mouth"></span></span></span>
+    <span class="face-host"><span class="fc" style="color:#1e3a8a">水</span><span class="face"><span class="eyes"><span class="eye"></span><span class="eye"></span></span><span class="mouth"></span></span></span>
+  </div>
+</header>
+
+<!-- ② あそぶボタン -->
+<div class="playzone wrap">
+  <!-- 公開時は href="play/" に書き換え -->
+  <a class="btn-play" href="play/">▶ ゲームで あそぶ<span class="s">タップして すぐ スタート！</span></a>
+  <p class="note">とちゅうから つづきも できるよ（きろくは じどうで のこるよ）</p>
+</div>
+
+<!-- ③ カードコーナー -->
+<section class="cardzone wrap">
+  <h2 class="sec-title"><span class="mark">◆</span> かんじモンカード <span class="soon">じゅんびちゅう</span></h2>
+  <div class="card">
+    <div class="minicards" aria-hidden="true">
+      <div class="minicard"><span class="face-host"><span class="fc" style="color:#5b3a1a">山</span><span class="face"><span class="eyes"><span class="eye"></span><span class="eye"></span></span><span class="mouth"></span></span></span><span class="n">やま</span></div>
+      <div class="minicard"><span class="face-host"><span class="fc" style="color:#7f1d1d">火</span><span class="face"><span class="eyes"><span class="eye"></span><span class="eye"></span></span><span class="mouth"></span></span></span><span class="n">ひ</span></div>
+      <div class="minicard"><span class="face-host"><span class="fc" style="color:#1e40af">川</span><span class="face"><span class="eyes"><span class="eye"></span><span class="eye"></span></span><span class="mouth"></span></span></span><span class="n">かわ</span></div>
+    </div>
+    <p>つかまえた かんじモンを、おうちで いんさつして<br>ほんものの カードに できるよ！　おたのしみに！</p>
+  </div>
+</section>
+
+<!-- ④ どんなゲーム？ -->
+<section class="wrap">
+  <h2 class="sec-title"><span class="mark">◆</span> どんな ゲーム？</h2>
+  <div class="card feat"><div class="ico">⚔️</div>
+    <div><h3>よみクイズで バトル！</h3><p>かんじの「よみ」を あてると こうげき！　まちがえても だいじょうぶ。</p></div></div>
+  <div class="card feat"><div class="ico">🎒</div>
+    <div><h3>つかまえて ずかんを あつめよう</h3><p>たおした かんじモンは なかまに なるよ。ずかん コンプリートを めざせ！</p></div></div>
+  <div class="card feat"><div class="ico">✨</div>
+    <div><h3>そだてて しんか！</h3><p>なかまを そだてると、もっと つよい すがたに しんかするよ。</p></div></div>
+</section>
+
+<!-- ⑤ おうちの方へ（ここから親ゾーン・ですます調） -->
+<section class="parents">
+  <div class="wrap">
+    <h2 class="sec-title">🏠 おうちの方へ</h2>
+    <div class="card">
+      <h3>学年別配当漢字に完全準拠しています</h3>
+      <p>登場する漢字は文部科学省の「学年別漢字配当表」に沿っています。現在は小学1・2年生の全240字を公開中で、小学3年生（200字）も制作中です。</p>
+    </div>
+    <div class="card">
+      <h3>「勉強しなさい」と言わなくていい設計</h3>
+      <p>漢字の読みがそのままゲームの攻撃になるため、遊んでいる時間がまるごと反復学習になります。登録・アプリのインストールは不要で、ブラウザだけで動きます。</p>
+    </div>
+    <div class="card pricebox">
+      <h3>料金について</h3>
+      <p>小学1〜3年生の内容は<strong>無料</strong>でお使いいただけます。小学4年生以降の内容は、学年ごとの買い切り（お手頃な価格を予定）として準備中です。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ⑥ ドリル・教材コーナー（将来枠＋アフィリ枠） -->
+<section class="drill wrap">
+  <h2 class="sec-title"><span class="mark">◆</span> もっと しっかり 学ぶなら <span class="soon">じゅんびちゅう</span></h2>
+  <div class="card"><p>無料の書きとりプリントや、ゲームで漢字が好きになったお子さま向けの教材紹介を準備しています。</p></div>
+  <div class="ad-slot">（教材紹介スペース・準備中）</div>
+</section>
+
+<!-- ⑦ フッター -->
+<footer>
+  <div class="wrap">
+    <p>かんじモンRPG ｜ あそびラボ</p>
+    <p style="margin-top:6px">お問い合わせ・運営者情報（準備中）</p>
+  </div>
+</footer>
+
+</body>
+</html>
