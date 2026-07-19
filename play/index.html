@@ -1366,7 +1366,7 @@
   .op1-overlay{position:fixed;inset:0;z-index:9999;display:none;background:#000;overflow:hidden;
     font-family:inherit;-webkit-user-select:none;user-select:none}
   .op1-overlay.show{display:block}
-  .op1-stage{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  .op1-stage{position:absolute;inset:0;z-index:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
     gap:6px;background:#000;transition:background .6s ease;padding:24px;box-sizing:border-box;text-align:center}
   .op1-stage.op1-bg-white{background:#fff}
   .op1-stage.op1-bg-dim{background:#1b1730}
@@ -1429,6 +1429,25 @@
   .op1-gate-btn{display:none;animation:op1GatePulse 1.6s ease-in-out infinite}
   .op1-gate-btn.show{display:inline-block}
   @keyframes op1GatePulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+
+  /* ===== 弾OP-4：S4の背景を書道教室に＋正解後「カメラ引き」種明かし（設計書\書道教室_設計方針.md§4）=====
+     S0〜S3の白/暗/黒（.op1-bg-white/dim/black・既存トリガーは一切変更しない）はそのまま。
+     このレイヤーはS4開始（op1PlayS4Setup）で初めて'show'が付き、それまでは opacity:0 で完全に無害。
+     #op1Stageに明示z-index(0・上のルールで付与)を与えてローカルなスタッキングコンテキストを作り、
+     z-index:-1の本レイヤーが#op1Stage自身の背景色より上・他の子要素（せりふ/3択/マナ枠）より
+     下に必ず収まるようにしている。.opt/.op1-manaは共に不透明な下地を持つため、
+     背景画像を敷いても可読性は自動的に保たれる（発注書「作業2」の白オーバーレイは
+     この理由により不要と判断＝実装判断。報告書に明記）。 */
+  .op1-bg-layer{position:absolute;inset:0;z-index:-1;background-size:cover;background-position:center center;
+    opacity:0;transition:opacity .6s ease}
+  .op1-bg-layer.show{opacity:1}
+  #op1BgShodo{background-image:url('images/op/op1-bg-shodo.webp')}
+  /* カメラ引き＝教室全景をズームアウト（scale 1.3→1）しながらクロスフェードで手前の書道背景に重ねる。
+     開始2.3s後・所要2.4s（作業3の「2〜3秒」レンジ内）＝S4成功の変身完了(t=2.3s)からS5開始(t=4.7s)まで
+     の既存の間にちょうど収まり、現行のタイムラインを1秒も延ばさない（作業3「+3秒以内」を+0秒で満たす）。 */
+  #op1BgInterior{background-image:url('images/fullart/interior-shodo.webp');
+    transform:scale(1.3);transition:opacity 2.4s ease,transform 2.4s ease}
+  #op1BgInterior.show{opacity:1;transform:scale(1)}
 </style>
 </head>
 <body>
@@ -1593,6 +1612,9 @@
   <div class="op1-flash" id="op1Flash"></div>
   <div class="op1-scan" id="op1Scan"></div>
   <div class="op1-stage op1-bg-black" id="op1Stage">
+    <!-- 弾OP-4：S4以降だけ有効化する背景レイヤー（S0〜S3の白/暗/黒は#op1Stage自体のクラスのまま無変更） -->
+    <div class="op1-bg-layer" id="op1BgShodo"></div>
+    <div class="op1-bg-layer" id="op1BgInterior"></div>
     <div class="op1-voice" id="op1Voice"></div>
     <!-- OP-1b§3：自動再生制限対応の入口ボタン（タップでS0開始＋以後の音声再生を解禁）。とばすはここからも押せる -->
     <button type="button" class="btn btn-primary op1-gate-btn" id="op1GateBtn" style="font-size:1.25rem;padding:18px 32px" onclick="op1EnterFromGate()">▶ タップして はじめる</button>
@@ -12013,6 +12035,9 @@ function op1PlayS0(){
   // OP-1b：正解後の変身クロスフェード状態をリセット（再視聴時に前回の変身済み状態を持ち越さない）
   $('op1BrushClip').style.opacity='';
   const kf=$('op1KanjiFace'); kf.classList.remove('show');
+  // 弾OP-4：S4背景・カメラ引きレイヤーもリセット（再視聴時に前回のshow状態を持ち越さない）
+  $('op1BgShodo').classList.remove('show');
+  $('op1BgInterior').classList.remove('show');
   $('op1KanjiFaceText').textContent=K[PARTNER_IDX].c;
   $('op1KanjiFaceText').style.color=K[PARTNER_IDX].cl;
   setTimeout(()=>{
@@ -12081,6 +12106,7 @@ function op1PlayS3(){
 /* ---- S4：即バトル＝チュートリアル（プレイヤー操作）。必要正解1・敗北なし・正解で終了へ ---- */
 function op1PlayS4Setup(){
   op1AnswerLock=false;
+  $('op1BgShodo').classList.add('show');   // 弾OP-4：チュートリアルバトルの背景を白から書道教室に差し替え
   $('op1ManaText').textContent='よみを こたえて あげて！';
   op1PlaySnd('s4a');   // OP-1b§3：出題の台詞表示と同時にマナの声を再生
   op1BuildAnswers();
@@ -12152,6 +12178,10 @@ function op1PlayS4Success(){
     $('op1BrushClip').style.opacity='0';
     $('op1KanjiFace').classList.add('show');
   },1600);
+  // 弾OP-4：変身完了(1600+700ms)の直後にカメラ引き種明かし開始＝教室全景へ2.4sでズームアウトクロスフェード。
+  // 完了(2300+2400=4700ms)がop1PlayS5の呼び出しタイミング(900+OP1_VOICE_MS.s4b+700=4700ms)とちょうど一致し、
+  // 「教室全景が見えた状態の上でS5のせりふを出す」を現行タイムラインのまま(+0秒)満たす。
+  setTimeout(()=>{ if(seq!==op1Seq) return; $('op1BgInterior').classList.add('show'); },1600+OP1_VOICE_PAUSE_MS);
   setTimeout(()=>{ if(seq!==op1Seq) return; op1PlayS5(); },900+OP1_VOICE_MS.s4b+OP1_VOICE_PAUSE_MS);
 }
 /* ---- S5：種明かしと旅立ち（確定文言）。→そのままフィールドへ（ゾーン1開始） ---- */
