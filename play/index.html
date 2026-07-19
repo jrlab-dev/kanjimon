@@ -5811,14 +5811,45 @@ function buildCry(idx,isBoss,known,altReading){
   }
   return {text:isBoss?'？？？…！！':'？？？…！', speak:''};
 }
-// 頭上に鳴き声吹き出しを表示(約1.2秒)＋鳴き声音＋読み上げ
+/* ==============================
+   OP2V1§4：敵の名乗り（VOICEVOX mp3・その場読み込み）
+   通常敵=audio/nanori/normal/{idx}.mp3（櫻歌ミコ）／ボス=audio/nanori/boss/b{idx}.mp3（青山龍星）／
+   色違い(altReadingがある字のみ)=audio/nanori/alt/a{idx}.mp3（WhiteCUL）。altReadingが無い字はnormal版のまま。
+   1,794本あるため事前プリロードはしない＝呼ばれた瞬間にnew Audio()で読み込んで即再生。
+   連続で鳴る場面では前の名乗りを必ず止めてから鳴らす。404・play()失敗はspeechSynthesisへフォールバック（進行を止めない）。
+================================ */
+let nanoriAudioEl=null;
+function stopNanoriVoice(){
+  if(nanoriAudioEl){ try{ nanoriAudioEl.pause(); }catch(e){} nanoriAudioEl=null; }
+}
+function nanoriPathFor(idx,isBoss,altReading){
+  if(isBoss) return 'audio/nanori/boss/b'+idx+'.mp3';
+  if(altReading) return 'audio/nanori/alt/a'+idx+'.mp3';
+  return 'audio/nanori/normal/'+idx+'.mp3';
+}
+function playNanoriVoice(idx,isBoss,altReading,fallbackText){
+  stopNanoriVoice();
+  if(!soundOn) return;
+  let el;
+  try{ el=new Audio(nanoriPathFor(idx,isBoss,altReading)); }catch(e){ el=null; }
+  if(!el){ if(fallbackText) speakJa(fallbackText); return; }
+  nanoriAudioEl=el;
+  const toFallback=()=>{ if(nanoriAudioEl===el) nanoriAudioEl=null; if(fallbackText) speakJa(fallbackText); };
+  el.onerror=toFallback;
+  try{
+    const p=el.play();
+    if(p&&typeof p.catch==='function') p.catch(toFallback);
+  }catch(e){ toFallback(); }
+}
+// 頭上に鳴き声吹き出しを表示(約1.2秒)＋鳴き声音＋名乗り（mp3・失敗時はspeechSynthesisへ）
 // known 省略時は「難易度」で判定（かんたん＝常に名乗る／むずかしい＝ゲット済みのみ名乗る）
 function showCryBubble(idx,isBoss,known,altReading){
   if(known===undefined) known = (difficulty==='easy') ? true : caught.has(idx);
   const c=buildCry(idx,isBoss,known,altReading);
   const el=$('cryBubble'); if(!el) return;
   // 声で名乗れるときは ふりがな吹き出しを出さない（声が出ないときだけ文字で補う）2026-07-03ユーザー判断
-  const willSpeak = !!c.speak && soundOn && ('speechSynthesis' in window) && !!jaVoice;
+  // OP2V1§4：名乗りの主手段がmp3になったため、判定はsoundOnのみ（jaVoice有無に依存しない＝対応環境が広がる）
+  const willSpeak = !!c.speak && soundOn;
   if(willSpeak){
     el.className='cry-bubble';         // 文字は出さない
   }else{
@@ -5828,7 +5859,7 @@ function showCryBubble(idx,isBoss,known,altReading){
     el.classList.add('show');
   }
   sndCry(typeOf(idx));
-  if(willSpeak) speakJa(c.speak);
+  if(willSpeak) playNanoriVoice(idx,isBoss,altReading,c.speak);
 }
 
 /* ==============================
@@ -6132,7 +6163,7 @@ function playSoulSeparation(idx, seq){
     renderParty(); updateBattleHud();
     if(!sepGuideSeen){
       sepGuideSeen=true; save();
-      showBattleHakase('『'+kc+'』の たましいが はなれて しまった！ でも だいじょうぶ。たましいは この ゾーンを さまよって おるぞ。くさむらで さがして、よみを こたえれば もどって くる！');
+      showBattleHakase('『'+kc+'』の たましいが はなれて しまった！ でも だいじょうぶ。たましいは この ゾーンを さまよって いるわ。くさむらで さがして、よみを こたえれば もどって くるのよ！','bh01');
     }
     if(!allPartyUsable()){ sendHomeAllTired(); return; }
     answering=false; phase='select';
@@ -6148,7 +6179,7 @@ function handleTiredAfterRound(seq){
   const wasGenkiGuideSeen=genkiGuideSeen;
   if(!genkiGuideSeen){
     genkiGuideSeen=true; save();
-    showBattleHakase('げんきが 1に なると ヘトヘトで こうげき できない。こうたい させて あげよう。そのまま こうげきを うけると たましいが はなれて しまうぞ！');
+    showBattleHakase('げんきが 1に なると ヘトヘトで こうげき できないの。こうたい させて あげて。そのまま こうげきを うけると たましいが はなれて しまうわ！','bh02');
   }
   const tiredIdx=selectedAttacker;
   if(curStage<=AUTO_SWAP_MAX_ZONE){
@@ -6158,7 +6189,7 @@ function handleTiredAfterRound(seq){
   }else{
     if(!manualSwapGuideSeen && wasGenkiGuideSeen){
       manualSwapGuideSeen=true; save();
-      showBattleHakase('ヘトヘトの こは こうげき できない。したの れつから ほかの こを タップして こうたい じゃ！');
+      showBattleHakase('ヘトヘトの こは こうげき できないの。したの れつから ほかの こを タップして こうたいして あげて！','bh03');
     }else if(manualSwapGuideSeen){
       setMsg('『'+K[tiredIdx].c+'』は ヘトヘト！ ほかの こに こうたい しよう');
     }
@@ -6378,7 +6409,7 @@ function spawnJukugoBossEnemy(){
     // §5-4：初めてボス熟語モン戦が始まったとき1回だけ、はかせカードでガイド
     if(!jukugoBossGuideSeen){
       jukugoBossGuideSeen=true; save();
-      showBattleHakase('ゲートを まもる じゅくごモンだ！ 2もじ あわせた よみを こたえて こうげきしよう！');
+      showBattleHakase('ゲートを まもる じゅくごモンよ！ 2もじ あわせた よみを こたえて こうげきしよう！','bh04');
     }
     $('bOptions').innerHTML='';
     renderParty();
@@ -6607,7 +6638,7 @@ function spawnTwinBossEnemy(){
     // §4-3：初めてツインボス戦が始まったとき1回だけ、はかせカードでガイド
     if(!twinBossGuideSeen){
       twinBossGuideSeen=true; save();
-      showBattleHakase('ふたりを たおすには… りょうほうを どうじに やっつけないと！ かたほうだけじゃ すぐ ふっかつしちゃうよ！');
+      showBattleHakase('ふたりを たおすには… りょうほうを どうじに やっつけないと！ かたほうだけじゃ すぐ ふっかつしちゃうよ！','bh05');
     }
     $('bOptions').innerHTML='';
     renderParty();
@@ -7154,7 +7185,7 @@ function spawnEnemy(){
     // §7-1：最初のフィールドバトルだけ はかせのセリフを添える（初見フラグ・1回だけ）
     // 手直し 会話テンプレート統一：setMsgへの文字列連結ではなく、専用の博士カード（showBattleHakase）で表示
     const hakaseHintMsg = (!firstFieldBattleHelped && battleSource==='field' && !isIntruder)
-      ? 'ただしい よみを えらぶのじゃ！' : null;
+      ? 'ただしい よみを えらぶのよ！' : null;
     if(isIntruder){
       setMsg(shinyTag+'<span class="bubble">おじゃまかんじもんだ！</span><br>ついかいこう！');
       if(!intrudeSeen){ intrudeSeen=true; save(); }
@@ -7162,12 +7193,12 @@ function spawnEnemy(){
       renderParty();
     }else if(battleMode==='party'){
       setMsg(shinyTag+'やせいの 『<span class="yomi">'+k.c+'</span>』が あらわれた！<br>こうげきする かんじもんを えらぼう');
-      if(hakaseHintMsg) showBattleHakase(hakaseHintMsg);
+      if(hakaseHintMsg) showBattleHakase(hakaseHintMsg,'bh06');
       $('bOptions').innerHTML='';
       renderParty();
     }else{
       setMsg(shinyTag+'やせいの 『<span class="yomi">'+k.c+'</span>』が あらわれた！<br>なんて よむ？');
-      if(hakaseHintMsg) showBattleHakase(hakaseHintMsg);
+      if(hakaseHintMsg) showBattleHakase(hakaseHintMsg,'bh06');
       buildOptions(idx);
     }
     answering=false;
@@ -7224,7 +7255,7 @@ function spawnReviewIntrudeEnemy(){
     //   （以前はフィールド画面で先に見せていたため「とびだしてきた」のに何も見えない、という時間差があった）
     if(!reviewIntrudeFirstSeen){
       reviewIntrudeFirstSeen=true; save();
-      showBattleHakase('おや？ まえに みた かんじもんかも しれないぞ。たおして けいけんちを もらおう！');
+      showBattleHakase('あら？ まえに みた かんじもんかも しれないわ。たおして けいけんちを もらおう！','bh07');
     }
     if(battleMode==='party'){
       $('bOptions').innerHTML='';
@@ -7328,9 +7359,9 @@ function onCorrectSimple(btn){
       if(firstBodyIdx===null){ firstBodyIdx=idx; forceTamashiiNext=true; }
       // §7-1：最初のフィールドバトル勝利だけ はかせのセリフを添える
       const hakaseWinMsg = firstFieldWin
-        ? 'みごと！ あばれが おさまって からだを ゲットじゃ。たましいは フィールドに おるぞ' : null;
+        ? 'みごと！ あばれが おさまって からだを ゲットよ。たましいは フィールドに いるわ' : null;
       setMsg('あばれが おさまった！<br>『<span class="yomi">'+k.c+'</span>』の からだを ゲット！<br><span class="meaning">でも たましいは フィールドの どこかを さまよっている…</span>');
-      if(hakaseWinMsg) showBattleHakase(hakaseWinMsg);
+      if(hakaseWinMsg) showBattleHakase(hakaseWinMsg,'bh08');
       snd('get');
       setTimeout(()=>{ if(seq!==spawnSeq) return; afterBattleWin(); },2000);
       return;
@@ -7699,9 +7730,9 @@ function onEnemyDefeated(att){
       if(firstBodyIdx===null){ firstBodyIdx=enemyIdx; forceTamashiiNext=true; }
       // §7-1：最初のフィールドバトル勝利だけ はかせのセリフを添える
       const hakaseWinMsg = firstFieldWin
-        ? 'みごと！ あばれが おさまって からだを ゲットじゃ。たましいは フィールドに おるぞ' : null;
+        ? 'みごと！ あばれが おさまって からだを ゲットよ。たましいは フィールドに いるわ' : null;
       setMsg('あばれが おさまった！<br>『<span class="yomi">'+k.c+'</span>』の からだを ゲット！<br><span class="meaning">でも たましいは フィールドの どこかを さまよっている…</span>'+coinHtml);
-      if(hakaseWinMsg) showBattleHakase(hakaseWinMsg);
+      if(hakaseWinMsg) showBattleHakase(hakaseWinMsg,'bh08');
       snd('get');
       setTimeout(()=>{ if(seq!==spawnSeq) return; afterEnemyDefeatedProgress(att, seq); }, 2000);
       return;
@@ -8157,7 +8188,7 @@ function tamashiiArrival(seq){
     setMsg(arrivalMsg);
     tamashiiShowNext(seq, ()=>{
       setMsg('');
-      showBattleHakase('みたか！ あれは さっき しずめた かんじの たましいじゃ。ただしい かんじを えらんで、からだに もどして やろう！');
+      showBattleHakase('みて！ あれは さっき しずめた かんじの たましいよ。ただしい かんじを えらんで、からだに もどして あげよう！','bh09');
       tamashiiShowNext(seq, ()=>{
         tamashiiFirstSeen=true; save();
         setMsg('『'+name+'』は どれ？');
@@ -8306,10 +8337,10 @@ function onTamashiiWrong(btn, correctIdx, seq, onDone){
   tamashiiQuizMiss++;
   if(tamashiiQuizMiss>=2){
     // §7-2：最初のたましいで失敗したときは はかせのセリフを添える
-    const hakaseFleeMsg = tamashiiFirstAttempt ? 'だいじょうぶ。たましいは また あらわれるぞ' : null;
+    const hakaseFleeMsg = tamashiiFirstAttempt ? 'だいじょうぶ。たましいは また あらわれるわ' : null;
     tamashiiFirstAttempt=false;
     setMsg('たましいは にげてしまった… また あいに こよう！');
-    if(hakaseFleeMsg) showBattleHakase(hakaseFleeMsg);
+    if(hakaseFleeMsg) showBattleHakase(hakaseFleeMsg,'bh10');
     tamashiiQuizIdx=null; tamashiiQuizMiss=0;
     setTimeout(()=>{ if(seq!==spawnSeq) return; onDone(); }, TAMASHII_FLEE_MS);
     return;
@@ -8519,7 +8550,7 @@ function autoJoinParty(idx){
     showToast('『'+K[idx].c+'』が てもちに くわわった！');
   }else if(!partyFullGuideSeen){
     partyFullGuideSeen=true; save();
-    showBattleHakase('てもちが いっぱいだ！ 『てもち』ボタンで いれかえられるぞ');
+    showBattleHakase('てもちが いっぱいね！ 『てもち』ボタンで いれかえられるわよ','bh11');
   }
 }
 function closeZukan(){ $('zukanOverlay').classList.remove('show'); }
@@ -9244,8 +9275,8 @@ function relayoutField(){ fitFieldHeight(); computeTileSize(); updateCamera(true
    スキップボタンで即座に最終状態へ飛ばせる。renderField()自身の続き（afterFieldRender・旧セーブ
    バナー）や、warpZone/enterNextZone/イベントボス導入等の「renderField直後」の処理は、
    afterFieldZoomIntro()経由で演出終了まで待たせることで、既存のバナー・はかせ会話の表示順序を変えずに済ませる。 */
-const FIELD_INTRO_HOLD_MS=300;   // 「ゾーン全体」を静止して見せる時間（設計書に数値指定なし＝ちずと揃えた実装判断）
-const FIELD_INTRO_MS=900;        // 自分の位置へズーム/パンする所要時間（実装判断）
+const FIELD_INTRO_HOLD_MS=1200;   // 「ゾーン全体」を静止して見せる時間（設計書に数値指定なし＝ちずと揃えた実装判断／OP2V1でゆっくり化）
+const FIELD_INTRO_MS=1800;        // 自分の位置へズーム/パンする所要時間（実装判断／OP2V1でゆっくり化）
 let fieldZoomLastZone=null;      // 直前にこの演出の判定対象にした(=renderFieldした)ゾーン。同じ値なら「入場」扱いしない
 let fieldIntro={playing:false,finish:null,queue:[]};   // 演出の再生状態＋演出終了を待つ処理のキュー
 /* 演出中でなければ即実行、演出中ならキューして終了後にまとめて実行する（renderField自身の続きにも外部呼び出しにも使う） */
@@ -10060,10 +10091,31 @@ function scheduleHakaseAutoStart(){
   };
   hakaseStartTimer=setTimeout(tryStart,HAKASE_START_DELAY_MS);
 }
+/* 手直し OP2V1§3：博士（マナ）説明カードの声（audio/battle/bh01〜11.mp3・四国めたん）。
+   showBattleHakase(msg,sndId) の第2引数にIDを渡すと表示と同時に再生する（省略時は従来どおり音声なし）。
+   前の説明音声が鳴っていれば必ず止めてから次を鳴らす。読み込み失敗・play()のrejectは握りつぶし、ゲーム進行は止めない。 */
+let battleHakaseAudioEl=null;
+function stopBattleHakaseVoice(){
+  if(battleHakaseAudioEl){ try{ battleHakaseAudioEl.pause(); }catch(e){} battleHakaseAudioEl=null; }
+}
+function playBattleHakaseVoice(sndId){
+  stopBattleHakaseVoice();
+  if(!sndId || !soundOn) return;
+  let el;
+  try{ el=new Audio('audio/battle/'+sndId+'.mp3'); }catch(e){ el=null; }
+  if(!el) return;
+  battleHakaseAudioEl=el;
+  const onFail=()=>{ if(battleHakaseAudioEl===el) battleHakaseAudioEl=null; };
+  el.onerror=onFail;
+  try{
+    const p=el.play();
+    if(p&&typeof p.catch==='function') p.catch(onFail);
+  }catch(e){ onFail(); }
+}
 /* 手直し 会話テンプレート統一：バトル画面用の博士カード（左に顔・右にテキスト）。
    フィールドのhakase-talkと同じ構図だがバトル画面のレイアウトに合わせて常設の要素として置く（表示/非表示で切替）。
    タップ先送りは持たない＝バトルメッセージと同時に表示されたまま選択肢を選べる（従来のsetMsg併記と同じ体験）。 */
-function showBattleHakase(msg){
+function showBattleHakase(msg,sndId){
   const box=$('battleHakase'); if(!box) return;
   box.innerHTML='';
   const face=document.createElement('div'); face.className='battle-hakase-face'+(hakaseFaceImgOK?' has-img':'');
@@ -10072,10 +10124,12 @@ function showBattleHakase(msg){
   const text=document.createElement('div'); text.className='battle-hakase-text'; text.textContent=msg;
   box.appendChild(face); box.appendChild(text);
   box.classList.add('show');
+  playBattleHakaseVoice(sndId);
 }
 function hideBattleHakase(){
   const box=$('battleHakase'); if(!box) return;
   box.classList.remove('show'); box.innerHTML='';
+  stopBattleHakaseVoice();
 }
 /* 手直し はかせトーク2§3：はかせの会話ウィンドウ（左に顔・右にセリフ）。既存showFieldBanner（黒帯）は使わない。
    #fieldWrap直下＝カメラtransformの影響を受けない（体験監査 重大-2の流儀）。顔はhakase-face.webpがあれば表示、無ければ🧑‍🔬 */
@@ -10436,8 +10490,8 @@ function wmReclampOnResize(){
    実装方式：#wmMapの transform/transition を直接inline styleで制御する（wmSetupZoom/wmApplyTransformを
    そのまま使い回す＝クランプ計算式を重複させない）。ドラッグ・タップは演出中は無効化する（bindWorldMapDrag参照）。
 ================================ */
-const WM_INTRO_HOLD_MS=300;   // 「地図全体」を静止して見せる時間（設計書に数値指定なし＝実装判断）
-const WM_INTRO_MS=900;        // 現在地の倍率へズームする所要時間（実装判断）
+const WM_INTRO_HOLD_MS=1200;   // 「地図全体」を静止して見せる時間（設計書に数値指定なし＝実装判断／OP2V1でゆっくり化）
+const WM_INTRO_MS=1800;        // 現在地の倍率へズームする所要時間（実装判断／OP2V1でゆっくり化）
 let wmIntro={playing:false,finish:null};   // 演出の再生状態（スキップ・連続open時の強制終了に使う）
 function wmSkipIntro(){ if(wmIntro.playing && wmIntro.finish) wmIntro.finish(); }
 function wmPlayIntroZoom(scale,cx,cy){
@@ -11853,6 +11907,7 @@ function op1BuildAnswers(){
   opts.forEach(txt=>{
     const b=document.createElement('button');
     b.className='opt'; b.textContent=txt;
+    if(txt!==correct) b.style.opacity='0.35';   // OP2V1：正解以外は薄く表示（押せる状態は維持）
     b.onclick=()=>op1OnAnswer(b,txt,correct);
     wrap.appendChild(b);
   });
