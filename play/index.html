@@ -536,13 +536,18 @@
   .pbtn.pfield .sel-ring{position:absolute;left:50%;bottom:-.08em;transform:translateX(-50%) scale(.9);
     width:2.3em;height:.7em;border-radius:50%;pointer-events:none;opacity:0;
     background:radial-gradient(ellipse at center,rgba(255,224,102,.9) 0%,rgba(255,199,64,.5) 45%,rgba(255,224,102,0) 78%)}
-  .pbtn.pfield.sel{transform:translateY(-6px) scale(1.14)}
-  .pbtn.pfield.sel:active{transform:translateY(-3px) scale(1.08)}
+  /* 発注_OP3 作業1：選択中の一歩前浮き上がりを、はっきり分かる量へ強化（-6px→-14px前後） */
+  .pbtn.pfield.sel{transform:translateY(-14px) scale(1.14)}
+  .pbtn.pfield.sel:active{transform:translateY(-11px) scale(1.08)}
   .pbtn.pfield.sel .sel-ring{opacity:1;animation:pfieldRing 1.4s ease-in-out infinite}
   @keyframes pfieldRing{0%,100%{transform:translateX(-50%) scale(.92)}50%{transform:translateX(-50%) scale(1.1)}}
   /* 足元パラメータ札（Lv・げんき n/m・げんきバー・ヘトヘトタグ） */
   .pbtn.pfield .pfuda{position:relative;display:flex;flex-direction:column;align-items:center;gap:1px;
     background:rgba(255,255,255,.94);border-radius:9px;padding:3px clamp(4px,1.6vw,8px) 4px;box-shadow:0 2px 5px rgba(0,0,0,.2);min-width:30px}
+  /* 発注_OP3 作業1：選択中の子だけ札の外枠を太く赤く。box-shadowのリング方式（.pbtn.selと同じ技法）を採用＝
+     border追加だとボックスが実寸で6px前後広がり、320px幅・gap3px（@media(max-width:340px)）で隣の札と
+     接触しうるため、レイアウトに影響しないbox-shadowで「太い赤枠」を再現する（判断はOP3実装報告に明記） */
+  .pbtn.pfield.sel .pfuda{box-shadow:0 0 0 3px #e53935,0 2px 5px rgba(0,0,0,.2)}
   .pbtn.pfield .pfuda .tired-tag{position:static;transform:none;box-shadow:none;margin-bottom:1px;font-size:.58rem}
   .pbtn.pfield .pfuda-lv{font-size:.7rem;font-weight:900;color:#7c4a03;line-height:1.25;white-space:nowrap}
   .pbtn.pfield .pfuda-genki{font-size:.7rem;font-weight:900;color:#495057;line-height:1.25;white-space:nowrap}
@@ -1449,6 +1454,12 @@
       <span class="diff-label">ひらがなヒント</span>
       <button class="diff-pill" id="diffEasy" onclick="setDifficulty('easy')">なまえを なのる<br><small>（かんたん）</small></button>
       <button class="diff-pill" id="diffHard" onclick="setDifficulty('hard')">なまえは ひみつ<br><small>（むずかしい）</small></button>
+    </div>
+    <!-- 発注_OP3 作業2-2：AUTOえらび切替。難易度ピルと同じ場所・同じ見た目の作法（.diff-toggle/.diff-pill流用） -->
+    <div class="diff-toggle">
+      <span class="diff-label">こうげき えらび</span>
+      <button class="diff-pill" id="autoOn" onclick="setAutoPick(true)">AUTO<br><small>（じどうで えらぶ）</small></button>
+      <button class="diff-pill" id="autoOff" onclick="setAutoPick(false)">じぶんで<br><small>（タップして えらぶ）</small></button>
     </div>
   </section>
 
@@ -5175,6 +5186,9 @@ let shiny=new Set();    // オンヨミフォーム取得済み Kインデック
 // 弾3-8§1-2：発見済み四字熟語（辞書エントリ・文字列のセット。今回は'一心同体'の1件のみ）
 let yoji=new Set();
 let difficulty='easy';  // 'easy'(なまえをなのる) | 'hard'(なまえはひみつ)
+// 発注_OP3 作業2：AUTOえらび（カントウ開放まで自動選択）。新規ゲーム＝AUTOオン（既定値どおり）
+let autoPick=true;          // true=自動でこうげきする子を選ぶ／false=じぶんでタップ
+let autoPickExplained=false; // カントウ開放後の「じぶんで えらんでみて」説明カードを見せた（＝AUTOをオフにした）か
 let labSeen=false;      // けんきゅうじょを開いたことがあるか（NEWバッジ表示判定）
 let shinySeen=false;    // 色違いの初遭遇演出を見たか
 let intrudeSeen=false;  // おじゃまかんじもんの初回演出を見たか
@@ -5241,6 +5255,7 @@ function save(){
       caught:[...caught],bodies:[...bodies],unlocked:unlocked,cleared:[...cleared],
       levels:levels,party:party,sound:soundOn,tut:partyTutorialDone,
       jukugo:[...jukugo],shiny:[...shiny],difficulty:difficulty,
+      autoPick:autoPick,autoPickExplained:autoPickExplained,   // 発注_OP3 作業2
       labSeen:labSeen,shinySeen:shinySeen,intrudeSeen:intrudeSeen,
       fieldPos:fieldPos,introSeen:introSeen,zoneVisited:[...zoneVisited],
       freeZones:[...freeZones],heroChar:heroChar,
@@ -5400,6 +5415,19 @@ function load(){
     otetsudaiGuideSeen = (d.otetsudaiGuideSeen===true);
     interiorGuideSeen = (d.interiorGuideSeen===true);
     schoolTestGuideSeen = (d.schoolTestGuideSeen===true);
+    // 発注_OP3 作業2-1：AUTOえらびフラグのマイグレーション。
+    // フラグが有る（新形式）セーブはそのまま採用。フラグが無い（旧セーブ）場合は、
+    // 「カントウ地方が既に開放済み（ゾーン9が遊べる状態）」の既存判定＝unlocked>=STAGE1_COUNT+1 で分岐：
+    //   開放済み → もう自分で選ぶ操作に慣れている前提で「オフ＋説明済み」／未開放 → 「オン＋説明未」で初期化。
+    // ここに来る時点でunlockedは直前のcleared補正まで含めて確定済み（第5.5弾等の既存マイグレーションと同じ並び）。
+    if(typeof d.autoPick==='boolean'){
+      autoPick=d.autoPick;
+      autoPickExplained=(d.autoPickExplained===true);
+    }else if(unlocked>=STAGE1_COUNT+1){
+      autoPick=false; autoPickExplained=true;
+    }else{
+      autoPick=true; autoPickExplained=false;
+    }
     // 弾3-6§6-3：旧セーブ移行③「たびの つづき」通知の判定（cleared済みだが未訪問＝1回だけ次のフィールド表示で消費）
     pendingTravelContinueBanner = (!travelContinueSeen && cleared.has(STAGE2_COUNT) && !zoneVisited.includes(STAGE2_COUNT+1));
     // 弾4-6§6-3：旧セーブ移行③′。カンサイ→チュウブ側（44クリア済み・45未訪問）の「たびの つづき」通知
@@ -5935,6 +5963,9 @@ function updateTitle(){
   // 難易度ピル
   $('diffEasy').classList.toggle('on',difficulty==='easy');
   $('diffHard').classList.toggle('on',difficulty==='hard');
+  // 発注_OP3 作業2-2：AUTOえらびピル
+  $('autoOn').classList.toggle('on',autoPick);
+  $('autoOff').classList.toggle('on',!autoPick);
   // 第5.5弾：しゅじんこう切替ボタンは女の子画像があるときだけ（§2/§4）
   const hcb=$('heroChangeBtn');
   if(hcb) hcb.style.display = heroSelectAvailable() ? '' : 'none';
@@ -5942,6 +5973,11 @@ function updateTitle(){
 function setDifficulty(d){
   difficulty=d; save(); updateTitle();
   ensureAudio(); if(d==='hard') sfxWrong(); else sfxCorrect();
+}
+/* 発注_OP3 作業2-2：AUTOえらび切替（いつでも切替可能・切替は保存する）。カントウ開放前にオフにするのも自由 */
+function setAutoPick(v){
+  autoPick=!!v; save(); updateTitle();
+  ensureAudio(); sfxCorrect();
 }
 function goStages(){ showScreen('screen-stages'); }
 function goZukan(){ showScreen('screen-zukan'); }
@@ -6057,6 +6093,10 @@ let isIntruder=false, intrudeCount=0;    // おじゃまかんじもん（復習
 let phase='select';            // party モード: 'select' | 'quiz'
 let selectedAttacker=null;
 let combo=0;
+// 発注_OP3 作業2：AUTOえらびの実行時状態（セーブしない・バトル中のみ使うセッション値）
+let autoPickArmed=false;     // 700ms待機中か（他ボタン操作での中断判定・多重タイマー防止）
+let autoPickSeq=0;           // 世代カウンタ：新しい選択チャンスや中断のたびに+1し、古いタイマーを無効化する
+let autoPickRendering=false; // maybeAutoPickAttacker()からのrenderParty()再入を防ぐガード
 // 第4弾：フィールドからのバトル使い回し用
 let battleSource='quick';    // 'quick'(クイックバトル) | 'field'(フィールドからの1体バトル)
 let fieldIsBoss=false;       // フィールドで今の1体がボス漢字（ゲート開放対象）か
@@ -7044,6 +7084,9 @@ function renderParty(){
     ib.onclick=onGenkidamaBtnTap;
     row.appendChild(ib);
   }
+  // 発注_OP3 作業2：AUTOえらび。renderParty()が呼ばれるたび毎回チェックし、条件が揃った時だけ実行する
+  // （autoPickRendering中＝maybeAutoPickAttacker自身からの再入なので呼ばない＝無限再帰防止）
+  if(!autoPickRendering) maybeAutoPickAttacker();
 }
 /* 弾R-2：勝利ふり向き演出。heroVictoryPose中はhero-back画像を前向き勝利ポーズへ差し替える（無ければ従来どおり後ろ姿）。
    renderParty()が呼ばれるたびにも一貫して同じ画像を選ぶための共通口 */
@@ -7074,6 +7117,7 @@ function onGenkidamaBtnTap(){
   if(answering||evoLock) return;
   if(items.genkidama<=0) return;
   itemUseMode=!itemUseMode;
+  autoPickArmed=false; autoPickSeq++;   // 発注_OP3 作業2：げんきだまボタンを押した＝AUTOの待機演出があれば中断（手動操作を優先）
   if(itemUseMode) setMsg('🍙 だれに つかう？');
   else setMsg('かんじもんを えらぼう');
   renderParty();
@@ -7082,6 +7126,7 @@ function onGenkidamaBtnTap(){
 function useGenkidamaOn(idx){
   if(answering||evoLock) return;
   itemUseMode=false;
+  autoPickArmed=false; autoPickSeq++;   // 発注_OP3 作業2：げんきだま使用も操作の一種＝AUTOの待機演出を中断
   if(items.genkidama<=0 || !party.includes(idx)){ renderParty(); return; }
   items.genkidama--;
   genki[idx]=genkiMaxOf(idx);
@@ -7540,6 +7585,79 @@ function requiredHitsFor(attackerIdx,defenderIdx,defenderIsBoss){
   const aff=affinity(selfType, typeOf(defenderIdx));
   const affRel = aff>=2 ? 'batsugun' : (aff<1 ? 'nigate' : 'futsuu');
   return REQUIRED_HITS_TABLE[bandRel][affRel];
+}
+
+/* ==============================
+   発注_OP3 作業2：AUTOえらび（カントウ開放まで自動選択）
+   - 対象は「標準のパーティ選択フェーズ」のみ＝onPartyTapのデフォルト分岐（通常の野生・たましい・
+     おじゃまかんじもん・ふくしゅう乱入）。isJukugoBoss/isTwinBossは対象外にする：
+     この2つは onJukugoBossPartyTap/onTwinBossPartyTap という別のタップハンドラを持ち、相手が
+     K配列のインデックスを持たない（熟語オブジェクト）ため、既存のrequiredHitsFor(attackerIdx,
+     defenderIdx,...)がそのままでは使えない＝判定式が要求する「必要正解数」の土台が無い。
+     ボス戦は従来どおり手動選択のまま（発注書に明記の除外は無いが、最も整合的な解釈として除外）。
+   - オープニングOP-1のチュートリアルバトルは、renderParty()/onPartyTapを一切呼ばない完全に別の
+     オーバーレイ（op1Overlay系）で完結しているため、このフックの対象に自然と含まれない。
+================================ */
+/* ヘトヘトでない子の中から、必要正解数が最少の子を選ぶ。同点はレベルが高い方、それも同点なら
+   partyの並び順で先（＝列の左）を優先。usableはparty順を保ったまま絞り込むため、走査を
+   「厳密に上回った時だけ更新」にすることで、同点タイの左優先を自然に満たす（追加の分岐不要） */
+function autoPickBestIdx(){
+  const usable=party.filter(i=>genkiOf(i)>GENKI_TIRED);
+  if(usable.length===0) return null;
+  let best=null, bestHits=Infinity, bestLv=-1;
+  usable.forEach(i=>{
+    const hits=requiredHitsFor(i, enemyIdx, enemyIsBoss);
+    const lv=levelOf(i);
+    if(hits<bestHits || (hits===bestHits && lv>bestLv)){
+      best=i; bestHits=hits; bestLv=lv;
+    }
+  });
+  return best;
+}
+/* renderParty()の末尾から毎回呼ばれる。実際に何かするのは「AUTOオン・party戦・選択フェーズ・
+   ボス戦以外・操作ブロック中でない」ときだけ。多重発火はautoPickArmedで防ぐ */
+function maybeAutoPickAttacker(){
+  if(!autoPick || battleMode!=='party' || phase!=='select') return;
+  if(answering || evoLock || itemUseMode) return;
+  if(isJukugoBoss || isTwinBoss) return;
+  if(party.length===0 || enemyIdx==null) return;
+  // カントウ開放時の切り替え：AUTOオンのまま開放済み状態で選択フェーズに入った最初の1回だけ、
+  // 説明カード＋音声(bh12)を出してAUTOをオフにし、このバトルから手動選択にする（自動選択はしない）
+  if(unlocked>=STAGE1_COUNT+1 && !autoPickExplained){
+    autoPickExplained=true; autoPick=false; save();
+    autoPickArmed=false; autoPickSeq++;   // 進行中の自動選択タイマーがあれば無効化
+    // 検品差し戻し対応（不具合B）：ここ（renderParty()の中）はspawnEnemy等の演出初期化の途中で、
+    // この数行後に「前の敵の残りカードを消す」既存の無条件hideBattleHakase()が必ず呼ばれる。
+    // 同期処理内で表示するとその場で消されてしまうため、setTimeout(...,0)で今の同期処理が
+    // 終わってから表示する（spawnEnemy側やhideBattleHakase自体は一切変更しない）
+    setTimeout(()=>{
+      showBattleHakase('ここからは こうげきする かんじもんを じぶんで えらんでみて！ あいしょうの いい こを えらぶと、すこしの せいかいで こえが とどくのよ。じどうで えらんで ほしいときは、タイトルの AUTO を オンに してね','bh12');
+    },0);
+    return;
+  }
+  if(autoPickArmed) return;   // 既に自動選択の待機演出中（多重起動防止）
+  const idx=autoPickBestIdx();
+  if(idx==null) return;
+  autoPickArmed=true;
+  const seq=++autoPickSeq;
+  const seqAtArm=spawnSeq;   // バトル自体が切り替わっていないかの安全網（既存spawnSeq流儀）
+  selectedAttacker=idx;
+  autoPickRendering=true; renderParty(); autoPickRendering=false;   // 選ばれた子に.selを付けて見せる
+  updateBattleHud();
+  setTimeout(()=>{ autoPickFireWhenReady(idx,seq,seqAtArm); },700);
+}
+/* 検品差し戻し対応（不具合A）：700ms経過時点でまだ敵の登場演出ロック中（answering/evoLock＝
+   spawnEnemy等がENTRY_MS/BOSS_ENTRY_MSの間trueにしている）だと、そのまま諦めて二度と再挑戦しない
+   実装になっていたため、AUTOオンでも毎回「ハイライトは出るがこうげきへ進まない」まま止まっていた。
+   ロック中は諦めずに100ms間隔で再チェックし、ロックが明けた瞬間にonPartyTap(idx)を呼ぶ。
+   seq/seqAtArmの世代チェックは毎回必ず行う＝他ボタン操作・新ラウンド・バトル離脱があれば
+   古い待機は自然に消える（無限ポーリングにはならない） */
+function autoPickFireWhenReady(idx,seq,seqAtArm){
+  if(seq!==autoPickSeq || seqAtArm!==spawnSeq) return;   // 中断済み（他ボタン操作／新ラウンド／バトル離脱）
+  if(!autoPick || battleMode!=='party' || phase!=='select' || itemUseMode){ autoPickArmed=false; return; }
+  if(answering || evoLock){ setTimeout(()=>autoPickFireWhenReady(idx,seq,seqAtArm),100); return; }   // 演出ロック明けを待って再挑戦
+  autoPickArmed=false;
+  onPartyTap(idx);   // タップしたのと同じ流れでこうげきへ進む
 }
 
 /* --- てもちバトル（ステージ3以降・第10弾§2-5でゾーン1〜2も） --- */
