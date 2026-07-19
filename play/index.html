@@ -9555,6 +9555,8 @@ function relayoutField(){ fitFieldHeight(); computeTileSize(); updateCamera(true
    afterFieldZoomIntro()経由で演出終了まで待たせることで、既存のバナー・はかせ会話の表示順序を変えずに済ませる。 */
 const FIELD_INTRO_HOLD_MS=1200;   // 「ゾーン全体」を静止して見せる時間（設計書に数値指定なし＝ちずと揃えた実装判断／OP2V1でゆっくり化）
 const FIELD_INTRO_MS=1800;        // 自分の位置へズーム/パンする所要時間（実装判断／OP2V1でゆっくり化）
+const FIELD_PAN_MS=1400;          // 発注_ズーム横パン(2026-07-20)：横長ゾーンの横パン所要時間。目安1400〜1800msの下限を採用
+                                   // （HOLD1200+PAN1400+ZOOM1800=4400ms＝発注書の目安「トータル3〜4.5秒程度」に収まる。実機確認で選定）
 let fieldZoomLastZone=null;      // 直前にこの演出の判定対象にした(=renderFieldした)ゾーン。同じ値なら「入場」扱いしない
 let fieldIntro={playing:false,finish:null,queue:[]};   // 演出の再生状態＋演出終了を待つ処理のキュー
 /* 演出中でなければ即実行、演出中ならキューして終了後にまとめて実行する（renderField自身の続きにも外部呼び出しにも使う） */
@@ -9594,7 +9596,7 @@ function playFieldZoomIntro(plan){
   // 最終状態＝直前のupdateCamera(true)が既に計算済みの値をそのまま使う（クランプ計算式を重複させない）
   const endX=parseFloat(grid.style.getPropertyValue('--cam-x'))||0;
   const endY=parseFloat(grid.style.getPropertyValue('--cam-y'))||0;
-  let startX,startY,startScale;
+  let startX,startY,startScale,needPan=false,panEndX=0,panEndY=0;
   if(plan.isTall){
     // 設計書§1-3の代案：縦長ゾーンはボスの位置から下ってくる（倍率は変えずパンだけ）
     const bp=findZoneBossTile(fieldZone) || zoneStartOf(fieldZone);
@@ -9602,11 +9604,24 @@ function playFieldZoomIntro(plan){
     startX=Math.max(vw-mapW, Math.min(0, vw/2-(bp.x+0.5)*plan.tile));
     startY=Math.max(vh-mapH, Math.min(0, vh/2-(bp.y+0.5)*plan.tile));
   }else{
-    // 標準：ゾーン全体が収まる倍率まで縮小して中央表示（余白6%・実装判断）
-    const fit=Math.min(1, vw/mapW, vh/mapH)*0.94;
-    if(fit>=0.999) return;   // すでに全体が収まっている＝演出不要（ズームする意味がない）
-    startScale=fit;
-    startX=(vw-mapW*fit)/2; startY=(vh-mapH*fit)/2;
+    // 発注_ズーム横パン(2026-07-20)：横長ゾーンは余白ゼロ（高さいっぱいの倍率）＋横パンに変更。
+    // 0.94のような余白係数は付けない＝上下の白余白をゼロにするのが今回の目的そのもの
+    const fitH=Math.min(1, vh/mapH);
+    needPan=(mapW*fitH > vw+1);   // 1pxの誤差は許容。縮小後もマップ幅が画面より広ければパンが要る
+    if(fitH>=0.999 && !needPan) return;   // 何も見せる意味が無い＝従来どおり演出スキップ
+    startScale=fitH;
+    const panY=(vh-mapH*fitH)/2;   // fitHがvh/mapHぴったりの場合は自動的に0になる（高さの余白ゼロ）
+    if(needPan){
+      // パン開始位置＝プレイヤーがいる側と逆の端（逆の端から始めて終盤で自然にプレイヤー側へ寄る見え方にする実装判断）
+      const playerOnLeftHalf=(fieldHx < plan.FW/2);
+      startX=playerOnLeftHalf ? (vw-mapW*fitH) : 0;
+      panEndX=playerOnLeftHalf ? 0 : (vw-mapW*fitH);
+    }else{
+      // パン不要（マップ幅が画面に収まる＝横パンする意味が無い）＝中央固定。高さだけ合わせた静止表示になる
+      startX=(vw-mapW*fitH)/2;
+      panEndX=startX;
+    }
+    startY=panY; panEndY=panY;
   }
   fieldIntro.playing=true;
   heroLock=true;   // 演出中は移動・オートたんけん・当たり判定を止める（tryStep/autoTickが見る既存のロック）
@@ -9618,7 +9633,9 @@ function playFieldZoomIntro(plan){
   grid.style.transition='none';
   grid.style.transform='translate('+startX+'px,'+startY+'px) scale('+startScale+')';
   void grid.offsetWidth;   // reflow強制（この後のtransition指定を次の変化から効かせるため）
-  grid.style.transition='transform '+FIELD_INTRO_MS+'ms cubic-bezier(.2,.8,.2,1)';
+  // 発注_ズーム横パン：段階を区別する変数（'pan'＝横パン中／'zoom'＝自分の位置へズーム中）。onEnd/fallbackがどちらの完了か判定するのに使う
+  let stage=needPan?'pan':'zoom';
+  grid.style.transition='transform '+(needPan?FIELD_PAN_MS:FIELD_INTRO_MS)+'ms cubic-bezier(.2,.8,.2,1)';
   let done=false, fallback=null;
   const cleanup=()=>{ grid.removeEventListener('transitionend',onEnd); clearTimeout(holdTimer); clearTimeout(fallback); };
   const finish=()=>{
@@ -9632,12 +9649,27 @@ function playFieldZoomIntro(plan){
     const q=fieldIntro.queue; fieldIntro.queue=[];
     q.forEach(fn=>fn());
   };
-  fieldIntro.finish=finish;
-  const onEnd=e=>{ if(e.target===grid && e.propertyName==='transform') finish(); };
+  fieldIntro.finish=finish;   // どの段階でもfinish()は即座に最終状態(--cam-x/--cam-y・scale解除)へ飛べる（スキップ対応）
+  // 発注_ズーム横パン：パン段階の完了を受けて、自分の位置へのズーム段階へ引き継ぐ
+  const startZoomStage=()=>{
+    stage='zoom';
+    grid.style.transition='transform '+FIELD_INTRO_MS+'ms cubic-bezier(.2,.8,.2,1)';
+    grid.style.transform='translate('+endX+'px,'+endY+'px) scale(1)';
+    fallback=setTimeout(finish, FIELD_INTRO_MS+500);   // 保険（ズーム段階のtransitionendが来ない環境向け）
+  };
+  const onEnd=e=>{
+    if(e.target!==grid || e.propertyName!=='transform') return;
+    if(stage==='pan'){ clearTimeout(fallback); startZoomStage(); }
+    else finish();
+  };
   grid.addEventListener('transitionend',onEnd);
   const holdTimer=setTimeout(()=>{
-    grid.style.transform='translate('+endX+'px,'+endY+'px) scale(1)';   // armed済みのtransitionでなめらかに動く
-    fallback=setTimeout(finish, FIELD_INTRO_MS+500);   // 保険（transitionendが来ない環境向け）
+    if(needPan){
+      grid.style.transform='translate('+panEndX+'px,'+panEndY+'px) scale('+startScale+')';   // armed済みのtransitionでなめらかに動く
+      fallback=setTimeout(startZoomStage, FIELD_PAN_MS+500);   // 保険（パン段階のtransitionendが来ない環境向け）
+    }else{
+      startZoomStage();
+    }
   }, FIELD_INTRO_HOLD_MS);
 }
 
