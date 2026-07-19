@@ -5223,6 +5223,8 @@ let otetsudaiGuideSeen=false;
 let interiorGuideSeen=false;
 // 弾3-16：がっこうの初回お手本（旧セーブは未見あつかい）
 let schoolTestGuideSeen=false;
+// 発注T-1：しょどうきょうしつ初回入室のはかせ一言（旧セーブは未見あつかい）
+let shodoGuideSeen=false;
 // 弾3-9§3-1／§3-3：かくれラスボス（イベントボス）関連（旧セーブは未見・未撃破あつかい）
 let eventBossDone=new Set();    // 撃破済みイベントボスのゾーン番号（初回のみ発生させるためのフラグ・ゾーン24・44共用）
 let eventBossIntroSeen=false;   // かくれラスボスへのつなぎ（はかせの一言）を見たか（初回のみ・ゾーン24用）
@@ -5289,7 +5291,8 @@ function save(){
       innGuideSeen:innGuideSeen,
       otetsudaiGuideSeen:otetsudaiGuideSeen,
       interiorGuideSeen:interiorGuideSeen,
-      schoolTestGuideSeen:schoolTestGuideSeen
+      schoolTestGuideSeen:schoolTestGuideSeen,
+      shodoGuideSeen:shodoGuideSeen   // 発注T-1
     }));
   }catch(e){}
 }
@@ -5415,6 +5418,7 @@ function load(){
     otetsudaiGuideSeen = (d.otetsudaiGuideSeen===true);
     interiorGuideSeen = (d.interiorGuideSeen===true);
     schoolTestGuideSeen = (d.schoolTestGuideSeen===true);
+    shodoGuideSeen = (d.shodoGuideSeen===true);   // 発注T-1
     // 発注_OP3 作業2-1：AUTOえらびフラグのマイグレーション。
     // フラグが有る（新形式）セーブはそのまま採用。フラグが無い（旧セーブ）場合は、
     // 「カントウ地方が既に開放済み（ゾーン9が遊べる状態）」の既存判定＝unlocked>=STAGE1_COUNT+1 で分岐：
@@ -6097,6 +6101,7 @@ let combo=0;
 let autoPickArmed=false;     // 700ms待機中か（他ボタン操作での中断判定・多重タイマー防止）
 let autoPickSeq=0;           // 世代カウンタ：新しい選択チャンスや中断のたびに+1し、古いタイマーを無効化する
 let autoPickRendering=false; // maybeAutoPickAttacker()からのrenderParty()再入を防ぐガード
+const AUTOPICK_FIRE_GRACE_MS=600;   // 発注T-1 作業4・ユーザー調整用：演出ロック明け検知後、実際に発火するまでの猶予（この間にげんきだまで中断できる）
 // 第4弾：フィールドからのバトル使い回し用
 let battleSource='quick';    // 'quick'(クイックバトル) | 'field'(フィールドからの1体バトル)
 let fieldIsBoss=false;       // フィールドで今の1体がボス漢字（ゲート開放対象）か
@@ -6125,6 +6130,7 @@ const TOWN_ZONE=0;            // 町の疑似ゾーン番号（ZONESの外・進
 const MALL_ZONE=-1;           // 弾3-15：ショッピングモールのなか
 const HOUSE1_ZONE=-2;         // 弾3-15：みんかのなか
 const SCHOOL_ZONE=-3;         // 弾3-16：がっこうのなか
+const SHODO_ZONE=-4;          // 発注T-1：しょどうきょうしつのなか
 function isTownLike(z){ return z<=0; }   // 町＋屋内＝非戦闘の疑似ゾーン
 const COIN_WIN=2;             // 通常バトル勝利のコイン
 const COIN_BOSS=10;           // ボス系（もんばん・ツインボス・かくれラスボス・ゾーンボス）勝利のコイン
@@ -7652,12 +7658,19 @@ function maybeAutoPickAttacker(){
    ロック中は諦めずに100ms間隔で再チェックし、ロックが明けた瞬間にonPartyTap(idx)を呼ぶ。
    seq/seqAtArmの世代チェックは毎回必ず行う＝他ボタン操作・新ラウンド・バトル離脱があれば
    古い待機は自然に消える（無限ポーリングにはならない） */
+/* 発注T-1 作業4（弾OP-3検品の残存懸念対応）：ロック明けを検知した直後に即発火すると、げんきだまで
+   中断できる操作窓が0〜100msしかない。ロック明け検知後にAUTOPICK_FIRE_GRACE_MSだけさらに待ってから
+   発火する＝この間にげんきだまが押されればautoPickSeqが変わり（既存の中断の仕組み）、下の再チェックで中断される。 */
 function autoPickFireWhenReady(idx,seq,seqAtArm){
   if(seq!==autoPickSeq || seqAtArm!==spawnSeq) return;   // 中断済み（他ボタン操作／新ラウンド／バトル離脱）
   if(!autoPick || battleMode!=='party' || phase!=='select' || itemUseMode){ autoPickArmed=false; return; }
   if(answering || evoLock){ setTimeout(()=>autoPickFireWhenReady(idx,seq,seqAtArm),100); return; }   // 演出ロック明けを待って再挑戦
-  autoPickArmed=false;
-  onPartyTap(idx);   // タップしたのと同じ流れでこうげきへ進む
+  setTimeout(()=>{
+    if(seq!==autoPickSeq || seqAtArm!==spawnSeq) return;   // 猶予中にげんきだま等で中断済み
+    if(!autoPick || battleMode!=='party' || phase!=='select' || itemUseMode || answering || evoLock){ autoPickArmed=false; return; }
+    autoPickArmed=false;
+    onPartyTap(idx);   // タップしたのと同じ流れでこうげきへ進む
+  }, AUTOPICK_FIRE_GRACE_MS);
 }
 
 /* --- てもちバトル（ステージ3以降・第10弾§2-5でゾーン1〜2も） --- */
@@ -9615,10 +9628,11 @@ function renderField(){
           else txt=gateOpen?'➔':'🚧';
         }else txt=gateOpen?'➔':'🚧';
       }
-      else if(fieldZone===TOWN_ZONE && (ch==='L'||ch==='D'||ch==='Y'||ch==='H'||ch==='M'||ch==='K'||ch==='G')){
+      else if(fieldZone===TOWN_ZONE && (ch==='L'||ch==='D'||ch==='Y'||ch==='H'||ch==='M'||ch==='K'||ch==='G'||ch==='F')){
         // 弾3-12/3-13：町の建物いりぐち・掲示板（A-L分岐＝zoneCharIdxはindex -1で壊れるため先に分岐する）
+        // 発注T-1：書道教室いりぐちF（がっこうGと同じ流儀）を追加
         cls+=' t-path t-town-door';
-        txt='<span class="town-door-emoji">'+(ch==='L'?'🔬':(ch==='D'?'🛍️':(ch==='Y'?'🛏️':(ch==='H'?'📋':(ch==='M'?'🏬':(ch==='K'?'🏠':'🏫'))))))+'</span>';
+        txt='<span class="town-door-emoji">'+(ch==='L'?'🔬':(ch==='D'?'🛍️':(ch==='Y'?'🛏️':(ch==='H'?'📋':(ch==='M'?'🏬':(ch==='K'?'🏠':(ch==='F'?'🖌️':'🏫')))))))+'</span>';
       }
       else if(fieldZone<0 && (ch==='E'||ch==='M'||ch==='N')){
         // 弾3-15：屋内の出口・店員・住人。画像が読めたNPCは後載せするため、タイル上の絵文字はフォールバック時だけ。
@@ -9672,6 +9686,7 @@ function renderField(){
   if(fieldZone===TOWN_ZONE && fullart){
     TOWN_BUILDINGS.forEach(b=>{
       if(b.cls==='school'&&!schoolBuildingOK) return;
+      if(b.cls==='shodo'&&!shodoBuildingOK) return;   // 発注T-1：画像が無ければ出さない（がっこうと同じ流儀）
       const el=document.createElement('span');
       el.className='town-building '+b.cls;
       el.style.setProperty('--tx',b.x); el.style.setProperty('--ty',b.y);
@@ -10293,24 +10308,34 @@ function hakaseTapAdvance(){ if(hakaseTapTrigger) hakaseTapTrigger(); }
    読み上げが無い/鳴らない環境ではspeakJaのonDone(false)が即返るのでttsDoneゲートは即成立＝文字数式だけで進む。
    手直し はかせみため§4：上記のmax()がHAKASE_MAX_MSを超える場合の保険として、charDone/ttsDoneのゲートを無視して
    強制的に次へ進む上限タイマーを別途持つ（読み上げが長引いてもフリーズ感を防ぐ）。 */
-function scheduleHakaseAdvance(msg, fseq, isLast, onFinish){
+/* 発注T-1：sndId を渡すと、読み上げ(speakJa)の代わりに録音ボイス（audio/battle/配下・showBattleHakaseと同じ仕組み）を
+   鳴らす。見た目（会話ウィンドウ）はhakaseTalkOnce系のまま、音声だけshowBattleHakase系に合わせる版。
+   省略時は従来どおりspeakJaでの読み上げ（既存呼び出しは無変更で動く）。 */
+function scheduleHakaseAdvance(msg, fseq, isLast, onFinish, sndId){
   hakaseMsgSeq++;
   const mseq=hakaseMsgSeq;
   let charDone=false, ttsDone=false, done=false;
   const finish=()=>{
     if(done) return; done=true;
     hakaseTapTrigger=null;
+    if(sndId) stopBattleHakaseVoice();
     if(onFinish) onFinish(); else hakaseFinishCurrent(fseq, isLast);
   };
   const tryAdvance=()=>{ if(mseq!==hakaseMsgSeq || done) return; if(charDone && ttsDone) finish(); };
   const charMs=Math.max(msg.length*HAKASE_MSG_MS_PER_CHAR + HAKASE_MSG_MS_BASE, HAKASE_MSG_MS_MIN);
   setTimeout(()=>{ if(mseq!==hakaseMsgSeq) return; charDone=true; tryAdvance(); },charMs);
   setTimeout(()=>{ if(mseq!==hakaseMsgSeq) return; finish(); },HAKASE_MAX_MS);   // 手直し はかせみため§4：表示時間の上限（ゲート無視で強制finish）
-  speakJa(msg,(spoke)=>{
-    if(mseq!==hakaseMsgSeq) return;
-    if(!spoke){ ttsDone=true; tryAdvance(); return; }   // 読み上げ環境が無い＝文字数式のみで進む
-    setTimeout(()=>{ if(mseq!==hakaseMsgSeq) return; ttsDone=true; tryAdvance(); },HAKASE_MSG_TTS_GRACE_MS);
-  });
+  if(sndId){
+    playBattleHakaseVoice(sndId);
+    ttsDone=true;   // 録音ボイスがある行はTTSを鳴らさない＝文字数式のゲートだけで進む
+    tryAdvance();
+  }else{
+    speakJa(msg,(spoke)=>{
+      if(mseq!==hakaseMsgSeq) return;
+      if(!spoke){ ttsDone=true; tryAdvance(); return; }   // 読み上げ環境が無い＝文字数式のみで進む
+      setTimeout(()=>{ if(mseq!==hakaseMsgSeq) return; ttsDone=true; tryAdvance(); },HAKASE_MSG_TTS_GRACE_MS);
+    });
+  }
   hakaseTapTrigger=()=>{ if(mseq!==hakaseMsgSeq || done) return; finish(); };   // タップは両ゲートを無視して即先送り
 }
 /* セリフ1個分の表示時間が終わった（またはタップされた）ときの後始末。
@@ -10334,7 +10359,7 @@ function hakaseFinishCurrent(fseq, isLast){
 /* 手直し 会話テンプレート統一：イントロ以外の単発の博士セリフ（クリア後の一言など）を
    会話ウィンドウ（顔付き）で1つだけ表示し、閉じたら onDone を呼ぶ汎用版。
    scheduleHakaseAdvanceのonFinishにフックするだけで、表示時間・タップ先送りの仕組みはイントロと共通のものを使う。 */
-function hakaseTalkOnce(msg, onDone){
+function hakaseTalkOnce(msg, onDone, sndId){
   const fseq=fieldSeq;
   heroLock=true;
   hakaseDuckAcquire();
@@ -10345,7 +10370,7 @@ function hakaseTalkOnce(msg, onDone){
     if(fseq!==fieldSeq) return;   // ワープ等で離脱済みなら以降のonDoneは呼ばない（誤発火防止）
     heroLock=false;
     if(onDone) onDone();
-  });
+  }, sndId);
 }
 /* はかせ（セリフを全部話し終えたら introSeen。手直し はかせみため§4で5→7セリフに変更＝件数はmsgs.lengthから動的に判定するため無影響）。
    第10弾§2-1：1画面追加で「一」をくれる */
@@ -10817,6 +10842,13 @@ const SCHOOL_TOWN_CONFIG={
   entrance:{x:20,y:37},
   returnTo:{x:20,y:38}
 };
+/* 発注T-1：書道教室の町配置。がっこうと同じ流儀＝調整はこの1か所だけ。
+   南側の空き地（みんか町33行目K・がっこう31〜37行目Gの間、9〜16列の空きマス）に配置。座標は0始まり。 */
+const SHODO_TOWN_CONFIG={
+  building:{x:9.5,y:27,w:6.5,h:5.5},
+  entrance:{x:13,y:32},
+  returnTo:{x:13,y:33}
+};
 const TOWN_DEF={
   name:'はじまりの まち',
   fullart:['town-bg.webp','town-bg-south.webp'],   // 弾3-14：北＋南の縦積み。建物は town-building レイヤーで後載せ
@@ -10873,13 +10905,25 @@ const TOWN_DEF={
     const r=TOWN_DEF.grid[p.y]; TOWN_DEF.grid[p.y]=r.slice(0,p.x)+'G'+r.slice(p.x+1);
   }
 })();
+/* 発注T-1：書道教室入口も設定値から毎回作る（Gと同じ流儀）。
+   文字は発注書指定の'W'ではなく'F'を採用＝'W'は水タイル（isPassableTileで常に通行不可）と衝突し入口が
+   踏めなくなるため、既存コードとの整合を優先して回避した（報告書に明記）。 */
+(function applyShodoTownEntrance(){
+  TOWN_DEF.grid=TOWN_DEF.grid.map(r=>r.replace(/F/g,'.'));
+  const p=SHODO_TOWN_CONFIG.entrance;
+  if(p.y>=0&&p.y<TOWN_DEF.grid.length&&p.x>=0&&p.x<TOWN_DEF.grid[p.y].length){
+    const r=TOWN_DEF.grid[p.y]; TOWN_DEF.grid[p.y]=r.slice(0,p.x)+'F'+r.slice(p.x+1);
+  }
+})();
 const TOWN_BUILDINGS=[
   {cls:'lab',    img:'town-lab.webp',        x:7.9,  y:2.5,  w:4.7, h:5.1},
   {cls:'tower',  img:'town-clocktower.webp', x:2.6,  y:19.2, w:4.8, h:6.2},
   {cls:'mall',   img:'town-mall.webp',       x:15.5, y:20.6, w:9.0, h:7.6},
   {cls:'house1', img:'town-house1.webp',     x:3.5,  y:29.8, w:5.0, h:4.4},
   {cls:'school', img:'town-school.webp',     x:SCHOOL_TOWN_CONFIG.building.x,y:SCHOOL_TOWN_CONFIG.building.y,
-    w:SCHOOL_TOWN_CONFIG.building.w,h:SCHOOL_TOWN_CONFIG.building.h}
+    w:SCHOOL_TOWN_CONFIG.building.w,h:SCHOOL_TOWN_CONFIG.building.h},
+  {cls:'shodo',  img:'town-shodo.webp',      x:SHODO_TOWN_CONFIG.building.x,y:SHODO_TOWN_CONFIG.building.y,
+    w:SHODO_TOWN_CONFIG.building.w,h:SHODO_TOWN_CONFIG.building.h}
 ];
 const MALL_DEF={ zone:MALL_ZONE, name:'ショッピングモール', bg:'interior-mall.webp',
   returnTo:{x:19,y:28},
@@ -10924,7 +10968,24 @@ const SCHOOL_DEF={ zone:SCHOOL_ZONE, name:'がっこう', bg:'interior-school.we
 'T........S.......T',
 'T........E.......T',
 'TTTTTTTTTTTTTTTTTT']};
-const PSEUDO_DEFS={ [TOWN_ZONE]:TOWN_DEF, [MALL_ZONE]:MALL_DEF, [HOUSE1_ZONE]:HOUSE1_DEF, [SCHOOL_ZONE]:SCHOOL_DEF };
+/* 発注T-1：しょどうきょうしつ（がっこうと同寸法18×12）。畳の間＝机3つ(T)＋正面奥の先生の席(T)。
+   先生NPCは裁定待ちのため今回は置かない（新キャラ生成は裁定まで禁止）＝N文字は使わない。 */
+const SHODO_DEF={ zone:SHODO_ZONE, name:'しょどうきょうしつ', bg:'interior-shodo.webp',
+  returnTo:SHODO_TOWN_CONFIG.returnTo,
+  grid:[
+'TTTTTTTTTTTTTTTTTT',
+'T................T',
+'T........T.......T',
+'T................T',
+'T................T',
+'T...T...T...T....T',
+'T................T',
+'T................T',
+'T................T',
+'T........S.......T',
+'T........E.......T',
+'TTTTTTTTTTTTTTTTTT']};
+const PSEUDO_DEFS={ [TOWN_ZONE]:TOWN_DEF, [MALL_ZONE]:MALL_DEF, [HOUSE1_ZONE]:HOUSE1_DEF, [SCHOOL_ZONE]:SCHOOL_DEF, [SHODO_ZONE]:SHODO_DEF };
 const INTERIOR_ACTORS=[
   {zone:MALL_ZONE,key:'nikuya',sheet:'nikuya-field.webp',img:'nikuya-normal.webp',emoji:'🧑‍🍳',x:3,y:3,dir:'down',frame:'a'},
   {zone:HOUSE1_ZONE,key:'ojisan',sheet:'npc-ojisan-field.webp',img:'npc-ojisan.webp',emoji:'👴',x:9,y:2,dir:'down',frame:'a'}
@@ -10943,9 +11004,9 @@ function zoneGridOf(zone){ return isTownLike(zone) ? PSEUDO_DEFS[zone].grid : ZO
 function zoneNameOf(zone){ return isTownLike(zone) ? PSEUDO_DEFS[zone].name : STAGE_DEFS[zone-1].name; }
 function zoneFullartOf(zone){ return zone===TOWN_ZONE ? TOWN_DEF.fullart[0] : (zone<0?PSEUDO_DEFS[zone].bg:ZONE_FULLART[zone-1]); }
 let interiorFullartOK=new Set(), interiorActorSheetOK=new Set(), interiorActorImgOK=new Set(), meatSceneOK=false;
-let teacherImagesOK=false, schoolBuildingOK=false;
+let teacherImagesOK=false, schoolBuildingOK=false, shodoBuildingOK=false;
 (function preloadInteriorAssets(){
-  [MALL_DEF,HOUSE1_DEF,SCHOOL_DEF].forEach(def=>{ const im=new Image(); im.onload=()=>{ interiorFullartOK.add(def.zone); if(fieldZone===def.zone&&$('screen-field').classList.contains('active')) renderField(); }; im.onerror=()=>{}; im.src='images/fullart/'+def.bg; });
+  [MALL_DEF,HOUSE1_DEF,SCHOOL_DEF,SHODO_DEF].forEach(def=>{ const im=new Image(); im.onload=()=>{ interiorFullartOK.add(def.zone); if(fieldZone===def.zone&&$('screen-field').classList.contains('active')) renderField(); }; im.onerror=()=>{}; im.src='images/fullart/'+def.bg; });
   INTERIOR_ACTORS.forEach(a=>{
     const redraw=()=>{ if(fieldZone===a.zone&&$('screen-field').classList.contains('active')) renderField(); };
     const sheet=new Image(); sheet.onload=()=>{ interiorActorSheetOK.add(a.key); redraw(); }; sheet.onerror=()=>{}; sheet.src='images/sprites/'+a.sheet;
@@ -10956,6 +11017,7 @@ let teacherImagesOK=false, schoolBuildingOK=false;
   const teacherFiles=['teacher-normal.webp','teacher-happy.webp','teacher-encourage.webp']; let teacherLoaded=0,teacherFailed=false;
   teacherFiles.forEach(file=>{ const im=new Image(); im.onload=()=>{ teacherLoaded++; if(!teacherFailed&&teacherLoaded===teacherFiles.length){teacherImagesOK=true;if(fieldZone===SCHOOL_ZONE&&$('screen-field').classList.contains('active'))renderField();} }; im.onerror=()=>{teacherFailed=true;teacherImagesOK=false;}; im.src='images/'+file; });
   const school=new Image(); school.onload=()=>{schoolBuildingOK=true;if(fieldZone===TOWN_ZONE&&$('screen-field').classList.contains('active'))renderField();}; school.onerror=()=>{schoolBuildingOK=false;}; school.src='images/town-school.webp';
+  const shodo=new Image(); shodo.onload=()=>{shodoBuildingOK=true;if(fieldZone===TOWN_ZONE&&$('screen-field').classList.contains('active'))renderField();}; shodo.onerror=()=>{shodoBuildingOK=false;}; shodo.src='images/town-shodo.webp';
 })();
 /* 弾3-14§5：町背景2枚のプリロード。北/南どちらかが無ければ町全体をタイル絵フォールバック */
 let townFullartOK=false;
@@ -10987,11 +11049,11 @@ function townSelfTest(){
   const fails=[];
   if(!(g.length===40 && g.every(r=>r.length===30))) fails.push('サイズ30x40でない');
   const all=g.join('');
-  ['S','L','D','Y','H','M','K','G'].forEach(c=>{ if((all.split(c).length-1)!==1) fails.push(c+'が1個でない'); });
+  ['S','L','D','Y','H','M','K','G','F'].forEach(c=>{ if((all.split(c).length-1)!==1) fails.push(c+'が1個でない'); });   // 発注T-1：Fを追加
   // 検品修正弾3-14：/[,A-J>]/ だと町の正規記号D(どうぐや)・H(けいじばん)がA-J範囲に含まれ誤検知するため、D/Hを除外
-  if(/[,>]/.test(all) || /[ABCEFIJ]/.test(all)) fails.push('くさむら/すみか/ゲートあり');
-  if(/[^SLDYHMKGTR.]/.test(all)) fails.push('不正な記号あり');
-  // BFS：SからL/D/Y/H/M/K/Gぜんぶに到達できるか（isPassableTileと同じ判定＝T/R以外は通行可）
+  if(/[,>]/.test(all) || /[ABCEIJ]/.test(all)) fails.push('くさむら/すみか/ゲートあり');   // 発注T-1：Fを町の正規記号にしたためA-Jの除外対象からも外す
+  if(/[^SLDYHMKGFTR.]/.test(all)) fails.push('不正な記号あり');   // 発注T-1：Fを追加
+  // BFS：SからL/D/Y/H/M/K/G/Fぜんぶに到達できるか（isPassableTileと同じ判定＝T/R以外は通行可）
   const H=g.length, W=g[0].length;
   let sx=-1, sy=-1;
   for(let y=0;y<H;y++){ const x=g[y].indexOf('S'); if(x>=0){ sx=x; sy=y; break; } }
@@ -11000,7 +11062,7 @@ function townSelfTest(){
   while(q.length){
     const [x,y]=q.shift();
     const ch=g[y][x];
-    if(ch==='L'||ch==='D'||ch==='Y'||ch==='H'||ch==='M'||ch==='K'||ch==='G') reached[ch]=true;
+    if(ch==='L'||ch==='D'||ch==='Y'||ch==='H'||ch==='M'||ch==='K'||ch==='G'||ch==='F') reached[ch]=true;
     [[1,0],[-1,0],[0,1],[0,-1]].forEach(([dx,dy])=>{
       const nx=x+dx, ny=y+dy;
       if(nx<0||ny<0||nx>=W||ny>=H) return;
@@ -11010,12 +11072,18 @@ function townSelfTest(){
       seen.add(ny*W+nx); q.push([nx,ny]);
     });
   }
-  ['L','D','Y','H','M','K','G'].forEach(c=>{ if(!reached[c]) fails.push('S→'+c+'到達不能'); });
+  ['L','D','Y','H','M','K','G','F'].forEach(c=>{ if(!reached[c]) fails.push('S→'+c+'到達不能'); });
   const ep=SCHOOL_TOWN_CONFIG.entrance,rp=SCHOOL_TOWN_CONFIG.returnTo,bp=SCHOOL_TOWN_CONFIG.building;
   if(g[ep.y]&&g[ep.y][ep.x]!=='G') fails.push('学校入口設定とGが不一致');
   if(Math.abs(ep.x-rp.x)+Math.abs(ep.y-rp.y)!==1) fails.push('学校入口とreturnToが隣接していない');
   if(!g[rp.y]||rp.x<0||rp.x>=g[rp.y].length||!isPassableTile(g[rp.y][rp.x],TOWN_ZONE)) fails.push('学校returnToが通行不能');
   if(!(bp.w>0&&bp.h>0)) fails.push('学校建物サイズ不正');
+  // 発注T-1：書道教室も同様のセルフテスト
+  const ep2=SHODO_TOWN_CONFIG.entrance,rp2=SHODO_TOWN_CONFIG.returnTo,bp2=SHODO_TOWN_CONFIG.building;
+  if(g[ep2.y]&&g[ep2.y][ep2.x]!=='F') fails.push('書道入口設定とFが不一致');
+  if(Math.abs(ep2.x-rp2.x)+Math.abs(ep2.y-rp2.y)!==1) fails.push('書道入口とreturnToが隣接していない');
+  if(!g[rp2.y]||rp2.x<0||rp2.x>=g[rp2.y].length||!isPassableTile(g[rp2.y][rp2.x],TOWN_ZONE)) fails.push('書道returnToが通行不能');
+  if(!(bp2.w>0&&bp2.h>0)) fails.push('書道建物サイズ不正');
   const ok=fails.length===0;
   console.log('[townSelfTest] '+(ok?'OK':'FAIL')+'  '+(fails.length?fails.join(' / '):''));
   return {ok,fails};
@@ -11049,6 +11117,7 @@ function onArriveTownTile(ch){
   if(ch==='M'){ warpInterior(MALL_ZONE); return; }
   if(ch==='K'){ warpInterior(HOUSE1_ZONE); return; }
   if(ch==='G'){ warpInterior(SCHOOL_ZONE); return; }
+  if(ch==='F'){ warpInterior(SHODO_ZONE); return; }   // 発注T-1
 }
 
 /* ===== 弾3-15：屋内の出入り・住人カード ===== */
@@ -11056,9 +11125,19 @@ function warpInterior(zone){
   if(!PSEUDO_DEFS[zone]||zone>=0) return;
   fieldZone=zone; const s=zoneStartOf(zone); fieldHx=s.x; fieldHy=s.y;
   showScreen('screen-field'); renderField();
+  // 発注T-1：しょどうきょうしつ初回入室の一言（録音ボイスbh13付き）。
+  // 「たてもののなかにも…」の初回案内より後に出す＝両方初見のときは連続で2枚出る
+  const showShodoIntro=()=>{
+    if(zone===SHODO_ZONE && !shodoGuideSeen){
+      shodoGuideSeen=true; save();
+      hakaseTalkOnce('ここは しょどうきょうしつ。じが うまれる ばしょよ。かきとりの れんしゅうは もうすこし まっててね', null, 'bh13');
+    }
+  };
   if(!interiorGuideSeen){
     interiorGuideSeen=true; save();
-    hakaseTalkOnce('たてものの なかにも はいれるように なったぞ！ 🚪の マークを ふむと そとに でられる');
+    hakaseTalkOnce('たてものの なかにも はいれるように なったぞ！ 🚪の マークを ふむと そとに でられる', showShodoIntro);
+  }else{
+    showShodoIntro();
   }
 }
 function leaveInterior(){
@@ -11090,9 +11169,9 @@ function closeInteriorCard(){ $('interiorCardOverlay').classList.remove('show');
 /* §9：屋内定義セルフテスト */
 function interiorSelfTest(){
   const fails=[];
-  [MALL_DEF,HOUSE1_DEF,SCHOOL_DEF].forEach(def=>{
+  [MALL_DEF,HOUSE1_DEF,SCHOOL_DEF,SHODO_DEF].forEach(def=>{
     const g=def.grid,H=g.length,W=g[0].length,all=g.join(''),tag=def.name;
-    const expected=def.zone===MALL_ZONE?{w:18,h:12}:(def.zone===SCHOOL_ZONE?{w:18,h:12}:{w:15,h:10});
+    const expected=def.zone===MALL_ZONE?{w:18,h:12}:((def.zone===SCHOOL_ZONE||def.zone===SHODO_ZONE)?{w:18,h:12}:{w:15,h:10});
     if(H!==expected.h||W!==expected.w||!g.every(r=>r.length===expected.w)) fails.push(tag+':サイズ/行長不一致');
     ['S','E'].forEach(c=>{ if((all.split(c).length-1)!==1) fails.push(tag+':'+c+'が1個でない'); });
     const wantM=def.zone===MALL_ZONE?1:0,wantN=(def.zone===HOUSE1_ZONE||def.zone===SCHOOL_ZONE)?1:0;
