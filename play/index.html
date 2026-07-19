@@ -733,6 +733,10 @@
   .overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;
     align-items:center;justify-content:center;padding:20px;z-index:200}
   .overlay.show{display:flex;animation:fadeIn .25s}
+  /* 弾OP5c§1：しゅじんこう選択ポップをOP開始前に出す都合上、OP画面本体(.op1-overlay z-index:9999)より
+     確実に前面へ出す必要がある。.overlayクラス自体(てもち編成・図鑑等)やevo-overlayの値は変更せず、
+     このID単体だけをOP画面より上へ引き上げる。 */
+  #heroSelectOverlay{z-index:10000}
   .panel{background:#fff;border-radius:24px;padding:26px 22px;width:100%;max-width:360px;
     text-align:center;box-shadow:0 14px 40px rgba(0,0,0,.25);animation:pop .35s;max-height:90vh;overflow-y:auto}
   @keyframes pop{0%{transform:scale(.8);opacity:0}100%{transform:scale(1);opacity:1}}
@@ -12481,11 +12485,16 @@ const OP5_LAYOUT={
   boy:  { u:0.4549, v:0.9100, standImgW:86.54,  walkImgW:56.54 },
   girl: { u:0.5113, v:0.9100, standImgW:89.42,  walkImgW:55.38 },
   mana: { u:0.5789, v:0.9000, standImgW:126.92, walkImgW:60.57 },
+  /* 弾OP5c§4：選択制導入で机の前が1人＋マナの2人構図になったため、boy/girlの座標(2人並び前提で左右に振ってある)を
+     そのまま使うとマナとの間隔バランスが崩れる。座標だけこのsoloを使い、幅(standImgW/walkImgW)は選ばれた性別の
+     既存値(boy/girl)をそのまま流用する。目安値＝ichiFloor(u:0.4887)付近。320/375/414/390x844で自己確認済み。 */
+  solo: { u:0.483, v:0.9100 },
   exit:{   // しょどうきょうしつ(SHODO_DEF)の出口Eが下端中央にあるのに合わせた画面下部中央へ
     ichi:{ u:0.5000, v:0.9800 },
     boy: { u:0.4775, v:0.9700 },
     girl:{ u:0.5075, v:0.9700 },
-    mana:{ u:0.5376, v:0.9600 }
+    mana:{ u:0.5376, v:0.9600 },
+    solo:{ u:0.490, v:0.9700 }   // 弾OP5c§4：1人構図の退室座標（目安値）
   },
   jumpMs:500,          // 作業3-1「0.5秒程度」
   walkDurationMs:2600, // 作業3-2「合計2〜3秒」（ジャンプ0.5s+これで合計3.1s＝「3〜4秒以内」を満たす）
@@ -12568,6 +12577,21 @@ function op1EnterFromGate(){
   if(!op1Active) return;
   $('op1GateBtn').classList.remove('show');
   ensureAudio();   // 既存の効果音まわりと同じ解禁呼び出し（無害・二重呼びOK）
+  /* 弾OP5c§2：完全新規プレイヤー（起動時セーブ無し）かつ女の子画像が読み込めている場合だけ、
+     OP開始直前（このタップの直後）にしゅじんこう選択ポップを挟む。heroSelectShownOnceにより
+     goField()内の第5.5弾ロジックとの二重発火はしない（goField側は削除せず将来の保険として残す）。
+     女の子画像が無い場合はポップを出さず、今までどおりboyのままOPが始まる（既存フォールバック継続）。 */
+  if(!hadSaveAtBoot && heroSelectAvailable() && !heroSelectShownOnce){
+    heroSelectShownOnce=true;
+    // 選択を強制している最中に「とばす」を押されると選ばずフィールド直行になり、繰り上げた意味が薄れるため一時的に隠す。
+    // S0以降は元々スキップ可能な状態に戻すので、選択完了コールバック内（S0開始直前）で復帰させる。
+    $('op1SkipBtn').classList.remove('show');
+    openHeroSelect(function(){
+      $('op1SkipBtn').classList.add('show');
+      op1PlayS0();
+    });
+    return;
+  }
   op1PlayS0();
 }
 /* 右上「とばす」：どのシーンからでも即・完走時と同じ最終状態（ゾーン1フィールド開始）へ飛ばす。
@@ -12806,10 +12830,13 @@ function op1RevealOp5Scene(durationMs){
     face.style.fontSize=ichiFontPx+'px';
   });
 
-  ['boy','girl','mana'].forEach(key=>{
+  /* 弾OP5c§3：選ばれた性別＋mana の2要素だけをループ対象にする（選ばれなかった方はshowクラスが付かず非表示のまま） */
+  const op5HeroKey=heroChar==='girl'?'girl':'boy';
+  [op5HeroKey,'mana'].forEach(key=>{
     const el=$('op5'+key.charAt(0).toUpperCase()+key.slice(1));
-    const L=OP5_LAYOUT[key];
-    const pos=op5UV(L.u,L.v,m);
+    const L=OP5_LAYOUT[key];   // 幅(standImgW)は性別ごとの既存値をそのまま使う
+    const posSrc=(key===op5HeroKey)?OP5_LAYOUT.solo:L;   // 弾OP5c§4：1人構図の座標はsoloを使う（manaは従来どおり）
+    const pos=op5UV(posSrc.u,posSrc.v,m);
     el.style.left=pos.leftPct+'%'; el.style.top=pos.topPct+'%';
     el.style.width=op5PxSize(L.standImgW,m)+'px';   // 追加発注OP5b§1：%指定をやめ、背景スケール連動のpxへ
     requestAnimationFrame(()=>{ if(seq!==op1Seq) return; el.classList.add('show'); });
@@ -12833,10 +12860,13 @@ window.addEventListener('resize',()=>{
   face.style.fontSize=op5PxSize(OP5_LAYOUT.ichi.imgSize,m)+'px';
   void wrap.offsetWidth;
   wrap.style.transition=prevTrans;
-  ['boy','girl','mana'].forEach(key=>{
+  const op5HeroKey=heroChar==='girl'?'girl':'boy';   // 弾OP5c§3：選ばれた性別＋manaだけ再計算対象にする
+  [op5HeroKey,'mana'].forEach(key=>{
     const el=$('op5'+key.charAt(0).toUpperCase()+key.slice(1));
     if(!el.classList.contains('show')) return;
-    const L=OP5_LAYOUT[key], pos=op5UV(L.u,L.v,m);
+    const L=OP5_LAYOUT[key];
+    const posSrc=(key===op5HeroKey)?OP5_LAYOUT.solo:L;   // 弾OP5c§4：1人構図の座標はsolo
+    const pos=op5UV(posSrc.u,posSrc.v,m);
     el.style.left=pos.leftPct+'%'; el.style.top=pos.topPct+'%';
     el.style.width=op5PxSize(L.standImgW,m)+'px';
   });
@@ -12878,9 +12908,12 @@ function op1WalkGroupOut(seq){
   wrap.style.top=exitIchiPos.topPct+'%';
 
   op1StopWalkAnims();
-  op1WalkHandles=['boy','girl','mana'].map(key=>{
+  const op5HeroKey=heroChar==='girl'?'girl':'boy';   // 弾OP5c§3：選ばれた性別＋manaの2人だけ退室させる
+  op1WalkHandles=[op5HeroKey,'mana'].map(key=>{
     const el=$('op5'+key.charAt(0).toUpperCase()+key.slice(1));
-    const L=OP5_LAYOUT[key], exPos=op5UV(OP5_LAYOUT.exit[key].u,OP5_LAYOUT.exit[key].v,m);
+    const L=OP5_LAYOUT[key];
+    const exitSrc=(key===op5HeroKey)?OP5_LAYOUT.exit.solo:OP5_LAYOUT.exit[key];   // 弾OP5c§4：1人構図の退室座標はexit.solo
+    const exPos=op5UV(exitSrc.u,exitSrc.v,m);
     el.style.width=op5PxSize(L.walkImgW,m)+'px';   // 歩行コマは立ち絵とカンバスの余白比率が違うため即時切替（transitionしない）
     const handle=startWalkAnim(el,key,{intervalMs:OP5_LAYOUT.walkFrameMs});
     void el.offsetWidth;   // 強制リフロー（widthの即時切替の直後にleft/topのtransitionを確実に効かせる）
