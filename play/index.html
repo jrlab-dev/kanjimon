@@ -784,10 +784,16 @@
   .tutcell.reject{animation:peReject .3s}
   @keyframes peReject{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
 
-  /* ===== しんか演出（点滅式） ===== */
+  /* ===== しんか演出（点滅式）＝しんか・変身(たましい合体/ひらがな→かんじ)共用 ===== */
   .evo-overlay{background:rgba(20,24,60,.82);padding:0;z-index:250}
-  .evo-overlay.show{display:flex;align-items:center;justify-content:center}
-  .evo-stage{width:100%;max-width:420px;display:flex;flex-direction:column;align-items:center;gap:18px;padding:30px 20px}
+  /* 追加発注OP5b§3：演出中心を画面中央よりやや上（35〜40%あたり）へ移動。
+     align-items:flex-start（縦方向を上寄せ）にした上で、.evo-stage側に
+     margin-top:37vh + transform:translateY(-50%) を組み合わせる古典的な手法で、
+     コンテンツの実際の高さに関係なく「箱の中心が常に画面高の37%の位置」になるようにする
+     （画面中央に固定するcenterと違い、内容量が変わっても狙った位置からズレない）。 */
+  .evo-overlay.show{display:flex;align-items:flex-start;justify-content:center}
+  .evo-stage{width:100%;max-width:420px;display:flex;flex-direction:column;align-items:center;gap:18px;padding:30px 20px;
+    margin-top:37vh;transform:translateY(-50%)}
   .evo-msg{color:#fff;font-size:1.25rem;font-weight:900;text-align:center;line-height:1.6;min-height:2.6em;
     text-shadow:0 2px 8px rgba(0,0,0,.55)}
   .evo-char{font-size:clamp(110px,38vw,170px);font-weight:900;line-height:1;position:relative;display:inline-block;
@@ -1464,6 +1470,52 @@
   #op1BgInterior{background-image:url('images/fullart/interior-shodo.webp');
     transform:scale(1.3);transition:opacity 2.4s ease,transform 2.4s ease}
   #op1BgInterior.show{opacity:1;transform:scale(1)}
+
+  /* ===== 弾OP-5：カメラ引き後の人物配置＋退室演出（設計書\書道教室_設計方針.md§4.5）=====
+     ユーザー実機指摘の是正＝①「一」が画面中央の大表示のまま茶色い机に重なって浮いて見える
+     ②教室に誰もおらず構図がおかしい、の2点。座標・サイズの実値はOP5_LAYOUT（本体script側）にまとめてある。
+     #op1CharWrapは既存のflex中央寄せ(position:relative)のままS0〜S4success直後の大表示を維持し、
+     カメラ引き開始と同時にJS側でFLIP技法（現在の実描画位置をgetBoundingClientRectで測ってから
+     position:absoluteへ切替え、目標値へtransitionさせる＝視覚的なジャンプを起こさない）で
+     机の半紙上の小表示へ縮小移動する。子要素(#op1KanjiFace等)は元々box基準の絶対中央寄せなので、
+     箱自体をwidth/height:0に潰してもtransform:translate(-50%,-50%)が実質no-opになるだけで
+     見た目は変わらず、かつ透明な当たり判定ボックスが他のUI(とばす等)を覆う事故を避けられる。
+     追加発注OP5b§1：座標・サイズは「vw/vh基準の%」ではなく、背景(#op1BgInterior＝interior-shodo.webp・
+     background-size:cover)の実際の描画スケールに連動する画像空間座標(u,v・0〜1)＋画像空間サイズ単位に
+     変更した（op5BgMetrics/op5UV/op5PxSize＝本体script側）。理由＝縦長のスマホ実機（例390x844）では
+     coverのスケールが「ビューポート高さ」だけで決まる（縦長ほど背景が拡大される）一方、旧実装の
+     人物サイズはビューポート幅基準の%だったため、アスペクト比が変わるたびに人物と背景の縮尺が
+     ズレていた（Puppeteer実測で確認済み＝320x568幅と、アスペクト比が違う375/414/390x844幅とで
+     「人物の見た目サイズ÷背景の実描画スケール」が一定でなかった）。新方式は常にこの比が一定になり、
+     どのアスペクト比でも背景絵と同じ縮尺で立っているように見える。 */
+
+  #op1CharWrap.op5-desk{position:absolute;left:0;top:0;width:0;height:0;aspect-ratio:auto;
+    transform:translate(-50%,-50%);pointer-events:none;z-index:2}
+  /* 飛び降り（作業3-1）：left/topのtransition（机→床の直線移動）とは別に、上下だけの一回きりの弧を
+     transformに重ねて表現する（同じtransformプロパティをtransitionとanimationの2系統で途中で
+     付け替えると再始動バグを起こすため、位置移動はtransition・弧の上下動だけはanimationと役割を分離）。 */
+  @keyframes op5JumpArc{
+    0%{transform:translate(-50%,-50%) translateY(0)}
+    40%{transform:translate(-50%,-50%) translateY(-34px)}
+    100%{transform:translate(-50%,-50%) translateY(0)}
+  }
+  /* durationはJS側でOP5_LAYOUT.jumpMsに合わせてanimationDurationを直接指定する（既定値はここでの保険） */
+  #op1CharWrap.op5-desk.op5-jump{animation-name:op5JumpArc;animation-duration:.5s;
+    animation-timing-function:ease-out;animation-iteration-count:1}
+  /* 退室時（作業3-2）：「一」はコマ絵が無いため、S1で使った既存hopキーフレームと同系統の
+     小刻みバウンドで追従する（translate(-50%,-50%)を維持したまま上下・回転だけ加える）。 */
+  @keyframes op5IchiHop{
+    0%,100%{transform:translate(-50%,-50%) translateY(0) rotate(-3deg)}
+    50%{transform:translate(-50%,-50%) translateY(-10px) rotate(3deg)}
+  }
+  #op1CharWrap.op5-desk.op5-hop{animation:op5IchiHop .5s ease-in-out infinite}
+  /* 男の子・女の子・マナ：机の前に立つ実体（<img>のsrcを差し替えるだけで歩行4相コマに切替わる）。
+     left/topは足元（アンカーtranslate(-50%,-100%)）＝地面に立つ表現。opacityのみtransition指定し、
+     left/top/widthはJS側で場面に応じて動的にtransitionを付け外しする（歩行時の比率変化での
+     見た目の跳ねを避けるため、widthは常に即時切替・位置移動だけをなめらかにする実装判断）。 */
+  .op5-char{position:absolute;transform:translate(-50%,-100%);opacity:0;max-width:none;
+    transition:opacity 1s ease;pointer-events:none;z-index:2}
+  .op5-char.show{opacity:1}
 </style>
 </head>
 <body>
@@ -1631,6 +1683,10 @@
     <!-- 弾OP-4：S4以降だけ有効化する背景レイヤー（S0〜S3の白/暗/黒は#op1Stage自体のクラスのまま無変更） -->
     <div class="op1-bg-layer" id="op1BgShodo"></div>
     <div class="op1-bg-layer" id="op1BgInterior"></div>
+    <!-- 弾OP-5：カメラ引き完了後に机の前へフェードインする男の子・女の子・マナ（座標=OP5_LAYOUT） -->
+    <img class="op5-char" id="op5Boy" src="images/op/op-hero-boy.webp" alt="">
+    <img class="op5-char" id="op5Girl" src="images/op/op-hero-girl.webp" alt="">
+    <img class="op5-char" id="op5Mana" src="images/sprites/hakase.webp" alt="">
     <div class="op1-voice" id="op1Voice"></div>
     <!-- OP-1b§3：自動再生制限対応の入口ボタン（タップでS0開始＋以後の音声再生を解禁）。とばすはここからも押せる -->
     <button type="button" class="btn btn-primary op1-gate-btn" id="op1GateBtn" style="font-size:1.25rem;padding:18px 32px" onclick="op1EnterFromGate()">▶ タップして はじめる</button>
@@ -5868,17 +5924,22 @@ function _sweep(f1,f2,start,dur,type,vol){
   g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
   o.start(t); o.stop(t+dur+0.03);
 }
+// 追加発注OP5b§2(c)：sndCryの効果音音量を約2倍にする調整用定数（各volに掛ける）。
+// 個々のvol(0.08〜0.22)を単純倍すると最大でも0.44程度で、複数トーンが重なっても
+// destinationで大きく歪む値ではないが、念のため0.5で頭打ちして「割れない範囲」を保証する。
+const SNDCRY_GAIN_MUL=2.0;
+function _cryVol(v){ return Math.min(v*SNDCRY_GAIN_MUL,0.5); }
 // タイプ別の鳴き声音（🔇のときは鳴らさない＝snd()と同じ仕組み）
 function sndCry(type){
   if(!soundOn) return;
   ensureAudio(); if(!audioCtx) return;
   switch(type){
-    case 'みず': _tone(196,0,.14,'sine',.16); _tone(165,.13,.18,'sine',.16); break;        // ぽよぽよ低音2つ
-    case 'ひ':   _sweep(330,880,0,.22,'sawtooth',.12); break;                              // シュッと上昇音
-    case 'き':   _tone(523,0,.08,'triangle',.13); _tone(659,.08,.08,'triangle',.13);
-                 _tone(587,.16,.08,'triangle',.13); _tone(698,.24,.10,'triangle',.13); break; // ころころ中音
-    case 'つち': _tone(110,0,.22,'sine',.22); _tone(82,.02,.20,'sine',.12); break;          // ドンと低音
-    default:     _tone(660,0,.12,'square',.12); break;                                    // ふつう=ピッと中音
+    case 'みず': _tone(196,0,.14,'sine',_cryVol(.16)); _tone(165,.13,.18,'sine',_cryVol(.16)); break;        // ぽよぽよ低音2つ
+    case 'ひ':   _sweep(330,880,0,.22,'sawtooth',_cryVol(.12)); break;                              // シュッと上昇音
+    case 'き':   _tone(523,0,.08,'triangle',_cryVol(.13)); _tone(659,.08,.08,'triangle',_cryVol(.13));
+                 _tone(587,.16,.08,'triangle',_cryVol(.13)); _tone(698,.24,.10,'triangle',_cryVol(.13)); break; // ころころ中音
+    case 'つち': _tone(110,0,.22,'sine',_cryVol(.22)); _tone(82,.02,.20,'sine',_cryVol(.12)); break;          // ドンと低音
+    default:     _tone(660,0,.12,'square',_cryVol(.12)); break;                                    // ふつう=ピッと中音
   }
 }
 // 鳴き声テキスト生成。known=true で読みを叫ぶ（名乗り）、それ以外は正体不明
@@ -5900,8 +5961,22 @@ function buildCry(idx,isBoss,known,altReading){
    連続で鳴る場面では前の名乗りを必ず止めてから鳴らす。404・play()失敗はspeechSynthesisへフォールバック（進行を止めない）。
 ================================ */
 let nanoriAudioEl=null;
+// 追加発注OP5b§2：名乗りmp3の音量増幅倍率（WebAudioのGainNode経由）。AudioContextが使えない/
+// 接続に失敗した環境ではel.volume=1.0のまま再生を続行し、無音事故を起こさない（発注書の明示要求）。
+const NANORI_GAIN=2.0;
+// 追加発注OP5b§2(b)：名乗り中のBGMダッキング排他フラグ（speakJaのducked/failTimerと同じ流儀）。
+// onended・onerror・stopNanoriVoice・保険タイマーのどの経路から呼ばれてもnanoriDuckedで
+// 二重解放を防ぎ、必ず1回だけbgmDuckCountを戻す。
+let nanoriDucked=false, nanoriFailTimer=null;
+function nanoriEndDuck(){
+  if(!nanoriDucked) return;
+  nanoriDucked=false;
+  if(nanoriFailTimer){ clearTimeout(nanoriFailTimer); nanoriFailTimer=null; }
+  bgmDuckCount=Math.max(0,bgmDuckCount-1); _bgmApplyVolume();
+}
 function stopNanoriVoice(){
   if(nanoriAudioEl){ try{ nanoriAudioEl.pause(); }catch(e){} nanoriAudioEl=null; }
+  nanoriEndDuck();   // 追加発注OP5b§2(b)：とばす・画面遷移・連続名乗りで前の声を止めるときもダッキングを必ず戻す
 }
 function nanoriPathFor(idx,isBoss,altReading){
   if(isBoss) return 'audio/nanori/boss/b'+idx+'.mp3';
@@ -5915,8 +5990,27 @@ function playNanoriVoice(idx,isBoss,altReading,fallbackText){
   try{ el=new Audio(nanoriPathFor(idx,isBoss,altReading)); }catch(e){ el=null; }
   if(!el){ if(fallbackText) speakJa(fallbackText); return; }
   nanoriAudioEl=el;
-  const toFallback=()=>{ if(nanoriAudioEl===el) nanoriAudioEl=null; if(fallbackText) speakJa(fallbackText); };
+  const toFallback=()=>{ if(nanoriAudioEl===el) nanoriAudioEl=null; nanoriEndDuck(); if(fallbackText) speakJa(fallbackText); };
   el.onerror=toFallback;
+  el.onended=nanoriEndDuck;   // 追加発注OP5b§2(b)：再生終了で必ずダッキングを戻す
+  // 追加発注OP5b§2(a)：WebAudioのGainNode経由で約2倍に増幅。createMediaElementSourceは1要素につき
+  // 1回しか呼べない仕様だが、el自体が呼び出しごとにnew Audio()した新規オブジェクトなので問題ない。
+  // 接続の途中で例外が出た場合はgainOK=falseのままel.volume=1.0の従来経路にフォールバックする
+  // （無音のまま宙に浮いた接続を残さないよう、成功したときだけWebAudio経由にする）。
+  ensureAudio();
+  let gainOK=false;
+  if(audioCtx){
+    try{
+      const src=audioCtx.createMediaElementSource(el);
+      const gain=audioCtx.createGain();
+      gain.gain.value=NANORI_GAIN;
+      src.connect(gain); gain.connect(audioCtx.destination);
+      gainOK=true;
+    }catch(e){ gainOK=false; }
+  }
+  if(!gainOK) el.volume=1.0;   // フォールバック：AudioContext未対応/失敗環境でも従来どおり等倍で鳴らす（無音事故防止）
+  bgmDuckCount++; _bgmApplyVolume(); nanoriDucked=true;   // 追加発注OP5b§2(b)：mp3再生開始でダッキング
+  nanoriFailTimer=setTimeout(nanoriEndDuck,4000);          // onended/onerrorが発火しない環境の保険（speakJaと同流儀）
   try{
     const p=el.play();
     if(p&&typeof p.catch==='function') p.catch(toFallback);
@@ -12356,6 +12450,84 @@ const OP1_VOICE_MS={ s0:7400, s3:4900, s4a:1800, s4b:3100, s5:9500 };
 const OP1_VOICE_PAUSE_MS=700;   // 台詞を言い切ってから次のシーンへ移るまでの一呼吸（子ども向けの間）
 let op1SndCache={};   // key -> HTMLAudioElement|null
 let op1SndFailed={};  // key -> true（読込失敗が確定済み。以後は無音のまま・再試行しない）
+
+/* ---- 弾OP-5：カメラ引き後の人物配置＋退室演出（設計書\書道教室_設計方針.md§4.5） ----
+   座標・サイズは全部ここに集約（実装判断の根拠は_一時\_OP5実装\実装報告.mdに記載）。
+   追加発注OP5b§1（モバイル縦長対応）：vw/vh基準の%をやめ、背景(interior-shodo.webp・1536x1024・
+   background-size:cover)の実際の描画スケールに連動する「画像空間座標」へ全面変更した。
+   ・u,v：画像内の位置を0〜1の比率で表す正規化座標（画像のどこに立つか／何を指すか）。
+     op5UV(u,v)が現在のビューポートのcoverスケール・オフセットを実測し、#op1Stage基準のleft/top%へ変換する。
+   ・standImgW/walkImgW/imgSize：「画像1536px幅換算のサイズ単位」。表示px = 単位×op5BgMetrics().scale
+     （＝背景と同じ縮尺で拡大縮小される。ichiのfontSizeも同じ仕組みでpx指定に統一した）。
+   ・boy/girl/mana/ichiFloor/exit.*のu,vは、320x568幅（検品で「人物配置=OK」と判定済み）での
+     旧%値をconvert_layout_to_imgspace.js（_一時\_OP5実装）で画像空間へ変換した値＝320x568での
+     見た目は変えず、他のアスペクト比だけ正しく背景に連動させる。
+   ・ichiのu,vとimgSizeだけは検品不合格（右下角が机の茶色にかぶる再発）を受けて再測定した。
+     interior-shodo.webpのネイティブ解像度スキャン(scan_paper_boundary.js/scan_paper_shape.js)で
+     一次候補を求めたが、それだけでは不十分と判明：ブラウザが実際にcoverで縮小描画する際の
+     にじみ（縮小フィルタでエッジの色が数px内側まで混ざる）は「元画像ファイル単体のスキャン」では
+     再現できず、u=0.4935,v=0.7871,imgSize=53の一次候補は実機（320/375x812幅）で検証すると
+     依然として右下角が机色になることが判明した（自己検証＝_一時\_OP5実装\verify_ichi_hidden.js・
+     「一」をvisibility:hiddenにして背景だけを撮る検品と同じ方式）。
+     そこで、320/375/414/390x844の4幅すべてで実際にレンダリングされたスクリーンショットを
+     直接ピクセル判定するグリッドサーチ（_一時\_OP5実装\tune_ichi_layout.js）で中心・サイズを
+     再チューニングした：4幅すべてで安全な最大の一辺は46px（中心u=0.4889,v=0.7822・
+     内側5px＋外側8pxの厳しめ判定）。そこからさらに余白を残すため90%の41pxを採用値にした
+     （自己検証＝verify_op5b.js・画素色サンプリングで320/375/414/390x844の4幅とも合格）。 */
+const OP5_BG_IMG_W=1536, OP5_BG_IMG_H=1024;   // interior-shodo.webpのネイティブ解像度
+const OP5_LAYOUT={
+  ichi:      { u:0.4889, v:0.7822, imgSize:41 },   // 4幅の実機ピクセル判定で安全確認済みの最大サイズ(46px)の90%
+  ichiFloor: { u:0.4887, v:0.9050 },                // 飛び降り着地点（男の子と女の子の間）
+  boy:  { u:0.4549, v:0.9100, standImgW:86.54,  walkImgW:56.54 },
+  girl: { u:0.5113, v:0.9100, standImgW:89.42,  walkImgW:55.38 },
+  mana: { u:0.5789, v:0.9000, standImgW:126.92, walkImgW:60.57 },
+  exit:{   // しょどうきょうしつ(SHODO_DEF)の出口Eが下端中央にあるのに合わせた画面下部中央へ
+    ichi:{ u:0.5000, v:0.9800 },
+    boy: { u:0.4775, v:0.9700 },
+    girl:{ u:0.5075, v:0.9700 },
+    mana:{ u:0.5376, v:0.9600 }
+  },
+  jumpMs:500,          // 作業3-1「0.5秒程度」
+  walkDurationMs:2600, // 作業3-2「合計2〜3秒」（ジャンプ0.5s+これで合計3.1s＝「3〜4秒以内」を満たす）
+  walkFrameMs:150      // 作業3-2「コマ間隔150ms前後」
+};
+/* 背景(#op1BgInterior)のbackground-size:coverが実際にどう描画されているかをJS側で再現する。
+   #op1Stageはinset:0でビューポート全体を覆うため、そのgetBoundingClientRect()が
+   背景画像のcoverが基準にする「コンテナ」と完全に一致する（=画面のどんなアスペクト比でも正確）。 */
+function op5BgMetrics(){
+  const r=$('op1Stage').getBoundingClientRect();
+  const scale=Math.max(r.width/OP5_BG_IMG_W, r.height/OP5_BG_IMG_H);
+  return { scale, offsetX:(r.width-OP5_BG_IMG_W*scale)/2, offsetY:(r.height-OP5_BG_IMG_H*scale)/2, stageW:r.width, stageH:r.height };
+}
+/* 画像空間座標(u,v・0〜1)→ #op1Stage基準の位置%（left/topにそのまま代入できる） */
+function op5UV(u,v,m){
+  m=m||op5BgMetrics();
+  return {
+    leftPct:(m.offsetX+u*OP5_BG_IMG_W*m.scale)/m.stageW*100,
+    topPct:(m.offsetY+v*OP5_BG_IMG_H*m.scale)/m.stageH*100
+  };
+}
+/* 画像空間サイズ単位(1536px幅換算)→ 実際の表示px（背景の実描画スケールに連動＝作業1最重要ポイント） */
+function op5PxSize(imgUnits,m){ return imgUnits*(m||op5BgMetrics()).scale; }
+
+/* 汎用：歩行4相コマ送り（弾OP-5で新設。後日フィールド歩行にも同じコマ画像・同じ仕組みを流用する想定のため
+   op1接頭辞を付けず独立関数にしてある）。imgEl.srcを images/walk/walk-<character>-<n>.webp に定期的に
+   差し替えるだけの単純な実装＝どんな用途（このOP-5でも将来のフィールド歩行でも）にも使い回せる。
+   frameSeq既定[2,1,2,3]＝②閉じ→①右足前→②閉じ→③左足前のループ（ユーザー要望
+   「左→閉じる→右の流れるような動き」の実装）。戻り値のstop()で呼び出し側が任意のタイミングで止める。 */
+function startWalkAnim(imgEl,character,opts){
+  opts=opts||{};
+  const frameSeq=opts.frameSeq||[2,1,2,3];
+  const intervalMs=opts.intervalMs||150;
+  let i=0;
+  function tick(){ imgEl.src='images/walk/walk-'+character+'-'+frameSeq[i%frameSeq.length]+'.webp'; i++; }
+  tick();
+  const timerId=setInterval(tick,intervalMs);
+  return { stop(){ clearInterval(timerId); } };
+}
+let op1WalkHandles=[];              // 稼働中の歩行コマ送りハンドル（スキップ時にまとめて止める）
+function op1StopWalkAnims(){ op1WalkHandles.forEach(h=>{ if(h&&h.stop) h.stop(); }); op1WalkHandles=[]; }
+
 /* シーン切り替わりで前のセリフ音声が残っていたら止めてから鳴らす（既存bgmPlayの_bgmPauseAll()と同じ流儀・かぶり防止） */
 function op1StopAllSnd(){
   for(const k in op1SndCache){ const el=op1SndCache[k]; if(el){ try{ el.pause(); }catch(e){} } }
@@ -12406,6 +12578,7 @@ function op1Finish(){
   op1Seq++;              // 残っている古いシーンのsetTimeoutを無効化
   op1Active=false;
   op1StopAllSnd();       // OP-1b§3：とばす等で途中終了したとき、鳴っているセリフ音声を確実に止める（次画面へ音を持ち越さない）
+  op1StopWalkAnims();    // 弾OP-5：とばす等で退室演出の途中に終了したとき、歩行コマ送りのintervalを確実に止める
   $('op1GateBtn').classList.remove('show');
   $('op1Overlay').classList.remove('show');
   // 設計書に無い暗黙の分岐：既存の「zone1初回のみのはかせ説明」(introSeen)は本イベントと同じ
@@ -12433,6 +12606,18 @@ function op1PlayS0(){
   // 弾OP-4：S4背景・カメラ引きレイヤーもリセット（再視聴時に前回のshow状態を持ち越さない）
   $('op1BgShodo').classList.remove('show');
   $('op1BgInterior').classList.remove('show');
+  // 弾OP-5：机上配置・退室演出の状態もリセット（再視聴時に前回の位置・表示・歩行コマを持ち越さない）
+  op1StopWalkAnims();
+  const cw=$('op1CharWrap');
+  cw.classList.remove('op5-desk','op5-jump','op5-hop');
+  cw.style.transition=''; cw.style.left=''; cw.style.top=''; cw.style.animationDuration='';
+  $('op1KanjiFace').style.transition=''; $('op1KanjiFace').style.fontSize='';
+  [['op5Boy','images/op/op-hero-boy.webp'],['op5Girl','images/op/op-hero-girl.webp'],['op5Mana','images/sprites/hakase.webp']].forEach(([id,src])=>{
+    const el=$(id);
+    el.classList.remove('show');
+    el.style.transition=''; el.style.width=''; el.style.left=''; el.style.top='';
+    el.src=src;
+  });
   $('op1KanjiFaceText').textContent=K[PARTNER_IDX].c;
   $('op1KanjiFaceText').style.color=K[PARTNER_IDX].cl;
   setTimeout(()=>{
@@ -12576,16 +12761,139 @@ function op1PlayS4Success(){
   // 弾OP-4：変身完了(1600+700ms)の直後にカメラ引き種明かし開始＝教室全景へ2.4sでズームアウトクロスフェード。
   // 完了(2300+2400=4700ms)がop1PlayS5の呼び出しタイミング(900+OP1_VOICE_MS.s4b+700=4700ms)とちょうど一致し、
   // 「教室全景が見えた状態の上でS5のせりふを出す」を現行タイムラインのまま(+0秒)満たす。
-  setTimeout(()=>{ if(seq!==op1Seq) return; $('op1BgInterior').classList.add('show'); },1600+OP1_VOICE_PAUSE_MS);
+  setTimeout(()=>{
+    if(seq!==op1Seq) return;
+    $('op1BgInterior').classList.add('show');
+    op1RevealOp5Scene(2400);   // 弾OP-5：同じ2.4sで「一」を机上へ縮小移動＋男の子/女の子/マナをフェードイン
+  },1600+OP1_VOICE_PAUSE_MS);
   setTimeout(()=>{ if(seq!==op1Seq) return; op1PlayS5(); },900+OP1_VOICE_MS.s4b+OP1_VOICE_PAUSE_MS);
 }
-/* ---- S5：種明かしと旅立ち（確定文言）。→そのままフィールドへ（ゾーン1開始） ---- */
+/* ---- S5：種明かしと旅立ち（確定文言）。→退室演出（弾OP-5）→そのままフィールドへ（ゾーン1開始） ---- */
 function op1PlayS5(){
   const seq=op1Seq;
   $('op1CharWrap').classList.remove('op1-brush-hop');
   $('op1ManaText').innerHTML='よまれなくなった漢字は、よみを わすれて あばれてしまうの。<br>きみにしか たのめない 旅が あるの。……いっしょに きてくれる？';
   op1PlaySnd('s5');   // OP-1b§3：台詞表示と同時にマナの声を再生
-  setTimeout(()=>{ if(seq!==op1Seq) return; op1Finish(); },OP1_VOICE_MS.s5+OP1_VOICE_PAUSE_MS);
+  setTimeout(()=>{ if(seq!==op1Seq) return; op1PlayExit(); },OP1_VOICE_MS.s5+OP1_VOICE_PAUSE_MS);
+}
+
+/* ---- 弾OP-5 作業2：カメラ引きと同時に「一」を中央大表示→机の半紙上の小表示へ縮小移動、
+   男の子・女の子・マナを机の前へフェードインさせる（S5の台詞・音声のタイミングは一切変えない）。 ---- */
+function op1RevealOp5Scene(durationMs){
+  const seq=op1Seq;
+  const wrap=$('op1CharWrap'), stage=$('op1Stage'), face=$('op1KanjiFace');
+  // FLIP技法：position:absoluteへ切替える前に「今まさに画面に出ている位置」を実測し、そこを出発点にする
+  // （既存のflex中央寄せ位置をJSでも正確に再現できるため、切替の瞬間に見た目がジャンプしない）
+  const wrapRect=wrap.getBoundingClientRect(), stageRect=stage.getBoundingClientRect();
+  const curLeftPct=(wrapRect.left+wrapRect.width/2-stageRect.left)/stageRect.width*100;
+  const curTopPct=(wrapRect.top+wrapRect.height/2-stageRect.top)/stageRect.height*100;
+  const curFontPx=parseFloat(getComputedStyle(face).fontSize);
+  wrap.classList.add('op5-desk');
+  wrap.style.transition='none';
+  wrap.style.left=curLeftPct+'%'; wrap.style.top=curTopPct+'%';
+  face.style.transition='none'; face.style.fontSize=curFontPx+'px';
+  void wrap.offsetWidth;   // 強制リフロー（既存op1PlayS1のvoid clip.offsetWidthと同じ流儀）
+  wrap.style.transition='left '+durationMs+'ms ease, top '+durationMs+'ms ease';
+  face.style.transition='opacity .7s ease, font-size '+durationMs+'ms ease';   // 既存の.showフェードイン用transitionも保持
+  // 追加発注OP5b§1：目標値は背景の実描画スケール(op5BgMetrics)から求める（vw/vh直書きをやめた）
+  const m=op5BgMetrics();
+  const ichiPos=op5UV(OP5_LAYOUT.ichi.u,OP5_LAYOUT.ichi.v,m);
+  const ichiFontPx=op5PxSize(OP5_LAYOUT.ichi.imgSize,m);
+  requestAnimationFrame(()=>{
+    if(seq!==op1Seq) return;
+    wrap.style.left=ichiPos.leftPct+'%';
+    wrap.style.top=ichiPos.topPct+'%';
+    face.style.fontSize=ichiFontPx+'px';
+  });
+
+  ['boy','girl','mana'].forEach(key=>{
+    const el=$('op5'+key.charAt(0).toUpperCase()+key.slice(1));
+    const L=OP5_LAYOUT[key];
+    const pos=op5UV(L.u,L.v,m);
+    el.style.left=pos.leftPct+'%'; el.style.top=pos.topPct+'%';
+    el.style.width=op5PxSize(L.standImgW,m)+'px';   // 追加発注OP5b§1：%指定をやめ、背景スケール連動のpxへ
+    requestAnimationFrame(()=>{ if(seq!==op1Seq) return; el.classList.add('show'); });
+  });
+}
+/* 追加発注OP5b§1：S5の静止構図中（op5-desk・ジャンプ/歩行より前）にビューポートの実寸が変わった場合
+   （モバイルのアドレスバー開閉・回転など）、背景の実描画スケールに合わせて位置・サイズを再計算する。
+   ジャンプ/歩行アニメの最中は対象外（transition/animationの途中で値を差し替えると再始動バグを
+   起こすため＝op1IchiJumpOffのコメント参照。触らないことが安全）。 */
+window.addEventListener('resize',()=>{
+  if(!op1Active) return;
+  const wrap=$('op1CharWrap');
+  if(!wrap.classList.contains('op5-desk')) return;
+  if(wrap.classList.contains('op5-jump')||wrap.classList.contains('op5-hop')) return;
+  const face=$('op1KanjiFace');
+  const m=op5BgMetrics();
+  const prevTrans=wrap.style.transition;
+  wrap.style.transition='none';
+  const ichiPos=op5UV(OP5_LAYOUT.ichi.u,OP5_LAYOUT.ichi.v,m);
+  wrap.style.left=ichiPos.leftPct+'%'; wrap.style.top=ichiPos.topPct+'%';
+  face.style.fontSize=op5PxSize(OP5_LAYOUT.ichi.imgSize,m)+'px';
+  void wrap.offsetWidth;
+  wrap.style.transition=prevTrans;
+  ['boy','girl','mana'].forEach(key=>{
+    const el=$('op5'+key.charAt(0).toUpperCase()+key.slice(1));
+    if(!el.classList.contains('show')) return;
+    const L=OP5_LAYOUT[key], pos=op5UV(L.u,L.v,m);
+    el.style.left=pos.leftPct+'%'; el.style.top=pos.topPct+'%';
+    el.style.width=op5PxSize(L.standImgW,m)+'px';
+  });
+});
+
+/* ---- 弾OP-5 作業3：S5終了後の退室演出。1.「一」が机から飛び降り→2.4人で出口へ歩いて退場→3.op1Finish() ---- */
+function op1PlayExit(){
+  const seq=op1Seq;
+  op1IchiJumpOff(seq);
+}
+/* 「一」の飛び降り＝小ジャンプの弧（約0.5秒）。机→床のtop/leftの直線移動はtransitionで一括に行い、
+   「ふわっと上がって、ストンと落ちる」弧の上下動だけをop5-jumpの一回きりkeyframeアニメで別途重ねる
+   （transitionを飛行中に途中で付け替えると再始動して動きが止まるバグを起こすため、
+   位置移動＝transition・弧の上下動＝animationと役割を完全に分離した＝実装判断）。 */
+function op1IchiJumpOff(seq){
+  const wrap=$('op1CharWrap');
+  const floorPos=op5UV(OP5_LAYOUT.ichiFloor.u,OP5_LAYOUT.ichiFloor.v);   // 追加発注OP5b§1：背景スケール連動
+  wrap.style.animationDuration=OP5_LAYOUT.jumpMs+'ms';
+  wrap.classList.add('op5-jump');
+  wrap.style.transition='left '+OP5_LAYOUT.jumpMs+'ms ease-out, top '+OP5_LAYOUT.jumpMs+'ms ease-out';
+  wrap.style.left=floorPos.leftPct+'%';
+  wrap.style.top=floorPos.topPct+'%';
+  setTimeout(()=>{
+    if(seq!==op1Seq) return;
+    wrap.classList.remove('op5-jump');
+    op1WalkGroupOut(seq);
+  },OP5_LAYOUT.jumpMs);
+}
+/* 4人そろって出口（画面下端中央＝しょどうきょうしつグリッドの出口Eに合わせた位置）へ退場。
+   男の子・女の子・マナ＝歩行4相コマ送り（共通のstartWalkAnim・後日フィールド歩行にも流用）、
+   「一」＝コマ絵が無いのでhopキーフレームの小刻みバウンドで追従する。 */
+function op1WalkGroupOut(seq){
+  const wrap=$('op1CharWrap');
+  const m=op5BgMetrics();   // 追加発注OP5b§1：背景スケール連動（歩行時のwalkImgW pxもこのmで計算）
+  const exitIchiPos=op5UV(OP5_LAYOUT.exit.ichi.u,OP5_LAYOUT.exit.ichi.v,m);
+  wrap.classList.add('op5-hop');
+  wrap.style.transition='left '+OP5_LAYOUT.walkDurationMs+'ms ease, top '+OP5_LAYOUT.walkDurationMs+'ms ease';
+  wrap.style.left=exitIchiPos.leftPct+'%';
+  wrap.style.top=exitIchiPos.topPct+'%';
+
+  op1StopWalkAnims();
+  op1WalkHandles=['boy','girl','mana'].map(key=>{
+    const el=$('op5'+key.charAt(0).toUpperCase()+key.slice(1));
+    const L=OP5_LAYOUT[key], exPos=op5UV(OP5_LAYOUT.exit[key].u,OP5_LAYOUT.exit[key].v,m);
+    el.style.width=op5PxSize(L.walkImgW,m)+'px';   // 歩行コマは立ち絵とカンバスの余白比率が違うため即時切替（transitionしない）
+    const handle=startWalkAnim(el,key,{intervalMs:OP5_LAYOUT.walkFrameMs});
+    void el.offsetWidth;   // 強制リフロー（widthの即時切替の直後にleft/topのtransitionを確実に効かせる）
+    el.style.transition='opacity 1s ease, left '+OP5_LAYOUT.walkDurationMs+'ms ease, top '+OP5_LAYOUT.walkDurationMs+'ms ease';
+    el.style.left=exPos.leftPct+'%'; el.style.top=exPos.topPct+'%';
+    return handle;
+  });
+
+  setTimeout(()=>{
+    if(seq!==op1Seq){ op1StopWalkAnims(); return; }
+    op1StopWalkAnims();
+    op1Finish();
+  },OP5_LAYOUT.walkDurationMs);
 }
 
 /* ==============================
