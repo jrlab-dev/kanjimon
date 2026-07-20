@@ -693,6 +693,12 @@
   .kt-done-msg{font-weight:900;color:var(--red);font-size:1.25rem;text-align:center;margin-bottom:14px}
   @media(max-width:374px){ .kt-canvas-wrap{width:min(82vw,260px)} }
   /* ===== 弾W-2：かきとりテスト（白紙書き・コイン報酬） ===== */
+  /* 発注：かきとり解禁実装(2026-07-20)。テスト用紙にだけ縦横バランスの目安線(薄い十字)をCSS背景で追加。
+     判定に使う#ktLiveCanvasには一切描かない＝キャンバスの下に敷く背景なので、なぞり判定・採点ピクセルに影響しない。
+     .kt-canvas-wrap（W-1なぞりと共通の基本クラス）はそのまま・このクラスを追加併用したときだけ十字が出る。 */
+  .kt-canvas-wrap.kt-test-paper{background-image:
+    linear-gradient(to right, transparent calc(50% - 1px), rgba(0,0,0,.12) calc(50% - 1px), rgba(0,0,0,.12) calc(50% + 1px), transparent calc(50% + 1px)),
+    linear-gradient(to bottom, transparent calc(50% - 1px), rgba(0,0,0,.12) calc(50% - 1px), rgba(0,0,0,.12) calc(50% + 1px), transparent calc(50% + 1px))}
   .kt-test-q{font-weight:900;font-size:1.1rem;color:var(--ink);text-align:center;margin-bottom:2px}
   .kt-test-hint{font-weight:700;font-size:.84rem;color:var(--sub);text-align:center;margin:0 auto 8px;max-width:300px;line-height:1.5}
   .kt-daily-tag{display:inline-block;font-size:.72rem;font-weight:800;color:#8a5a00;background:#fff3c4;
@@ -11789,11 +11795,19 @@ function openKakitoriInvite(){
   if(pool.length===0){
     html+='<div class="interior-card-msg">かんじもんを なかまに してから きてね</div>'+
       '<button class="btn btn-primary" onclick="closeInteriorCard()">とじる</button>';
-  }else{
-    // 発注W-2：れんしゅう（なぞり）とテスト（白紙）の2択＋やめる
+  }else if(caught.size>=30){
+    // 発注W-2：れんしゅう（なぞり）とテスト（白紙）の2択＋やめる（30体解禁後の通常表示）
     html+='<div class="interior-card-msg">かきとりを する？</div>'+
       '<button class="btn btn-primary" onclick="startKakitori()">れんしゅう</button>'+
       '<button class="btn btn-primary" onclick="startKakitoriTest()">テストを うける</button>'+
+      '<button class="btn btn-ghost" onclick="closeInteriorCard()">やめる</button>';
+  }else{
+    // 発注：かきとりテストの解禁条件（30体・2026-07-20）。caught.size（ゲット済み総数・図鑑カウントと同じ、
+    // てもち4体の枠とは別）が30未満の間は「テストを うける」をボタンではなく案内文にする。
+    // れんしゅうはW-1のまま解禁条件の対象外＝ここでも常に押せる。30という数字・カウントダウンはセリフに出さない。
+    html+='<div class="interior-card-msg">かきとりを する？</div>'+
+      '<button class="btn btn-primary" onclick="startKakitori()">れんしゅう</button>'+
+      '<div class="interior-card-msg">もじかき塾を はじめようと おもってるんだ。もうすこし なかまが ふえたら はじめるからね！</div>'+
       '<button class="btn btn-ghost" onclick="closeInteriorCard()">やめる</button>';
   }
   $('interiorCardBody').innerHTML=html;
@@ -12194,7 +12208,7 @@ function renderKtTestQuestion(){
     '<div class="kt-test-q">『'+reading+'』を かこう</div>'+
     '<div class="kt-test-hint">―― '+hint+'</div>'+
     (claimed?'<div class="kt-daily-tag">きょう すでに ゲットずみ・れんしゅう あつかい（コインなし）</div>':'')+
-    '<div class="kt-canvas-wrap" id="ktCanvasWrap"><canvas id="ktLiveCanvas" width="'+KT_CANVAS_PX+'" height="'+KT_CANVAS_PX+'"></canvas></div>'+
+    '<div class="kt-canvas-wrap kt-test-paper" id="ktCanvasWrap"><canvas id="ktLiveCanvas" width="'+KT_CANVAS_PX+'" height="'+KT_CANVAS_PX+'"></canvas></div>'+
     '<div class="kt-msg" id="ktMsg">&nbsp;</div>'+
     '<div class="kt-actions">'+
       '<button class="btn btn-ghost" onclick="kttClear()">けす</button>'+
