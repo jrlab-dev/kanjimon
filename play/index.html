@@ -1030,16 +1030,23 @@
   /* 第20弾§4：一枚絵（フルアート）モード。グリッド全体に描き下ろし背景1枚をぴったり敷き、地面/木タイルは透明化 */
   .field-grid.has-fullart{background-image:var(--fullart-img);background-size:100% 100%;background-repeat:no-repeat}
   .field-grid.has-fullart.town-map{background-size:100% 50%,100% 50%;background-position:top,bottom;background-repeat:no-repeat,no-repeat}
-  /* 発注_しまなみ海道 作業2(2026-07-20)：ゾーン41専用・継ぎ目なしタイル画像を横方向にrepeat-xで敷き詰める。
-     zone41-bridge-tile.webpは1024×1024の正方形画像（欄干より上は透過・pythonでalpha確認済み＝
-     上から約32%が透過／残り68%が不透過）。背景サイズをvar(--tile)基準の固定値にすることで画面幅が
-     変わっても1マス=画像内の同じ比率を保つ（100% 100%の伸縮指定を上書き）。9マス角を採用＝画像内の
-     敷石4個ぶんが横9マスに収まり、敷石1個=2.25マス幅という現実的な足場サイズになる（実機確認・
-     以前の「敷石が主人公より大きすぎる」不具合の是正）。background-positionのY値は、不透過(敷石)部分が
-     ちょうどグリッドのくさむら+歩道帯(行10〜16・すみかA〜J全部を含む)に重なるよう実機スクリーンショットで
-     再計算した値（最初はもっと下寄りに置いたところ、上段のすみかA/C/E/G/Iが透過部分＝海の上に浮いて
-     見える不具合があったため調整・詳細は_一時\_しまなみ海道実装\実装報告.md参照） */
-  .field-grid.has-fullart.bridge-tile{background-size:calc(9*var(--tile)) calc(9*var(--tile));background-position:0 calc(7*var(--tile));background-repeat:repeat-x}
+  /* 発注_しまなみ海道リアル化(2026-07-21)作業1：ゾーン41専用・継ぎ目なしタイル画像を横方向にrepeat-xで
+     敷き詰める。旧世代(zone41-bridge-tile.webp・敷石が主人公より巨大に見える不具合)→v1
+     (zone41-bridge-real-tile.webp・欄干クローズアップだが奥の島が隠れる/巨大感が残る)を経て、
+     v2(zone41-bridge-v2-tile.webp・1024×1024)を採用。v2は主塔+ケーブルが追加され、透過75.8%/
+     不透過19.5%（残り4.7%は欄干のグラデーション遷移帯）とv1よりさらに透過が広い。
+     background-sizeは8マス角を採用：不透過+遷移帯（画像下から約25.2%＝主構造物の高さ）が
+     8マス角で約2.0マス相当になり、主人公の背丈(.hero-sprite=1.15マス)の約1.75倍。単体では
+     「1〜1.5倍」の目安よりやや高いが、v2は主塔が画面内に大きく写り込むため「巨大な吊り橋を
+     見上げている」文脈が生まれ、実機スクリーンショットで見比べた結果、欄干単体の高さよりも
+     橋全体のバランスとして違和感がないと判断した（詳細比較はN=6/8/10/12を実機比較・
+     _一時\_しまなみ海道リアル化実装\実装報告.md参照）。background-positionのY値は
+     calc(6*var(--tile))＝不透過帯の下端がグリッドの行14（歩道row12・13の両方の下端）に
+     ちょうど揃うよう計算（M=14-N）。この「両方の歩道行を揃って覆う」アンカーは、旧M=13-N方式だと
+     歩道の片方(row13)だけ覆われず主人公が浮いて見える不具合を実機検証で発見して以来のもの。
+     すみかA〜J（行10・15）は新画像の透過範囲が広いぶん完全な覆いはできず、多少浮いて見える
+     トレードオフが残る（主経路である歩道2行を最優先でカバーする設計判断・詳細は報告書参照） */
+  .field-grid.has-fullart.bridge-tile{background-size:calc(8*var(--tile)) calc(8*var(--tile));background-position:0 calc(6*var(--tile));background-repeat:repeat-x}
   .field-grid.has-fullart .tile.t-grass,.field-grid.has-fullart .tile.t-path{background:transparent}
   .field-grid.has-fullart .tile.t-tree{background:transparent;box-shadow:none;color:transparent}
   /* フェーズD試作(2026-07-11)：一枚絵ゾーンに内側の水W・岩Rが初登場（ゾーン3）。絵に描かれている想定で水・岩タイルも透明化する */
@@ -7338,11 +7345,14 @@ function heroBackImgSrc(hbChar){
   return 'images/battle-tate/hero-back-'+hbChar+'.webp';
 }
 let heroVictoryPose=false;   // 勝利メッセージ表示中〜次の敵が出るまでtrue
+// 発注_勝利演出3件 作業2：戦闘勝利のたびに主人公が読み上げる短い掛け声（2〜4種からランダム・speakJa任せ＝🔇時は自動的に無音）
+const HERO_VICTORY_LINES=['やった！','よし！','やったね！','いいぞ！'];
 /* 敵を倒した瞬間（勝利メッセージが最初に出るタイミング）に1回だけ呼ぶ。
    画像が無ければ何もしない（heroBackOKと同じ「無ければ出さない」流儀）。
    既にDOM上にhero-back要素があれば即座に画像差し替え＋軽いポップ（renderParty()の再構築を待たない） */
 function triggerHeroVictoryPose(){
   if(heroVictoryPose) return;         // 多重発火防止（同じ勝利の中で何度も呼ばれても1回だけ）
+  speakJa(HERO_VICTORY_LINES[Math.floor(Math.random()*HERO_VICTORY_LINES.length)]);   // 発注_勝利演出3件 作業2：ボス戦・じゅくご戦・通常戦いずれもこの共通口を通るので一律で発火
   const hbChar=(heroChar==='girl')?'girl':'boy';
   if(!heroVictoryOK.has(hbChar)) return;
   heroVictoryPose=true;
@@ -8204,6 +8214,8 @@ function playEvolution(fromIdx,toIdx,after){
         // 手直し おと調整2§3：「◯◯（よみ）は ◇◇（よみ）に しんかした！」＝まえの名前→あたらしい名前が両方読める形
         msg.innerHTML='『'+K[fromIdx].c+'』（'+K[fromIdx].y+'）は 『'+K[toIdx].c+'』（'+K[toIdx].y+'）に しんかした！<br><span style="font-size:.85em;opacity:.9">ずかんに きろくされた！</span>';
         sfxLevelup();
+        // 発注_勝利演出3件 作業3：進化後の新しい漢字モン自身の鳴き声（sfxEvoend/sfxLevelupと重ならないよう少し間を空けて追加）
+        evoTimeout(()=>{ sndCry(typeOf(toIdx)); },500);
         evoTimeout(()=>{ evoAfterglowLock=false; bgmResume(); },EVO_AFTERGLOW_MS);   // 余韻の終わりでBGMを続きから再開
         evoTimeout(()=>{
           ov.classList.remove('show');
@@ -9422,12 +9434,19 @@ const ZONE_FULLART=['zone1.webp','zone2.webp','zone3.webp','zone4.webp','zone5.w
                     'zone17.webp','zone18.webp','zone19.webp','zone20.webp','zone21.webp','zone22.webp','zone23.webp','zone24.webp',
                     /* 弾3-6§2-4：3年カンサイ・シコク20ゾーンぶん。41番目だけnull（弾3-7で一枚絵を差し替え・nullはプリロードをスキップ＝フォールバック） */
                     'zone25.webp','zone26.webp','zone27.webp','zone28.webp','zone29.webp','zone30.webp','zone31.webp','zone32.webp','zone33.webp','zone34.webp',
-                    'zone35.webp','zone36.webp','zone37.webp','zone38.webp','zone39.webp','zone40.webp','zone41-bridge-tile.webp','zone42.webp','zone43.webp','zone44.webp',
+                    'zone35.webp','zone36.webp','zone37.webp','zone38.webp','zone39.webp','zone40.webp','zone41-bridge-v2-tile.webp','zone42.webp','zone43.webp','zone44.webp',
                     // 弾4-6§2-4：4年チュウブ20ゾーンぶん
                     'zone45.webp','zone46.webp','zone47.webp','zone48.webp','zone49.webp','zone50.webp','zone51.webp','zone52.webp','zone53.webp','zone54.webp','zone55.webp','zone56.webp','zone57.webp','zone58.webp','zone59.webp','zone60.webp','zone61.webp','zone62.webp','zone63.webp','zone64.webp'];
 /* 弾3-7：パララックス背景を使うゾーンの対応表。ゾーン41以外は未登録＝通常表示のまま */
 const ZONE_PARALLAX_BG={41:'zone41-bg-tile.webp'};
-const PARALLAX_SPEED=0.3;  // 背景の移動速度係数（1=前景と同速、0=完全固定。奥にあるほど小さい値）
+/* 発注_しまなみ海道リアル化(2026-07-21)作業2：0.3→0.18に変更。実測では0.3自体は正確に機能していた
+   （バグではない）が、ユーザー体感で「手前と奥がほぼ同速に見える」という指摘があったため、体感の
+   速度差をより強調する狙いで踏み込んで縮小した（発注書の目安0.15〜0.2の中間）。この定数はグローバル
+   だがPARALLAX_SPEEDを使うのはupdateCamera内のpbgのtransform計算のみ、pbg自体はZONE_PARALLAX_BG
+   に登録されたゾーン（現状ゾーン41のみ）でしか#fieldParallaxBgに.showが付かず表示されないため、
+   実質的な影響範囲はゾーン41のみ（grep・実機確認で裏取り済み・詳細は_一時\_しまなみ海道リアル化実装\
+   実装報告.md参照） */
+const PARALLAX_SPEED=0.18;  // 背景の移動速度係数（1=前景と同速、0=完全固定。奥にあるほど小さい値）
 /* 第20弾§4-2：一枚絵プリロード（groundImgOKと同じ流儀＝onload/onerror。無ければfullartOKに入らず従来表示） */
 const fullartOK=new Set();
 ZONE_FULLART.forEach((file,i)=>{
