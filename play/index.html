@@ -676,6 +676,9 @@
   }
   #innDark{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity .5s;z-index:290}
   #innDark.on{opacity:.85}
+  /* 発注_町北側：自分の家（新規・やどとは別施設）専用の暗転。#innDarkは無変更のため別IDで複製 */
+  #homeDark{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity .5s;z-index:290}
+  #homeDark.on{opacity:.85}
   /* ===== 弾W-1：かきとり（なぞり書き・れんしゅうモード） ===== */
   .kakitori-panel{width:min(94vw,420px);max-height:94vh;overflow:auto;padding:16px 14px}
   .kt-head{font-weight:900;color:var(--ink);font-size:1.05rem;margin-bottom:10px;text-align:center}
@@ -1936,6 +1939,22 @@
   </div>
 </div>
 <div id="innDark"></div>
+
+<!-- 発注_町北側：自分の家（新規・やどとは別施設。無料全回復のロジックはやどと同じものを複製して流用） -->
+<div class="overlay" id="homeOverlay">
+  <div class="panel" style="text-align:center">
+    <h3 style="color:var(--orange)">🏡 じぶんの いえ</h3>
+    <p id="homeMsg" style="font-weight:900;color:var(--ink);margin:12px 0">じぶんの いえで やすんで いく？（むりょう）</p>
+    <div id="homeBtns">
+      <button class="btn btn-primary" onclick="homeRest()">やすむ</button>
+      <button class="btn btn-ghost" onclick="closeHome()">やめる</button>
+    </div>
+    <div id="homeDone" style="display:none">
+      <button class="btn btn-primary" onclick="closeHome()">とじる</button>
+    </div>
+  </div>
+</div>
+<div id="homeDark"></div>
 
 <!-- 弾3-12：どうぐ（インベントリ） -->
 <div class="overlay" id="itemsOverlay">
@@ -9834,11 +9853,12 @@ function renderField(){
           else txt=gateOpen?'➔':'🚧';
         }else txt=gateOpen?'➔':'🚧';
       }
-      else if(fieldZone===TOWN_ZONE && (ch==='L'||ch==='D'||ch==='Y'||ch==='H'||ch==='M'||ch==='K'||ch==='G'||ch==='F')){
+      else if(fieldZone===TOWN_ZONE && (ch==='L'||ch==='D'||ch==='Y'||ch==='H'||ch==='M'||ch==='K'||ch==='G'||ch==='F'||ch==='N'||ch==='O')){
         // 弾3-12/3-13：町の建物いりぐち・掲示板（A-L分岐＝zoneCharIdxはindex -1で壊れるため先に分岐する）
         // 発注T-1：書道教室いりぐちF（がっこうGと同じ流儀）を追加
+        // 発注_町北側：N(時計塔・機能未実装)・O(自分の家・新規)を追加
         cls+=' t-path t-town-door';
-        txt='<span class="town-door-emoji">'+(ch==='L'?'🔬':(ch==='D'?'🛍️':(ch==='Y'?'🛏️':(ch==='H'?'📋':(ch==='M'?'🏬':(ch==='K'?'🏠':(ch==='F'?'🖌️':'🏫')))))))+'</span>';
+        txt='<span class="town-door-emoji">'+(ch==='L'?'🔬':(ch==='D'?'🛍️':(ch==='Y'?'🛏️':(ch==='H'?'📋':(ch==='M'?'🏬':(ch==='K'?'🏠':(ch==='F'?'🖌️':(ch==='N'?'🕰️':(ch==='O'?'🏡':'🏫')))))))))+'</span>';
       }
       else if(fieldZone<0 && (ch==='E'||ch==='M'||ch==='N')){
         // 弾3-15：屋内の出口・店員・住人。画像が読めたNPCは後載せするため、タイル上の絵文字はフォールバック時だけ。
@@ -11058,29 +11078,31 @@ const SHODO_TOWN_CONFIG={
 const TOWN_DEF={
   name:'はじまりの まち',
   fullart:['town-bg.webp','town-bg-south.webp'],   // 弾3-14：北＋南の縦積み。建物は town-building レイヤーで後載せ
-  /* 弾3-14：30×40。北20行＋南20行。S=とうちゃく地点・L/D/Y=既存建物・H=掲示板・M/K=準備中入口・T=通行不可・.=地面。
-     北半分は最終行の列12〜16だけ開通。くさむら,・すみかA〜J・ゲート>は置かない */
+  /* 発注_町北側：30×40。北20行＋南20行。S=とうちゃく地点・L/D/Y=既存建物（今回位置移設）・
+     H=掲示板（今回位置移設）・N=時計塔（新規・機能未実装のタップ反応のみ）・O=自分の家（新規・やどとは別施設）・
+     M/K/G/F=南側の準備中入口・T=通行不可・.=地面。北側20行はユーザー配置ツールのデータに総入れ替え
+     （まちの北側.json→北側グリッド変換.jsで生成。_一時\_町北側実装\参照）。くさむら,・すみかA〜J・ゲート>は置かない */
   grid:[
-    'TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT',
-    'TTTTTTTTTTTT.....TTTTTTTTTTTTT',
-    'TTTTTTTTTTTT.....TTTTTTTTTTTTT',
-    'TTTTTTTTTTTT.....TTTTTTTTTTTTT',
-    'TTTTTTTTTTTT.....TTTTTTTTTTTTT',
-    'TTTTTTTTTTTT.....TTTTTTTTTTTTT',
-    'TTTTTTTTTLTT.....TTDTTT....TTT',
-    'TTT.........................TT',
-    'TT............H.............TT',
-    'TT............S.............TT',
-    'TT.TTTTTTT..................TT',
-    'TT.TTTTTTT........TTTTTTTTTTTT',
-    'TT.TTTTTTT........TTTTTTTTTTTT',
-    'TT.TTTTTTT........TTTTTTTTTTTT',
-    'TT.TTTTTTT........TTTTTTTTTTTT',
-    'TT.TTTTTY.........TTTTTTTTTTTT',
-    'TTT...............TTTTTTTTTTTT',
-    'TTTT..............TTTTTTTTTTTT',
-    'TTTTT.....................TTTT',
-    'TTTTTTTTTTTT.....TTTTTTTTTTTTT',
+    'TTTTTTTTTTTTT...TTTTTTTTTTTTTT',
+    'TTT.........T...TT.........TTT',
+    'TT..................TTTTTT.TTT',
+    'TT....TTT...........TTTTTT.TTT',
+    'TT....TNT............LTTTT.TTT',
+    'TT..........................TT',
+    'TT..........................TT',
+    'T...........TTTTT.............',
+    '............TTTTTT............',
+    '............TTTTT.............',
+    'T..TTTTT......TT.......TTTTT.T',
+    'T..TTTTT...............TTDTT.T',
+    'T..TTOTT...............T..TT.T',
+    'T.........TT........Y........T',
+    'T.........TT......TT.........T',
+    'T.........TT......TTT......TTT',
+    'TT.......TTT.......TTTTTTTTTTT',
+    'TTTTTTTTTTTTTT..TTTTTTTTTTTTTT',
+    'TTTTTTTTTTTTTT..TTTTTTTTTTTTTT',
+    'TTTTT.........SH..............',
     'TTTTTTTTTTTT.....TTTTTTTTTTTTT',
     'T............................T',
     'T..TTTT.........TTTTTTTT.....T',
@@ -11121,9 +11143,18 @@ const TOWN_DEF={
     const r=TOWN_DEF.grid[p.y]; TOWN_DEF.grid[p.y]=r.slice(0,p.x)+'F'+r.slice(p.x+1);
   }
 })();
+/* 発注_町北側：北側4棟（研究所・時計塔・自分の家・道具屋）の座標は、ユーザーが配置ツールで
+   置いた位置を tile=1536/30=51.2 で換算した値（_一時\_町北側実装\北側グリッド変換.js参照）。
+   labとtowerは既存エントリの値を置き換え（towerは元々未使用の仮配置だった）。
+   house1-home/house1-shopは新規追加＝南側の"house1"（みんか）とは別cls名で衝突を回避。
+   tower.yのみ試算値-0.87から0へ補正（320x568幅で入口タイルに立った実機確認で屋根飾りの
+   先端がわずかに見切れたため。0-4の許容範囲内の調整＝入口マーカーN(7,4)はy範囲[0,6.43]に
+   引き続き収まる。labは同条件で見切れなかったため試算値-2.29のまま無調整）。 */
 const TOWN_BUILDINGS=[
-  {cls:'lab',    img:'town-lab.webp',        x:7.9,  y:2.5,  w:4.7, h:5.1},
-  {cls:'tower',  img:'town-clocktower.webp', x:2.6,  y:19.2, w:4.8, h:6.2},
+  {cls:'lab',        img:'town-lab.webp',        x:19.16, y:-2.29, w:7.78, h:7.78},
+  {cls:'tower',      img:'town-clocktower.webp', x:4.25,  y:0,     w:6.43, h:6.43},
+  {cls:'house1-home',img:'town-house1.webp',     x:1.83,  y:6.81,  w:7.78, h:7.78},
+  {cls:'house1-shop',img:'town-house1.webp',     x:21.9,  y:6.76,  w:7.22, h:7.22},
   {cls:'mall',   img:'town-mall.webp',       x:15.5, y:20.6, w:9.0, h:7.6},
   {cls:'house1', img:'town-house1.webp',     x:3.5,  y:29.8, w:5.0, h:4.4},
   {cls:'school', img:'town-school.webp',     x:SCHOOL_TOWN_CONFIG.building.x,y:SCHOOL_TOWN_CONFIG.building.y,
@@ -11255,11 +11286,11 @@ function townSelfTest(){
   const fails=[];
   if(!(g.length===40 && g.every(r=>r.length===30))) fails.push('サイズ30x40でない');
   const all=g.join('');
-  ['S','L','D','Y','H','M','K','G','F'].forEach(c=>{ if((all.split(c).length-1)!==1) fails.push(c+'が1個でない'); });   // 発注T-1：Fを追加
+  ['S','L','D','Y','H','M','K','G','F','N','O'].forEach(c=>{ if((all.split(c).length-1)!==1) fails.push(c+'が1個でない'); });   // 発注T-1：Fを追加／発注_町北側：N(時計塔)・O(自分の家)を追加
   // 検品修正弾3-14：/[,A-J>]/ だと町の正規記号D(どうぐや)・H(けいじばん)がA-J範囲に含まれ誤検知するため、D/Hを除外
   if(/[,>]/.test(all) || /[ABCEIJ]/.test(all)) fails.push('くさむら/すみか/ゲートあり');   // 発注T-1：Fを町の正規記号にしたためA-Jの除外対象からも外す
-  if(/[^SLDYHMKGFTR.]/.test(all)) fails.push('不正な記号あり');   // 発注T-1：Fを追加
-  // BFS：SからL/D/Y/H/M/K/G/Fぜんぶに到達できるか（isPassableTileと同じ判定＝T/R以外は通行可）
+  if(/[^SLDYHMKGFTRNO.]/.test(all)) fails.push('不正な記号あり');   // 発注T-1：Fを追加／発注_町北側：N・Oを追加
+  // BFS：SからL/D/Y/H/M/K/G/F/N/Oぜんぶに到達できるか（isPassableTileと同じ判定＝T/R以外は通行可）
   const H=g.length, W=g[0].length;
   let sx=-1, sy=-1;
   for(let y=0;y<H;y++){ const x=g[y].indexOf('S'); if(x>=0){ sx=x; sy=y; break; } }
@@ -11268,7 +11299,7 @@ function townSelfTest(){
   while(q.length){
     const [x,y]=q.shift();
     const ch=g[y][x];
-    if(ch==='L'||ch==='D'||ch==='Y'||ch==='H'||ch==='M'||ch==='K'||ch==='G'||ch==='F') reached[ch]=true;
+    if(ch==='L'||ch==='D'||ch==='Y'||ch==='H'||ch==='M'||ch==='K'||ch==='G'||ch==='F'||ch==='N'||ch==='O') reached[ch]=true;
     [[1,0],[-1,0],[0,1],[0,-1]].forEach(([dx,dy])=>{
       const nx=x+dx, ny=y+dy;
       if(nx<0||ny<0||nx>=W||ny>=H) return;
@@ -11278,7 +11309,7 @@ function townSelfTest(){
       seen.add(ny*W+nx); q.push([nx,ny]);
     });
   }
-  ['L','D','Y','H','M','K','G','F'].forEach(c=>{ if(!reached[c]) fails.push('S→'+c+'到達不能'); });
+  ['L','D','Y','H','M','K','G','F','N','O'].forEach(c=>{ if(!reached[c]) fails.push('S→'+c+'到達不能'); });
   const ep=SCHOOL_TOWN_CONFIG.entrance,rp=SCHOOL_TOWN_CONFIG.returnTo,bp=SCHOOL_TOWN_CONFIG.building;
   if(g[ep.y]&&g[ep.y][ep.x]!=='G') fails.push('学校入口設定とGが不一致');
   if(Math.abs(ep.x-rp.x)+Math.abs(ep.y-rp.y)!==1) fails.push('学校入口とreturnToが隣接していない');
@@ -11324,6 +11355,8 @@ function onArriveTownTile(ch){
   if(ch==='K'){ warpInterior(HOUSE1_ZONE); return; }
   if(ch==='G'){ warpInterior(SCHOOL_ZONE); return; }
   if(ch==='F'){ warpInterior(SHODO_ZONE); return; }   // 発注T-1
+  if(ch==='O'){ openHome(); return; }   // 発注_町北側：自分の家（新規・やどとは別施設）
+  if(ch==='N'){ showFieldBanner('とけいとうは まだ なかに はいれないみたい…'); return; }   // 発注_町北側：時計塔（機能未実装・タップで軽い反応のみ）
 }
 
 /* ===== 弾3-15：屋内の出入り・住人カード ===== */
@@ -12708,6 +12741,38 @@ function innRest(){
     if(dark) dark.classList.remove('on');
     $('innMsg').textContent='ぐっすり やすんだ！ みんな げんき モリモリ！';
     $('innDone').style.display='';
+  },700);
+}
+
+/* ===== 発注_町北側：自分の家（無料・げんき全回復。やどとは別施設・別の文言）=====
+   openInn/closeInn/innRestは0-3訂正のとおり一切変更しないため、同じ回復ロジックを
+   ここに複製して独立実装する（innSeqとは別カウンタhomeSeqで世代ガードも独立）。 */
+let homeSeq=0;   // 自分の家演出タイマーの世代ガード（innSeqと同じ流儀・別カウンタ）
+function openHome(){
+  homeSeq++;
+  $('homeMsg').textContent='じぶんの いえで やすんで いく？（むりょう）';
+  $('homeBtns').style.display='';
+  $('homeDone').style.display='none';
+  $('homeOverlay').classList.add('show');
+}
+function closeHome(){
+  homeSeq++;
+  $('homeOverlay').classList.remove('show');
+  const dark=$('homeDark'); if(dark) dark.classList.remove('on');
+}
+function homeRest(){
+  const seq=++homeSeq;
+  $('homeBtns').style.display='none';
+  const dark=$('homeDark'); if(dark) dark.classList.add('on');   // 短い暗転
+  setTimeout(()=>{
+    if(seq!==homeSeq) return;
+    // なかま全員（caught全員）のげんきを最大値に（やどのinnRestと同じロジック）
+    caught.forEach(i=>{ genki[i]=genkiMaxOf(i); });
+    save();
+    ensureAudio(); sfxLevelup();
+    if(dark) dark.classList.remove('on');
+    $('homeMsg').textContent='ぐっすり やすんだ！ みんな げんき モリモリ！';
+    $('homeDone').style.display='';
   },700);
 }
 
