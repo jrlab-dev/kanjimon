@@ -9917,7 +9917,7 @@ function renderField(){
       el.className='town-building '+b.cls;
       el.style.setProperty('--tx',b.x); el.style.setProperty('--ty',b.y);
       el.style.setProperty('--tw',b.w); el.style.setProperty('--th',b.h);
-      el.style.backgroundImage="url('images/"+b.img+"')";
+      el.style.backgroundImage="url('images/buildings/"+b.img+"')";
       grid.appendChild(el);
     });
   }
@@ -11253,8 +11253,8 @@ let teacherImagesOK=false, schoolBuildingOK=false, shodoBuildingOK=false;
   files.forEach(file=>{ const im=new Image(); im.onload=()=>{ loaded++; if(!failed&&loaded===files.length) meatSceneOK=true; }; im.onerror=()=>{ failed=true; meatSceneOK=false; }; im.src='images/'+file; });
   const teacherFiles=['teacher-normal.webp','teacher-happy.webp','teacher-encourage.webp']; let teacherLoaded=0,teacherFailed=false;
   teacherFiles.forEach(file=>{ const im=new Image(); im.onload=()=>{ teacherLoaded++; if(!teacherFailed&&teacherLoaded===teacherFiles.length){teacherImagesOK=true;if(fieldZone===SCHOOL_ZONE&&$('screen-field').classList.contains('active'))renderField();} }; im.onerror=()=>{teacherFailed=true;teacherImagesOK=false;}; im.src='images/'+file; });
-  const school=new Image(); school.onload=()=>{schoolBuildingOK=true;if(fieldZone===TOWN_ZONE&&$('screen-field').classList.contains('active'))renderField();}; school.onerror=()=>{schoolBuildingOK=false;}; school.src='images/town-school.webp';
-  const shodo=new Image(); shodo.onload=()=>{shodoBuildingOK=true;if(fieldZone===TOWN_ZONE&&$('screen-field').classList.contains('active'))renderField();}; shodo.onerror=()=>{shodoBuildingOK=false;}; shodo.src='images/town-shodo.webp';
+  const school=new Image(); school.onload=()=>{schoolBuildingOK=true;if(fieldZone===TOWN_ZONE&&$('screen-field').classList.contains('active'))renderField();}; school.onerror=()=>{schoolBuildingOK=false;}; school.src='images/buildings/town-school.webp';
+  const shodo=new Image(); shodo.onload=()=>{shodoBuildingOK=true;if(fieldZone===TOWN_ZONE&&$('screen-field').classList.contains('active'))renderField();}; shodo.onerror=()=>{shodoBuildingOK=false;}; shodo.src='images/buildings/town-shodo.webp';
 })();
 /* 弾3-14§5：町背景2枚のプリロード。北/南どちらかが無ければ町全体をタイル絵フォールバック */
 let townFullartOK=false;
