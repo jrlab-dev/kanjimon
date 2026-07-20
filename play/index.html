@@ -970,6 +970,12 @@
     background-size:100% 100%;background-repeat:no-repeat;background-position:center;
     transition:transform var(--step-ms,140ms) linear}
   .field-parallax-bg.show{display:block}
+  /* 発注_しまなみ海道 作業2(2026-07-20)：パララックス背景（奥のリアル風3D背景）もrepeat-xでタイル敷き。
+     zone41-bg-tile.webpは2048×1024（画面いっぱいに見える空+海+島の情景）。ここは白ぬけ防止(作業3)が
+     最優先のため、高さはvar(--tile)基準にせず100%固定（グリッド全高を常にすき間なく覆う）。横幅だけ
+     var(--tile)基準の固定値にしてrepeat-x（100% 100%の伸縮指定を上書き）。30マス毎に横方向の情景が
+     1周する設定＝ゆっくり動く奥の背景としては十分自然な間隔（実機確認・実装判断） */
+  .field-parallax-bg.bg-tile{background-size:calc(30*var(--tile)) 100%;background-repeat:repeat-x}
   /* 第7弾§1/§2：マップサイズ可変 ＋ カメラ追従。
      --fw/--fh = そのゾーンの実寸マス数・--tile = 1マスのpxサイズ・--cam-x/--cam-y = ビューポート内オフセット。
      すべて renderField/updateCamera で JS 設定（既定値は従来の12×8相当にして未設定でも崩れない） */
@@ -1008,6 +1014,16 @@
   /* 第20弾§4：一枚絵（フルアート）モード。グリッド全体に描き下ろし背景1枚をぴったり敷き、地面/木タイルは透明化 */
   .field-grid.has-fullart{background-image:var(--fullart-img);background-size:100% 100%;background-repeat:no-repeat}
   .field-grid.has-fullart.town-map{background-size:100% 50%,100% 50%;background-position:top,bottom;background-repeat:no-repeat,no-repeat}
+  /* 発注_しまなみ海道 作業2(2026-07-20)：ゾーン41専用・継ぎ目なしタイル画像を横方向にrepeat-xで敷き詰める。
+     zone41-bridge-tile.webpは1024×1024の正方形画像（欄干より上は透過・pythonでalpha確認済み＝
+     上から約32%が透過／残り68%が不透過）。背景サイズをvar(--tile)基準の固定値にすることで画面幅が
+     変わっても1マス=画像内の同じ比率を保つ（100% 100%の伸縮指定を上書き）。9マス角を採用＝画像内の
+     敷石4個ぶんが横9マスに収まり、敷石1個=2.25マス幅という現実的な足場サイズになる（実機確認・
+     以前の「敷石が主人公より大きすぎる」不具合の是正）。background-positionのY値は、不透過(敷石)部分が
+     ちょうどグリッドのくさむら+歩道帯(行10〜16・すみかA〜J全部を含む)に重なるよう実機スクリーンショットで
+     再計算した値（最初はもっと下寄りに置いたところ、上段のすみかA/C/E/G/Iが透過部分＝海の上に浮いて
+     見える不具合があったため調整・詳細は_一時\_しまなみ海道実装\実装報告.md参照） */
+  .field-grid.has-fullart.bridge-tile{background-size:calc(9*var(--tile)) calc(9*var(--tile));background-position:0 calc(7*var(--tile));background-repeat:repeat-x}
   .field-grid.has-fullart .tile.t-grass,.field-grid.has-fullart .tile.t-path{background:transparent}
   .field-grid.has-fullart .tile.t-tree{background:transparent;box-shadow:none;color:transparent}
   /* フェーズD試作(2026-07-11)：一枚絵ゾーンに内側の水W・岩Rが初登場（ゾーン3）。絵に描かれている想定で水・岩タイルも透明化する */
@@ -4666,7 +4682,6 @@ const ZONES=[
        既存の構成要素(S・ゲート>・すみかA〜J、数10個・左右順とも変更なし)を保ったまま、5つの休憩所
        (station=くさむら+すみか2個)＋間の長い水域(connector)で「長い橋を渡る」自然な間延びを付けた設計。
        単純な4連結タイリングではない。詳細は_一時\_しまなみ海道実装\実装報告.md参照 */
-    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
     "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
     "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
     "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
@@ -9388,11 +9403,11 @@ const ZONE_FULLART=['zone1.webp','zone2.webp','zone3.webp','zone4.webp','zone5.w
                     'zone17.webp','zone18.webp','zone19.webp','zone20.webp','zone21.webp','zone22.webp','zone23.webp','zone24.webp',
                     /* 弾3-6§2-4：3年カンサイ・シコク20ゾーンぶん。41番目だけnull（弾3-7で一枚絵を差し替え・nullはプリロードをスキップ＝フォールバック） */
                     'zone25.webp','zone26.webp','zone27.webp','zone28.webp','zone29.webp','zone30.webp','zone31.webp','zone32.webp','zone33.webp','zone34.webp',
-                    'zone35.webp','zone36.webp','zone37.webp','zone38.webp','zone39.webp','zone40.webp','zone41-bridge.webp','zone42.webp','zone43.webp','zone44.webp',
+                    'zone35.webp','zone36.webp','zone37.webp','zone38.webp','zone39.webp','zone40.webp','zone41-bridge-tile.webp','zone42.webp','zone43.webp','zone44.webp',
                     // 弾4-6§2-4：4年チュウブ20ゾーンぶん
                     'zone45.webp','zone46.webp','zone47.webp','zone48.webp','zone49.webp','zone50.webp','zone51.webp','zone52.webp','zone53.webp','zone54.webp','zone55.webp','zone56.webp','zone57.webp','zone58.webp','zone59.webp','zone60.webp','zone61.webp','zone62.webp','zone63.webp','zone64.webp'];
 /* 弾3-7：パララックス背景を使うゾーンの対応表。ゾーン41以外は未登録＝通常表示のまま */
-const ZONE_PARALLAX_BG={41:'zone41-bg.webp'};
+const ZONE_PARALLAX_BG={41:'zone41-bg-tile.webp'};
 const PARALLAX_SPEED=0.3;  // 背景の移動速度係数（1=前景と同速、0=完全固定。奥にあるほど小さい値）
 /* 第20弾§4-2：一枚絵プリロード（groundImgOKと同じ流儀＝onload/onerror。無ければfullartOKに入らず従来表示） */
 const fullartOK=new Set();
@@ -9682,9 +9697,12 @@ function playFieldZoomIntro(plan){
   fieldIntro.playing=true;
   heroLock=true;   // 演出中は移動・オートたんけん・当たり判定を止める（tryStep/autoTickが見る既存のロック）
   const introSeq=fieldSeq;   // 演出中に別ゾーンへ離脱済みなら、終了時のheroLock解除を行わないためのガード
-  const pbg=$('fieldParallaxBg');
-  const pbgHadShow=!!(pbg && pbg.classList.contains('show'));
-  if(pbgHadShow) pbg.style.opacity='0';   // パララックス背景は演出中だけ隠す（グリッド本体だけをズームさせる簡略化・実装判断）
+  // 発注_しまなみ海道 作業3(2026-07-20)：以前はここで演出中だけパララックス背景を
+  // opacity=0で隠していたが、ゾーン41の橋タイルは欄干より上が透過のため、隠すと
+  // #fieldWrap等の下地色(白)が透けて見えてしまう不具合があった。隠さず「その場に
+  // 静止表示させたまま」にする方式に変更（無理に主グリッドの動きと同期はさせない・
+  // 実機確認で違和感が小さいと判断できたための実装判断）。pbg自身の transform は
+  // 演出中は一切書き換えない＝直前のupdateCamera(true)が設定した最終位置のまま止まって見える。
   const skip=$('fieldSkipBtn'); if(skip) skip.classList.add('show');
   grid.style.transition='none';
   grid.style.transform='translate('+startX+'px,'+startY+'px) scale('+startScale+')';
@@ -9699,7 +9717,7 @@ function playFieldZoomIntro(plan){
     cleanup();
     fieldIntro.playing=false; fieldIntro.finish=null;
     grid.style.transition=''; grid.style.transform='';   // クラス側(--cam-x/--cam-y)の制御へそのまま戻る（値は既に一致）
-    if(pbgHadShow && pbg) pbg.style.opacity='';
+    // 発注_しまなみ海道 作業3：pbgのopacityはもう演出中に触っていないため、ここでの復元も不要
     const skipBtn=$('fieldSkipBtn'); if(skipBtn) skipBtn.classList.remove('show');
     if(introSeq===fieldSeq) heroLock=false;   // 世代が変わっていなければロック解除（別ゾーンへ離脱済みなら次のrenderFieldに委ねる）
     const q=fieldIntro.queue; fieldIntro.queue=[];
@@ -9779,6 +9797,8 @@ function renderField(){
   grid.classList.toggle('has-ground',hasGround&&!fullart);
   grid.classList.toggle('has-fullart',fullart);
   grid.classList.toggle('town-map',fieldZone===TOWN_ZONE && fullart);
+  // 発注_しまなみ海道 作業2：ゾーン41だけタイル敷き(repeat-x)クラスを付ける（town-mapと同じ要領の1か所切替）
+  grid.classList.toggle('bridge-tile',fieldZone===41 && fullart);
   grid.style.setProperty('--ground-img',hasGround?"url('images/tiles/ground"+fieldZone+".webp')":'none');
   const fullartImg=(fieldZone===TOWN_ZONE && fullart)
     ? "url('images/fullart/"+TOWN_DEF.fullart[0]+"'),url('images/fullart/"+TOWN_DEF.fullart[1]+"')"
@@ -9787,6 +9807,8 @@ function renderField(){
   const pbgFile=ZONE_PARALLAX_BG[fieldZone];
   const pbg=$('fieldParallaxBg');
   pbg.classList.toggle('show', !!pbgFile && parallaxBgOK.has(fieldZone));
+  // 発注_しまなみ海道 作業2：パララックス背景側もゾーン41だけタイル敷き(repeat-x)クラスを付ける
+  pbg.classList.toggle('bg-tile', fieldZone===41);
   pbg.style.backgroundImage = pbgFile ? "url('images/fullart/"+pbgFile+"')" : 'none';
   grid.innerHTML='';
   const g=zoneGridOf(fieldZone);              // 弾3-12§5-2：町対応のアクセサ経由
