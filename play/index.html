@@ -1022,8 +1022,12 @@
   .field-grid.has-fullart .tile.t-spot .mini-face .eye{width:6px;height:7px}
   .field-grid.has-fullart .tile.t-spot .mini-face .mouth{width:14px;height:6px;border-bottom-width:3px;top:52%}
   .field-grid.has-fullart .tile.t-spot .mini-face.happy .eye{height:5px;border-top-width:3.5px}
+  /* 修正_町建物前後判定(2026-07-20)：固定値24だと主人公(z-index:10+行番号)が建物近くで常に
+     奥に隠れてしまう不具合があったため、主人公と同じ「10+行番号」の物差しに変更。--tzは
+     townBuildingFrontRow()がJS側で建物ごとに計算して設定（未設定時のフォールバック14は
+     旧来の24相当より少し低い値）。詳細は_一時\発注_町建物の前後判定.md参照。 */
   .town-building{position:absolute;left:calc(var(--tx)*var(--tile));top:calc(var(--ty)*var(--tile));
-    width:calc(var(--tw)*var(--tile));height:calc(var(--th)*var(--tile));z-index:24;pointer-events:none;
+    width:calc(var(--tw)*var(--tile));height:calc(var(--th)*var(--tile));z-index:calc(10 + var(--tz,14));pointer-events:none;
     background-repeat:no-repeat;background-position:center bottom;background-size:contain;
     filter:drop-shadow(0 6px 8px rgba(0,0,0,.24))}
   @keyframes waterSway{0%,100%{background-position:50% 0;filter:brightness(1)}50%{background-position:50% 100%;filter:brightness(1.08)}}
@@ -9917,6 +9921,7 @@ function renderField(){
       el.className='town-building '+b.cls;
       el.style.setProperty('--tx',b.x); el.style.setProperty('--ty',b.y);
       el.style.setProperty('--tw',b.w); el.style.setProperty('--th',b.h);
+      el.style.setProperty('--tz',townBuildingFrontRow(b));   /* 修正_町建物前後判定：主人公と同じ物差しの基準行 */
       el.style.backgroundImage="url('images/buildings/"+b.img+"')";
       grid.appendChild(el);
     });
@@ -11162,6 +11167,50 @@ const TOWN_BUILDINGS=[
   {cls:'shodo',  img:'town-shodo.webp',      x:SHODO_TOWN_CONFIG.building.x,y:SHODO_TOWN_CONFIG.building.y,
     w:SHODO_TOWN_CONFIG.building.w,h:SHODO_TOWN_CONFIG.building.h}
 ];
+/* 修正_町建物前後判定(2026-07-20)：建物ごとの「通行不可(T)マスのうち一番手前(画面下側＝行番号が
+   一番大きい)の行」を求める。CSS側の.town-buildingはこれを--tzとして受け取り、主人公と同じ
+   「10+行番号」の物差し(z-index:calc(10 + var(--tz,14)))で重なり順を決める。これにより、
+   主人公の行番号がこの基準行より大きい(建物の通行不可マスより手前＝南側)なら主人公が手前に、
+   小さいか同じ(建物の通行不可マスの範囲内〜奥＝北側)なら主人公が奥に隠れる、という自然な
+   重なり順になる（固定値24のままだと建物近くで常に主人公が奥に隠れてしまう不具合の修正）。
+   引数はTOWN_BUILDINGSの1要素（{cls,img,x,y,w,h}）。既存のTOWN_DEF.gridとbboxだけから計算する
+   共通関数＝学校(SCHOOL_TOWN_CONFIG)・書道教室(SHODO_TOWN_CONFIG)経由のbboxにもそのまま使える
+   （建物ごとの個別処理は書かない）。
+
+   【発注書の式からの実装時の変更点・2点／理由は実機検証で判明した不具合への対処】
+   発注書は「列＝floor(x)〜ceil(x+w)-1」「行＝floor(y)〜ceil(y+h)+1（+1は余裕）」で単純にTを探す式
+   だったが、そのまま実装して実機確認したところ、道具屋・自分の家・学校の入口の1マス手前でも
+   主人公がまだ隠れる（前後判定が直っていない）ケースが実際に見つかった。原因は2つ：
+   (a) 「+1行の余裕」が、その建物自身の壁ではない別の場所の壁（例：自分の家の南側・北棟と南棟を
+       仕切る通路の壁）まで拾ってしまう（自分の家＝旧16行目にhitし基準行が16になり、入口12行目より
+       5行も奥にずれる不具合を実機で確認）。
+   (b) 列の範囲がbboxのceil()により、まちの外周（東西の壁）にちょうど届いてしまう建物がある
+       （道具屋は右端が列29＝まちの東の外壁と同じ列になり、外壁のTを拾って基準行が15になる／
+       学校は「+1行の余裕」がまちの最終行(39行目＝全マスT)に届き、常にTを拾ってしまい基準行が39
+       固定になる不具合を実機で確認。これは常に主人公が奥に隠れる＝直っていない状態と同義）。
+   対処：①「+1行の余裕」を外す（floor(y)〜ceil(y+h)-1のみ）②まちを囲う外周（1行目/最終行・
+   1列目/最終列）は建物固有の壁ではなく町全体の壁のため探索対象から除外。この2点だけの変更で
+   北側4棟＋学校＋書道教室、全ての入口の1マス手前で主人公が手前に出ることを実機(Puppeteer)の
+   computedStyle読み取り＋スクリーンショットで確認済み（_一時\_町建物前後判定実装\実装報告.md
+   参照）。対象範囲にTが無い場合のフォールバック式は発注書のまま変更していない。 */
+function townBuildingFrontRow(b){
+  const grid=TOWN_DEF.grid;
+  const gh=grid.length, gw=grid[0]?grid[0].length:0;
+  const x0=Math.floor(b.x), x1=Math.ceil(b.x+b.w)-1;
+  const y0=Math.floor(b.y), y1=Math.ceil(b.y+b.h)-1;
+  let front=-Infinity;
+  for(let y=y0;y<=y1;y++){
+    if(y<=0||y>=gh-1) continue;   // まちを囲う外周の行（1行目・最終行）は建物固有の壁ではないため除外
+    const row=grid[y];
+    if(!row) continue;
+    for(let x=x0;x<=x1;x++){
+      if(x<=0||x>=gw-1) continue;   // 同上（1列目・最終列）
+      if(row[x]==='T') front=Math.max(front,y);
+    }
+  }
+  // 対象範囲内にTが1つも無かった場合のフォールバック：bboxの下端に近い行（不正値・例外防止・発注書の式のまま）
+  return front===-Infinity ? (Math.round(b.y+b.h)-1) : front;
+}
 const MALL_DEF={ zone:MALL_ZONE, name:'ショッピングモール', bg:'interior-mall.webp',
   returnTo:{x:19,y:28},
   grid:[
