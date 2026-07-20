@@ -4662,27 +4662,31 @@ const ZONES=[
     "WTTTWWWWWTWTTT..TTTWWWWWWWWWWT",
     "TTTTTTTTTTTTTT.STTTTTTWTTTTTTT"] },
   { name:'しまなみかいどうの はし', scene:'s-sky', grid:[
-    /* 弾3-6§2-2：ゾーン41は納品物なし＝設計書に埋め込まれた暫定グリッド（横長の橋・左端S→右端ゲート）を1文字も変えず使用。弾3-7で本番差し替え予定 */
-    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
-    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
-    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
-    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
-    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
-    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
-    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
-    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
-    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
-    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
-    "W,,,AWW,,,C,,,,,E,,WW,G,,,I,,W",
-    "W,,,,,,,,,,,,,,,,,,,,,,,,,,,,W",
-    ".S...........................>",
-    ".............................W",
-    "W,,,,,,,,,,,,,,,,,,,,,,,,,,,,W",
-    "W,,,,,B,,,,,D,,,,,F,,,,,H,,J,W",
-    "W,,,,,,,,WW,,,WW,,,,,,,,WW,,,W",
-    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
-    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
-    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"] },
+    /* 発注_しまなみ海道(2026-07-20)：19(実質20)行×30列の暫定幅を19(実質20)行×120列(4倍)へ拡張。
+       既存の構成要素(S・ゲート>・すみかA〜J、数10個・左右順とも変更なし)を保ったまま、5つの休憩所
+       (station=くさむら+すみか2個)＋間の長い水域(connector)で「長い橋を渡る」自然な間延びを付けた設計。
+       単純な4連結タイリングではない。詳細は_一時\_しまなみ海道実装\実装報告.md参照 */
+    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+    "W,,,,,,,,,WWWWWWWW,,,A,,,,,,WWWWWWWWWW,,,C,,,,,,WWWWWWWWWW,,,E,,,,,,WWWWWWWWWW,,,G,,,,,,WWWWWWWWWW,,,I,,,,,,,,,,,,,,,,,W",
+    "W,,,,,,,,,WWWWWWWW,,,,,,,,,,WWWWWWWWWW,,,,,,,,,,WWWWWWWWWW,,,,,,,,,,WWWWWWWWWW,,,,,,,,,,WWWWWWWWWW,,,,,,,,,,,,,,,,,,,,,W",
+    ".S.....................................................................................................................>",
+    ".......................................................................................................................W",
+    "W,,,,,,,,,WWWWWWWW,,,,,,,,,,WWWWWWWWWW,,,,,,,,,,WWWWWWWWWW,,,,,,,,,,WWWWWWWWWW,,,,,,,,,,WWWWWWWWWW,,,,,,,,,,,,,,,,,,,,,W",
+    "W,,,,,,,,,WWWWWWWW,,,,,B,,,,WWWWWWWWWW,,,,,D,,,,WWWWWWWWWW,,,,,F,,,,WWWWWWWWWW,,,,,H,,,,WWWWWWWWWW,,,,,J,,,,,,,,,,,,,,,W",
+    "W,,,,,,,,,WWWWWWWW,,,,,,,,,,WWWWWWWWWW,,,,,,,,,,WWWWWWWWWW,,,,,,,,,,WWWWWWWWWW,,,,,,,,,,WWWWWWWWWW,,,,,,,,,,,,,,,,,,,,,W",
+    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"] },
   { name:'どうごおんせんの まち', scene:'s-sunset', grid:[
     /* 弾3-6§2-2：_一時\量産候補\grids\zone42_final.txt を1文字も変えず転記 */
     "TTTTTTTTTTTTTT>TTTTTTTTTTTTTTT",
@@ -6328,6 +6332,8 @@ const MALL_ZONE=-1;           // 弾3-15：ショッピングモールのなか
 const HOUSE1_ZONE=-2;         // 弾3-15：みんかのなか
 const SCHOOL_ZONE=-3;         // 弾3-16：がっこうのなか
 const SHODO_ZONE=-4;          // 発注T-1：しょどうきょうしつのなか
+const STATION_ZONE=-5;        // 発注_町南側と駅：えきのなか（今回はロック中＝入場不可）
+const STATION_OPEN=false;     // 発注_町南側と駅：えき解放フラグ。trueにするまでPをタップしても入れない（電車演出は別弾）
 function isTownLike(z){ return z<=0; }   // 町＋屋内＝非戦闘の疑似ゾーン
 const COIN_WIN=2;             // 通常バトル勝利のコイン
 const COIN_BOSS=10;           // ボス系（もんばん・ツインボス・かくれラスボス・ゾーンボス）勝利のコイン
@@ -9857,12 +9863,14 @@ function renderField(){
           else txt=gateOpen?'➔':'🚧';
         }else txt=gateOpen?'➔':'🚧';
       }
-      else if(fieldZone===TOWN_ZONE && (ch==='L'||ch==='D'||ch==='Y'||ch==='H'||ch==='M'||ch==='K'||ch==='G'||ch==='F'||ch==='N'||ch==='O')){
+      else if(fieldZone===TOWN_ZONE && (ch==='L'||ch==='D'||ch==='Y'||ch==='H'||ch==='M'||ch==='K'||ch==='G'||ch==='F'||ch==='N'||ch==='O'||ch==='P'||ch==='Q')){
         // 弾3-12/3-13：町の建物いりぐち・掲示板（A-L分岐＝zoneCharIdxはindex -1で壊れるため先に分岐する）
         // 発注T-1：書道教室いりぐちF（がっこうGと同じ流儀）を追加
         // 発注_町北側：N(時計塔・機能未実装)・O(自分の家・新規)を追加
+        // 発注_町南側と駅：P(駅いりぐち・ロック中)・Q(ゲームセンター・じゅんび中)を追加（Nと同じ「タップで軽い反応のみ」系統の
+        // アイコン表示。発注書は文字の割り当てまでの指定で絵文字までは未指定だが、既存のN/O方式に揃えて実装者判断で追加）
         cls+=' t-path t-town-door';
-        txt='<span class="town-door-emoji">'+(ch==='L'?'🔬':(ch==='D'?'🛍️':(ch==='Y'?'🛏️':(ch==='H'?'📋':(ch==='M'?'🏬':(ch==='K'?'🏠':(ch==='F'?'🖌️':(ch==='N'?'🕰️':(ch==='O'?'🏡':'🏫')))))))))+'</span>';
+        txt='<span class="town-door-emoji">'+(ch==='L'?'🔬':(ch==='D'?'🛍️':(ch==='Y'?'🛏️':(ch==='H'?'📋':(ch==='M'?'🏬':(ch==='K'?'🏠':(ch==='F'?'🖌️':(ch==='N'?'🕰️':(ch==='O'?'🏡':(ch==='P'?'🚉':(ch==='Q'?'🎮':'🏫')))))))))))+'</span>';
       }
       else if(fieldZone<0 && (ch==='E'||ch==='M'||ch==='N')){
         // 弾3-15：屋内の出口・店員・住人。画像が読めたNPCは後載せするため、タイル上の絵文字はフォールバック時だけ。
@@ -11067,26 +11075,38 @@ function warpZone(z){
    - fieldZone===TOWN_ZONE(0) の間だけ、アクセサ（zoneGridOf/zoneNameOf/zoneFullartOf）が町データを返す
    - バトル系・くさむら抽選・オートたんけん・ゾーンバナー・ゲート処理は町では一切発火しない
 ================================ */
-/* 弾3-16：学校の町配置。調整ツールはこの1か所だけを書き換える。座標は0始まり。 */
+/* 弾3-16：学校の町配置。調整ツールはこの1か所だけを書き換える。座標は0始まり。
+   発注_町南側と駅：ユーザーが配置ツールで作った新レイアウトに合わせて更新（南側グリッド変換.js参照）。
+   entranceはマーカー「学校」(8,4)の絶対座標(8,24)。buildingはtown-school.webpのitems座標を
+   tile=51.2で換算(+20込み)。returnToはentranceの1マス下(通行可能なことを確認済み)。 */
 const SCHOOL_TOWN_CONFIG={
-  building:{x:16,y:31,w:9,h:6.5},
-  entrance:{x:20,y:37},
-  returnTo:{x:20,y:38}
+  building:{x:6.54,y:20.5,w:4.03,h:4.03},
+  entrance:{x:8,y:24},
+  returnTo:{x:8,y:25}
 };
 /* 発注T-1：書道教室の町配置。がっこうと同じ流儀＝調整はこの1か所だけ。
-   南側の空き地（みんか町33行目K・がっこう31〜37行目Gの間、9〜16列の空きマス）に配置。座標は0始まり。 */
+   発注_町南側と駅：ユーザーが配置ツールで作った新レイアウトに合わせて更新（南側グリッド変換.js参照）。
+   entranceはマーカー「書道教室」(2,4)の絶対座標(2,24)。buildingはtown-shodo.webpのitems座標を
+   tile=51.2で換算(+20込み)。returnToはentranceの1マス下(通行可能なことを確認済み)。 */
 const SHODO_TOWN_CONFIG={
-  building:{x:9.5,y:27,w:6.5,h:5.5},
-  entrance:{x:13,y:32},
-  returnTo:{x:13,y:33}
+  building:{x:1.05,y:21.83,w:2.93,h:2.93},
+  entrance:{x:2,y:24},
+  returnTo:{x:2,y:25}
 };
 const TOWN_DEF={
   name:'はじまりの まち',
   fullart:['town-bg.webp','town-bg-south.webp'],   // 弾3-14：北＋南の縦積み。建物は town-building レイヤーで後載せ
   /* 発注_町北側：30×40。北20行＋南20行。S=とうちゃく地点・L/D/Y=既存建物（今回位置移設）・
      H=掲示板（今回位置移設）・N=時計塔（新規・機能未実装のタップ反応のみ）・O=自分の家（新規・やどとは別施設）・
-     M/K/G/F=南側の準備中入口・T=通行不可・.=地面。北側20行はユーザー配置ツールのデータに総入れ替え
-     （まちの北側.json→北側グリッド変換.jsで生成。_一時\_町北側実装\参照）。くさむら,・すみかA〜J・ゲート>は置かない */
+     T=通行不可・.=地面。北側20行はユーザー配置ツールのデータに総入れ替え
+     （まちの北側.json→北側グリッド変換.jsで生成。_一時\_町北側実装\参照）。くさむら,・すみかA〜J・ゲート>は置かない
+     発注_町南側と駅：南側20行（行20〜39）もユーザー配置ツールのデータに総入れ替え
+     （まちの南側.json→南側グリッド変換.jsで生成。_一時\_町南側駅実装\参照）。
+     M=ショッピングモール・K=みんか（既存文字・位置のみ移設）・P=駅いりぐち（新規・STATION_OPEN=falseの間はロック）・
+     Q=ゲームセンター（新規・タップで「じゅんび中」反応のみ・内部は作らない）。
+     学校(G)・書道教室(F)は生グリッドには書かない（SCHOOL_TOWN_CONFIG/SHODO_TOWN_CONFIG経由でapplySchoolTownEntrance/
+     applyShodoTownEntranceが起動のたびに上書き設置する。0-5節）。民家２・スピーカーは装飾のみでグリッド文字を持たない
+     （TOWN_BUILDINGSにのみ追加）。出口(14,19)は保留＝ただの通行可能な地面のまま（用途不明のため今回は機能を割り当てない）。 */
   grid:[
     'TTTTTTTTTTTTT...TTTTTTTTTTTTTT',
     'TTT.........T...TT.........TTT',
@@ -11108,26 +11128,26 @@ const TOWN_DEF={
     'TTTTTTTTTTTTTT..TTTTTTTTTTTTTT',
     'TTTTTTTTTTTTTT..TTTTTTTTTTTTTT',
     'TTTTT.........SH..............',
+    '..............................',
+    '..............................',
+    'TTTTTTTTTTTT.......TTTTTTTT...',
+    'TTTTTTTTTTTT.......TTTTTTTT.T.',
+    'TT.TTTTT.TTT.......TT.M.TTT.T.',
+    '..............................',
+    '..............................',
+    'P.............................',
+    '..............................',
+    '.....TTTTTT...................',
+    'T....TTTTTTT..................',
+    'TT....TTTKTTT.......TTTTTT..TT',
+    'TTT.................TTQ.TT.TTT',
+    'TTTT......................TTTT',
+    'TTTTT.............T.......TTTT',
+    'TTTTT...TTTTT...TTTTT....TTTTT',
     'TTTTTTTTTTTT.....TTTTTTTTTTTTT',
-    'T............................T',
-    'T..TTTT.........TTTTTTTT.....T',
-    'T..TTTT.........TTTTTTTT.....T',
-    'T..TTTT.........TTTTTTTT.....T',
-    'T...............TTTTTTTT.....T',
-    'T...............TTTTTTTT.....T',
-    'T...............TTTMTTTT.....T',
-    'T............................T',
-    'T............................T',
-    'T............................T',
-    'T...TTTTT....................T',
-    'T...TTTTT....................T',
-    'T...TTKTT....................T',
-    'T............................T',
-    'T............................T',
-    'T............................T',
-    'T............................T',
-    'T............................T',
-    'TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT'
+    'TTTTTTTTTTTTT...TTTTTTTTTTTTTT',
+    'TTTTTTTTTTTTT...TTTTTTTTTTTTTT',
+    'TTTTTTTTTTTT.....TTTTTTTTTTTTT'
   ]
 };
 /* G入口は設定値から毎回作る。旧位置にGが残っても先に通常床へ戻すため、ツールで何度調整しても1個になる。 */
@@ -11155,17 +11175,29 @@ const TOWN_DEF={
    tower.yのみ試算値-0.87から0へ補正（320x568幅で入口タイルに立った実機確認で屋根飾りの
    先端がわずかに見切れたため。0-4の許容範囲内の調整＝入口マーカーN(7,4)はy範囲[0,6.43]に
    引き続き収まる。labは同条件で見切れなかったため試算値-2.29のまま無調整）。 */
+/* 発注_町南側と駅：南側7棟（mall・house1・school・shodo・speaker・station-building・house3・gamecenter）は
+   ユーザーが配置ツールで置いた位置を tile=1536/30=51.2 で換算した値(+20込み・南側グリッド変換.js参照)。
+   mallは既存エントリの座標を更新。house1（みんか）は items に対応エントリが無いため、現状のbbox原点と
+   K文字位置の相対オフセットを新しいK位置に適用する特別な算出方法（0-4節指定どおり）。school/shodoは
+   CONFIG値をそのまま参照（CONFIG更新だけで自動追従・このエントリ自体は編集不要）。
+   speaker（スピーカー）・station-building（駅の建物スプライト）・house3（民家２）・gamecenter（ゲームセンター）は
+   今回新規追加。station-buildingは入口P(0,7)とは離れた位置＝ユーザーが配置ツールで意図して分けた配置
+   （0-2節参照）。house3はcls名を既存南側の"house1"と衝突しないよう別名にした。 */
 const TOWN_BUILDINGS=[
   {cls:'lab',        img:'town-lab.webp',        x:19.16, y:-2.29, w:7.78, h:7.78},
   {cls:'tower',      img:'town-clocktower.webp', x:4.25,  y:0,     w:6.43, h:6.43},
   {cls:'house1-home',img:'town-house1.webp',     x:1.83,  y:6.81,  w:7.78, h:7.78},
   {cls:'house1-shop',img:'town-house1.webp',     x:21.9,  y:6.76,  w:7.22, h:7.22},
-  {cls:'mall',   img:'town-mall.webp',       x:15.5, y:20.6, w:9.0, h:7.6},
-  {cls:'house1', img:'town-house1.webp',     x:3.5,  y:29.8, w:5.0, h:4.4},
+  {cls:'mall',   img:'town-mall.webp',       x:18.21, y:17.9,  w:9.48, h:9.48},
+  {cls:'house1', img:'town-house1.webp',     x:6.5,   y:27.8,  w:5.0,  h:4.4},
   {cls:'school', img:'town-school.webp',     x:SCHOOL_TOWN_CONFIG.building.x,y:SCHOOL_TOWN_CONFIG.building.y,
     w:SCHOOL_TOWN_CONFIG.building.w,h:SCHOOL_TOWN_CONFIG.building.h},
   {cls:'shodo',  img:'town-shodo.webp',      x:SHODO_TOWN_CONFIG.building.x,y:SHODO_TOWN_CONFIG.building.y,
-    w:SHODO_TOWN_CONFIG.building.w,h:SHODO_TOWN_CONFIG.building.h}
+    w:SHODO_TOWN_CONFIG.building.w,h:SHODO_TOWN_CONFIG.building.h},
+  {cls:'speaker',         img:'town-speaker.webp',    x:25.66, y:19.49, w:5.67, h:5.67},
+  {cls:'station-building',img:'town-station.webp',    x:6.32,  y:26.73, w:7.64, h:7.64},
+  {cls:'house3',          img:'town-house3.webp',     x:3.15,  y:26.82, w:6.05, h:6.05},
+  {cls:'gamecenter',      img:'town-gamecenter.webp', x:19.8,  y:27.57, w:6.41, h:6.41}
 ];
 /* 修正_町建物前後判定(2026-07-20)：建物ごとの「通行不可(T)マスのうち一番手前(画面下側＝行番号が
    一番大きい)の行」を求める。CSS側の.town-buildingはこれを--tzとして受け取り、主人公と同じ
@@ -11271,7 +11303,25 @@ const SHODO_DEF={ zone:SHODO_ZONE, name:'しょどうきょうしつ', bg:'inter
 'T........S.......T',
 'T........E.......T',
 'TTTTTTTTTTTTTTTTTT']};
-const PSEUDO_DEFS={ [TOWN_ZONE]:TOWN_DEF, [MALL_ZONE]:MALL_DEF, [HOUSE1_ZONE]:HOUSE1_DEF, [SCHOOL_ZONE]:SCHOOL_DEF, [SHODO_ZONE]:SHODO_DEF };
+/* 発注_町南側と駅：えき（待合室・15×10＝HOUSE1_DEFと同じ広さ）。STATION_OPEN=falseの間はonArriveTownTileの
+   P分岐でロックメッセージのみ表示し、warpInterior自体を呼ばない＝このゾーンには今回まだ入れない。
+   NPC・新しい文字は追加しない（新規キャラ禁止・裁定待ち）＝グリッド内で使う文字はSとEだけ。
+   returnToは南側グリッドのP(0,7南側相対＝絶対(0,27))から自然に出てこられる隣接マス、東隣の(1,27)を採用
+   （Pは町の西端(x=0)にあり、西隣は範囲外のため東・北・南の3候補から東を選んだ。理由は報告書に明記）。 */
+const STATION_DEF={ zone:STATION_ZONE, name:'えき', bg:'interior-station.webp',
+  returnTo:{x:1,y:27},
+  grid:[
+'TTTTTTTTTTTTTTT',
+'T.............T',
+'T..TT.....TT..T',
+'T..TT.....TT..T',
+'T.............T',
+'T.............T',
+'T.............T',
+'T......S......T',
+'T......E......T',
+'TTTTTTTTTTTTTTT']};
+const PSEUDO_DEFS={ [TOWN_ZONE]:TOWN_DEF, [MALL_ZONE]:MALL_DEF, [HOUSE1_ZONE]:HOUSE1_DEF, [SCHOOL_ZONE]:SCHOOL_DEF, [SHODO_ZONE]:SHODO_DEF, [STATION_ZONE]:STATION_DEF };
 const INTERIOR_ACTORS=[
   {zone:MALL_ZONE,key:'nikuya',sheet:'nikuya-field.webp',img:'nikuya-normal.webp',emoji:'🧑‍🍳',x:3,y:3,dir:'down',frame:'a'},
   {zone:HOUSE1_ZONE,key:'ojisan',sheet:'npc-ojisan-field.webp',img:'npc-ojisan.webp',emoji:'👴',x:9,y:2,dir:'down',frame:'a'}
@@ -11292,7 +11342,7 @@ function zoneFullartOf(zone){ return zone===TOWN_ZONE ? TOWN_DEF.fullart[0] : (z
 let interiorFullartOK=new Set(), interiorActorSheetOK=new Set(), interiorActorImgOK=new Set(), meatSceneOK=false;
 let teacherImagesOK=false, schoolBuildingOK=false, shodoBuildingOK=false;
 (function preloadInteriorAssets(){
-  [MALL_DEF,HOUSE1_DEF,SCHOOL_DEF,SHODO_DEF].forEach(def=>{ const im=new Image(); im.onload=()=>{ interiorFullartOK.add(def.zone); if(fieldZone===def.zone&&$('screen-field').classList.contains('active')) renderField(); }; im.onerror=()=>{}; im.src='images/fullart/'+def.bg; });
+  [MALL_DEF,HOUSE1_DEF,SCHOOL_DEF,SHODO_DEF,STATION_DEF].forEach(def=>{ const im=new Image(); im.onload=()=>{ interiorFullartOK.add(def.zone); if(fieldZone===def.zone&&$('screen-field').classList.contains('active')) renderField(); }; im.onerror=()=>{}; im.src='images/fullart/'+def.bg; });   // 発注_町南側と駅：STATION_DEFを追加（画像プリロード・onerrorフォールバックはMALL/HOUSE1等と共通のため、画像が万一無くても壊れない）
   INTERIOR_ACTORS.forEach(a=>{
     const redraw=()=>{ if(fieldZone===a.zone&&$('screen-field').classList.contains('active')) renderField(); };
     const sheet=new Image(); sheet.onload=()=>{ interiorActorSheetOK.add(a.key); redraw(); }; sheet.onerror=()=>{}; sheet.src='images/sprites/'+a.sheet;
@@ -11335,11 +11385,11 @@ function townSelfTest(){
   const fails=[];
   if(!(g.length===40 && g.every(r=>r.length===30))) fails.push('サイズ30x40でない');
   const all=g.join('');
-  ['S','L','D','Y','H','M','K','G','F','N','O'].forEach(c=>{ if((all.split(c).length-1)!==1) fails.push(c+'が1個でない'); });   // 発注T-1：Fを追加／発注_町北側：N(時計塔)・O(自分の家)を追加
+  ['S','L','D','Y','H','M','K','G','F','N','O','P','Q'].forEach(c=>{ if((all.split(c).length-1)!==1) fails.push(c+'が1個でない'); });   // 発注T-1：Fを追加／発注_町北側：N(時計塔)・O(自分の家)を追加／発注_町南側と駅：P(駅いりぐち)・Q(ゲームセンター)を追加
   // 検品修正弾3-14：/[,A-J>]/ だと町の正規記号D(どうぐや)・H(けいじばん)がA-J範囲に含まれ誤検知するため、D/Hを除外
   if(/[,>]/.test(all) || /[ABCEIJ]/.test(all)) fails.push('くさむら/すみか/ゲートあり');   // 発注T-1：Fを町の正規記号にしたためA-Jの除外対象からも外す
-  if(/[^SLDYHMKGFTRNO.]/.test(all)) fails.push('不正な記号あり');   // 発注T-1：Fを追加／発注_町北側：N・Oを追加
-  // BFS：SからL/D/Y/H/M/K/G/F/N/Oぜんぶに到達できるか（isPassableTileと同じ判定＝T/R以外は通行可）
+  if(/[^SLDYHMKGFTRNOPQ.]/.test(all)) fails.push('不正な記号あり');   // 発注T-1：Fを追加／発注_町北側：N・Oを追加／発注_町南側と駅：P・Qを追加
+  // BFS：SからL/D/Y/H/M/K/G/F/N/O/P/Qぜんぶに到達できるか（isPassableTileと同じ判定＝T/R以外は通行可）
   const H=g.length, W=g[0].length;
   let sx=-1, sy=-1;
   for(let y=0;y<H;y++){ const x=g[y].indexOf('S'); if(x>=0){ sx=x; sy=y; break; } }
@@ -11348,7 +11398,7 @@ function townSelfTest(){
   while(q.length){
     const [x,y]=q.shift();
     const ch=g[y][x];
-    if(ch==='L'||ch==='D'||ch==='Y'||ch==='H'||ch==='M'||ch==='K'||ch==='G'||ch==='F'||ch==='N'||ch==='O') reached[ch]=true;
+    if(ch==='L'||ch==='D'||ch==='Y'||ch==='H'||ch==='M'||ch==='K'||ch==='G'||ch==='F'||ch==='N'||ch==='O'||ch==='P'||ch==='Q') reached[ch]=true;
     [[1,0],[-1,0],[0,1],[0,-1]].forEach(([dx,dy])=>{
       const nx=x+dx, ny=y+dy;
       if(nx<0||ny<0||nx>=W||ny>=H) return;
@@ -11358,7 +11408,7 @@ function townSelfTest(){
       seen.add(ny*W+nx); q.push([nx,ny]);
     });
   }
-  ['L','D','Y','H','M','K','G','F','N','O'].forEach(c=>{ if(!reached[c]) fails.push('S→'+c+'到達不能'); });
+  ['L','D','Y','H','M','K','G','F','N','O','P','Q'].forEach(c=>{ if(!reached[c]) fails.push('S→'+c+'到達不能'); });
   const ep=SCHOOL_TOWN_CONFIG.entrance,rp=SCHOOL_TOWN_CONFIG.returnTo,bp=SCHOOL_TOWN_CONFIG.building;
   if(g[ep.y]&&g[ep.y][ep.x]!=='G') fails.push('学校入口設定とGが不一致');
   if(Math.abs(ep.x-rp.x)+Math.abs(ep.y-rp.y)!==1) fails.push('学校入口とreturnToが隣接していない');
@@ -11406,6 +11456,8 @@ function onArriveTownTile(ch){
   if(ch==='F'){ warpInterior(SHODO_ZONE); return; }   // 発注T-1
   if(ch==='O'){ openHome(); return; }   // 発注_町北側：自分の家（新規・やどとは別施設）
   if(ch==='N'){ showFieldBanner('とけいとうは まだ なかに はいれないみたい…'); return; }   // 発注_町北側：時計塔（機能未実装・タップで軽い反応のみ）
+  if(ch==='P'){ if(STATION_OPEN){ warpInterior(STATION_ZONE); }else{ showFieldBanner('えきは まだ りようできないみたい。もうすこし まってね'); } return; }   // 発注_町南側と駅：駅いりぐち（ロック中はNと同じ軽い反応パターン）
+  if(ch==='Q'){ showFieldBanner('ゲームセンターは まだ じゅんびちゅうみたい…'); return; }   // 発注_町南側と駅：ゲームセンター（新規・タップ反応のみ・内部は作らない）
 }
 
 /* ===== 弾3-15：屋内の出入り・住人カード ===== */
@@ -11460,9 +11512,11 @@ function closeInteriorCard(){ $('interiorCardOverlay').classList.remove('show');
 /* §9：屋内定義セルフテスト */
 function interiorSelfTest(){
   const fails=[];
-  [MALL_DEF,HOUSE1_DEF,SCHOOL_DEF,SHODO_DEF].forEach(def=>{
+  [MALL_DEF,HOUSE1_DEF,SCHOOL_DEF,SHODO_DEF,STATION_DEF].forEach(def=>{
     const g=def.grid,H=g.length,W=g[0].length,all=g.join(''),tag=def.name;
-    const expected=def.zone===MALL_ZONE?{w:18,h:12}:((def.zone===SCHOOL_ZONE||def.zone===SHODO_ZONE)?{w:18,h:12}:{w:15,h:10});
+    // 発注_町南側と駅：STATION_ZONEのケースを明示的に追加（15×10＝HOUSE1_DEFと同じ寸法だが、
+    // 黙って「それ以外」の分岐に収まるのに任せず、駅も判定されていることが読んで分かる形にする）
+    const expected=def.zone===MALL_ZONE?{w:18,h:12}:((def.zone===SCHOOL_ZONE||def.zone===SHODO_ZONE)?{w:18,h:12}:(def.zone===STATION_ZONE?{w:15,h:10}:{w:15,h:10}));
     if(H!==expected.h||W!==expected.w||!g.every(r=>r.length===expected.w)) fails.push(tag+':サイズ/行長不一致');
     ['S','E'].forEach(c=>{ if((all.split(c).length-1)!==1) fails.push(tag+':'+c+'が1個でない'); });
     const wantM=def.zone===MALL_ZONE?1:0,wantN=(def.zone===HOUSE1_ZONE||def.zone===SCHOOL_ZONE)?1:0;
