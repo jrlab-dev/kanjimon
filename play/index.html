@@ -3797,7 +3797,11 @@ const ZONES=[
        旧16×24マップは第7弾設計書§3に残存。S(下端の道)→道1本→上端ゲート>。すみかA〜L（12字ぶん）。
        検証：verify_grid.js（行長30×20・S/>/A〜L各1・BFS全到達・歩ける225/600）＋重ね絵目視2周。
        ※手直し 道順フィールド試作（7/18）はタイル描画の見た目がユーザー実機で品質不合格→本グリッドへ復元。
-       道順グリッド案は _一時\_道順試作\ に保管（方式改訂＝高品質一枚絵＋透明障害物部品のユーザー配置へ） */
+       道順グリッド案は _一時\_道順試作\ に保管（方式改訂＝高品質一枚絵＋透明障害物部品のユーザー配置へ）。
+       発注_初回チュートリアル修正2(2026-07-21)：(x=9,y=9)の一マスだけ ',' → 'z' に変更（初回チュートリアルの
+       「透明な1回限りイベントマス」）。小文字zは検品\自動回帰テスト.jsのすみか判定(/[A-Z]/のみ対象)にも
+       onArriveTileのすみか判定(/[A-L]/)にも一致しない＝どちらにも影響しない専用の新記号。isPassableTileでは
+       T/R/W/未開ゲート以外なので通行可（ただの床と同じ）。pickAutoTarget/autoTickの専用分岐でのみ意味を持つ。 */
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTT>TTTTTTTTTTTTTTT",
@@ -3807,7 +3811,7 @@ const ZONES=[
     "TTTTT,,,,,,,,,.,,,,,TR,,,TTTTT",
     "TTTT,,,,,DT,,,.,,,,G,,,,,TTTTT",
     "TTTT,,,,,,,,,,.,,,,,,,,HTTTTTT",
-    "TTTT,,,,,,,,,,.,TR,,,,,,,TTTTT",
+    "TTTT,,,,,z,,,,.,TR,,,,,,,TTTTT",
     "TTTT,,,,,,,,,..,K,R,,,,,,TTTTT",
     "TTTT,,C,,R,,,..,,,,,,,I,,TTTTT",
     "TTTT,,,,,,,,,..,,,,,TTT,,TTTTT",
@@ -6519,6 +6523,14 @@ function sendHomeAllTired(source){
   isJukugoBoss=false; jukugoBossWordObj=null; jukugoBossZoneCur=null;
   isTwinBoss=false; twinBossZoneCur=null;
   isEventBoss=false;
+  // 発注_初回チュートリアル修正2：げんき切れの送還でもtutorialShinyBattleを必ず消費する。
+  //   従来はexitBattle・勝利後の2箇所でしか消費されておらず、げんき切れで戦闘が中断された場合は
+  //   リセットされないまま持ち越されていた。今回の再設計でオートたんけんだけでこの戦闘に実際に
+  //   到達できるようになったことで初めて実機で再現した（診断_げんき切れ後の色違い漏れ.jsで確認：
+  //   持ち越されたtutorialShinyBattleが原因で、送還後に復帰した先の全く別の通常戦闘まで
+  //   enemyShinyが確定trueになってしまう）。他の送還理由（isTamashii等）と同じ「状態を残さない」
+  //   流儀にそろえる1行追加のみで、他のsendHomeAllTired呼び出し元・他の場面には影響しない。
+  tutorialShinyBattle=false;
   battleSource='quick';
   // 町のやど前（Yの1マス手前）へワープ（fieldPosは書かない＝町の位置はセーブされない）
   if(fieldZone>=1) townPrevZone=fieldZone;
@@ -10234,6 +10246,27 @@ function autoTick(){
   if(fieldHx===target.x && fieldHy===target.y){
     // 第10弾§2-3：すみかA=「一のうまれたいえ」（バトルせずバナー→次のすみかへ。巡回は止まらない）
     if(target.home){ showFieldBanner(HOME_BANNER); zone1HomeArrived=true; autoTimer=setTimeout(autoTick,2400); return; }
+    // 発注_初回チュートリアル修正2：透明マス(z)到着＝3体撃破後の確定色違いバトルを開始する。
+    //   対象キャラ選定・確定色違い化のロジック自体は前回実装のonArriveTile側(tutorialForceShinyNext消費部分)
+    //   をそのまま移設しただけで変更していない（トリガーの仕組みだけをくさむら方式からここに差し替え）。
+    if(target.tutorialShiny){
+      tutorialForceShinyNext=false;
+      const cand=STAGE_DEFS[fieldZone-1].indices.filter(i=>i!==PARTNER_IDX);
+      const shinyCand=cand.filter(i=>!!altReadingOf(i));   // ALTよみ（オンヨミフォーム）を持つ子だけが対象
+      tutorialShinySeen=true; save();   // 一度きり：対象がいない場合もここで消費して見送る
+      if(shinyCand.length>0){
+        // 既に「なかま」(caught)済みの子がいれば優先して選ぶ（前回設計どおり・変更なし）
+        const caughtCand=shinyCand.filter(i=>caught.has(i));
+        const pool=caughtCand.length>0 ? caughtCand : shinyCand;
+        const pickIdx=pool[Math.floor(Math.random()*pool.length)];
+        tutorialShinyBattle=true;
+        fieldForceShiny=true;
+        startFieldBattle(fieldZone, pickIdx, true);   // 既存すみかAパターンと同じ要領（であった演出つき）
+      }else{
+        autoTimer=setTimeout(autoTick,2400);   // 対象なし＝見送り。すみかAのバナー分岐と同様に巡回を継続する
+      }
+      return;
+    }
     // 弾3-6§5-2：もんばん方式ゾーンで全すみか制覇後の目的地＝ボスマス（であった演出は挟まず直接ボス戦へ）
     if(target.isJukugoBoss){ startJukugoBossBattle(fieldZone); return; }
     // 弾3-8§3-3：ゾーン44も同様（ツインボス専用フローへ）
@@ -10269,6 +10302,16 @@ function pickAutoTarget(){
     if(posA){
       if(posA.x===fieldHx && posA.y===fieldHy) return {x:posA.x,y:posA.y,letter:0,idx:PARTNER_IDX,home:true};
       if(bfsNextStep(fieldHx,fieldHy,posA.x,posA.y)) return {x:posA.x,y:posA.y,letter:0,idx:PARTNER_IDX,home:true};
+    }
+  }
+  // 発注_初回チュートリアル修正2：ゾーン1・3体撃破達成後（tutorialForceShinyNext）、透明な専用マス(z)を
+  //   次の目的地にする（すみかAと同じ「特殊分岐を先にチェックする」形）。tutorialShinySeen済みなら
+  //   絶対に対象にしない＝通常のフィールドでは完全に無視される「ただの床」になる（巡回対象から外れる）。
+  if(fieldZone===1 && tutorialForceShinyNext && !tutorialShinySeen){
+    const posZ=findLetterPos(1,'z');
+    if(posZ){
+      if(posZ.x===fieldHx && posZ.y===fieldHy) return {x:posZ.x,y:posZ.y,tutorialShiny:true};
+      if(bfsNextStep(fieldHx,fieldHy,posZ.x,posZ.y)) return {x:posZ.x,y:posZ.y,tutorialShiny:true};
     }
   }
   const inds=STAGE_DEFS[fieldZone-1].indices;
@@ -10428,28 +10471,10 @@ function onArriveTile(ch){
       return;
     }
     forceTamashiiNext=false;   // たましい候補がいなくても消費（持ち越さない）
-    // 発注_初回チュートリアル：ゾーン1・3体撃破後の次のくさむらエンカウントを対象キャラの確定色違いに（初回のみ）
-    //   forceTamashiiNextが同時に立っている稀なケースはたましい側を優先し、このチュートリアルは次の
-    //   くさむらエンカウントまで持ち越す（既存のたましい導線を邪魔しないための判断）
-    if(tutorialForceShinyNext && fieldZone===1){
-      tutorialForceShinyNext=false;
-      const shinyCand=cand.filter(i=>!!altReadingOf(i));   // ALTよみ（オンヨミフォーム）を持つ子だけが対象
-      tutorialShinySeen=true; save();   // 一度きり：対象がいない場合もここで消費して見送る
-      if(shinyCand.length>0){
-        // 手直し：既に「なかま」(caught)済みの子がいれば優先して選ぶ。通常のonCorrectSimpleは
-        // 未遭遇の子を倒しても「からだゲット」止まり（なかま化はたましいを別途つかまえた後）のため、
-        // 「よみクイズに正解して なかまに なる」という体験を確実にするための選定（既存の仲間化ロジック自体は無変更）。
-        // 該当が無ければ（まだ誰もなかまになっていない等）従来どおり全候補からランダム＝この場合は
-        // 既存フローどおり「からだゲット」までの体験になる（読みクイズ・仲間化ロジックはどちらの場合も一切変更しない）
-        const caughtCand=shinyCand.filter(i=>caught.has(i));
-        const pool=caughtCand.length>0 ? caughtCand : shinyCand;
-        const pickIdx=pool[Math.floor(Math.random()*pool.length)];
-        tutorialShinyBattle=true;
-        fieldForceShiny=true;
-        startFieldBattle(fieldZone, pickIdx);
-        return;
-      }
-    }
+    // 発注_初回チュートリアル修正2：ゾーン1・3体撃破後の確定色違いトリガーは、オートたんけん中は
+    //   くさむらエンカウント自体が発生しない構造的問題（前回実装報告4節で判明）のため、ここでの消費は廃止。
+    //   同じロジック（対象キャラ選定・確定色違い化・tutorialShinySeen確定）は pickAutoTarget/autoTick の
+    //   透明マス(z)到着時分岐にそのまま移設した（トリガーの仕組みだけの差し替え。中身は無変更）。
     // 第15弾§4：クリア済みゾーンのくさむら1/4は「たましい」に置き換え
     //   （そのゾーンのbodiesにある子から抽選・一は対象外・色違い/乱入とは重複しない）
     if(freeZones.has(fieldZone) && Math.random()<TAMASHII_RATE){
