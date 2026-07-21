@@ -6723,6 +6723,7 @@ function spawnJukugoBossEnemy(){
   setTimeout(()=>{
     if(seq!==spawnSeq) return;
     wrap.classList.remove('entering');
+    sndCry('ふつう');   // 発注_もんばんツインボス鳴き声：もんばんの登場鳴き声（タイプ「ふつう」固定・showCryBubbleと同じ着地タイミング）
     setMsg('ゲートを まもる 『<span class="yomi">'+(jw?jw.w:'')+'</span>』が あらわれた！<br>こうげきする かんじもんを えらぼう');
     // §5-4：初めてボス熟語モン戦が始まったとき1回だけ、はかせカードでガイド
     if(!jukugoBossGuideSeen){
@@ -6951,6 +6952,10 @@ function spawnTwinBossEnemy(){
   setTimeout(()=>{
     if(seq!==spawnSeq) return;
     wrap.classList.remove('entering');
+    // 発注_もんばんツインボス鳴き声：一心→(300ms後)同体の順で鳴き声（タイプ「ふつう」固定）。
+    // 1体目が鳴り終わってから2体目、の指定のため、sndCry自体は各タイプ最長でも0.22秒程度＝300msの間隔で重ならない
+    sndCry('ふつう');   // 一心
+    setTimeout(()=>{ if(seq!==spawnSeq) return; sndCry('ふつう'); },300);   // 同体
     setMsg('ラスボス：『一心』『同体』が ゲートを まもる！<br>こうげきする かんじもんを えらぼう');
     twinBossUpdateHighlight();
     // §4-3：初めてツインボス戦が始まったとき1回だけ、はかせカードでガイド
