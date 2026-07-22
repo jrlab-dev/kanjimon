@@ -10676,19 +10676,30 @@ function enterNextZone(){
       showFieldBanner('あたらしい ちへの みちが ひらけた！');
       setTimeout(()=>{ if(enterSeq!==fieldSeq) return; ensureFieldIntro(); },2300);   // 専用バナーが消えてから通常のゾーン紹介バナーを出す（showFieldBanner流用・新規オーバーレイなし）
     }else if(enteringKansai){
+      // 弾3-6§6-1→Phase2組み込み弾（発注書0-1節）：ゾーン24→25のゲート通過フックを使用。
+      //   初回だけ「マナの誘い（カット0）→新幹線『電光』本編シーン→ゾーン紹介バナー→ようこそ」の本格演出、
+      //   2回目以降は従来どおりの軽量バナーのみ（本編シーンは初回限定＝検品を意識した注意 項目3）。
       const showKansaiIntro=()=>{
-        showFieldBanner('しんかんせんに のって にしの ちほうへ しゅっぱつ！');
-        setTimeout(()=>{
-          if(enterSeq!==fieldSeq) return;
-          ensureFieldIntro();   // ゾーン25の紹介バナー
-          if(!kansaiHakaseSeen){
-            setTimeout(()=>{
-              if(enterSeq!==fieldSeq) return;
-              kansaiHakaseSeen=true; save();
-              hakaseTalkOnce('ようこそ カンサイ・シコクへ！ ここからは ボスが じゅくごモンに なるぞ！');
-            },2300);   // 紹介バナーが消えてから、はかせの一言（初回のみ）
-          }
-        },2300);
+        if(!kansaiHakaseSeen){
+          hakaseTalkOnce('カンサイ・シコクで かんじもんが あばれておるようじゃ。とおいから でんこうに のって いこうぞ！',()=>{
+            if(enterSeq!==fieldSeq) return;   // ワープ等で離脱済みなら新幹線シーンへは進まない
+            startTrainSceneEvent(()=>{
+              if(enterSeq!==fieldSeq) return;   // 新幹線シーン再生中にワープ等で離脱済みなら以降は進めない
+              ensureFieldIntro();   // ゾーン25の紹介バナー
+              setTimeout(()=>{
+                if(enterSeq!==fieldSeq) return;
+                kansaiHakaseSeen=true; save();
+                hakaseTalkOnce('ようこそ カンサイ・シコクへ！ ここからは ボスが じゅくごモンに なるぞ！');
+              },2300);   // 紹介バナーが消えてから、はかせの一言（初回のみ）
+            });
+          });
+        }else{
+          showFieldBanner('しんかんせんに のって にしの ちほうへ しゅっぱつ！');
+          setTimeout(()=>{
+            if(enterSeq!==fieldSeq) return;
+            ensureFieldIntro();   // ゾーン25の紹介バナー
+          },2300);
+        }
       };
       if(willShowTravelBanner) setTimeout(()=>{ if(enterSeq!==fieldSeq) return; showKansaiIntro(); },2300);   // 「たびの つづき」を見せ終えてから新幹線バナーへ
       else showKansaiIntro();
@@ -13930,6 +13941,7 @@ function op1WalkGroupOut(seq){
 let trainSceneActive=false;   // 再生中フラグ（多重起動防止。オーバーレイが全画面を覆うのでロックはCSS任せ＝op1Activeと同じ流儀）
 let trainSceneSeq=0;          // 世代カウンタ：とばす/完走のたびに増やし、残っている古いsetTimeoutを無効化する（op1Seqと同じ流儀・鉄則7）
 let trainSceneWalkHandles=[]; // S2で稼働中の歩行コマ送りハンドル（スキップ時にまとめて止める。op1WalkHandlesと同じ流儀）
+let trainSceneOnDone=null;    // Phase2作業1：startTrainSceneEvent(onDone)で受け取った完了コールバック。とばす/完走どちらの経路でもtrainSceneFinish()内で1回だけ呼ぶ
 
 const TRAIN_SCENE_MS={ s0:1500, s1:1800, s2:1000, s3:2600, s4a:900, s4b:900, s4c:900, s5:1000 };  // 0-4節の秒数表（合計10.6秒＝目安10〜12秒レンジ内）
 
@@ -13945,15 +13957,18 @@ function trainSceneResetLayers(){
   $('tsVoice').innerHTML=''; $('tsVoice').classList.remove('show');
 }
 
-/* ---- デバッグ発火：コンソールから直接呼べる独立関数（0-3節）。どの画面がactiveでも呼べる想定 ---- */
-function startTrainSceneEvent(){
+/* ---- 発火：引数なしでコンソールから直接呼べる（0-3節・デバッグ用、今回も維持）／
+   Phase2作業1：onDoneを渡すとtrainSceneFinish()（とばす・完走どちらでも）で1回だけ呼ばれる ---- */
+function startTrainSceneEvent(onDone){
   if(trainSceneActive) return;
   trainSceneActive=true;
+  trainSceneOnDone=(typeof onDone==='function')?onDone:null;   // 未指定（コンソール手動発火）ならnullのまま＝trainSceneFinish()で何もしない
   $('trainSceneOverlay').classList.add('show');
   trainScenePlayS0();
 }
 
-/* 右上「とばす」：即座にオーバーレイを閉じるだけ（ゲーム状態は一切変更しない＝0-2節） */
+/* 右上「とばす」：即座にオーバーレイを閉じるだけ（ゲーム状態は一切変更しない＝0-2節）。
+   スキップ＝早送り完走の意味なのでonDoneは完走時と同じくtrainSceneFinish()経由で必ず呼ばれる */
 function trainSceneSkip(){ if(trainSceneActive) trainSceneFinish(); }
 
 function trainSceneFinish(){
@@ -13962,8 +13977,12 @@ function trainSceneFinish(){
   trainSceneStopWalkAnims();
   $('trainSceneOverlay').classList.remove('show');
   trainSceneResetLayers();      // 次回再生時に前回の表示状態を持ち越さない（保険）
-  // 0-4節：今回は「オーバーレイを閉じるだけ」でよい。カット6＝ワールドマップズーム演出との接続、
-  // zone24ボス撃破後の自動発火・カット0の会話組み込みは次回の組み込み弾で行う（今回のスコープ外）。
+  // Phase2作業1：とばす／完走のどちらの経路もこの関数に集約される＝onDoneはここで1回だけ呼べば二重発火しない
+  const onDone=trainSceneOnDone; trainSceneOnDone=null;
+  if(onDone) onDone();
+  // 0-4節（Phase1）：カット6＝ワールドマップズーム演出との接続は今回もスコープ外（発注書0-5節：ゲート通過時点で
+  // 既にrenderField()済みでゾーン25フィールドが描画済みのため、暗転からそのままオーバーレイを閉じて
+  // フィールドが見える、というシンプルな終わり方で今回は十分）。
 }
 
 /* ---- S0：駅の待合室（〜1.5秒）。ナレーション1行のみ（0-5節の文言） ---- */
