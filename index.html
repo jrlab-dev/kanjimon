@@ -98,6 +98,13 @@
   /* ⑥ ドリル・教材コーナー */
   .drill .card{text-align:center}
   .drill p{font-size:.9rem}
+  .drill .avail{display:inline-block;background:#fff3bf;color:#7c4a03;font-weight:900;font-size:.72rem;
+    padding:2px 10px;border-radius:50px;vertical-align:middle;margin-left:6px}
+  .btn-drill{display:inline-block;text-decoration:none;background:var(--orange);color:#fff;
+    font-weight:900;font-size:1rem;padding:13px 26px;border-radius:50px;margin-top:12px;
+    box-shadow:0 5px 0 #e8871e;transition:transform .12s}
+  .btn-drill:active{transform:translateY(3px);box-shadow:0 2px 0 #e8871e}
+  .btn-drill .s{display:block;font-size:.72rem;font-weight:700;opacity:.9;margin-top:2px}
   .ad-slot{border:3px dashed var(--line);border-radius:16px;padding:22px 16px;text-align:center;
     color:#adb5bd;font-weight:900;font-size:.85rem;background:#fafbfc}
 
@@ -174,8 +181,11 @@
 
 <!-- ⑥ ドリル・教材コーナー（将来枠＋アフィリ枠） -->
 <section class="drill wrap">
-  <h2 class="sec-title"><span class="mark">◆</span> もっと しっかり 学ぶなら <span class="soon">じゅんびちゅう</span></h2>
-  <div class="card"><p>無料の書きとりプリントや、ゲームで漢字が好きになったお子さま向けの教材紹介を準備しています。</p></div>
+  <h2 class="sec-title"><span class="mark">◆</span> もっと しっかり 学ぶなら <span class="avail">1年生ぶん こうかい中</span></h2>
+  <div class="card">
+    <p>小学1年生で習うかんじ81字ぶんの書きとり練習プリントを、無料で印刷できます。筆順つきのお手本と書き込み欄つきで、A4で8ページになります。</p>
+    <a class="btn-drill" href="drill/grade1.html">📝 1年生の かんじドリル<span class="s">むりょう印刷・とうろく不要</span></a>
+  </div>
   <div class="ad-slot">（教材紹介スペース・準備中）</div>
 </section>
 
