@@ -1037,7 +1037,8 @@
   /* 発注_しまなみ海道リアル化(2026-07-21)作業1：ゾーン41専用・継ぎ目なしタイル画像を横方向にrepeat-xで
      敷き詰める。旧世代(zone41-bridge-tile.webp・敷石が主人公より巨大に見える不具合)→v1
      (zone41-bridge-real-tile.webp・欄干クローズアップだが奥の島が隠れる/巨大感が残る)を経て、
-     v2(zone41-bridge-v2-tile.webp・1024×1024)を採用。v2は主塔+ケーブルが追加され、透過75.8%/
+     v2(1024×1024・単塔の斜張橋。旧ファイル名は本ファイル内grep対象を汚さないよう本文中には残さない
+     方針とし、_一時\_しまなみ海道リアル化実装\実装報告.md参照)を採用。v2は主塔+ケーブルが追加され、透過75.8%/
      不透過19.5%（残り4.7%は欄干のグラデーション遷移帯）とv1よりさらに透過が広い。
      background-sizeは8マス角を採用：不透過+遷移帯（画像下から約25.2%＝主構造物の高さ）が
      8マス角で約2.0マス相当になり、主人公の背丈(.hero-sprite=1.15マス)の約1.75倍。単体では
@@ -1049,7 +1050,18 @@
      ちょうど揃うよう計算（M=14-N）。この「両方の歩道行を揃って覆う」アンカーは、旧M=13-N方式だと
      歩道の片方(row13)だけ覆われず主人公が浮いて見える不具合を実機検証で発見して以来のもの。
      すみかA〜J（行10・15）は新画像の透過範囲が広いぶん完全な覆いはできず、多少浮いて見える
-     トレードオフが残る（主経路である歩道2行を最優先でカバーする設計判断・詳細は報告書参照） */
+     トレードオフが残る（主経路である歩道2行を最優先でカバーする設計判断・詳細は報告書参照）。
+     発注_しまなみ橋v3差し替え(2026-07-23)：v2(1024×1024・単塔の斜張橋)→v3
+     (zone41-bridge-v3-tile.webp・1254×1254・H型主塔の吊り橋・透過済み)に差し替え。PILでアルファ
+     チャンネルを実測した結果、v3は不透過(alpha>128)の橋桁（主構造物）が画像下から約25.8%
+     （y=930/1254px、境界はほぼ1pxのハードエッジでv2のような遷移帯はほぼ無し）＝v2の約25.2%と
+     ほぼ同じ比率だった。8マス角に換算すると約2.07マス相当・主人公背丈(1.15マス)の約1.80倍と、
+     v2の1.75倍とほぼ同水準で0-4節の目安(1.5〜2.0倍)に収まるため、background-size(8マス角)・
+     background-position(calc(6*var(--tile))＝M=14-N＝14-8)は実測のうえ変更不要と判断した
+     （実測ログ・実機確認結果は_一時\_しまなみ橋v3実装\実装報告.md参照）。なおv3はH型主塔が
+     画像上端(y=0)で既にクロップされている（塔の頂部が画像に収まっていない）意匠のため、
+     すみかA〜Jの浮きはv2と実機スクリーンショット比較でほぼ同程度（明らかな悪化は無し・
+     詳細は報告書参照）。 */
   .field-grid.has-fullart.bridge-tile{background-size:calc(8*var(--tile)) calc(8*var(--tile));background-position:0 calc(6*var(--tile));background-repeat:repeat-x}
   .field-grid.has-fullart .tile.t-grass,.field-grid.has-fullart .tile.t-path{background:transparent}
   .field-grid.has-fullart .tile.t-tree{background:transparent;box-shadow:none;color:transparent}
@@ -1581,6 +1593,62 @@
   .op5-char{position:absolute;transform:translate(-50%,-100%);opacity:0;max-width:none;
     transition:opacity 1s ease;pointer-events:none;z-index:2}
   .op5-char.show{opacity:1}
+
+  /* ===== 新幹線「電光」地方間移動シーン Phase1（発注書:_一時\発注_新幹線でんこうシーンPhase1.md）=====
+     既存の全画面カットシーン(.op1-overlay系)と同じ設計思想で新設した完全独立のオーバーレイ。
+     クラス名はすべてtrain-scene-*で新規に切り、既存op1-overlay系のCSS/HTML/JSには一切触れていない。
+     普段はdisplay:none（.showが付いたときだけ表示）＝コンソールからstartTrainSceneEvent()を呼ぶ
+     デバッグ発火以外では完全に不可視・実プレイの他画面に一切影響しない独立機能（今回のスコープ＝
+     シーン単体の実装まで。zone24ボス撃破後の自動発火・カット0の会話組み込みは次回の別弾で行う）。 */
+  .train-scene-overlay{position:fixed;inset:0;z-index:9999;display:none;background:#000;overflow:hidden;
+    font-family:inherit;-webkit-user-select:none;user-select:none}
+  .train-scene-overlay.show{display:block}
+  .train-scene-stage{position:absolute;inset:0;overflow:hidden}
+  /* S1：電光の決めカットを軽く揺らす簡易カメラシェイク（0-4節S1「既存の画面揺れ演出があれば流用、
+     無ければCSSのtransform:translateを数px小刻みに変えるだけの簡易実装でよい」に対応。既存の.shake
+     キーフレーム(rotate込み・敵撃破用で大仰)とは意図的に別物にした新規キーフレーム） */
+  .train-scene-stage.ts-shake{animation:trainSceneShake .5s ease-in-out infinite}
+  @keyframes trainSceneShake{
+    0%,100%{transform:translate(0,0)}
+    25%{transform:translate(-3px,2px)}
+    50%{transform:translate(2px,-2px)}
+    75%{transform:translate(-2px,-1px)}
+  }
+  .train-scene-layer{position:absolute;inset:0;background-size:cover;background-position:center center;
+    opacity:0;transition:opacity .6s ease;z-index:1}
+  .train-scene-layer.show{opacity:1}
+  #tsBgStation{background-image:url('images/fullart/interior-station.webp')}
+  #tsBgHero{background-image:url('images/fullart/train-denkou-hero.webp')}
+  #tsBgCity{background-image:url('images/fullart/train-scene-city.webp')}
+  #tsBgCountryside{background-image:url('images/fullart/train-scene-countryside.webp')}
+  #tsBgFuji{background-image:url('images/fullart/train-scene-mountain-fuji.webp')}
+  /* S3：発車・横スクロール。奥の空はゆっくり・手前の電車は速く動くパララックス（しまなみ海道ゾーン41の
+     PARALLAX_SPEEDと同じ「奥はゆっくり・手前は速く」の考え方を流用＝0-4節S3の実装メモ指定どおり）。
+     ワンショットの短い演出なので無限ループのタイル画像は使わず、実寸より一回り大きく敷いた静止画を
+     transform:translateXで一度だけずらす簡易実装にした（train-denkou-side.webpはタイル前提の画像
+     ではないため、無限ループ化は継ぎ目が目立つ＝今回のスコープでは過剰と判断・実装判断）。 */
+  #tsBgSky{background:linear-gradient(180deg,#8ec9f0 0%,#cdeaff 55%,#fef3d6 100%);
+    left:-6%;right:-6%;width:112%;transition:opacity .6s ease,transform 2.6s linear}
+  #tsBgSky.scroll{transform:translateX(-4%)}
+  #tsBgSide{background-image:url('images/fullart/train-denkou-side.webp');
+    left:-14%;right:-14%;width:128%;transition:opacity .6s ease,transform 2.6s linear}
+  #tsBgSide.scroll{transform:translateX(-8%)}
+  /* S2：主人公・相棒が乗り込むシルエット。既存の歩行4相スプライト(images/walk/walk-*-*.webp・
+     startWalkAnim()をそのまま呼び出すだけで新設なし)を画面下部で数コマだけ動かし、右へフレームアウト
+     させる簡易実装（0-4節S2「動きが分かる程度の簡易実装でよい」に対応）。 */
+  .train-scene-char{position:absolute;bottom:8%;left:28%;width:15vw;max-width:64px;min-width:34px;
+    opacity:0;transform:translateX(0);transition:opacity .3s ease,transform .9s ease-in;
+    pointer-events:none;z-index:5}
+  .train-scene-char.show{opacity:1}
+  #tsMana{left:40%}
+  .train-scene-char.walk-off{transform:translateX(130vw)}
+  .train-scene-blackout{position:absolute;inset:0;background:#000;opacity:0;
+    transition:opacity 1s ease;z-index:20}
+  .train-scene-blackout.show{opacity:1}
+  .train-scene-voice{position:absolute;left:0;right:0;bottom:9%;text-align:center;
+    color:#fff;font-weight:900;font-size:1.05rem;line-height:1.6;padding:0 26px;
+    text-shadow:0 2px 8px rgba(0,0,0,.75);opacity:0;transition:opacity .6s ease;z-index:10}
+  .train-scene-voice.show{opacity:1}
 </style>
 </head>
 <body>
@@ -1769,6 +1837,28 @@
       <div class="op1-mana-text" id="op1ManaText"></div>
     </div>
     <div class="options op1-answers" id="op1Answers"></div>
+  </div>
+</div>
+
+<!-- ===== 新幹線「電光」地方間移動シーン Phase1（発注書:_一時\発注_新幹線でんこうシーンPhase1.md）=====
+     既存の.op1-overlay系とは無関係の完全新規実装。クラス名・関数名はすべてtrain-scene-系/trainScene系で
+     新設し、op1系のコード・クラス名・関数名には一切触れていない。コンソールからstartTrainSceneEvent()
+     を呼ぶことでのみ再生される独立デバッグ機能（今回のスコープ＝シーン単体の実装まで。zone24ボス撃破後
+     の自動発火・カット0の会話組み込みは次回の別弾で行う＝ゲーム進行には一切手を入れていない）。 -->
+<div class="train-scene-overlay" id="trainSceneOverlay">
+  <button class="intro-skip-btn show" id="trainSceneSkipBtn" onclick="trainSceneSkip()">▶ とばす</button>
+  <div class="train-scene-stage" id="trainSceneStage">
+    <div class="train-scene-layer" id="tsBgStation"></div>
+    <div class="train-scene-layer" id="tsBgHero"></div>
+    <img class="train-scene-char" id="tsHero" alt="">
+    <img class="train-scene-char" id="tsMana" alt="">
+    <div class="train-scene-layer" id="tsBgSky"></div>
+    <div class="train-scene-layer" id="tsBgSide"></div>
+    <div class="train-scene-layer" id="tsBgCity"></div>
+    <div class="train-scene-layer" id="tsBgCountryside"></div>
+    <div class="train-scene-layer" id="tsBgFuji"></div>
+    <div class="train-scene-voice" id="tsVoice"></div>
+    <div class="train-scene-blackout" id="tsBlackout"></div>
   </div>
 </div>
 
@@ -5422,6 +5512,8 @@ let interiorGuideSeen=false;
 let schoolTestGuideSeen=false;
 // 発注T-1：しょどうきょうしつ初回入室のはかせ一言（旧セーブは未見あつかい）
 let shodoGuideSeen=false;
+// 発注_村1：むらの森を購入済みか（旧セーブは!!d.ownsForestで読み込み・既定false＝未所有あつかい）
+let ownsForest=false;
 // 発注W-2：かきとりテストの日次コイン制限（端末日付YYYY-MM-DDの変わり目でリセット・提案ベース裁定済み扱い）。
 // doneはKインデックス(文字列キー)→true（今日すでにコイン対象を取得済み）。旧セーブは無し→date=''扱いで初回アクセス時に自動初期化される。
 let kakitoriDaily={date:'',done:{}};
@@ -5498,7 +5590,8 @@ function save(){
       schoolTestGuideSeen:schoolTestGuideSeen,
       shodoGuideSeen:shodoGuideSeen,   // 発注T-1
       kakitoriDaily:kakitoriDaily,           // 発注W-2
-      kakitoriTotalCorrect:kakitoriTotalCorrect
+      kakitoriTotalCorrect:kakitoriTotalCorrect,
+      ownsForest:ownsForest             // 発注_村1
     }));
   }catch(e){}
 }
@@ -5629,6 +5722,7 @@ function load(){
     interiorGuideSeen = (d.interiorGuideSeen===true);
     schoolTestGuideSeen = (d.schoolTestGuideSeen===true);
     shodoGuideSeen = (d.shodoGuideSeen===true);   // 発注T-1
+    ownsForest = !!d.ownsForest;   // 発注_村1（旧セーブは未所有あつかい）
     // 発注W-2：かきとり日次記録（旧セーブ・壊れた形は初期値に倒す＝ktEnsureDailyが次のアクセスで日付を補正する）
     kakitoriDaily={date:'',done:{}};
     if(d && typeof d.kakitoriDaily==='object' && d.kakitoriDaily && typeof d.kakitoriDaily.date==='string'){
@@ -6395,7 +6489,19 @@ const SCHOOL_ZONE=-3;         // 弾3-16：がっこうのなか
 const SHODO_ZONE=-4;          // 発注T-1：しょどうきょうしつのなか
 const STATION_ZONE=-5;        // 発注_町南側と駅：えきのなか（今回はロック中＝入場不可）
 const STATION_OPEN=false;     // 発注_町南側と駅：えき解放フラグ。trueにするまでPをタップしても入れない（電車演出は別弾）
+const MURA_ZONE=-6;           // 発注_村1：むら ひろば よてい地のなか（村づくり第1弾。3年生＝カンサイ・シコク到達で解禁）
 function isTownLike(z){ return z<=0; }   // 町＋屋内＝非戦闘の疑似ゾーン
+// 発注_村1§0-2：お金の表現方針。新しい財布は作らずcoins（🪙）をそのまま使う。村の会話画面だけ円換算した表示にする。
+const YEN_PER_COIN=10000;     // 🪙1枚＝1万円（ユーザー調整用の定数。将来ここだけ変えればよい）
+function muraYen(coinAmount){ return (coinAmount*YEN_PER_COIN).toLocaleString('ja-JP')+'円'; }
+// 価格は円建てで先に決め、コインへ逆算する向きで定数化（コイン価格を決め打ちで別途持たない）
+const MURA_AKICHI_YEN=3000000;    // 空き地（今回は購入不可・表示のみ）
+const MURA_MORI_YEN=100000;       // 森本体
+const MURA_KIRIKATA_YEN=30000;    // 木を切る代
+const MURA_SEICHI_YEN=20000;      // 整地代
+const MURA_MORI_TOTAL_YEN=MURA_MORI_YEN+MURA_KIRIKATA_YEN+MURA_SEICHI_YEN;   // 森の合計＝150,000円
+function muraYenFmt(yenAmount){ return yenAmount.toLocaleString('ja-JP'); }   // 円の数字部分だけ（「円」は呼び出し側で付ける）
+function muraCoinsFor(yenAmount){ return Math.round(yenAmount/YEN_PER_COIN); }   // 円→コインの換算（実際に払わせる額はこちらを必ず経由）
 const COIN_WIN=2;             // 通常バトル勝利のコイン
 const COIN_BOSS=10;           // ボス系（もんばん・ツインボス・かくれラスボス・ゾーンボス）勝利のコイン
 const PRICE_GENKIDAMA=20;     // げんきだまのねだん
@@ -9512,7 +9618,7 @@ const ZONE_FULLART=['zone1.webp','zone2.webp','zone3.webp','zone4.webp','zone5.w
                     'zone17.webp','zone18.webp','zone19.webp','zone20.webp','zone21.webp','zone22.webp','zone23.webp','zone24.webp',
                     /* 弾3-6§2-4：3年カンサイ・シコク20ゾーンぶん。41番目だけnull（弾3-7で一枚絵を差し替え・nullはプリロードをスキップ＝フォールバック） */
                     'zone25.webp','zone26.webp','zone27.webp','zone28.webp','zone29.webp','zone30.webp','zone31.webp','zone32.webp','zone33.webp','zone34.webp',
-                    'zone35.webp','zone36.webp','zone37.webp','zone38.webp','zone39.webp','zone40.webp','zone41-bridge-v2-tile.webp','zone42.webp','zone43.webp','zone44.webp',
+                    'zone35.webp','zone36.webp','zone37.webp','zone38.webp','zone39.webp','zone40.webp','zone41-bridge-v3-tile.webp','zone42.webp','zone43.webp','zone44.webp',
                     // 弾4-6§2-4：4年チュウブ20ゾーンぶん
                     'zone45.webp','zone46.webp','zone47.webp','zone48.webp','zone49.webp','zone50.webp','zone51.webp','zone52.webp','zone53.webp','zone54.webp','zone55.webp','zone56.webp','zone57.webp','zone58.webp','zone59.webp','zone60.webp','zone61.webp','zone62.webp','zone63.webp','zone64.webp'];
 /* 弾3-7：パララックス背景を使うゾーンの対応表。ゾーン41以外は未登録＝通常表示のまま */
@@ -10008,20 +10114,24 @@ function renderField(){
           else txt=gateOpen?'➔':'🚧';
         }else txt=gateOpen?'➔':'🚧';
       }
-      else if(fieldZone===TOWN_ZONE && (ch==='L'||ch==='D'||ch==='Y'||ch==='H'||ch==='M'||ch==='K'||ch==='G'||ch==='F'||ch==='N'||ch==='O'||ch==='P'||ch==='Q')){
+      else if(fieldZone===TOWN_ZONE && (ch==='L'||ch==='D'||ch==='Y'||ch==='H'||ch==='M'||ch==='K'||ch==='G'||ch==='F'||ch==='N'||ch==='O'||ch==='P'||ch==='Q'||ch==='V')){
         // 弾3-12/3-13：町の建物いりぐち・掲示板（A-L分岐＝zoneCharIdxはindex -1で壊れるため先に分岐する）
         // 発注T-1：書道教室いりぐちF（がっこうGと同じ流儀）を追加
         // 発注_町北側：N(時計塔・機能未実装)・O(自分の家・新規)を追加
         // 発注_町南側と駅：P(駅いりぐち・ロック中)・Q(ゲームセンター・じゅんび中)を追加（Nと同じ「タップで軽い反応のみ」系統の
         // アイコン表示。発注書は文字の割り当てまでの指定で絵文字までは未指定だが、既存のN/O方式に揃えて実装者判断で追加）
+        // 発注_村1：V(むらへの入口・新規)を追加。仮絵文字は🏞️（画像は後日別弾）
         cls+=' t-path t-town-door';
-        txt='<span class="town-door-emoji">'+(ch==='L'?'🔬':(ch==='D'?'🛍️':(ch==='Y'?'🛏️':(ch==='H'?'📋':(ch==='M'?'🏬':(ch==='K'?'🏠':(ch==='F'?'🖌️':(ch==='N'?'🕰️':(ch==='O'?'🏡':(ch==='P'?'🚉':(ch==='Q'?'🎮':'🏫')))))))))))+'</span>';
+        txt='<span class="town-door-emoji">'+(ch==='L'?'🔬':(ch==='D'?'🛍️':(ch==='Y'?'🛏️':(ch==='H'?'📋':(ch==='M'?'🏬':(ch==='K'?'🏠':(ch==='F'?'🖌️':(ch==='N'?'🕰️':(ch==='O'?'🏡':(ch==='P'?'🚉':(ch==='Q'?'🎮':(ch==='V'?'🏞️':'🏫'))))))))))))+'</span>';
       }
-      else if(fieldZone<0 && (ch==='E'||ch==='M'||ch==='N')){
+      else if(fieldZone<0 && (ch==='E'||ch==='M'||ch==='N'||(fieldZone===MURA_ZONE&&(ch==='F'||ch==='C')))){
         // 弾3-15：屋内の出口・店員・住人。画像が読めたNPCは後載せするため、タイル上の絵文字はフォールバック時だけ。
+        // 発注_村1：MURA_ZONE専用のF(不動産屋)・C(大工兄弟)を追加。他ゾーンのM/Nの意味と衝突しないようfieldZone===MURA_ZONEを明示
         cls+=' t-path t-town-door';
         if(ch==='E') txt='<span class="town-door-emoji">🚪</span>';
         else if(ch==='M') txt=(interiorActorSheetOK.has('nikuya')||interiorActorImgOK.has('nikuya'))?'':'<span class="town-door-emoji">🧑‍🍳</span>';
+        else if(fieldZone===MURA_ZONE&&ch==='F') txt='<span class="town-door-emoji">💼</span>';
+        else if(fieldZone===MURA_ZONE&&ch==='C') txt='<span class="town-door-emoji">👷</span>';
         else if(fieldZone===SCHOOL_ZONE) txt=teacherImagesOK?'':'<span class="town-door-emoji">👩‍🏫</span>';
         else txt=(interiorActorSheetOK.has('ojisan')||interiorActorImgOK.has('ojisan'))?'':'<span class="town-door-emoji">👴</span>';
       }
@@ -11287,7 +11397,8 @@ const TOWN_DEF={
      Q=ゲームセンター（新規・タップで「じゅんび中」反応のみ・内部は作らない）。
      学校(G)・書道教室(F)は生グリッドには書かない（SCHOOL_TOWN_CONFIG/SHODO_TOWN_CONFIG経由でapplySchoolTownEntrance/
      applyShodoTownEntranceが起動のたびに上書き設置する。0-5節）。民家２・スピーカーは装飾のみでグリッド文字を持たない
-     （TOWN_BUILDINGSにのみ追加）。出口(14,19)は保留＝ただの通行可能な地面のまま（用途不明のため今回は機能を割り当てない）。 */
+     （TOWN_BUILDINGSにのみ追加）。出口(14,19)は保留＝ただの通行可能な地面のままだったが、
+     発注_村1：ここにV（むらへの入口・3年生＝unlocked>=STAGE2_COUNT+1で解禁）を配置した。 */
   grid:[
     'TTTTTTTTTTTTT...TTTTTTTTTTTTTT',
     'TTT.........T...TT.........TTT',
@@ -11328,7 +11439,7 @@ const TOWN_DEF={
     'TTTTTTTTTTTT.....TTTTTTTTTTTTT',
     'TTTTTTTTTTTTT...TTTTTTTTTTTTTT',
     'TTTTTTTTTTTTT...TTTTTTTTTTTTTT',
-    'TTTTTTTTTTTT.....TTTTTTTTTTTTT'
+    'TTTTTTTTTTTT..V..TTTTTTTTTTTTT'
   ]
 };
 /* G入口は設定値から毎回作る。旧位置にGが残っても先に通常床へ戻すため、ツールで何度調整しても1個になる。 */
@@ -11502,7 +11613,25 @@ const STATION_DEF={ zone:STATION_ZONE, name:'えき', bg:'interior-station.webp'
 'T......S......T',
 'T......E......T',
 'TTTTTTTTTTTTTTT']};
-const PSEUDO_DEFS={ [TOWN_ZONE]:TOWN_DEF, [MALL_ZONE]:MALL_DEF, [HOUSE1_ZONE]:HOUSE1_DEF, [SCHOOL_ZONE]:SCHOOL_DEF, [SHODO_ZONE]:SHODO_DEF, [STATION_ZONE]:STATION_DEF };
+/* 発注_村1：むら ひろば よてい地（15×10＝HOUSE1_DEF/STATION_DEFと同じ広さ）。3年生（unlocked>=STAGE2_COUNT+1）で
+   町のV入口から入れる村づくり第1弾の拠点。F=不動産屋（空き地・森の話を聞ける）・C=大工兄弟（購入後の会話のみ・
+   建てる機能は次回以降）。新規キャラクター画像は発注しない＝タイル絵文字・カードとも絵文字フォールバックのみ。
+   bgはownsForestで森→更地を出し分ける（0-8節）。warpInterior呼び出し時・購入直後に書き換える。
+   どちらの画像もまだ存在しない前提＝preloadInteriorAssetsの既存onerrorフォールバックに任せる。 */
+const MURA_DEF={ zone:MURA_ZONE, name:'むら ひろば よてい地', bg:'mura-forest.webp',
+  returnTo:{x:14,y:38},
+  grid:[
+'TTTTTTTTTTTTTTT',
+'T.............T',
+'T..F.......C..T',
+'T.............T',
+'T..TT.....TT..T',
+'T.............T',
+'T.............T',
+'T......S......T',
+'T......E......T',
+'TTTTTTTTTTTTTTT']};
+const PSEUDO_DEFS={ [TOWN_ZONE]:TOWN_DEF, [MALL_ZONE]:MALL_DEF, [HOUSE1_ZONE]:HOUSE1_DEF, [SCHOOL_ZONE]:SCHOOL_DEF, [SHODO_ZONE]:SHODO_DEF, [STATION_ZONE]:STATION_DEF, [MURA_ZONE]:MURA_DEF };
 const INTERIOR_ACTORS=[
   {zone:MALL_ZONE,key:'nikuya',sheet:'nikuya-field.webp',img:'nikuya-normal.webp',emoji:'🧑‍🍳',x:3,y:3,dir:'down',frame:'a'},
   {zone:HOUSE1_ZONE,key:'ojisan',sheet:'npc-ojisan-field.webp',img:'npc-ojisan.webp',emoji:'👴',x:9,y:2,dir:'down',frame:'a'}
@@ -11523,7 +11652,7 @@ function zoneFullartOf(zone){ return zone===TOWN_ZONE ? TOWN_DEF.fullart[0] : (z
 let interiorFullartOK=new Set(), interiorActorSheetOK=new Set(), interiorActorImgOK=new Set(), meatSceneOK=false;
 let teacherImagesOK=false, schoolBuildingOK=false, shodoBuildingOK=false;
 (function preloadInteriorAssets(){
-  [MALL_DEF,HOUSE1_DEF,SCHOOL_DEF,SHODO_DEF,STATION_DEF].forEach(def=>{ const im=new Image(); im.onload=()=>{ interiorFullartOK.add(def.zone); if(fieldZone===def.zone&&$('screen-field').classList.contains('active')) renderField(); }; im.onerror=()=>{}; im.src='images/fullart/'+def.bg; });   // 発注_町南側と駅：STATION_DEFを追加（画像プリロード・onerrorフォールバックはMALL/HOUSE1等と共通のため、画像が万一無くても壊れない）
+  [MALL_DEF,HOUSE1_DEF,SCHOOL_DEF,SHODO_DEF,STATION_DEF,MURA_DEF].forEach(def=>{ const im=new Image(); im.onload=()=>{ interiorFullartOK.add(def.zone); if(fieldZone===def.zone&&$('screen-field').classList.contains('active')) renderField(); }; im.onerror=()=>{}; im.src='images/fullart/'+def.bg; });   // 発注_町南側と駅：STATION_DEFを追加／発注_村1：MURA_DEFを追加（画像プリロード・onerrorフォールバックはMALL/HOUSE1等と共通のため、画像が万一無くても壊れない）
   INTERIOR_ACTORS.forEach(a=>{
     const redraw=()=>{ if(fieldZone===a.zone&&$('screen-field').classList.contains('active')) renderField(); };
     const sheet=new Image(); sheet.onload=()=>{ interiorActorSheetOK.add(a.key); redraw(); }; sheet.onerror=()=>{}; sheet.src='images/sprites/'+a.sheet;
@@ -11566,11 +11695,11 @@ function townSelfTest(){
   const fails=[];
   if(!(g.length===40 && g.every(r=>r.length===30))) fails.push('サイズ30x40でない');
   const all=g.join('');
-  ['S','L','D','Y','H','M','K','G','F','N','O','P','Q'].forEach(c=>{ if((all.split(c).length-1)!==1) fails.push(c+'が1個でない'); });   // 発注T-1：Fを追加／発注_町北側：N(時計塔)・O(自分の家)を追加／発注_町南側と駅：P(駅いりぐち)・Q(ゲームセンター)を追加
+  ['S','L','D','Y','H','M','K','G','F','N','O','P','Q','V'].forEach(c=>{ if((all.split(c).length-1)!==1) fails.push(c+'が1個でない'); });   // 発注T-1：Fを追加／発注_町北側：N(時計塔)・O(自分の家)を追加／発注_町南側と駅：P(駅いりぐち)・Q(ゲームセンター)を追加／発注_村1：V(むらへの入口)を追加
   // 検品修正弾3-14：/[,A-J>]/ だと町の正規記号D(どうぐや)・H(けいじばん)がA-J範囲に含まれ誤検知するため、D/Hを除外
   if(/[,>]/.test(all) || /[ABCEIJ]/.test(all)) fails.push('くさむら/すみか/ゲートあり');   // 発注T-1：Fを町の正規記号にしたためA-Jの除外対象からも外す
-  if(/[^SLDYHMKGFTRNOPQ.]/.test(all)) fails.push('不正な記号あり');   // 発注T-1：Fを追加／発注_町北側：N・Oを追加／発注_町南側と駅：P・Qを追加
-  // BFS：SからL/D/Y/H/M/K/G/F/N/O/P/Qぜんぶに到達できるか（isPassableTileと同じ判定＝T/R以外は通行可）
+  if(/[^SLDYHMKGFTRNOPQV.]/.test(all)) fails.push('不正な記号あり');   // 発注T-1：Fを追加／発注_町北側：N・Oを追加／発注_町南側と駅：P・Qを追加／発注_村1：Vを追加
+  // BFS：SからL/D/Y/H/M/K/G/F/N/O/P/Q/Vぜんぶに到達できるか（isPassableTileと同じ判定＝T/R以外は通行可）
   const H=g.length, W=g[0].length;
   let sx=-1, sy=-1;
   for(let y=0;y<H;y++){ const x=g[y].indexOf('S'); if(x>=0){ sx=x; sy=y; break; } }
@@ -11579,7 +11708,7 @@ function townSelfTest(){
   while(q.length){
     const [x,y]=q.shift();
     const ch=g[y][x];
-    if(ch==='L'||ch==='D'||ch==='Y'||ch==='H'||ch==='M'||ch==='K'||ch==='G'||ch==='F'||ch==='N'||ch==='O'||ch==='P'||ch==='Q') reached[ch]=true;
+    if(ch==='L'||ch==='D'||ch==='Y'||ch==='H'||ch==='M'||ch==='K'||ch==='G'||ch==='F'||ch==='N'||ch==='O'||ch==='P'||ch==='Q'||ch==='V') reached[ch]=true;
     [[1,0],[-1,0],[0,1],[0,-1]].forEach(([dx,dy])=>{
       const nx=x+dx, ny=y+dy;
       if(nx<0||ny<0||nx>=W||ny>=H) return;
@@ -11589,7 +11718,7 @@ function townSelfTest(){
       seen.add(ny*W+nx); q.push([nx,ny]);
     });
   }
-  ['L','D','Y','H','M','K','G','F','N','O','P','Q'].forEach(c=>{ if(!reached[c]) fails.push('S→'+c+'到達不能'); });
+  ['L','D','Y','H','M','K','G','F','N','O','P','Q','V'].forEach(c=>{ if(!reached[c]) fails.push('S→'+c+'到達不能'); });
   const ep=SCHOOL_TOWN_CONFIG.entrance,rp=SCHOOL_TOWN_CONFIG.returnTo,bp=SCHOOL_TOWN_CONFIG.building;
   if(g[ep.y]&&g[ep.y][ep.x]!=='G') fails.push('学校入口設定とGが不一致');
   if(Math.abs(ep.x-rp.x)+Math.abs(ep.y-rp.y)!==1) fails.push('学校入口とreturnToが隣接していない');
@@ -11639,11 +11768,17 @@ function onArriveTownTile(ch){
   if(ch==='N'){ showFieldBanner('とけいとうは まだ なかに はいれないみたい…'); return; }   // 発注_町北側：時計塔（機能未実装・タップで軽い反応のみ）
   if(ch==='P'){ if(STATION_OPEN){ warpInterior(STATION_ZONE); }else{ showFieldBanner('えきは まだ りようできないみたい。もうすこし まってね'); } return; }   // 発注_町南側と駅：駅いりぐち（ロック中はNと同じ軽い反応パターン）
   if(ch==='Q'){ showFieldBanner('ゲームセンターは まだ じゅんびちゅうみたい…'); return; }   // 発注_町南側と駅：ゲームセンター（新規・タップ反応のみ・内部は作らない）
+  if(ch==='V'){   // 発注_村1：むらへの入口（3年生＝カンサイ・シコク到達で解禁）
+    if(unlocked>=STAGE2_COUNT+1){ warpInterior(MURA_ZONE); }
+    else{ showFieldBanner('このさきは まだ とおれないみたい。もっと たびを すすめてから きてみよう'); }
+    return;
+  }
 }
 
 /* ===== 弾3-15：屋内の出入り・住人カード ===== */
 function warpInterior(zone){
   if(!PSEUDO_DEFS[zone]||zone>=0) return;
+  if(zone===MURA_ZONE){ MURA_DEF.bg=ownsForest?'mura-cleared.webp':'mura-forest.webp'; }   // 発注_村1・0-8節：入場のたびに所有状態から書き換える
   fieldZone=zone; const s=zoneStartOf(zone); fieldHx=s.x; fieldHy=s.y;
   showScreen('screen-field'); renderField();
   // 発注T-1：しょどうきょうしつ初回入室の一言（録音ボイスbh13付き）。
@@ -11674,6 +11809,8 @@ function onArriveInteriorTile(ch){
   // 発注W-1：しょどうきょうしつの先生の席(SHODO_DEF.grid内のT・座標(9,2))の前のマス(9,3)。
   // 先生NPCはまだ生成裁定待ち（N文字を使わない）なので、tile文字ではなく座標で判定する。
   if(fieldZone===SHODO_ZONE&&fieldHx===9&&fieldHy===3){ openKakitoriInvite(); return; }
+  if(fieldZone===MURA_ZONE&&ch==='F'){ muraOpenFudousan(); return; }   // 発注_村1：不動産屋
+  if(fieldZone===MURA_ZONE&&ch==='C'){ muraOpenDaiku(); return; }      // 発注_村1：大工兄弟
 }
 function openInteriorCard(kind){
   let html='';
@@ -11690,25 +11827,103 @@ function openInteriorCard(kind){
 }
 function closeInteriorCard(){ $('interiorCardOverlay').classList.remove('show'); }
 
+/* ===== 発注_村1：村の不動産屋・大工兄弟（会話・購入フロー） =====
+   0-6節のとおり、openInteriorCard(kind)のswitchには足さず、既存の2つのDOM要素
+   （interiorCardBody/interiorCardOverlay）を専用関数群から直接使い回す。
+   顔画像は絵文字フォールバックのみ（新規キャラクター画像は発注しない）。 */
+function muraFudousanFace(){ return '<div class="interior-card-face">🧑‍💼</div>'; }
+function muraDaikuFace(){ return '<div class="interior-card-face">👷</div>'; }
+function muraOpenFudousan(){
+  const html=muraFudousanFace()+
+    '<div class="interior-card-msg">おっ、いらっしゃい！ この むらに とちを もとめてるのかい？</div>'+
+    '<button class="btn btn-primary" onclick="muraShowAkichi()">あきちの はなしを きく</button>'+
+    '<button class="btn btn-primary" onclick="muraShowMori()">もりの はなしを きく</button>'+
+    '<button class="btn btn-ghost" onclick="closeInteriorCard()">やめとく</button>';
+  $('interiorCardBody').innerHTML=html; $('interiorCardOverlay').classList.add('show');
+}
+function muraShowAkichi(){
+  // 絶対禁止：空き地（300万円）は今回は購入不可のまま。値段を見せるだけ・買うボタンは出さない
+  const html=muraFudousanFace()+
+    '<div class="interior-card-msg">あきちは '+muraYenFmt(MURA_AKICHI_YEN)+'円だよ！</div>'+
+    '<div class="interior-card-msg">たかいなあ…。また いつか おおきくなったら かんがえよう</div>'+
+    '<button class="btn btn-primary" onclick="closeInteriorCard()">とじる</button>';
+  $('interiorCardBody').innerHTML=html; $('interiorCardOverlay').classList.add('show');
+}
+function muraShowMori(){
+  if(ownsForest){
+    // 二重購入防止：すでに所有済みなら購入フローへは進めず、購入成功と同じ文言（0-7節の表にある文言）だけ見せる
+    const html=muraFudousanFace()+
+      '<div class="interior-card-msg">やったね！ この もりは きみの ものだ！</div>'+
+      '<button class="btn btn-primary" onclick="closeInteriorCard()">とじる</button>';
+    $('interiorCardBody').innerHTML=html; $('interiorCardOverlay').classList.add('show');
+    return;
+  }
+  const html=muraFudousanFace()+
+    '<div class="interior-card-msg">もりは '+muraYenFmt(MURA_MORI_YEN)+'円で かえるよ。でも 木を きったり せいちしたり するのに、もう すこし かかるけどね</div>'+
+    '<div class="interior-card-msg">もり だい '+muraYenFmt(MURA_MORI_YEN)+'円＋木を きる だい '+muraYenFmt(MURA_KIRIKATA_YEN)+'円＋せいち だい '+muraYenFmt(MURA_SEICHI_YEN)+'円＝ぜんぶで '+muraYenFmt(MURA_MORI_TOTAL_YEN)+'円</div>'+
+    '<button class="btn btn-primary" onclick="muraConfirmMori()">かう</button>'+
+    '<button class="btn btn-ghost" onclick="closeInteriorCard()">やめとく</button>';
+  $('interiorCardBody').innerHTML=html; $('interiorCardOverlay').classList.add('show');
+}
+function muraConfirmMori(){
+  const html=muraFudousanFace()+
+    '<div class="interior-card-msg">ほんとうに かう？</div>'+
+    '<button class="btn btn-primary" onclick="muraBuyMori()">かう</button>'+
+    '<button class="btn btn-ghost" onclick="closeInteriorCard()">やめとく</button>';
+  $('interiorCardBody').innerHTML=html; $('interiorCardOverlay').classList.add('show');
+}
+function muraBuyMori(){
+  if(ownsForest){ closeInteriorCard(); return; }   // 二重購入の念のための防止線（通常はmuraShowMoriで既に弾かれる）
+  const cost=muraCoinsFor(MURA_MORI_TOTAL_YEN);   // 円→コインの換算をここで一度だけ通す（コイン価格を別途決め打ちしない）
+  if(coins<cost){
+    const html=muraFudousanFace()+
+      '<div class="interior-card-msg">おこづかいが たりないみたいだね。また あとで きてね</div>'+
+      '<button class="btn btn-primary" onclick="closeInteriorCard()">とじる</button>';
+    $('interiorCardBody').innerHTML=html; $('interiorCardOverlay').classList.add('show');
+    return;
+  }
+  coins-=cost;
+  ownsForest=true;
+  MURA_DEF.bg='mura-cleared.webp';   // 0-8節：見た目の切り替え（森→更地）
+  save();
+  const html=muraFudousanFace()+
+    '<div class="interior-card-msg">やったね！ この もりは きみの ものだ！</div>'+
+    '<button class="btn btn-primary" onclick="closeInteriorCard()">とじる</button>';
+  $('interiorCardBody').innerHTML=html; $('interiorCardOverlay').classList.add('show');
+  renderField();   // 0-8節：購入直後にその場でフィールド表示（背景・コインバッジ）を切り替える。再読み込み不要
+}
+function muraOpenDaiku(){
+  const html=muraDaikuFace()+
+    (ownsForest
+      ? '<div class="interior-card-msg">さあ、なにを たてようか。これからが たのしみだね！</div>'
+      : '<div class="interior-card-msg">おれたちは だいくの きょうだいさ。とちが きまったら、また はなしかけてくれよな！</div>')+
+    '<button class="btn btn-primary" onclick="closeInteriorCard()">とじる</button>';
+  $('interiorCardBody').innerHTML=html; $('interiorCardOverlay').classList.add('show');
+}
+
 /* §9：屋内定義セルフテスト */
 function interiorSelfTest(){
   const fails=[];
-  [MALL_DEF,HOUSE1_DEF,SCHOOL_DEF,SHODO_DEF,STATION_DEF].forEach(def=>{
+  [MALL_DEF,HOUSE1_DEF,SCHOOL_DEF,SHODO_DEF,STATION_DEF,MURA_DEF].forEach(def=>{
     const g=def.grid,H=g.length,W=g[0].length,all=g.join(''),tag=def.name;
     // 発注_町南側と駅：STATION_ZONEのケースを明示的に追加（15×10＝HOUSE1_DEFと同じ寸法だが、
     // 黙って「それ以外」の分岐に収まるのに任せず、駅も判定されていることが読んで分かる形にする）
-    const expected=def.zone===MALL_ZONE?{w:18,h:12}:((def.zone===SCHOOL_ZONE||def.zone===SHODO_ZONE)?{w:18,h:12}:(def.zone===STATION_ZONE?{w:15,h:10}:{w:15,h:10}));
+    // 発注_村1：MURA_ZONEも同様に明示追加（15×10＝HOUSE1_DEF/STATION_DEFと同じ寸法）
+    const expected=def.zone===MALL_ZONE?{w:18,h:12}:((def.zone===SCHOOL_ZONE||def.zone===SHODO_ZONE)?{w:18,h:12}:(def.zone===STATION_ZONE?{w:15,h:10}:(def.zone===MURA_ZONE?{w:15,h:10}:{w:15,h:10})));
     if(H!==expected.h||W!==expected.w||!g.every(r=>r.length===expected.w)) fails.push(tag+':サイズ/行長不一致');
     ['S','E'].forEach(c=>{ if((all.split(c).length-1)!==1) fails.push(tag+':'+c+'が1個でない'); });
     const wantM=def.zone===MALL_ZONE?1:0,wantN=(def.zone===HOUSE1_ZONE||def.zone===SCHOOL_ZONE)?1:0;
+    const wantF=def.zone===MURA_ZONE?1:0,wantC=def.zone===MURA_ZONE?1:0;   // 発注_村1：不動産屋F・大工兄弟C
     if((all.split('M').length-1)!==wantM) fails.push(tag+':M個数不正');
     if((all.split('N').length-1)!==wantN) fails.push(tag+':N個数不正');
-    if(/[,>A-DF-L]/.test(all)) fails.push(tag+':くさむら/すみか/ゲートあり');
-    if(/[^T.SEMN]/.test(all)) fails.push(tag+':不正な記号あり');
+    if((all.split('F').length-1)!==wantF) fails.push(tag+':F個数不正');
+    if((all.split('C').length-1)!==wantC) fails.push(tag+':C個数不正');
+    if(/[,>ABDG-L]/.test(all)) fails.push(tag+':くさむら/すみか/ゲートあり');   // 発注_村1：F・Cを村の正規記号にしたため除外対象からも外す（元は/[,>A-DF-L]/）
+    if(/[^T.SEMNFC]/.test(all)) fails.push(tag+':不正な記号あり');   // 発注_村1：F・Cを追加
     let sx=-1,sy=-1; for(let y=0;y<H;y++){ const x=g[y].indexOf('S'); if(x>=0){sx=x;sy=y;break;} }
     const seen=new Set(),q=[]; if(sx>=0){seen.add(sy*W+sx);q.push([sx,sy]);}
     while(q.length){ const [x,y]=q.shift(); [[1,0],[-1,0],[0,1],[0,-1]].forEach(([dx,dy])=>{ const nx=x+dx,ny=y+dy,k=ny*W+nx; if(nx>=0&&ny>=0&&nx<W&&ny<H&&!seen.has(k)&&g[ny][nx]!=='T'){seen.add(k);q.push([nx,ny]);} }); }
-    ['E','M','N'].forEach(c=>{ for(let y=0;y<H;y++){ const x=g[y].indexOf(c); if(x>=0&&!seen.has(y*W+x)) fails.push(tag+':S→'+c+'到達不能'); } });
+    ['E','M','N','F','C'].forEach(c=>{ for(let y=0;y<H;y++){ const x=g[y].indexOf(c); if(x>=0&&!seen.has(y*W+x)) fails.push(tag+':S→'+c+'到達不能'); } });
     const r=def.returnTo,tg=TOWN_DEF.grid;
     if(r.y<0||r.y>=tg.length||r.x<0||r.x>=tg[0].length||!isPassableTile(tg[r.y][r.x],TOWN_ZONE)) fails.push(tag+':returnTo不正');
   });
@@ -13702,6 +13917,132 @@ function op1WalkGroupOut(seq){
     op1StopWalkAnims();
     op1Finish();
   },OP5_LAYOUT.walkDurationMs);
+}
+
+/* ==============================
+   新幹線「電光」地方間移動シーン Phase1（単体シーン実装）
+   発注書＝_一時\発注_新幹線でんこうシーンPhase1.md。既存op1-overlay系とは完全に独立の新規実装
+   （クラス名・関数名はすべてtrain-scene-系/trainScene系で新設。op1系のコード・クラス名・関数名は
+   一切変更していない）。今回のスコープ＝シーン単体の独立実装のみ。ゲーム進行（zone24クリア後の
+   自動発火・unlockedの変更等）には一切手を入れない。startTrainSceneEvent()をコンソールから呼ぶ
+   ことでのみ再生されるデバッグ機能（0-3節：「特定の画面がactiveであることを前提にしない」独立関数）。
+================================ */
+let trainSceneActive=false;   // 再生中フラグ（多重起動防止。オーバーレイが全画面を覆うのでロックはCSS任せ＝op1Activeと同じ流儀）
+let trainSceneSeq=0;          // 世代カウンタ：とばす/完走のたびに増やし、残っている古いsetTimeoutを無効化する（op1Seqと同じ流儀・鉄則7）
+let trainSceneWalkHandles=[]; // S2で稼働中の歩行コマ送りハンドル（スキップ時にまとめて止める。op1WalkHandlesと同じ流儀）
+
+const TRAIN_SCENE_MS={ s0:1500, s1:1800, s2:1000, s3:2600, s4a:900, s4b:900, s4c:900, s5:1000 };  // 0-4節の秒数表（合計10.6秒＝目安10〜12秒レンジ内）
+
+function trainSceneStopWalkAnims(){ trainSceneWalkHandles.forEach(h=>{ if(h&&h.stop) h.stop(); }); trainSceneWalkHandles=[]; }
+
+/* 全レイヤーを初期状態(非表示)へ戻す。S0開始時・Finish時の両方から呼ぶ（再視聴時に前回の表示状態を持ち越さない＝op1PlayS0のリセット流儀と同じ） */
+function trainSceneResetLayers(){
+  ['tsBgStation','tsBgHero','tsBgSky','tsBgSide','tsBgCity','tsBgCountryside','tsBgFuji','tsBlackout'].forEach(id=>{
+    const el=$(id); if(el) el.classList.remove('show','scroll');
+  });
+  $('trainSceneStage').classList.remove('ts-shake');
+  [$('tsHero'),$('tsMana')].forEach(el=>{ if(el) el.classList.remove('show','walk-off'); });
+  $('tsVoice').innerHTML=''; $('tsVoice').classList.remove('show');
+}
+
+/* ---- デバッグ発火：コンソールから直接呼べる独立関数（0-3節）。どの画面がactiveでも呼べる想定 ---- */
+function startTrainSceneEvent(){
+  if(trainSceneActive) return;
+  trainSceneActive=true;
+  $('trainSceneOverlay').classList.add('show');
+  trainScenePlayS0();
+}
+
+/* 右上「とばす」：即座にオーバーレイを閉じるだけ（ゲーム状態は一切変更しない＝0-2節） */
+function trainSceneSkip(){ if(trainSceneActive) trainSceneFinish(); }
+
+function trainSceneFinish(){
+  trainSceneSeq++;              // 残っている古いシーンのsetTimeoutを無効化（世代番号ガード・検品項目3対応）
+  trainSceneActive=false;
+  trainSceneStopWalkAnims();
+  $('trainSceneOverlay').classList.remove('show');
+  trainSceneResetLayers();      // 次回再生時に前回の表示状態を持ち越さない（保険）
+  // 0-4節：今回は「オーバーレイを閉じるだけ」でよい。カット6＝ワールドマップズーム演出との接続、
+  // zone24ボス撃破後の自動発火・カット0の会話組み込みは次回の組み込み弾で行う（今回のスコープ外）。
+}
+
+/* ---- S0：駅の待合室（〜1.5秒）。ナレーション1行のみ（0-5節の文言） ---- */
+function trainScenePlayS0(){
+  trainSceneResetLayers();
+  const seq=trainSceneSeq;
+  $('tsBgStation').classList.add('show');
+  setTimeout(()=>{
+    if(seq!==trainSceneSeq) return;
+    $('tsVoice').textContent='でんこうが くるまで、まっていよう';
+    $('tsVoice').classList.add('show');
+  },150);
+  setTimeout(()=>{ if(seq!==trainSceneSeq) return; trainScenePlayS1(); },TRAIN_SCENE_MS.s0);
+}
+/* ---- S1：電光の決めカット（1.5〜2秒）。クロスフェードで切り替え＋画面を軽く揺らす。静止画のままでよい ---- */
+function trainScenePlayS1(){
+  const seq=trainSceneSeq;
+  $('tsVoice').classList.remove('show');
+  $('tsBgHero').classList.add('show');
+  $('trainSceneStage').classList.add('ts-shake');
+  setTimeout(()=>{ if(seq!==trainSceneSeq) return; trainScenePlayS2(); },TRAIN_SCENE_MS.s1);
+}
+/* ---- S2：主人公・相棒(マナ)が電車に乗り込むシルエット（〜1秒）。既存の歩行4相スプライトを画面下部で
+   数コマだけ動かし、画面外(右)へフレームアウトさせる（heroCharで男の子/女の子を切り替え＝既存の主人公・
+   相棒のみ・新規キャラなし）。startWalkAnim()は既存の汎用関数をそのまま呼ぶだけ（新設・変更なし） ---- */
+function trainScenePlayS2(){
+  const seq=trainSceneSeq;
+  $('trainSceneStage').classList.remove('ts-shake');
+  const heroKey=(typeof heroChar!=='undefined' && heroChar==='girl')?'girl':'boy';
+  const heroEl=$('tsHero'), manaEl=$('tsMana');
+  heroEl.classList.add('show'); manaEl.classList.add('show');
+  trainSceneWalkHandles.push(startWalkAnim(heroEl,heroKey,{intervalMs:150}));
+  trainSceneWalkHandles.push(startWalkAnim(manaEl,'mana',{intervalMs:150}));
+  requestAnimationFrame(()=>{
+    if(seq!==trainSceneSeq) return;
+    heroEl.classList.add('walk-off'); manaEl.classList.add('walk-off');
+  });
+  setTimeout(()=>{ if(seq!==trainSceneSeq) return; trainSceneStopWalkAnims(); trainScenePlayS3(); },TRAIN_SCENE_MS.s2);
+}
+/* ---- S3：発車・横スクロール（2〜3秒）。奥の空はゆっくり・手前の電車は速く動くパララックス
+   （しまなみ海道ゾーン41のPARALLAX_SPEEDと同じ「奥はゆっくり・手前は速く」の考え方を流用） ---- */
+function trainScenePlayS3(){
+  const seq=trainSceneSeq;
+  $('tsBgHero').classList.remove('show');
+  // S2のwalk-off(rAF起点のトランジション)が万一まだ終わっていなくても、S3開始時点で確実にシルエットを
+  // 消しておく防御措置（低速端末でrAFが遅延してもキャラが画面に残留するバグを防ぐ・実装判断）
+  $('tsHero').classList.remove('show'); $('tsMana').classList.remove('show');
+  $('tsBgSky').classList.add('show');
+  $('tsBgSide').classList.add('show');
+  requestAnimationFrame(()=>{
+    if(seq!==trainSceneSeq) return;
+    $('tsBgSky').classList.add('scroll');
+    $('tsBgSide').classList.add('scroll');
+  });
+  setTimeout(()=>{ if(seq!==trainSceneSeq) return; trainScenePlayS4a(); },TRAIN_SCENE_MS.s3);
+}
+/* ---- S4：車窓モンタージュ（2〜3秒＝city→countryside→mountain-fujiの順に各0.8〜1秒クロスフェード） ---- */
+function trainScenePlayS4a(){
+  const seq=trainSceneSeq;
+  $('tsBgSky').classList.remove('show','scroll');
+  $('tsBgSide').classList.remove('show','scroll');
+  $('tsBgCity').classList.add('show');
+  setTimeout(()=>{ if(seq!==trainSceneSeq) return; trainScenePlayS4b(); },TRAIN_SCENE_MS.s4a);
+}
+function trainScenePlayS4b(){
+  const seq=trainSceneSeq;
+  $('tsBgCountryside').classList.add('show');
+  setTimeout(()=>{ if(seq!==trainSceneSeq) return; trainScenePlayS4c(); },TRAIN_SCENE_MS.s4b);
+}
+function trainScenePlayS4c(){
+  const seq=trainSceneSeq;
+  $('tsBgFuji').classList.add('show');
+  setTimeout(()=>{ if(seq!==trainSceneSeq) return; trainScenePlayS5(); },TRAIN_SCENE_MS.s4c);
+}
+/* ---- S5：トンネル暗転（〜1秒）。暗転しきったところでtrainSceneFinish()（0-4節：今回はここで完結） ---- */
+function trainScenePlayS5(){
+  const seq=trainSceneSeq;
+  $('tsBlackout').classList.add('show');
+  setTimeout(()=>{ if(seq!==trainSceneSeq) return; trainSceneFinish(); },TRAIN_SCENE_MS.s5);
 }
 
 /* ==============================
