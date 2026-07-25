@@ -440,6 +440,74 @@
     0%{transform:translate(-50%,-50%) scale(.25);opacity:1}
     100%{transform:translate(-50%,-50%) scale(6.5);opacity:0}}
   .magic-fx.max .magic-burst.b2{animation-delay:.2s;animation-duration:.75s}
+  /* ===== 手直し_打撃の演出（2026-07-25・改善メモ4番の後半）=====
+     相性がいいときは「まほう」が出るが、ふつう・にがてのときは毎回まったく同じ揺れだけで単調だった。
+     そこで打撃を4種類つくってランダムに出す（きりさく／たたく／つきさす／くだく）。
+     画像は使わずCSSだけ＝容量ゼロ・権利の心配なし。色は白＋うすい黄、クリティカルだけ金。 */
+  .hit-fx{position:absolute;width:0;height:0;pointer-events:none;z-index:45;--hcol:#fff3a8}
+  .hit-fx.crit{--hcol:#fde047}
+  /* ①きりさく：ひかりの線が2本、×の形に走る */
+  .hit-slash{position:absolute;left:0;top:0;width:min(52vw,190px);height:11px;border-radius:9px;
+    background:linear-gradient(90deg,rgba(255,255,255,0),#fff 26%,#fff 74%,rgba(255,255,255,0));
+    box-shadow:0 0 10px #fff,0 0 20px var(--hcol);opacity:0;
+    animation:hitSlash .34s ease-out forwards}
+  .hit-slash.s2{--rot:36deg;animation-delay:.09s}
+  @keyframes hitSlash{
+    0%{opacity:0;transform:translate(-50%,-50%) rotate(var(--rot,-34deg)) scaleX(.1)}
+    25%{opacity:1;transform:translate(-50%,-50%) rotate(var(--rot,-34deg)) scaleX(1.05)}
+    62%{opacity:1;transform:translate(-50%,-50%) rotate(var(--rot,-34deg)) scaleX(1)}
+    100%{opacity:0;transform:translate(-50%,-50%) rotate(var(--rot,-34deg)) scaleX(1.15)}}
+  /* ②たたく：マンガの「バン！」形のひかりがドンと出る。
+     中まで真っ白に塗ると敵が完全に隠れてしまうので、中心の白は絞り、下の敵が透ける重ね方にする（7/25の見た目確認） */
+  .hit-star{position:absolute;left:0;top:0;width:min(44vw,158px);aspect-ratio:1;opacity:0;
+    mix-blend-mode:screen;
+    background:radial-gradient(circle,#fff 0%,#fff 20%,var(--hcol) 50%,rgba(255,255,255,0) 74%);
+    clip-path:polygon(50% 0%,60% 26%,86% 12%,74% 38%,100% 50%,74% 62%,86% 88%,60% 74%,
+                      50% 100%,40% 74%,14% 88%,26% 62%,0% 50%,26% 38%,14% 12%,40% 26%);
+    animation:hitStar .4s cubic-bezier(.2,.8,.3,1) forwards}
+  @keyframes hitStar{
+    0%{opacity:0;transform:translate(-50%,-50%) scale(.2) rotate(-18deg)}
+    22%{opacity:1;transform:translate(-50%,-50%) scale(1.12) rotate(0deg)}
+    58%{opacity:1;transform:translate(-50%,-50%) scale(1) rotate(4deg)}
+    100%{opacity:0;transform:translate(-50%,-50%) scale(1.26) rotate(10deg)}}
+  /* ③つきさす：横から線が突き刺さって、当たった点が光る。
+     細くて薄いと明るい背景に負けて見えないので、太く・濃く・光る時間を長めにとる（7/25の見た目確認） */
+  .hit-line{position:absolute;left:0;top:0;height:15px;width:min(50vw,186px);border-radius:9px;
+    background:linear-gradient(90deg,rgba(255,255,255,0),#fff 48%,var(--hcol));opacity:0;
+    box-shadow:0 0 12px var(--hcol),0 0 4px #fff;
+    animation:hitLine .38s ease-out forwards}
+  .hit-line.l2{animation-delay:.06s}
+  .hit-line.l3{animation-delay:.12s}
+  @keyframes hitLine{
+    0%{opacity:0;transform:translate(-124%,calc(-50% + var(--oy,0px))) scaleX(.3)}
+    26%{opacity:1;transform:translate(-66%,calc(-50% + var(--oy,0px))) scaleX(1)}
+    72%{opacity:1;transform:translate(-50%,calc(-50% + var(--oy,0px))) scaleX(1)}
+    100%{opacity:0;transform:translate(-36%,calc(-50% + var(--oy,0px))) scaleX(.7)}}
+  .hit-dot{position:absolute;left:0;top:0;width:66px;aspect-ratio:1;border-radius:50%;opacity:0;
+    background:radial-gradient(circle,#fff 0%,#fff 22%,var(--hcol) 52%,rgba(255,255,255,0) 72%);
+    animation:hitDot .36s ease-out forwards}
+  @keyframes hitDot{
+    0%{opacity:0;transform:translate(-50%,-50%) scale(.2)}
+    24%{opacity:1;transform:translate(-50%,-50%) scale(1.3)}
+    70%{opacity:1;transform:translate(-50%,-50%) scale(1.15)}
+    100%{opacity:0;transform:translate(-50%,-50%) scale(1.6)}}
+  /* ④くだく：かけらが放射状に飛び散る＋衝撃の輪（小さすぎると見えないので大きめ・光つき） */
+  /* かけらは「割れたかたち」にして、ひとつずつ大きさも変える（同じ四角が並ぶと紙切れに見えるため） */
+  .hit-chip{position:absolute;left:0;top:0;width:var(--s,20px);height:var(--s,20px);
+    background:#fff;opacity:0;filter:drop-shadow(0 0 7px var(--hcol));
+    clip-path:polygon(48% 0%,100% 34%,82% 100%,16% 86%,0% 38%);
+    animation:hitChip .52s ease-out forwards}
+  @keyframes hitChip{
+    0%{opacity:0;transform:translate(-50%,-50%) rotate(var(--a,0deg)) translateX(6px) scale(.4)}
+    18%{opacity:1}
+    72%{opacity:1}
+    100%{opacity:0;transform:translate(-50%,-50%) rotate(var(--a,0deg)) translateX(var(--d,110px)) scale(1)}}
+  .hit-ring{position:absolute;left:0;top:0;width:58px;aspect-ratio:1;border-radius:50%;
+    border:4px solid #fff;box-shadow:0 0 8px var(--hcol);
+    animation:hitRing .42s ease-out forwards}
+  @keyframes hitRing{
+    0%{opacity:.9;transform:translate(-50%,-50%) scale(.3)}
+    100%{opacity:0;transform:translate(-50%,-50%) scale(2.8)}}
   .enemy-wrap{position:relative;display:inline-block;animation:efloat 3s ease-in-out infinite}
   @keyframes efloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
 
@@ -7237,6 +7305,7 @@ function jukugoBossOnCorrect(btn){
     if(seq!==spawnSeq) return;
     sfxCorrect();
     $('enemyChar').classList.add('attacked');
+    playHitFx($('enemyChar'), critical);   // 手直し_打撃の演出(7/25)：熟語ボスは属性なし＝いつも打撃
     setTimeout(()=>{
       if(seq!==spawnSeq) return;
       let pop='';
@@ -7486,6 +7555,7 @@ function twinBossOnCorrect(btn){
     if(seq!==spawnSeq) return;
     sfxCorrect();
     targetChar.classList.add('attacked');
+    playHitFx(targetChar, critical);   // 手直し_打撃の演出(7/25)：当たったほう（一心／同体）の位置に出す
     setTimeout(()=>{
       if(seq!==spawnSeq) return;
       let pop='';
@@ -8574,6 +8644,7 @@ function onCorrectParty(btn){
       playMagicFx(typeOf(att), mlv);
       setTimeout(runHit, mlv==='max' ? 1000 : 600);   // 最高は演出が長いぶん、当たるのを少し待つ
     }else{
+      playHitFx($('enemyChar'), critical);   // 手直し_打撃の演出(7/25)：まほうが出ないときは4種類の打撃をランダムに
       runHit();
     }
   };
@@ -8651,6 +8722,55 @@ function playMagicFx(type, level){
     if(app){ app.classList.add('shake'); setTimeout(()=>app.classList.remove('shake'),500); }
   }
   setTimeout(()=>{ if(box.parentNode) box.parentNode.removeChild(box); }, isWeak ? 1200 : (isMax ? 2000 : 1600));
+}
+/* ===== 手直し_打撃の演出（2026-07-25・改善メモ4番の後半）=====
+   まほうが出ない攻撃（相性ふつう・にがて／熟語ボス／ふたごボス）は、毎回まったく同じ揺れだけで
+   単調だった。4種類の打撃をランダムに出す。強さ（ダメージ）には一切関与しない＝見た目だけ。 */
+const HIT_FX_KINDS = ['zan', 'ban', 'totsu', 'sai'];   // きりさく／たたく／つきさす／くだく
+let _lastHitFx = -1;
+function playHitFx(targetEl, critical, forceKind){
+  const scene = document.querySelector('#screen-battle .scene.battle') || document.getElementById('screen-battle');
+  if(!scene) return;
+  let kind = forceKind;   // 第3引数は検品・撮影で種類を指定するためのもの（ゲーム中は使わない＝いつもランダム）
+  if(HIT_FX_KINDS.indexOf(kind) < 0){
+    let i = Math.floor(Math.random() * HIT_FX_KINDS.length);
+    if(i === _lastHitFx) i = (i + 1) % HIT_FX_KINDS.length;   // 2回続けて同じ種類は出さない（ランダムらしく見せるため）
+    _lastHitFx = i;
+    kind = HIT_FX_KINDS[i];
+  }
+  const box = document.createElement('div');
+  box.className = 'hit-fx ' + kind + (critical ? ' crit' : '');
+  // 当たった相手の真ん中に重ねる（ふたごボスでも、当たったほうに出る）
+  let lp = 50, tp = 46;
+  const el = targetEl || document.getElementById('enemyChar');
+  if(el){
+    const sr = scene.getBoundingClientRect(), tr = el.getBoundingClientRect();
+    if(sr.width > 0 && sr.height > 0 && tr.width > 0){
+      lp = ((tr.left + tr.width / 2) - sr.left) / sr.width * 100;
+      tp = ((tr.top + tr.height / 2) - sr.top) / sr.height * 100;
+    }
+  }
+  box.style.left = lp.toFixed(1) + '%';
+  box.style.top  = tp.toFixed(1) + '%';
+  const add = cls => { const e = document.createElement('div'); e.className = cls; box.appendChild(e); return e; };
+  if(kind === 'zan'){ add('hit-slash'); add('hit-slash s2'); }
+  else if(kind === 'ban'){ add('hit-star'); add('hit-ring'); }
+  else if(kind === 'totsu'){
+    ['hit-line', 'hit-line l2', 'hit-line l3'].forEach((c, n) => {
+      add(c).style.setProperty('--oy', ((n - 1) * 26) + 'px');
+    });
+    add('hit-dot');
+  }else{
+    for(let n = 0; n < 6; n++){
+      const chip = add('hit-chip');
+      chip.style.setProperty('--a', (n * 60 + Math.random() * 24 - 12).toFixed(0) + 'deg');
+      chip.style.setProperty('--d', (80 + Math.random() * 60).toFixed(0) + 'px');
+      chip.style.setProperty('--s', (15 + Math.random() * 12).toFixed(0) + 'px');   // 大きさもばらけさせる
+    }
+    add('hit-ring');
+  }
+  scene.appendChild(box);
+  setTimeout(()=>{ if(box.parentNode) box.parentNode.removeChild(box); }, 900);
 }
 
 /* 弾3-12§4：バトル勝利のコイン加算（partyモード専用＝onEnemyDefeatedは常にparty経由）。
