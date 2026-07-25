@@ -1219,7 +1219,7 @@
   /* 手直し はかせ顔クロノトリガー化：顔はウィンドウ幅基準のclamp()で決める固定サイズ（align-self:stretch等でウィンドウの実高さに追従させない＝
      「狭い画面→文字が折り返して縦長→顔が伸びて幅を圧迫→さらに折り返す」という暴走ループになるため引き続き回避する）。
      画像は256×256の正方形なので幅=高さ。セリフ1〜3行なら顔の高さ≒ウィンドウの高さになり、クロノトリガー風の左肖像に見える */
-  .hakase-talk-face{flex:0 0 auto;width:clamp(84px,24vw,124px);height:clamp(84px,24vw,124px);border-radius:14px;
+  .hakase-talk-face{flex:0 0 auto;width:clamp(84px,24%,124px);height:clamp(84px,24%,124px);border-radius:14px;
     background:rgba(255,255,255,.16);border:2px solid rgba(255,255,255,.75);
     display:flex;align-items:center;justify-content:center;font-size:2.6rem;overflow:hidden}
   .hakase-talk-face.has-img{background-size:cover;background-position:center top;font-size:0}
@@ -1670,7 +1670,9 @@
   .ts-talk.show{display:flex;animation:hakaseTalkIn .22s ease forwards}
   .ts-talk.mid{top:38%}
   .ts-talk.top{top:6%}
-  .ts-talk-face{flex:0 0 auto;width:clamp(84px,24vw,124px);height:clamp(84px,24vw,124px);border-radius:14px;
+  /* 改善メモ_0725：幅は枠基準(%)でよいが、高さに%を使うと親（.ts-talk）の高さが自動計算のため
+     0になって顔が潰れる。aspect-ratioで正方形を保つ */
+  .ts-talk-face{flex:0 0 auto;width:clamp(84px,24%,124px);aspect-ratio:1;height:auto;border-radius:14px;
     border:2px solid rgba(255,255,255,.75);background-size:cover;background-position:center top;overflow:hidden}
   .ts-talk-text{font-weight:900;font-size:1.148rem;line-height:1.4;text-align:left}
   .ts-talk-next{position:absolute;right:12px;bottom:6px;font-size:.8rem;opacity:.85;animation:tsTalkNext 1s ease-in-out infinite}
@@ -1737,13 +1739,13 @@
   #tsGroundFill{position:absolute;left:0;right:0;top:85.5%;bottom:0;z-index:3;opacity:0;transition:opacity .3s ease;
     background:linear-gradient(180deg,#98a1ab 0,#6a737d 40%,#4a525c 100%)}
   #tsGroundFill.run{opacity:1}
-  #tsTrainSide{position:absolute;left:0;top:67.4%;width:531vw;max-width:none;z-index:5;
+  #tsTrainSide{position:absolute;left:0;top:67.4%;width:531%;max-width:none;z-index:5;
     opacity:0;transition:opacity .45s ease}
   #tsTrainSide.run{opacity:1;animation:tsBob .42s ease-in-out infinite}
   @keyframes tsBob{0%,100%{transform:translateY(0)}50%{transform:translateY(4px)}}
   /* v2 S3：流れる電柱（右へ）。repeating-gradientの位相を1周期ぶん動かして無限ループ */
   .ts-poles{position:absolute;inset:0;z-index:7;opacity:0;transition:opacity .3s ease;pointer-events:none;
-    background:repeating-linear-gradient(90deg,rgba(47,58,76,.38) 0 6px,transparent 6px 52vw);
+    background:repeating-linear-gradient(90deg,rgba(47,58,76,.38) 0 6px,transparent 6px 52%);
     animation:tsPoles .5s linear infinite;animation-play-state:paused}
   .ts-poles.run{opacity:1;animation-play-state:running}
   @keyframes tsPoles{from{background-position:0 0}to{background-position:52vw 0}}
@@ -1762,13 +1764,13 @@
   .ts-speedlines span{position:absolute;height:3px;border-radius:99px;background:rgba(255,255,255,.55);
     animation:tsLineFly .55s linear infinite}
   .ts-speedlines.amber span{background:rgba(255,205,110,.55);height:4px}
-  .ts-speedlines span:nth-child(1){top:9%;width:34vw;animation-duration:.5s}
-  .ts-speedlines span:nth-child(2){top:21%;width:22vw;animation-duration:.42s;animation-delay:-.2s;opacity:.75}
-  .ts-speedlines span:nth-child(3){top:34%;width:40vw;animation-duration:.6s;animation-delay:-.35s}
-  .ts-speedlines span:nth-child(4){top:47%;width:18vw;animation-duration:.38s;animation-delay:-.1s;opacity:.6}
-  .ts-speedlines span:nth-child(5){top:61%;width:30vw;animation-duration:.52s;animation-delay:-.28s}
-  .ts-speedlines span:nth-child(6){top:74%;width:24vw;animation-duration:.45s;animation-delay:-.05s;opacity:.7}
-  .ts-speedlines span:nth-child(7){top:87%;width:36vw;animation-duration:.58s;animation-delay:-.4s}
+  .ts-speedlines span:nth-child(1){top:9%;width:34%;animation-duration:.5s}
+  .ts-speedlines span:nth-child(2){top:21%;width:22%;animation-duration:.42s;animation-delay:-.2s;opacity:.75}
+  .ts-speedlines span:nth-child(3){top:34%;width:40%;animation-duration:.6s;animation-delay:-.35s}
+  .ts-speedlines span:nth-child(4){top:47%;width:18%;animation-duration:.38s;animation-delay:-.1s;opacity:.6}
+  .ts-speedlines span:nth-child(5){top:61%;width:30%;animation-duration:.52s;animation-delay:-.28s}
+  .ts-speedlines span:nth-child(6){top:74%;width:24%;animation-duration:.45s;animation-delay:-.05s;opacity:.7}
+  .ts-speedlines span:nth-child(7){top:87%;width:36%;animation-duration:.58s;animation-delay:-.4s}
   @keyframes tsLineFly{from{transform:translateX(-45vw)}to{transform:translateX(115vw)}}
   /* v2 S4：車窓フレーム（車内の壁＋角丸の窓穴＋座席）。「ただの風景スライドショー」に見えるv1の弱点を潰し、
      窓穴の外周をbox-shadowの超大スプレッドで塗りつぶす1部品だけで「乗っている」文脈を作る */
@@ -1779,12 +1781,12 @@
   .ts-window::after{content:'';position:absolute;left:0;right:0;bottom:0;height:22%;
     background:linear-gradient(180deg,#66717f 0,#49525f 45%,#3a424e 100%)}
   /* v2 S2：乗り込み。v1(最大64px)は小さすぎて見えなかったため大型化＋接地影で締める */
-  .train-scene-char{position:absolute;bottom:11%;left:15%;width:24vw;max-width:110px;min-width:58px;
+  .train-scene-char{position:absolute;bottom:11%;left:15%;width:24%;max-width:110px;min-width:58px;
     opacity:0;transform:translateX(0);transition:opacity .25s ease,transform 1.05s cubic-bezier(.5,.05,.85,.4);
     filter:drop-shadow(0 5px 5px rgba(0,0,0,.3));pointer-events:none;z-index:5}
   .train-scene-char.show{opacity:1}
   #tsMana{left:34%}
-  .train-scene-char.walk-off{transform:translateX(125vw)}
+  .train-scene-char.walk-off{transform:translateX(125%)}
   /* v2 S5：トンネルは「左からの黒ワイプ→流れる灯り→白フラッシュ」の3拍（v1はただの1秒フェード） */
   .train-scene-blackout{position:absolute;inset:0;background:#000;opacity:1;transform:translateX(-103%);
     transition:transform .3s cubic-bezier(.6,0,.9,.6);z-index:20}
@@ -3095,34 +3097,34 @@ const PARTNER_IDX=IDX['一'];
 /* ==============================
    タイプ・そうせい
 ================================ */
-const TYPES=['みず','ひ','き','つち','ふつう'];
-const TYPE_COLOR={'みず':'#38bdf8','ひ':'#f87171','き':'#4ade80','つち':'#d4a373','ふつう':'#adb5bd'};
-const TYPE_EMOJI={'みず':'💧','ひ':'🔥','き':'🌿','つち':'🪨','ふつう':'⭐'};
+const TYPES=['みず','ひ','き','つち','かみなり'];   // 手直し_属性5すくみ(7/25 準也さんの裁定)：「ふつう」を廃止し「かみなり」を追加
+const TYPE_COLOR={'みず':'#38bdf8','ひ':'#f87171','き':'#4ade80','つち':'#d4a373','かみなり':'#facc15'};
+const TYPE_EMOJI={'みず':'💧','ひ':'🔥','き':'🌿','つち':'🪨','かみなり':'⚡'};
 const _C2T={};
-'水川雨貝青'.split('').forEach(c=>_C2T[c]='みず');
-'火日赤光夕'.split('').forEach(c=>_C2T[c]='ひ');
-'木林森草花竹田野生'.split('').forEach(c=>_C2T[c]='き');
-'土石山谷金玉'.split('').forEach(c=>_C2T[c]='つち');
-/* 第18弾§1：小2159字ぶんのタイプ割当（みず6・ひ2・き6・つち2、残り143は既定「ふつう」） */
-'海魚池雪雲汽'.split('').forEach(c=>_C2T[c]='みず');
-'明星'.split('').forEach(c=>_C2T[c]='ひ');
-'麦米茶園原紙'.split('').forEach(c=>_C2T[c]='き');
-'岩地'.split('').forEach(c=>_C2T[c]='つち');
-/* 弾3-6§1：3年200字ぶんのタイプ割当（みず13・ひ3・き11・つち6、残り167は既定「ふつう」。小3素材表_下書き.md§1集計どおり） */
-'湖波港泳深流氷温湯酒州注洋'.split('').forEach(c=>_C2T[c]='みず');
-'陽暑炭'.split('').forEach(c=>_C2T[c]='ひ');
-'葉緑板柱実根農畑豆植薬'.split('').forEach(c=>_C2T[c]='き');
-'岸島坂銀登鉄'.split('').forEach(c=>_C2T[c]='つち');
-/* 弾4-6§1：4年202字ぶんのタイプ割当（みず6・つち3・き10・ひ4、残り179は既定「ふつう」。小4素材表_下書き.md§1集計どおり） */
-'漁清浅浴潟沖'.split('').forEach(c=>_C2T[c]='みず');
-'陸岡崎'.split('').forEach(c=>_C2T[c]='つち');
-'菜種材芽果梅梨松茨栃'.split('').forEach(c=>_C2T[c]='き');
-'照熱灯焼'.split('').forEach(c=>_C2T[c]='ひ');
-function typeOf(idx){ return _C2T[K[idx].c]||'ふつう'; }
+/* 手直し_属性5すくみ(2026-07-25 準也さんの裁定)：「ふつう」を廃止し、642字すべてを5属性に割り当てた。
+   割り当ての軸＝**部首**（さんずい＝みず／日へん＝ひ／木へん・くさかんむり＝き／土石金・うかんむり＝つち）。
+   部首で決まらない抽象語（数・言葉・光・速さ・お金・仕組み）は かみなり。数字は準也さんの指定で かみなり。
+   子どもが「へん」で属性を言い当てられる＝漢字の勉強になる、という狙い。
+   振り分けの作業ログ＝_一時\_属性ふりわけ\（部首ルール_仕上げ.py が最終版） */
+'上下両井伝体入共円冬冷出化半単去口合命塩変多天寒少岸崎川州帰弱役待後徒手放時来水氷池決汽沖油治法波泣注泳洋活流浅浴海消深'.split('').forEach(c=>_C2T[c]='みず');
+'清港湖湯満漁漢潟目福空美群耳肉良血行貝足身辺近返追送通連週進遊運道遠配酒量集雨雪雲青静頭顔首魚鼻'.split('').forEach(c=>_C2T[c]='みず');
+'争仕使働光兵功助努労勇勝味夏夕夜字希帳強必急悪成戦敗文料日早明星春昨昼晴暑暗曜書月朝死温火灯炭点無然焼照熱申発祭章競茶要'.split('').forEach(c=>_C2T[c]='ひ');
+'言訓記詩話語説読負赤辞陽題願食飯養'.split('').forEach(c=>_C2T[c]='ひ');
+'主人他代仲休位低住佐何作例便係信倍借健側兄児前原友号君和品唱夫女好妹姉子季孫実客帯幸康弟徳心念思息悲想意愛感打投折拾持指'.split('').forEach(c=>_C2T[c]='き');
+'挙散族服望木末本札材村束東松板林果柱栃栄校根案梅梨械森植業極楽様標橋機歩歯母毛氏民気熊父牛犬王生産男病皮直相省県着秋科秒'.split('').forEach(c=>_C2T[c]='き');
+'種積童竹笑第筆等答算節米糸約紙級細終組結給絵続緑線練縄羊羽老者育臣花芸芽苦英茨草荷菜落葉薬虫衣見親談豆農野飲香馬鳥鳴鹿麦'.split('').forEach(c=>_C2T[c]='き');
+'不中乗京倉具内刀分切初別利副力包北区医協取古台右司向周員器回固国園土地坂城埼場外大太奈委媛守安完官定室宮害家宿富察寺局屋'.split('').forEach(c=>_C2T[c]='つち');
+'山岐岡岩島巣工左市席平広底店府庫庭建弓引径戸所旅旗昔景横欠止滋牧物玉球田町畑登皿矢石研社祝立管箱置船街西角課議谷貨賀路車'.split('').forEach(c=>_C2T[c]='つち');
+'軍転軽輪郡都里重金鉄銀鏡門開間関阜阪院陸隊階館駅高'.split('').forEach(c=>_C2T[c]='つち');
+'一丁七万三世丸九予事二五交今付令以会候億元兆先全八公六典写列刷加勉動十千午卒南博印参反受各同名商問四図声売央失始学対小差'.split('').forEach(c=>_C2T[c]='かみなり');
+'年度式当形才改教数整新方昭曲最有期未次歌正残毎求特理用由画界番白百的真知短礼神票究笛習考聞自色表覚観計試調買走起速達選部'.split('').forEach(c=>_C2T[c]='かみなり');
+'録長電面音順類風飛験黄黒'.split('').forEach(c=>_C2T[c]='かみなり');
+function typeOf(idx){ return _C2T[K[idx].c]||'かみなり'; }   // 手直し_属性5すくみ：全字に割り当て済み（保険の既定値）
 // そうせいの輪：みず→ひ→き→つち→みず（→は「強い」）
-const STRONG={'みず':'ひ','ひ':'き','き':'つち','つち':'みず'};
+const STRONG={'みず':'ひ','ひ':'き','き':'つち','つち':'かみなり','かみなり':'みず'};   // 5すくみ：つち→かみなり（土に電気を逃がす＝アース）／かみなり→みず（水は電気を通す）
 function affinity(attType,defType){
-  if(attType==='ふつう'||defType==='ふつう') return 1;
+  /* 手直し_属性5すくみ(7/25)：「ふつう」を廃止したので特例も削除。
+     同じ属性どうしは等倍、輪で勝っていれば2倍、負けていれば0.5倍 */
   if(STRONG[attType]===defType) return 2;
   if(STRONG[defType]===attType) return 0.5;
   return 1;
@@ -14669,7 +14671,7 @@ function trainScenePlayS4a(){
   $('tsNearBg').classList.remove('run');
   const t=$('tsTrainSide');
   t.style.transition='left 3s cubic-bezier(.5,.05,.9,.5)';   // 加速しながら左へ通り抜け
-  requestAnimationFrame(()=>{ if(seq!==trainSceneSeq) return; t.style.left='-170vw'; });
+  requestAnimationFrame(()=>{ if(seq!==trainSceneSeq) return; t.style.left='-170%'; });
   $('tsBgFuji').classList.add('show');
   tsNoise(0,.25,800,1600,.08);
   setTimeout(()=>{ if(seq!==trainSceneSeq) return; $('tsBgFuji').classList.remove('show'); $('tsBgCountryside').classList.add('show'); tsNoise(0,.25,800,1600,.08); },1000);
