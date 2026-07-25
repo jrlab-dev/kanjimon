@@ -1617,29 +1617,104 @@
   .train-scene-layer{position:absolute;inset:0;background-size:cover;background-position:center center;
     opacity:0;transition:opacity .6s ease;z-index:1}
   .train-scene-layer.show{opacity:1}
-  /* v2 S0：待合室はKen Burns（じわっとズームイン）。静止画でも画を止めない */
-  #tsBgStation{background-image:url('images/fullart/interior-station.webp');
+  /* v3 S0：東京駅風の新幹線ホーム＋Ken Burns（じわっとズームイン）。静止画でも画を止めない */
+  #tsBgStation{background-image:url('images/fullart/train-station-platform.webp');
     transition:opacity .6s ease,transform 1.9s ease-out}
   #tsBgStation.kenburns{transform:scale(1.08)}
-  /* v2 S1：決めカットは184%幅レイヤーを右→左へカメラスイープ＋ズームアウト。
+  /* v3 S1：決めカットは「先端アップ→車体が流れ去る」。184%幅レイヤーを右→左へ大きくスイープ＋ズームアウト。
      縦画面のcover固定だと電車の顔が見切れたまま止まる(v1の弱点)ため、切り取り窓のほうを動かす */
   #tsBgHero{background-image:url('images/fullart/train-denkou-hero.webp');left:-42%;right:-42%;
-    transform:translateX(20%) scale(1.16);transition:opacity .35s ease,transform 3.1s linear}
-  #tsBgHero.sweep{transform:translateX(-20%) scale(1)}
+    transform:translateX(34%) scale(1.3);transition:opacity .35s ease,transform 3.2s linear}
+  #tsBgHero.sweep{transform:translateX(-38%) scale(1.02)}
+  /* v4 S0：コンコース自動歩き（社長の構図ファイル=_一時\構図_7月25日_9時17分.json 前半）。
+     ズームしたコンコースを背景に、マナが先導して改札へ。途中でマナが振り向いて会話 */
+  #tsBgConcourse{position:absolute;left:-117%;top:-0.16%;width:295.5%;z-index:1;opacity:0;transition:opacity .5s ease}
+  #tsBgConcourse.show{opacity:1}
+  #tsBgConcourse img{width:100%;display:block}
+  #tsManaWalk{position:absolute;z-index:6;opacity:0;transition:left .9s linear,top .9s linear,width .9s linear,opacity .4s ease;
+    max-width:none;pointer-events:none}
+  #tsManaWalk.show{opacity:1}
+  /* v4.4：勝利ポーズのその場ジャンプ（社長指摘7/25＝位置・大きさは変えず上下に飛び跳ねるだけ） */
+  @keyframes tsHop{0%,100%{transform:translateY(0)}50%{transform:translateY(-16px)}}
+  /* v4.1：シーン内会話カード＝フィールドの.hakase-talkと同じ見た目（左に顔・黒帯・白枠・タップで送り）。
+     .mid=コンコース用（中段の空きフロアに出す）・.top=ホーム用（最上部・キャラを隠さない） */
+  .ts-talk{position:absolute;left:2%;width:96%;z-index:40;display:none;align-items:center;gap:12px;
+    background:rgba(0,0,0,.82);color:#fff;border:3px solid rgba(255,255,255,.85);border-radius:18px;
+    padding:10px 18px 10px 10px;box-shadow:0 4px 14px rgba(0,0,0,.28);cursor:pointer;box-sizing:border-box}
+  .ts-talk.show{display:flex;animation:hakaseTalkIn .22s ease forwards}
+  .ts-talk.mid{top:38%}
+  .ts-talk.top{top:6%}
+  .ts-talk-face{flex:0 0 auto;width:clamp(84px,24vw,124px);height:clamp(84px,24vw,124px);border-radius:14px;
+    border:2px solid rgba(255,255,255,.75);background-size:cover;background-position:center top;overflow:hidden}
+  .ts-talk-text{font-weight:900;font-size:1.148rem;line-height:1.4;text-align:left}
+  .ts-talk-next{position:absolute;right:12px;bottom:6px;font-size:.8rem;opacity:.85;animation:tsTalkNext 1s ease-in-out infinite}
+  @keyframes tsTalkNext{0%,100%{transform:translateY(0)}50%{transform:translateY(3px)}}
+  /* v4 S2：迫力の決めカット＝先頭を舐めながらズーム（構図コマ14〜24のカメラワークをJSで区分再生） */
+  #tsHeroCut{position:absolute;left:0;top:-0.5%;width:295.5%;max-width:none;z-index:2;opacity:0;transition:opacity .3s ease}
+  #tsHeroCut.show{opacity:1}
+  /* 顔つきセリフ（マナ）：tsVoiceの先頭に丸い顔アイコン */
+  .ts-vface{width:58px;height:58px;border-radius:50%;border:3px solid #fff;background:#fff;
+    vertical-align:middle;margin-right:10px;object-fit:cover}
+  /* v4.3：カンサイ到着（構図_7月25日_10時46分.json 後半）。到着ホーム＝v4版画像・斜めドア＝社長作成の透過PNG */
+  #tsBgArrive{position:absolute;left:-22.66%;top:-0.66%;width:125.3%;z-index:1;opacity:0;transition:opacity .5s ease}
+  #tsBgArrive.show{opacity:1}
+  #tsBgArrive img{width:100%;display:block}
+  #tsDoorDiag{position:absolute;left:60.47%;top:22.95%;width:9.41%;height:16.99%;z-index:2;opacity:0;
+    transition:opacity .45s ease;background-image:url('images/fullart/train-door-diag.webp');
+    background-size:100% 100%;background-repeat:no-repeat}
+  #tsDoorDiag.show{opacity:1}
+  /* v3.3 S2：乗車シーン（社長の構図ファイル=_一時\構図_7月25日_8時28分.json の7コマを正とする）。
+     奥行きホーム(電光停車・ドア開)を背景に、マナは手前で見送り(後ろ姿・大)・主人公は奥のドアへ
+     歩いて遠近法で小さくなる→振り向いて勝利ポーズ→横向き→ドアの中へ */
+  #tsBgDepth{position:absolute;left:-22.1%;top:-0.76%;width:124%;z-index:1;opacity:0;transition:opacity .5s ease}
+  #tsBgDepth.show{opacity:1}
+  #tsBgDepth img{width:100%;display:block}
+  #tsManaBack{position:absolute;left:34.7%;top:68.7%;width:103.6%;max-width:none;z-index:6;
+    opacity:0;transition:opacity .5s ease;pointer-events:none}
+  #tsManaBack.show{opacity:1}
+  /* 主人公：歩行シート(300%200%格子)を1コマ表示。位置・大きさはJSがコマごとに書き換え、CSS遷移でつなぐ */
+  #tsBoardHero{position:absolute;z-index:5;aspect-ratio:1;pointer-events:none;opacity:0;
+    background-repeat:no-repeat;background-size:300% 200%;
+    transition:left .7s linear,top .7s linear,width .7s linear,opacity .35s ease}
+  #tsBoardHero.pose{background-size:contain;background-position:center bottom}
   #tsBgCity{background-image:url('images/fullart/train-scene-city.webp')}
   #tsBgCountryside{background-image:url('images/fullart/train-scene-countryside.webp')}
   #tsBgFuji{background-image:url('images/fullart/train-scene-mountain-fuji.webp')}
   /* v2 S4：車窓の風景3枚は幅を広げて右向きに横パン（窓の外が流れ続ける） */
   .ts-view{left:-10%;right:-10%;transform:translateX(-5%);transition:opacity .45s ease,transform 1.3s linear}
   .ts-view.pan{transform:translateX(5%)}
-  /* v2 S3：横スクロールは「車体を大きく写す(145%ズーム)＋車両に沿ってパン＋車体ボブ」で速度感を作る。
-     v1は3:2画像をcoverで置いただけ＝細い電車帯と白い余白だけの画面になっていた */
+  /* v3.1 S3：4層パララックス（社長の参考動画=車窓実写の速度差を再現）。
+     奥から：山なみ(ほぼ動かない)→近景の田園・川(速い)→高架橋の壁(最速)→電光の車体(手前・ボブ)。
+     壁はv3の「車体の前」から「車体と近景の間」へ移動（動画のとおり世界の一部として車体のうしろを流れる） */
   #tsBgSky{background:linear-gradient(180deg,#8ec9f0 0%,#cdeaff 55%,#fef3d6 100%)}
-  #tsBgSide{background-image:url('images/fullart/train-denkou-side.webp');
-    background-size:auto 185%;background-position:68% 56%;
-    transition:opacity .45s ease,background-position 2.7s linear}
-  #tsBgSide.ride{background-position:30% 56%;animation:tsBob .42s ease-in-out infinite}
-  @keyframes tsBob{0%,100%{transform:translateY(0)}50%{transform:translateY(2.5px)}}
+  #tsBgSide{background-image:url('images/fullart/train-denkou-side.webp')}
+  /* ---- v3.2：縦の配置は社長の構図ファイル（_一時\構図_7月25日_7時58分.json コマ1〜3）を正とする ----
+     山なみ＝上の帯(-7.2%〜33%)／近景＝中段(〜60%)／壁＝59%付近から／車体＝下1/3を大きく・下端ぴったり */
+  /* 社長指摘(7/25)：一番奥はループさせない。富士山（画像の右寄り）が画面左寄りから始まり、
+     一方向にゆっくり右へ流れるだけ（同じ富士山が2回出てくると遠景としておかしいため）。
+     開始位置-27vh＝富士山が画面左1/4あたり。+18vhドリフトで右寄りまで動いて止まる */
+  #tsMountains{position:absolute;left:0;right:0;top:-7.2%;height:40.3%;z-index:1;opacity:0;transition:opacity .45s ease;
+    background-image:url('images/fullart/train-bg-mountains.webp');background-size:auto 100%;
+    background-repeat:repeat-x;background-position:-27vh 0}
+  #tsMountains.run{opacity:1;animation:tsMtn 3.2s linear forwards}
+  @keyframes tsMtn{from{background-position:-27vh 0}to{background-position:-9vh 0}}
+  /* 近景（田園・川原・民家のループ帯・空は透過済み）。壁より遅く山よりずっと速い＝中間の速度 */
+  #tsNearBg{position:absolute;left:0;right:0;top:-0.5%;height:60.8%;z-index:2;opacity:0;transition:opacity .45s ease;
+    background-image:url('images/fullart/train-bg-near.webp');background-size:auto 100%;background-repeat:repeat-x}
+  #tsNearBg.run{opacity:1;animation:tsNear 4.3s linear infinite}
+  @keyframes tsNear{from{background-position:0 0}to{background-position:182.4vh 0}}
+  #tsParapet{position:absolute;left:0;right:0;top:41.4%;height:45%;z-index:3;opacity:0;transition:opacity .3s ease;
+    background-image:url('images/fullart/train-bridge-parapet.webp');background-size:auto 100%;background-repeat:repeat-x}
+  #tsParapet.run{opacity:1;animation:tsPar .48s linear infinite}
+  @keyframes tsPar{from{background-position:0 0}to{background-position:135vh 0}}
+  /* 壁の下端(86%)から画面下端までの埋め（高架の地面。すき間から空が見えないように） */
+  #tsGroundFill{position:absolute;left:0;right:0;top:85.5%;bottom:0;z-index:3;opacity:0;transition:opacity .3s ease;
+    background:linear-gradient(180deg,#98a1ab 0,#6a737d 40%,#4a525c 100%)}
+  #tsGroundFill.run{opacity:1}
+  #tsTrainSide{position:absolute;left:0;top:67.4%;width:531vw;max-width:none;z-index:5;
+    opacity:0;transition:opacity .45s ease}
+  #tsTrainSide.run{opacity:1;animation:tsBob .42s ease-in-out infinite}
+  @keyframes tsBob{0%,100%{transform:translateY(0)}50%{transform:translateY(4px)}}
   /* v2 S3：流れる電柱（右へ）。repeating-gradientの位相を1周期ぶん動かして無限ループ */
   .ts-poles{position:absolute;inset:0;z-index:7;opacity:0;transition:opacity .3s ease;pointer-events:none;
     background:repeating-linear-gradient(90deg,rgba(47,58,76,.38) 0 6px,transparent 6px 52vw);
@@ -1895,9 +1970,22 @@
   <div class="train-scene-stage" id="trainSceneStage">
     <div class="train-scene-layer" id="tsBgStation"></div>
     <div class="train-scene-layer" id="tsBgHero"></div>
+    <div id="tsBgConcourse"><img src="images/fullart/station-concourse.webp" alt=""></div>
+    <div id="tsBgArrive"><img src="images/fullart/train-platform-arrive.webp" alt=""></div>
+    <div id="tsDoorDiag"></div>
+    <img id="tsHeroCut" src="images/fullart/train-denkou-hero.webp" alt="">
+    <div id="tsBgDepth"><img src="images/fullart/train-platform-depth.webp" alt=""></div>
+    <div id="tsBoardHero"></div>
+    <img id="tsManaWalk" src="images/mana-back-a.webp" alt="">
+    <img id="tsManaBack" src="images/mana-back-a.webp" alt="">
     <img class="train-scene-char" id="tsHero" alt="">
     <img class="train-scene-char" id="tsMana" alt="">
     <div class="train-scene-layer" id="tsBgSky"></div>
+    <div id="tsMountains"></div>
+    <div id="tsNearBg"></div>
+    <div id="tsParapet"></div>
+    <div id="tsGroundFill"></div>
+    <img id="tsTrainSide" src="images/fullart/train-side-clear.webp" alt="">
     <div class="train-scene-layer" id="tsBgSide"></div>
     <div class="train-scene-layer ts-view" id="tsBgCity"></div>
     <div class="train-scene-layer ts-view" id="tsBgCountryside"></div>
@@ -1907,6 +1995,7 @@
     <div class="ts-window" id="tsWindow"></div>
     <div class="ts-speedlines" id="tsSpeedLines"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
     <div class="train-scene-voice" id="tsVoice"></div>
+    <div class="ts-talk" id="tsTalk"></div>
     <div class="train-scene-blackout" id="tsBlackout"></div>
     <div class="ts-flash" id="tsFlash"></div>
   </div>
@@ -5575,6 +5664,7 @@ let eventBossIntroSeen=false;   // かくれラスボスへのつなぎ（はか
 let twinEventIntroSeen=false;   // 「練を倒した後、まだ何かいる」演出を見たか（初回のみ・ゾーン44用）
 // 弾3-6§6-1：カンサイ突入時のはかせ一言を見たか（旧セーブは未見あつかい）
 let kansaiHakaseSeen=false;
+let stationSceneSeen=false;   // 手直し_駅構内(7/25)：初回入駅で新幹線シーンを自動再生したか
 // 弾3-6§6-3：「たびの つづき」通知（旧セーブ移行）を見たか（旧セーブは未見あつかい）
 let travelContinueSeen=false;
 let pendingTravelContinueBanner=false;   // セッション値：load()で判定し、次のrenderField()で1回だけ消費
@@ -5616,6 +5706,7 @@ function save(){
       partyFullGuideSeen:partyFullGuideSeen,   // 弾3-0
       jukugoBossGuideSeen:jukugoBossGuideSeen, // 弾3-6§5-4
       kansaiHakaseSeen:kansaiHakaseSeen,       // 弾3-6§6-1
+      stationSceneSeen:stationSceneSeen,       // 手直し_駅構内(7/25)：初回入駅の自動シーンを見たか
       travelContinueSeen:travelContinueSeen,   // 弾3-6§6-3
       chubuHakaseSeen:chubuHakaseSeen,         // 弾4-6§6-1
       travelContinueSeen2:travelContinueSeen2, // 弾4-6§6-3
@@ -5726,6 +5817,7 @@ function load(){
     // 弾3-6§5-4／§6-1／§6-3：新規セーブ項目（旧セーブは未見あつかい）
     jukugoBossGuideSeen = (d.jukugoBossGuideSeen===true);
     kansaiHakaseSeen = (d.kansaiHakaseSeen===true);
+    stationSceneSeen = (d.stationSceneSeen===true);   // 手直し_駅構内(7/25)：旧セーブは未見あつかい
     travelContinueSeen = (d.travelContinueSeen===true);
     // 弾4-6§6-1／§6-3：新規セーブ項目（旧セーブは未見あつかい）
     chubuHakaseSeen = (d.chubuHakaseSeen===true);
@@ -6538,7 +6630,7 @@ const HOUSE1_ZONE=-2;         // 弾3-15：みんかのなか
 const SCHOOL_ZONE=-3;         // 弾3-16：がっこうのなか
 const SHODO_ZONE=-4;          // 発注T-1：しょどうきょうしつのなか
 const STATION_ZONE=-5;        // 発注_町南側と駅：えきのなか（今回はロック中＝入場不可）
-const STATION_OPEN=false;     // 発注_町南側と駅：えき解放フラグ。trueにするまでPをタップしても入れない（電車演出は別弾）
+const STATION_OPEN=true;      // 手直し_駅構内(7/25)：駅構内フィールド実装にともない解放（社長指示＝入り口→改札→ホーム乗車シーン）
 const MURA_ZONE=-6;           // 発注_村1：むら ひろば よてい地のなか（村づくり第1弾。3年生＝カンサイ・シコク到達で解禁）
 function isTownLike(z){ return z<=0; }   // 町＋屋内＝非戦闘の疑似ゾーン
 // 発注_村1§0-2：お金の表現方針。新しい財布は作らずcoins（🪙）をそのまま使う。村の会話画面だけ円換算した表示にする。
@@ -10174,14 +10266,16 @@ function renderField(){
         cls+=' t-path t-town-door';
         txt='<span class="town-door-emoji">'+(ch==='L'?'🔬':(ch==='D'?'🛍️':(ch==='Y'?'🛏️':(ch==='H'?'📋':(ch==='M'?'🏬':(ch==='K'?'🏠':(ch==='F'?'🖌️':(ch==='N'?'🕰️':(ch==='O'?'🏡':(ch==='P'?'🚉':(ch==='Q'?'🎮':(ch==='V'?'🏞️':'🏫'))))))))))))+'</span>';
       }
-      else if(fieldZone<0 && (ch==='E'||ch==='M'||ch==='N'||(fieldZone===MURA_ZONE&&(ch==='F'||ch==='C')))){
+      else if(fieldZone<0 && (ch==='E'||ch==='M'||ch==='N'||(fieldZone===MURA_ZONE&&(ch==='F'||ch==='C'))||(fieldZone===STATION_ZONE&&ch==='K'))){
         // 弾3-15：屋内の出口・店員・住人。画像が読めたNPCは後載せするため、タイル上の絵文字はフォールバック時だけ。
         // 発注_村1：MURA_ZONE専用のF(不動産屋)・C(大工兄弟)を追加。他ゾーンのM/Nの意味と衝突しないようfieldZone===MURA_ZONEを明示
+        // 手直し_駅構内(7/25)：STATION_ZONE専用のK(改札)を追加（踏むと新幹線乗車シーン）
         cls+=' t-path t-town-door';
         if(ch==='E') txt='<span class="town-door-emoji">🚪</span>';
         else if(ch==='M') txt=(interiorActorSheetOK.has('nikuya')||interiorActorImgOK.has('nikuya'))?'':'<span class="town-door-emoji">🧑‍🍳</span>';
         else if(fieldZone===MURA_ZONE&&ch==='F') txt='<span class="town-door-emoji">💼</span>';
         else if(fieldZone===MURA_ZONE&&ch==='C') txt='<span class="town-door-emoji">👷</span>';
+        else if(fieldZone===STATION_ZONE&&ch==='K') txt='<span class="town-door-emoji">🎫</span>';
         else if(fieldZone===SCHOOL_ZONE) txt=teacherImagesOK?'':'<span class="town-door-emoji">👩‍🏫</span>';
         else txt=(interiorActorSheetOK.has('ojisan')||interiorActorImgOK.has('ojisan'))?'':'<span class="town-door-emoji">👴</span>';
       }
@@ -11661,16 +11755,19 @@ const SHODO_DEF={ zone:SHODO_ZONE, name:'しょどうきょうしつ', bg:'inter
    NPC・新しい文字は追加しない（新規キャラ禁止・裁定待ち）＝グリッド内で使う文字はSとEだけ。
    returnToは南側グリッドのP(0,7南側相対＝絶対(0,27))から自然に出てこられる隣接マス、東隣の(1,27)を採用
    （Pは町の西端(x=0)にあり、西隣は範囲外のため東・北・南の3候補から東を選んだ。理由は報告書に明記）。 */
-const STATION_DEF={ zone:STATION_ZONE, name:'えき', bg:'interior-station.webp',
+/* 手直し_駅構内(7/25)：木造待合室→近未来コンコース(station-concourse.webp・Codex生成)に刷新。
+   手前(下)＝駅の入り口(S/E)・奥(上)＝自動改札5レーン(K)。Kを踏むと新幹線乗車シーンが再生される
+   （進行フック＝zone24→25の既存演出との統合は次弾で判断。今はどの学年でも改札から体験できる）。 */
+const STATION_DEF={ zone:STATION_ZONE, name:'えき', bg:'station-concourse.webp',
   returnTo:{x:1,y:27},
   grid:[
 'TTTTTTTTTTTTTTT',
 'T.............T',
-'T..TT.....TT..T',
-'T..TT.....TT..T',
+'T....KKKKK....T',
 'T.............T',
 'T.............T',
-'T.............T',
+'TT...........TT',
+'TT...........TT',
 'T......S......T',
 'T......E......T',
 'TTTTTTTTTTTTTTT']};
@@ -11847,6 +11944,12 @@ function warpInterior(zone){
   if(zone===MURA_ZONE){ MURA_DEF.bg=ownsForest?'mura-cleared.webp':'mura-forest.webp'; }   // 発注_村1・0-8節：入場のたびに所有状態から書き換える
   fieldZone=zone; const s=zoneStartOf(zone); fieldHx=s.x; fieldHy=s.y;
   showScreen('screen-field'); renderField();
+  // 手直し_駅構内(7/25)：初めて駅に入ったときだけ、マナに連れられてホームへ行く一連のシーンを自動再生
+  // （社長指示「初めて乗るときはフィールドを歩くのも自動で」。2回目以降は改札Kを踏んだときだけ）
+  if(zone===STATION_ZONE && !stationSceneSeen && !trainSceneActive){
+    stationSceneSeen=true; save();
+    setTimeout(()=>{ if(!trainSceneActive) startTrainSceneEvent(); },600);
+  }
   // 発注T-1：しょどうきょうしつ初回入室の一言（録音ボイスbh13付き）。
   // 「たてもののなかにも…」の初回案内より後に出す＝両方初見のときは連続で2枚出る
   const showShodoIntro=()=>{
@@ -11877,6 +11980,8 @@ function onArriveInteriorTile(ch){
   if(fieldZone===SHODO_ZONE&&fieldHx===9&&fieldHy===3){ openKakitoriInvite(); return; }
   if(fieldZone===MURA_ZONE&&ch==='F'){ muraOpenFudousan(); return; }   // 発注_村1：不動産屋
   if(fieldZone===MURA_ZONE&&ch==='C'){ muraOpenDaiku(); return; }      // 発注_村1：大工兄弟
+  // 手直し_駅構内(7/25)：改札(K)を踏む→新幹線乗車シーン再生（完走/とばす後は駅構内に戻ってくる）
+  if(fieldZone===STATION_ZONE&&ch==='K'){ if(!trainSceneActive) startTrainSceneEvent(); return; }
 }
 function openInteriorCard(kind){
   let html='';
@@ -11982,16 +12087,18 @@ function interiorSelfTest(){
     ['S','E'].forEach(c=>{ if((all.split(c).length-1)!==1) fails.push(tag+':'+c+'が1個でない'); });
     const wantM=def.zone===MALL_ZONE?1:0,wantN=(def.zone===HOUSE1_ZONE||def.zone===SCHOOL_ZONE)?1:0;
     const wantF=def.zone===MURA_ZONE?1:0,wantC=def.zone===MURA_ZONE?1:0;   // 発注_村1：不動産屋F・大工兄弟C
+    const wantK=def.zone===STATION_ZONE?5:0;   // 手直し_駅構内(7/25)：改札K＝駅だけ5レーン
     if((all.split('M').length-1)!==wantM) fails.push(tag+':M個数不正');
     if((all.split('N').length-1)!==wantN) fails.push(tag+':N個数不正');
     if((all.split('F').length-1)!==wantF) fails.push(tag+':F個数不正');
     if((all.split('C').length-1)!==wantC) fails.push(tag+':C個数不正');
-    if(/[,>ABDG-L]/.test(all)) fails.push(tag+':くさむら/すみか/ゲートあり');   // 発注_村1：F・Cを村の正規記号にしたため除外対象からも外す（元は/[,>A-DF-L]/）
-    if(/[^T.SEMNFC]/.test(all)) fails.push(tag+':不正な記号あり');   // 発注_村1：F・Cを追加
+    if((all.split('K').length-1)!==wantK) fails.push(tag+':K個数不正');
+    if(/[,>ABDGHIJL]/.test(all)) fails.push(tag+':くさむら/すみか/ゲートあり');   // 手直し_駅構内：Kを改札の正規記号にしたため除外（元は/[,>ABDG-L]/）
+    if(/[^T.SEMNFCK]/.test(all)) fails.push(tag+':不正な記号あり');   // 手直し_駅構内：Kを追加
     let sx=-1,sy=-1; for(let y=0;y<H;y++){ const x=g[y].indexOf('S'); if(x>=0){sx=x;sy=y;break;} }
     const seen=new Set(),q=[]; if(sx>=0){seen.add(sy*W+sx);q.push([sx,sy]);}
     while(q.length){ const [x,y]=q.shift(); [[1,0],[-1,0],[0,1],[0,-1]].forEach(([dx,dy])=>{ const nx=x+dx,ny=y+dy,k=ny*W+nx; if(nx>=0&&ny>=0&&nx<W&&ny<H&&!seen.has(k)&&g[ny][nx]!=='T'){seen.add(k);q.push([nx,ny]);} }); }
-    ['E','M','N','F','C'].forEach(c=>{ for(let y=0;y<H;y++){ const x=g[y].indexOf(c); if(x>=0&&!seen.has(y*W+x)) fails.push(tag+':S→'+c+'到達不能'); } });
+    ['E','M','N','F','C','K'].forEach(c=>{ for(let y=0;y<H;y++){ const x=g[y].indexOf(c); if(x>=0&&!seen.has(y*W+x)) fails.push(tag+':S→'+c+'到達不能'); } });
     const r=def.returnTo,tg=TOWN_DEF.grid;
     if(r.y<0||r.y>=tg.length||r.x<0||r.x>=tg[0].length||!isPassableTile(tg[r.y][r.x],TOWN_ZONE)) fails.push(tag+':returnTo不正');
   });
@@ -13476,6 +13583,7 @@ function makeGradeStartSave(n){
     // 演出済みフラグ：学年Nの遷移より前（すでに通過済み）の分だけ済み扱い。
     // 学年N自身の突入演出（travelContinueSeen2＝れっしゃ 等）はfalseのまま＝初回発火させる
     travelContinueSeen:(startZone>STAGE2_COUNT+1), kansaiHakaseSeen:(startZone>STAGE2_COUNT+1),
+    stationSceneSeen:(startZone>STAGE2_COUNT+1),   // 手直し_駅構内(7/25)：学年スタートも同じ基準で既見あつかい
     travelContinueSeen2:(startZone>STAGE3_COUNT+1), chubuHakaseSeen:(startZone>STAGE3_COUNT+1),
     coins:30, items:{genkidama:0,fue:0}
   };
@@ -14000,21 +14108,27 @@ let trainSceneSeq=0;          // 世代カウンタ：とばす/完走のたび�
 let trainSceneWalkHandles=[]; // S2で稼働中の歩行コマ送りハンドル（スキップ時にまとめて止める。op1WalkHandlesと同じ流儀）
 let trainSceneOnDone=null;    // Phase2作業1：startTrainSceneEvent(onDone)で受け取った完了コールバック。とばす/完走どちらの経路でもtrainSceneFinish()内で1回だけ呼ぶ
 
-const TRAIN_SCENE_MS={ s0:1600, s1:2200, s2:1400, s3:2700, s4a:900, s4b:900, s4c:900, s5:1050 };  // v2秒数表（合計11.65秒＝目安10〜12秒レンジ内）
+const TRAIN_SCENE_MS={ s0:5600, s1:6700, s2:3100, s3:3000, s4a:3000, s5:1050, s6:5000, s7:4300 };  // v4.4秒数表（s7=改札登場を遅らせたぶん延長。s0/s1は自動送り込みの目安値）
 
 function trainSceneStopWalkAnims(){ trainSceneWalkHandles.forEach(h=>{ if(h&&h.stop) h.stop(); }); trainSceneWalkHandles=[]; }
 
 /* 全レイヤーを初期状態(非表示)へ戻す。S0開始時・Finish時の両方から呼ぶ（再視聴時に前回の表示状態を持ち越さない＝op1PlayS0のリセット流儀と同じ） */
 function trainSceneResetLayers(){
-  ['tsBgStation','tsBgHero','tsBgSky','tsBgSide','tsBgCity','tsBgCountryside','tsBgFuji','tsBlackout'].forEach(id=>{
+  ['tsBgStation','tsBgHero','tsBgConcourse','tsBgDepth','tsBgArrive','tsDoorDiag','tsHeroCut','tsManaWalk','tsManaBack','tsBgSky','tsBgSide','tsBgCity','tsBgCountryside','tsBgFuji','tsBlackout'].forEach(id=>{
     const el=$(id); if(el) el.classList.remove('show','scroll','kenburns','sweep','pan','ride');
   });
-  ['tsPoles','tsGround'].forEach(id=>{ const el=$(id); if(el) el.classList.remove('run'); });
+  const bcv=$('tsBgConcourse'); if(bcv) bcv.style.left='';        // v4.3：到着用の左位置上書きを戻す
+  const tsv=$('tsTrainSide'); if(tsv){ tsv.style.transition=''; tsv.style.left=''; }   // v4.3：通り抜けの移動を戻す
+  ['tsPoles','tsGround','tsMountains','tsNearBg','tsTrainSide','tsParapet','tsGroundFill'].forEach(id=>{ const el=$(id); if(el) el.classList.remove('run'); });
+  const bh=$('tsBoardHero'); if(bh){ bh.classList.remove('pose'); bh.removeAttribute('style'); }
+  const mw=$('tsManaWalk'); if(mw){ mw.removeAttribute('style'); mw.src='images/mana-back-a.webp'; }
+  const hc=$('tsHeroCut'); if(hc){ hc.removeAttribute('style'); }
+  tsTalkHide();   // v4.1：会話カードのタイマー・録音ボイスも確実に止める（とばす対応）
   const sl=$('tsSpeedLines'); if(sl) sl.classList.remove('show','amber');
   const win=$('tsWindow'); if(win) win.classList.remove('show');
   const fl=$('tsFlash'); if(fl) fl.classList.remove('show');
   $('trainSceneStage').classList.remove('ts-shake','ts-push');
-  [$('tsHero'),$('tsMana')].forEach(el=>{ if(el) el.classList.remove('show','walk-off'); });
+  [$('tsHero'),$('tsMana')].forEach(el=>{ if(el){ el.classList.remove('show','walk-off','board-walk'); el.removeAttribute('style'); } });
   $('tsVoice').innerHTML=''; $('tsVoice').classList.remove('show');
 }
 
@@ -14081,6 +14195,7 @@ function trainSceneFinish(){
   trainSceneSeq++;              // 残っている古いシーンのsetTimeoutを無効化（世代番号ガード・検品項目3対応）
   trainSceneActive=false;
   tsBusKill();                  // v2：予約済みの効果音（ガタンゴトン等の先読み分）もバスごと一発で消す
+  seStop('train-station-amb'); seStop('train-run-amb');   // v4.5：環境音も確実に止める（とばす対応）
   trainSceneStopWalkAnims();
   $('trainSceneOverlay').classList.remove('show');
   trainSceneResetLayers();      // 次回再生時に前回の表示状態を持ち越さない（保険）
@@ -14092,123 +14207,321 @@ function trainSceneFinish(){
   // フィールドが見える、というシンプルな終わり方で今回は十分）。
 }
 
-/* ---- S0 v2：駅の待合室（1.6秒）。Ken Burnsズームイン＋駅チャイム＋アナウンス文言 ---- */
+/* ---- v4.1：シーン内会話カード（社長指示7/25＝いつもの吹き出しスタイル・左に顔・読める時間確保・
+   タップで先送り・タップされなくても自動で進む・録音ボイス付き） ----
+   pos='mid'(コンコース中段)/'top'(ホーム最上部)。voiceFile=audio/battle/◯◯.mp3（無ければ無音・エラーなし）。
+   autoMs=自動送りまでの時間（声の長さ＋読み時間を呼び出し側で指定）。onDoneは1回だけ呼ばれる */
+let tsTalkTimer=null, tsTalkAudio=null;
+function tsTalkStopAudio(){ if(tsTalkAudio){ try{ tsTalkAudio.pause(); }catch(e){} tsTalkAudio=null; } }
+function tsTalkHide(){
+  if(tsTalkTimer){ clearTimeout(tsTalkTimer); tsTalkTimer=null; }
+  tsTalkStopAudio();
+  const el=$('tsTalk'); if(el){ el.classList.remove('show','mid','top'); el.onclick=null; }
+}
+function tsTalkShow(msg,pos,voiceFile,autoMs,onDone){
+  const seq=trainSceneSeq;
+  const el=$('tsTalk');
+  el.classList.remove('mid','top'); el.classList.add(pos,'show');
+  el.innerHTML='<div class="ts-talk-face" style="background-image:url(\'images/sprites/hakase-face.webp\')"></div>'+
+    '<div class="ts-talk-text">'+msg+'</div><div class="ts-talk-next">▼ タップ</div>';
+  if(voiceFile && soundOn){
+    try{ tsTalkAudio=new Audio('audio/battle/'+voiceFile+'.mp3'); tsTalkAudio.onerror=()=>{}; const p=tsTalkAudio.play(); if(p&&p.catch) p.catch(()=>{}); }catch(e){}
+  }
+  let finished=false;
+  const finish=()=>{
+    if(finished) return; finished=true;
+    tsTalkHide();
+    if(seq!==trainSceneSeq) return;   // とばす済みなら続きは呼ばない
+    if(onDone) onDone();
+  };
+  el.onclick=e=>{ e.stopPropagation(); finish(); };   // タップで先送り
+  tsTalkTimer=setTimeout(finish,autoMs);              // タップされなくても読める時間で自動送り
+}
+/* ---- S0 v4：コンコース自動歩き（5.6秒・構図コマ1〜6）。マナが先導して改札へ。
+   途中でマナが振り向いて「ここが えきだよ…ついてきて！」→2人で改札の奥へ消える ---- */
 function trainScenePlayS0(){
   trainSceneResetLayers();
   const seq=trainSceneSeq;
-  $('tsBgStation').classList.add('show');
+  $('tsBgConcourse').classList.add('show');
+  sePlay('train-station-amb',{loop:true,volume:.35});   // 社長提供の駅ホーム環境音（コンコース＋ホームで流す）
   tsChimeStation();
-  requestAnimationFrame(()=>{ if(seq!==trainSceneSeq) return; $('tsBgStation').classList.add('kenburns'); });
+  const bh=$('tsBoardHero'), mw=$('tsManaWalk');
+  const sheet=heroSheetUrl();
+  bh.classList.remove('pose');
+  bh.style.backgroundImage=`url('${sheet}')`;
+  bh.style.backgroundSize='300% 200%';
+  bh.style.transform='none';
+  const put=(x,y,w,dur)=>{ bh.style.transitionDuration=`${dur}s,${dur}s,${dur}s,.35s`; bh.style.left=x+'%'; bh.style.top=y+'%'; bh.style.width=w+'%'; };
+  const mput=(x,y,w,dur)=>{ mw.style.transitionDuration=`${dur}s,${dur}s,${dur}s,.4s`; mw.style.left=x+'%'; mw.style.top=y+'%'; mw.style.width=w+'%'; };
+  // 構図コマ1：入り口側に2人（後ろ姿）。主人公はマナより手前＝常に前面（社長指摘7/25＝奥行きの上下関係）
+  bh.style.zIndex='7';
+  put(45.1,66.6,21.9,0); mput(57.8,63.3,24.3,0);
+  bh.style.opacity='1'; mw.classList.add('show');
+  let row=false, manaBack=true;
+  bh.style.backgroundPosition='50% 0%';   // 50%=上向き（後ろ姿）列
+  const mkTick=()=>{
+    const tick=setInterval(()=>{
+      row=!row;
+      bh.style.backgroundPosition='50% '+(row?'100%':'0%');
+      if(manaBack) mw.src='images/mana-back-'+(row?'b':'a')+'.webp';
+    },160);
+    trainSceneWalkHandles.push({stop(){ clearInterval(tick); }});
+  };
+  mkTick();
+  // コマ2〜4：改札方向へ（0.9秒×2＋0.7秒）
+  setTimeout(()=>{ if(seq!==trainSceneSeq) return; put(52.2,55.9,21.9,.9); mput(59.0,50,24.3,.9); },100);
+  setTimeout(()=>{ if(seq!==trainSceneSeq) return; put(57.5,41.0,21.9,.9); mput(67.3,36.7,24.3,.9); },1000);
+  setTimeout(()=>{ if(seq!==trainSceneSeq) return; put(73.2,29.7,21.9,.7); mput(77.3,23.1,24.3,.7); },1900);
+  // コマ4末：マナが振り向いて会話（いつもの吹き出しカード・中段の空きフロアに表示・録音ボイスst01・
+  // タップで先送り／6.8秒（声6.2秒＋読み時間）で自動送り）
   setTimeout(()=>{
     if(seq!==trainSceneSeq) return;
-    $('tsVoice').textContent='「まもなく、でんこうが まいります」';
-    $('tsVoice').classList.add('show');
-  },200);
-  setTimeout(()=>{ if(seq!==trainSceneSeq) return; trainScenePlayS1(); },TRAIN_SCENE_MS.s0);
+    manaBack=false; mw.src='images/sprites/hakase.webp';
+    trainSceneStopWalkAnims();                     // 社長指摘7/25：会話中に主人公が足踏みし続けない＝止まって聞く
+    bh.style.backgroundPosition='50% 0%';
+    tsTalkShow('ここが えきだよ！ ここから しんかんせんに のれるんだ。ついてきて！','mid','st01',6800,()=>{
+      // コマ5：会話後、2人で改札の奥へ（歩き再開）
+      manaBack=true; mw.src='images/mana-back-b.webp';
+      mkTick();
+      mput(70.2,3.9,24.3,.9); put(70.5,13.3,21.9,.9);
+      // コマ6：改札を抜けて見えなくなる→ホームへ
+      setTimeout(()=>{ if(seq!==trainSceneSeq) return; bh.style.opacity='0'; mw.classList.remove('show'); },850);
+      setTimeout(()=>{ if(seq!==trainSceneSeq) return; trainSceneStopWalkAnims(); trainScenePlayS1(); },1250);
+    });
+  },2650);
 }
-/* ---- S1 v2：電光の入線（2.2秒）。白フラッシュ→決めカットを右→左へカメラスイープ＋揺れ＋スピード線＋風切り音 ---- */
+/* ---- S1 v4：ホーム乗車（6.7秒・構図コマ7〜15）。マナが顔つきで「いってらっしゃい」→会話が終わってから
+   主人公が奥のドアへ歩いて遠近法で小さくなる→振り向いて勝利ポーズ→横向き→ドアの中へ→ドアが閉まる（灯りが消える）。
+   主人公はheroCharで男女切り替え（社長指示） ---- */
 function trainScenePlayS1(){
   const seq=trainSceneSeq;
-  $('tsVoice').classList.remove('show');
-  $('tsFlash').classList.add('show');
-  setTimeout(()=>{ if(seq!==trainSceneSeq) return; $('tsFlash').classList.remove('show'); },140);
-  $('tsBgHero').classList.add('show');
-  $('trainSceneStage').classList.add('ts-shake');
-  $('tsSpeedLines').classList.add('show');
-  tsNoise(0,1.9,260,1500,.2);
-  requestAnimationFrame(()=>{ if(seq!==trainSceneSeq) return; $('tsBgHero').classList.add('sweep'); });
-  setTimeout(()=>{ if(seq!==trainSceneSeq) return; trainScenePlayS2(); },TRAIN_SCENE_MS.s1);
-}
-/* ---- S2 v2：乗り込み（1.4秒）。キャラ大型化＋文言＋ドアチャイム＋プシュー（音はバス経由の先読み予約＝
-   とばすでtsBusKill()一発停止）。startWalkAnim()は既存の汎用関数をそのまま呼ぶだけ（新設・変更なし） ---- */
-function trainScenePlayS2(){
-  const seq=trainSceneSeq;
-  $('trainSceneStage').classList.remove('ts-shake');
-  $('tsSpeedLines').classList.remove('show');
-  const heroKey=(typeof heroChar!=='undefined' && heroChar==='girl')?'girl':'boy';
-  const heroEl=$('tsHero'), manaEl=$('tsMana');
-  heroEl.classList.add('show'); manaEl.classList.add('show');
-  trainSceneWalkHandles.push(startWalkAnim(heroEl,heroKey,{intervalMs:120}));
-  trainSceneWalkHandles.push(startWalkAnim(manaEl,'mana',{intervalMs:120}));
-  tsChimeDoor(0.15);
-  tsNoise(1.0,.5,1400,500,.1);   // ドアが閉まるプシュー
+  $('tsBgDepth').classList.add('show');
+  $('tsManaBack').classList.add('show');
+  // コンコース→ホームのクロスフェード中に下が透けないよう、上が不透明になってから消す（v2の知見）
+  setTimeout(()=>{ if(seq!==trainSceneSeq) return; $('tsBgConcourse').classList.remove('show'); },550);
+  const girl=(typeof heroChar!=='undefined' && heroChar==='girl');
+  const bh=$('tsBoardHero');
+  const sheet=heroSheetUrl();
+  const put=(x,y,w,dur)=>{ bh.style.transitionDuration=`${dur}s,${dur}s,${dur}s,.35s`; bh.style.left=x+'%'; bh.style.top=y+'%'; bh.style.width=w+'%'; };
+  // 構図コマ：後ろ向きで手前に立つ（会話が終わるまで歩かない＝社長指示）
+  bh.classList.remove('pose');
+  bh.style.backgroundImage=`url('${sheet}')`;
+  bh.style.backgroundSize='300% 200%';
+  bh.style.transform='none';
+  bh.style.zIndex='5';   // ホームでは手前の見送りマナ(z6)が主人公より前（S0でz7にした分を戻す）
+  put(25.3,60.1,63.7,0);
+  bh.style.opacity='1';
+  let bhRow=false, bhBgX='50%';
+  bh.style.backgroundPosition='50% 0%';
+  // マナのいってらっしゃい（いつもの吹き出しカード・最上部＝2人を隠さない・録音ボイスst02・
+  // タップで先送り／4.2秒（声3.3秒＋読み時間）で自動送り）。会話が終わってから歩き出す（社長指示）
   setTimeout(()=>{
     if(seq!==trainSceneSeq) return;
-    $('tsVoice').textContent='でんこうに とびのった！';
-    $('tsVoice').classList.add('show');
-  },250);
-  requestAnimationFrame(()=>{
-    if(seq!==trainSceneSeq) return;
-    heroEl.classList.add('walk-off'); manaEl.classList.add('walk-off');
-  });
-  setTimeout(()=>{ if(seq!==trainSceneSeq) return; trainSceneStopWalkAnims(); trainScenePlayS3(); },TRAIN_SCENE_MS.s2);
+    tsTalkShow('いってらっしゃい！ きをつけてね！','top','st02',4200,()=>{
+      const tick=setInterval(()=>{ bhRow=!bhRow; bh.style.backgroundPosition=bhBgX+' '+(bhRow?'100%':'0%'); },150);
+      trainSceneWalkHandles.push({stop(){ clearInterval(tick); }});
+      put(35.9,46.0,52.6,.7);
+      setTimeout(()=>{ if(seq!==trainSceneSeq) return; put(47.7,37.5,36.3,.7); },700);
+      setTimeout(()=>{ if(seq!==trainSceneSeq) return; put(61.6,28.6,24.3,.7); },1400);
+      // 振り向いて勝利ポーズ（社長指摘7/25：位置・大きさは変えない＝吹っ飛び演出禁止。
+      // その場で小さくぴょんぴょん飛び跳ねるだけ。containへの明示上書き＝手足切れ対策は維持）
+      setTimeout(()=>{
+        if(seq!==trainSceneSeq) return;
+        trainSceneStopWalkAnims();
+        bh.classList.add('pose');
+        bh.style.backgroundImage=`url('images/battle-tate/hero-victory-${girl?'girl':'boy'}.webp')`;
+        bh.style.backgroundSize='contain';
+        bh.style.backgroundPosition='center bottom';
+        bh.style.animation='tsHop .5s ease 2';   // その場ジャンプ2回
+        tsTone(784,0,.12,'sine',.1); tsTone(1047,.12,.2,'sine',.1);   // ふりむきキラン
+      },2100);
+      // 横向き（左向き＝右向き列を反転）でドアへ
+      setTimeout(()=>{
+        if(seq!==trainSceneSeq) return;
+        bh.classList.remove('pose');
+        bh.style.animation='';
+        bh.style.backgroundImage=`url('${sheet}')`;
+        bh.style.backgroundSize='300% 200%';
+        bhBgX='100%'; bh.style.backgroundPosition='100% 0%';
+        bh.style.transform='scaleX(-1)';
+        put(56.9,28.8,17.7,.35);
+        const tick2=setInterval(()=>{ bhRow=!bhRow; bh.style.backgroundPosition=bhBgX+' '+(bhRow?'100%':'0%'); },160);
+        trainSceneWalkHandles.push({stop(){ clearInterval(tick2); }});
+      },2950);
+      // ドアの中へ（ドアの奥へ歩き込みながら消える）
+      setTimeout(()=>{ if(seq!==trainSceneSeq) return; put(60.5,28.6,13,.5); },3400);
+      setTimeout(()=>{ if(seq!==trainSceneSeq) return; trainSceneStopWalkAnims(); bh.style.opacity='0'; },3850);
+      // 構図コマ15：ドアが閉まる＝社長編集の斜めドアPNG＋実録のドア音（社長提供7/25）
+      setTimeout(()=>{
+        if(seq!==trainSceneSeq) return;
+        $('tsDoorDiag').classList.add('show');
+        tsChimeDoor(0); sePlay('train-door',{volume:.6});
+      },4100);
+      setTimeout(()=>{ if(seq!==trainSceneSeq) return; trainScenePlayS2(); },4700);
+    });
+  },400);
 }
-/* ---- S3 v2：発車・加速（2.7秒）。車体を大きく写して車両に沿ってパン＋車体ボブ＋電柱・地面・スピード線の
-   右流し＋ステージ微ズーム＋ガタンゴトン加速。v1の「空と白地面だけのスカスカ画面」対策の本丸 ---- */
+/* ---- S2 v4：迫力の決めカット（2.6秒・構図コマ14〜24）。先頭アップから車体を舐めながらズームイン
+   （x=0→-97→-237→-328・幅295%→389%→428%の3区分・加速）＋揺れ＋スピード線＋風切り音 ---- */
+function trainScenePlayS2(){
+  const seq=trainSceneSeq;
+  $('tsFlash').classList.add('show');
+  setTimeout(()=>{ if(seq!==trainSceneSeq) return; $('tsFlash').classList.remove('show'); },140);
+  const hc=$('tsHeroCut');
+  hc.style.transition='opacity .3s ease';
+  hc.style.left='0.1%'; hc.style.width='295.5%';
+  hc.classList.add('show');
+  $('trainSceneStage').classList.add('ts-shake');
+  $('tsSpeedLines').classList.add('show');
+  seStop('train-station-amb');
+  sePlay('train-run-amb',{loop:true,volume:.5});   // 社長提供の走行音（決めカット〜トンネルまで流しっぱなし）
+  tsNoise(0,2.4,260,1500,.16);
+  // ドア・見送りマナは次のシーンへ引きずらない（社長指摘7/25＝マナの頭が薄く残る問題）＝フェードなしで即座に消す
+  [['tsDoorDiag'],['tsManaBack']].forEach(([id])=>{
+    const el=$(id); el.style.transition='none'; el.classList.remove('show');
+    requestAnimationFrame(()=>{ el.style.transition=''; });
+  });
+  // ホーム背景は決めカットが不透明になってから消す
+  setTimeout(()=>{
+    if(seq!==trainSceneSeq) return;
+    $('tsBgDepth').classList.remove('show');
+    const bh=$('tsBoardHero'); if(bh){ bh.classList.remove('pose'); bh.removeAttribute('style'); }
+  },550);
+  // カメラワーク4区分（構図コマ14〜25の座標を区分でつなぐ。最終コマ25=構図_9時56分.jsonで社長が追加）
+  requestAnimationFrame(()=>{ if(seq!==trainSceneSeq) return;
+    hc.style.transition='opacity .3s ease,left 1.2s linear,width 1.2s linear';
+    hc.style.left='-96.9%'; });
+  setTimeout(()=>{ if(seq!==trainSceneSeq) return;
+    hc.style.transition='opacity .3s ease,left .8s ease-in,width .8s ease-in';
+    hc.style.left='-237.2%'; hc.style.width='389.4%'; },1200);
+  setTimeout(()=>{ if(seq!==trainSceneSeq) return;
+    hc.style.transition='opacity .3s ease,left .6s ease-in,width .6s ease-in';
+    hc.style.left='-328.3%'; hc.style.width='428.3%'; },2000);
+  setTimeout(()=>{ if(seq!==trainSceneSeq) return;
+    hc.style.transition='opacity .3s ease,left .5s ease-in,width .5s ease-in,top .5s ease-in';
+    hc.style.left='-417.9%'; hc.style.width='518.2%'; hc.style.top='-11.3%'; },2600);
+  setTimeout(()=>{ if(seq!==trainSceneSeq) return; trainScenePlayS3(); },TRAIN_SCENE_MS.s2);
+}
+/* ---- S3 v3：発車・加速（3.0秒）。3層パララックス＝遠景の山なみ(26秒/周・ほぼ静止)／透過の車体(ボブ)／
+   高架橋の壁(0.45秒/周・高速)＋電柱・スピード線・ステージ微ズーム＋ガタンゴトン加速。「いつものやつ」 ---- */
 function trainScenePlayS3(){
   const seq=trainSceneSeq;
   $('tsVoice').classList.remove('show');
-  // S2のwalk-off(rAF起点のトランジション)が万一まだ終わっていなくても、S3開始時点で確実にシルエットを
-  // 消しておく防御措置（低速端末でrAFが遅延してもキャラが画面に残留するバグを防ぐ・実装判断）
+  $('tsManaBack').classList.remove('show');   // 見送りのマナは発車と同時にフェード（走行シーンに残さない）
   $('tsHero').classList.remove('show'); $('tsMana').classList.remove('show');
   $('tsBgSky').classList.add('show');
-  $('tsBgSide').classList.add('show');
-  // 決めカット→横向きのクロスフェード中に、さらに下の待合室レイヤーが透けて見えないよう、
-  // 上に載る横向きレイヤーが不透明になってから下の2枚を消す（v2自己チェック1回目で発見した問題の対策）
+  $('tsMountains').classList.add('run');
+  $('tsNearBg').classList.add('run');
+  $('tsParapet').classList.add('run');
+  $('tsGroundFill').classList.add('run');
+  $('tsTrainSide').classList.add('run');
+  // 決めカット→走行のクロスフェード：上の走行レイヤー群が出てから決めカットを消す（v2の知見）
   setTimeout(()=>{
     if(seq!==trainSceneSeq) return;
-    $('tsBgHero').classList.remove('show');
-    $('tsBgStation').classList.remove('show','kenburns');
+    $('tsHeroCut').classList.remove('show');
   },550);
+  $('trainSceneStage').classList.remove('ts-shake');
   $('tsPoles').classList.add('run');
-  $('tsGround').classList.add('run');
   $('tsSpeedLines').classList.add('show');
   $('trainSceneStage').classList.add('ts-push');
-  tsGatanAt([0.35,0.95,1.45,1.9,2.3,2.62],0.09);   // 間隔を詰めていく＝加速
-  tsNoise(0,2.6,120,240,.06);                       // 低い走行うなり
-  requestAnimationFrame(()=>{ if(seq!==trainSceneSeq) return; $('tsBgSide').classList.add('ride'); });
+  // ガタンゴトン等の合成音は廃止（社長提供の実録走行音train-run-ambがS2から流れ続けているため）
   setTimeout(()=>{ if(seq!==trainSceneSeq) return; trainScenePlayS4a(); },TRAIN_SCENE_MS.s3);
 }
-/* ---- S4 v2：車窓モンタージュ（2.7秒）。車窓フレームの中で city→countryside→mountain-fuji を
-   各0.9秒、横パンさせながらクロスフェード。切替時にシュッという風切り音 ---- */
+/* ---- S4 v4.3：通り抜け（3.0秒・構図_10時46分.json前半）。車体が加速して左へ抜けていき、
+   背景は窓枠なしで 富士山→田園→都会 が一瞬ずつ流れる（社長指示「今までと同じ一瞬映す感じ」。
+   壁と車体は今まで通りの構図のまま続投） ---- */
 function trainScenePlayS4a(){
   const seq=trainSceneSeq;
-  $('tsBgSky').classList.remove('show');
-  $('tsBgSide').classList.remove('show','ride');
-  $('tsPoles').classList.remove('run');
-  $('tsGround').classList.remove('run');
-  $('tsSpeedLines').classList.remove('show');
-  $('trainSceneStage').classList.remove('ts-push');
-  $('tsWindow').classList.add('show');
-  $('tsBgCity').classList.add('show');
-  tsNoise(0,.25,800,1600,.07);
-  tsGatanAt([0.2,0.65,1.1,1.55,2.0,2.45],0.045);   // 巡航中はうっすら続ける
-  requestAnimationFrame(()=>{ if(seq!==trainSceneSeq) return; $('tsBgCity').classList.add('pan'); });
-  setTimeout(()=>{ if(seq!==trainSceneSeq) return; trainScenePlayS4b(); },TRAIN_SCENE_MS.s4a);
-}
-function trainScenePlayS4b(){
-  const seq=trainSceneSeq;
-  $('tsBgCountryside').classList.add('show');
-  tsNoise(0,.25,800,1600,.07);
-  requestAnimationFrame(()=>{ if(seq!==trainSceneSeq) return; $('tsBgCountryside').classList.add('pan'); });
-  setTimeout(()=>{ if(seq!==trainSceneSeq) return; trainScenePlayS4c(); },TRAIN_SCENE_MS.s4b);
-}
-function trainScenePlayS4c(){
-  const seq=trainSceneSeq;
+  $('tsMountains').classList.remove('run');
+  $('tsNearBg').classList.remove('run');
+  const t=$('tsTrainSide');
+  t.style.transition='left 3s cubic-bezier(.5,.05,.9,.5)';   // 加速しながら左へ通り抜け
+  requestAnimationFrame(()=>{ if(seq!==trainSceneSeq) return; t.style.left='-170vw'; });
   $('tsBgFuji').classList.add('show');
-  tsNoise(0,.25,800,1600,.07);
-  requestAnimationFrame(()=>{ if(seq!==trainSceneSeq) return; $('tsBgFuji').classList.add('pan'); });
-  setTimeout(()=>{ if(seq!==trainSceneSeq) return; trainScenePlayS5(); },TRAIN_SCENE_MS.s4c);
+  tsNoise(0,.25,800,1600,.08);
+  setTimeout(()=>{ if(seq!==trainSceneSeq) return; $('tsBgFuji').classList.remove('show'); $('tsBgCountryside').classList.add('show'); tsNoise(0,.25,800,1600,.08); },1000);
+  setTimeout(()=>{ if(seq!==trainSceneSeq) return; $('tsBgCountryside').classList.remove('show'); $('tsBgCity').classList.add('show'); tsNoise(0,.25,800,1600,.08); },2000);
+  setTimeout(()=>{ if(seq!==trainSceneSeq) return; trainScenePlayS5(); },TRAIN_SCENE_MS.s4a);
 }
-/* ---- S5 v2：トンネル→到着（1.05秒）。左からの黒ワイプ→琥珀色の灯りが流れる→白フラッシュでtrainSceneFinish()
-   （フラッシュの向こうでオーバーレイが閉じ、到着後のフィールドが見える＝「抜けた」感を作る） ---- */
+/* ---- S5 v4.3：トンネル（1.05秒）。黒ワイプ＋流れる灯り→そのままカンサイ到着(S6)へ ---- */
 function trainScenePlayS5(){
   const seq=trainSceneSeq;
   $('tsBlackout').classList.add('show');
   $('tsSpeedLines').classList.add('amber','show');
   tsNoise(0,.9,200,90,.2);
-  setTimeout(()=>{ if(seq!==trainSceneSeq) return; $('tsFlash').classList.add('show'); },550);
-  setTimeout(()=>{ if(seq!==trainSceneSeq) return; trainSceneFinish(); },TRAIN_SCENE_MS.s5);
+  setTimeout(()=>{ if(seq!==trainSceneSeq) return; trainScenePlayS6(); },TRAIN_SCENE_MS.s5);
+}
+/* ---- S6 v4.3：カンサイ到着ホーム（5秒・構図_10時46分.json後半）。停車（社長作成の斜めドア閉）→
+   ドアが開く→主人公が降りて（よこ向き→まえ向き）、コマ9〜14の位置どおり手前へ歩いてくる ---- */
+function trainScenePlayS6(){
+  const seq=trainSceneSeq;
+  // 走行レイヤーを片づけ、黒ワイプの下で到着ホームを準備してから開ける
+  ['tsBgSky','tsBgCity','tsBgCountryside','tsBgFuji'].forEach(id=>$(id).classList.remove('show'));
+  ['tsTrainSide','tsParapet','tsPoles','tsGroundFill'].forEach(id=>$(id).classList.remove('run'));
+  $('tsSpeedLines').classList.remove('show','amber');
+  $('trainSceneStage').classList.remove('ts-push','ts-shake');
+  const t=$('tsTrainSide'); t.style.transition='none'; t.style.left='0';
+  $('tsBgArrive').classList.add('show');
+  $('tsDoorDiag').classList.add('show');
+  seStop('train-run-amb');
+  sePlay('train-station-amb',{loop:true,volume:.35});   // 到着＝再び駅ホーム環境音
+  setTimeout(()=>{ if(seq!==trainSceneSeq) return; $('tsBlackout').classList.remove('show'); tsChimeStation(); },350);   // 黒ワイプが左へ抜けて到着ホームが見える
+  const bh=$('tsBoardHero');
+  const sheet=heroSheetUrl();
+  const put=(x,y,w,dur)=>{ bh.style.transitionDuration=`${dur}s,${dur}s,${dur}s,.35s`; bh.style.left=x+'%'; bh.style.top=y+'%'; bh.style.width=w+'%'; };
+  let row=false, col='100%';   // 100%=よこ向き（降車の一歩目）
+  // ドアが開く（＝斜めドア部品が消えて、背景の開いたドアが見える）＋実録のドア音
+  setTimeout(()=>{ if(seq!==trainSceneSeq) return; $('tsDoorDiag').classList.remove('show'); sePlay('train-door',{volume:.6}); },1100);
+  // コマ9：よこ向きで降りてくる
+  setTimeout(()=>{
+    if(seq!==trainSceneSeq) return;
+    bh.classList.remove('pose');
+    bh.style.backgroundImage=`url('${sheet}')`;
+    bh.style.backgroundSize='300% 200%';
+    bh.style.transform='none';
+    bh.style.backgroundPosition='100% 0%';
+    put(62.0,29.5,19.7,0); bh.style.opacity='1';
+    const tick=setInterval(()=>{ row=!row; bh.style.backgroundPosition=col+' '+(row?'100%':'0%'); },150);
+    trainSceneWalkHandles.push({stop(){ clearInterval(tick); }});
+  },1500);
+  // コマ10：まえ向きに転換（0%列=正面）
+  setTimeout(()=>{ if(seq!==trainSceneSeq) return; col='0%'; bh.style.backgroundPosition='0% 0%'; put(60.2,29.3,27,.4); },2100);
+  // コマ11〜14：手前へ歩いてくる（大きくなる）
+  setTimeout(()=>{ if(seq!==trainSceneSeq) return; put(57.2,33.0,33,.55); },2600);
+  setTimeout(()=>{ if(seq!==trainSceneSeq) return; put(51.3,41.5,39.9,.55); },3150);
+  setTimeout(()=>{ if(seq!==trainSceneSeq) return; put(42.1,49.3,53.1,.55); },3700);
+  setTimeout(()=>{ if(seq!==trainSceneSeq) return; put(27.6,59.3,70.7,.55); },4250);
+  setTimeout(()=>{ if(seq!==trainSceneSeq) return; trainSceneStopWalkAnims(); trainScenePlayS7(); },TRAIN_SCENE_MS.s6);
+}
+/* ---- S7 v4.3：到着コンコース（3.6秒・コマ15〜19）。まえ向きのまま改札側から駅の入り口へ歩いて、
+   白フラッシュで一連の流れが終了 ---- */
+function trainScenePlayS7(){
+  const seq=trainSceneSeq;
+  const bc=$('tsBgConcourse');
+  bc.style.left='-44.6%';   // 到着用の切り取り位置（出発時-117%とは別＝構図コマ15の指定）
+  bc.classList.add('show');
+  setTimeout(()=>{ if(seq!==trainSceneSeq) return; $('tsBgArrive').classList.remove('show'); $('tsDoorDiag').classList.remove('show'); },550);
+  const bh=$('tsBoardHero');
+  const put=(x,y,w,dur)=>{ bh.style.transitionDuration=`${dur}s,${dur}s,${dur}s,.35s`; bh.style.left=x+'%'; bh.style.top=y+'%'; bh.style.width=w+'%'; };
+  let row=false;
+  // 社長指摘7/25：ホーム→改札の切り替え中にキャラが早く出て二重に見える＝
+  // まず主人公を即座に消し、コンコース背景のクロスフェードが終わってから改札側に登場させる
+  bh.style.transition='none'; bh.style.opacity='0';
+  bh.style.left='41.5%'; bh.style.top='7.2%'; bh.style.width='24.3%';
+  bh.style.backgroundPosition='0% 0%';   // まえ向きのまま
+  requestAnimationFrame(()=>{ bh.style.transition=''; });
+  setTimeout(()=>{
+    if(seq!==trainSceneSeq) return;
+    bh.style.opacity='1';
+    const tick=setInterval(()=>{ row=!row; bh.style.backgroundPosition='0% '+(row?'100%':'0%'); },160);
+    trainSceneWalkHandles.push({stop(){ clearInterval(tick); }});
+  },650);
+  setTimeout(()=>{ if(seq!==trainSceneSeq) return; put(40.1,20.2,24.3,.7); },850);
+  setTimeout(()=>{ if(seq!==trainSceneSeq) return; put(50.4,33.4,24.3,.7); },1550);
+  setTimeout(()=>{ if(seq!==trainSceneSeq) return; put(52.2,49.7,24.3,.7); },2250);
+  setTimeout(()=>{ if(seq!==trainSceneSeq) return; put(55.7,64.1,24.3,.7); },2950);
+  setTimeout(()=>{ if(seq!==trainSceneSeq) return; $('tsFlash').classList.add('show'); },3900);
+  setTimeout(()=>{ if(seq!==trainSceneSeq) return; trainSceneFinish(); },TRAIN_SCENE_MS.s7);
 }
 
 /* ==============================
