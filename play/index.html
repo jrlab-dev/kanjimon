@@ -5877,12 +5877,17 @@ let heroChar='boy';
 const COSTUMES=[
   {key:'std',    name:'いつもの ふく', emoji:'👕', price:0,    suffix:'',        chars:'both', desc:'さいしょから きている ふく'},
   {key:'wafuku', name:'わふく',        emoji:'👘', price:2000, suffix:'-wafuku', chars:'both', desc:'おまつりみたいな きもの・はかま'},
-  {key:'suit',   name:'スーツ',        emoji:'🤵', price:8000, suffix:'-suit',   chars:'both', desc:'びしっと きまる フォーマル'},
+  /* 名前だけ「スーツ」→「せいふく」に変更（2026-07-26・準也さん＝絵が制服に見えるため）。
+     key と suffix は変えない＝これまでのセーブデータがそのまま使える */
+  {key:'suit',   name:'せいふく',      emoji:'👔', price:8000, suffix:'-suit',   chars:'both', desc:'びしっと きまる がっこうの ふく'},
   /* 第2弾（2026-07-25・準也さんの裁定＝うちゅうふくは男の子だけ／ゆきのドレスは女の子だけ・どちらも5,000円） */
   {key:'space',  name:'うちゅうふく',  emoji:'🚀', price:5000, suffix:'-space',  chars:'boy',  desc:'うちゅうに いけそうな しろい ふく'},
-  {key:'snow',   name:'ゆきのドレス',  emoji:'❄️', price:5000, suffix:'-snow',   chars:'girl', desc:'ゆきの けっしょうが きらめく ドレス'}
+  {key:'snow',   name:'ゆきのドレス',  emoji:'❄️', price:5000, suffix:'-snow',   chars:'girl', desc:'ゆきの けっしょうが きらめく ドレス'},
+  /* 第3弾（2026-07-26・ぼうけんの ふく＝男女どちらも着られる・3,000円）
+     準也さんの裁定で作り直し＝赤を主役にした、うごきやすい半そで短パン（マントなし） */
+  {key:'rpg',    name:'ぼうけんの ふく', emoji:'🗺️', price:3000, suffix:'-rpg',   chars:'both', desc:'あかい はんそで で かるがると うごける'}
   /* 予定（絵ができたら1行ずつ足す・値段と割り当ては準也さんの裁定 7/25）：
-     RPGふう 3000円(both)／ロボヒーロー 5000円(boy)／ピンクのドレス 5000円(girl) */
+     ロボヒーロー 5000円(boy)／ピンクのドレス 5000円(girl) */
 ];
 /* 手直し(2026-07-25夜・準也さんの指摘)：ふくは「男の子・女の子べつべつ」に持つ。
    それまでは1着ぶん買うと、主人公を切り替えたときにもう片方も着られてしまっていた
@@ -14171,7 +14176,7 @@ function makeGradeStartSave(n){
     stationSceneSeen:(startZone>STAGE2_COUNT+1),   // 手直し_駅構内(7/25)：学年スタートも同じ基準で既見あつかい
     travelContinueSeen2:(startZone>STAGE3_COUNT+1), chubuHakaseSeen:(startZone>STAGE3_COUNT+1),
     /* 手直し_お金(7/25・準也さんの指示)：お金の単位が「円」になったので、テスト用の学年スタートの
-       所持金も実額にする。3年生以降＝20,000円（わふく2,000＋スーツ8,000＋αが買えて着替えを試せる）／
+       所持金も実額にする。3年生以降＝20,000円（わふく2,000＋せいふく8,000＋αが買えて着替えを試せる）／
        2年生＝10,000円。旧値の30は「コイン時代」の名残で、円では何も買えないため差し替え */
     coins:(n>=3?20000:10000), items:{genkidama:0,fue:0}
   };
