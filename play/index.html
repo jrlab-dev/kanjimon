@@ -270,6 +270,13 @@
   .hp:empty{display:none}
   .battle-coins{font-weight:900;font-size:.78rem;color:#7c4a03;background:#fffbe6;border:2px solid var(--yellow);
     border-radius:50px;padding:2px 9px;white-space:nowrap;line-height:1.3}
+  /* 手直し_お金のしくみ(2026-07-25)：お金の単位＝黄色い丸の中に「円」（コイン風・準也さん指定）。
+     数字のうしろに置いて「2,000円」と読める並びにする。画像ではなくCSSだけで作る＝どの画面でも軽い */
+  .yen-coin{display:inline-flex;align-items:center;justify-content:center;width:1.3em;height:1.3em;
+    border-radius:50%;background:radial-gradient(circle at 34% 28%,#ffe999,#f7c62f 62%,#dfa100);
+    border:1px solid #c28800;color:#6d4102;font-weight:900;font-size:.72em;line-height:1;
+    vertical-align:-.18em;margin-left:.14em;box-shadow:0 1px 1px rgba(0,0,0,.18);
+    text-shadow:0 1px 0 rgba(255,255,255,.45)}
   .scene.battle{height:240px;display:flex;align-items:center;justify-content:center}
   @media(min-width:420px){.scene.battle{height:280px}}
   /* ===== バトル縦長化 試作v2(2026-07-11)：縦長背景を画面全体に敷き、UIを下から
@@ -304,7 +311,12 @@
     align-items:flex-end;padding-left:118px;padding-right:6px;gap:clamp(4px,2vw,14px);flex-wrap:nowrap}
   #screen-battle.tate .msg{position:absolute;left:14px;right:14px;bottom:296px;min-height:96px;margin:0;
     background:rgba(255,255,255,.93);z-index:6}   /* コメントは常に最前面（2026-07-11ユーザー指定） */
-  #screen-battle.tate .battle-hakase{position:absolute;left:14px;right:14px;bottom:296px;z-index:6}
+  /* 改善メモ_0725 指摘A（準也さんの実機フィードバック 7/25）：もんばん（じゅくごモン）登場時の
+     はかせの会話カードが右側で見切れていた。原因は .battle-hakase の基本CSSが width:100% で、
+     縦長バトルでは left:14px / right:14px の絶対配置にしているため、左を14pxずらしたまま
+     幅100%になり右へ14pxはみ出していたこと。width:auto に戻して left/right 指定を効かせる
+     （.msg・.options は width:100% を持っていないので同じ問題は起きていない＝確認済み） */
+  #screen-battle.tate .battle-hakase{position:absolute;left:14px;right:14px;width:auto;bottom:296px;z-index:6}
   #screen-battle.tate .options{position:absolute;left:14px;right:14px;bottom:8px;height:280px;justify-content:flex-start}
   /* 小さい画面では各部品を少し詰めて必ず収める */
   @media(max-height:760px){
@@ -555,6 +567,11 @@
      border追加だとボックスが実寸で6px前後広がり、320px幅・gap3px（@media(max-width:340px)）で隣の札と
      接触しうるため、レイアウトに影響しないbox-shadowで「太い赤枠」を再現する（判断はOP3実装報告に明記） */
   .pbtn.pfield.sel .pfuda{box-shadow:0 0 0 3px #e53935,0 2px 5px rgba(0,0,0,.2)}
+  /* 改善メモ_0725 指摘2（準也さんの裁定7/25「札を変えましょう」）：札の上に属性色の帯を出して、
+     絵文字と色の両方で属性が分かるようにする。疑似要素なのでレイアウトに影響せず（幅も高さも
+     変わらない）、選択中の赤いリング（box-shadow）ともぶつからない */
+  .pbtn.pfield .pfuda::before{content:'';position:absolute;left:5px;right:5px;top:2px;height:3px;
+    border-radius:2px;background:var(--tcol,transparent)}
   .pbtn.pfield .pfuda .tired-tag{position:static;transform:none;box-shadow:none;margin-bottom:1px;font-size:.58rem}
   .pbtn.pfield .pfuda-lv{font-size:.7rem;font-weight:900;color:#7c4a03;line-height:1.25;white-space:nowrap}
   .pbtn.pfield .pfuda-genki{font-size:.7rem;font-weight:900;color:#495057;line-height:1.25;white-space:nowrap}
@@ -606,6 +623,9 @@
     border-radius:18px;background:#fffbe6 center bottom/contain no-repeat;display:flex;align-items:center;justify-content:center;
     font-size:4rem;overflow:hidden;border:3px solid var(--yellow)}
   .interior-card-face.has-img{font-size:0}
+  /* 手直し_着替え第1弾：ふくの一覧（買う／きがえる）は行が増えるので、店員の顔は小さくして
+     ボタンが画面に収まるようにする（衣装が7着まで増える予定） */
+  .interior-card-face.small{width:clamp(64px,18vw,92px);height:clamp(64px,18vw,92px);margin-bottom:6px}
   .interior-card-msg{font-weight:900;color:var(--ink);font-size:1rem;line-height:1.65;text-align:left;margin:10px 0 14px}
   .ot-meat-scene{position:relative;width:100%;aspect-ratio:3/2;max-height:240px;margin:6px auto 10px;overflow:hidden;
     border-radius:16px;border:3px solid var(--line);background:url('images/nikuya-counter.webp') center/cover no-repeat}
@@ -1600,7 +1620,13 @@
      クラス名はすべてtrain-scene-*／ts-*で新規に切り、既存op1-overlay系のCSS/HTML/JSには一切触れていない。
      v2の設計方針＝「カメラは止めない・画面には常に流れる物を置く・音で背中を押す」。
      世界の流れは全カットで右向きに統一（横向き画像の電車は左向き＝左へ進むので、景色・電柱・風は右へ流れる）。 */
-  .train-scene-overlay{position:fixed;inset:0;z-index:9999;display:none;background:#000;overflow:hidden;
+  /* 改善メモ_0725 指摘B（準也さんの実機フィードバック 7/25）：パソコンで見ると、このシーンだけ
+     ブラウザ全体に広がって「超アップで画面から見切れる」状態だった。原因は inset:0 で
+     ビューポート全体を占めていたこと（他の画面は #app＝最大480pxの枠の中に描かれている）。
+     #app と同じ幅・同じ中央位置に収める（body は display:flex; justify-content:center で
+     #app を中央に置いているので、left:50% + translateX(-50%) で必ず一致する）。 */
+  .train-scene-overlay{position:fixed;top:0;bottom:0;left:50%;transform:translateX(-50%);
+    width:min(100vw,480px);z-index:9999;display:none;background:#000;overflow:hidden;
     font-family:inherit;-webkit-user-select:none;user-select:none}
   .train-scene-overlay.show{display:block}
   .train-scene-stage{position:absolute;inset:0;overflow:hidden}
@@ -1626,7 +1652,7 @@
   #tsBgHero{background-image:url('images/fullart/train-denkou-hero.webp');left:-42%;right:-42%;
     transform:translateX(34%) scale(1.3);transition:opacity .35s ease,transform 3.2s linear}
   #tsBgHero.sweep{transform:translateX(-38%) scale(1.02)}
-  /* v4 S0：コンコース自動歩き（社長の構図ファイル=_一時\構図_7月25日_9時17分.json 前半）。
+  /* v4 S0：コンコース自動歩き（準也さんの構図ファイル=_一時\構図_7月25日_9時17分.json 前半）。
      ズームしたコンコースを背景に、マナが先導して改札へ。途中でマナが振り向いて会話 */
   #tsBgConcourse{position:absolute;left:-117%;top:-0.16%;width:295.5%;z-index:1;opacity:0;transition:opacity .5s ease}
   #tsBgConcourse.show{opacity:1}
@@ -1634,7 +1660,7 @@
   #tsManaWalk{position:absolute;z-index:6;opacity:0;transition:left .9s linear,top .9s linear,width .9s linear,opacity .4s ease;
     max-width:none;pointer-events:none}
   #tsManaWalk.show{opacity:1}
-  /* v4.4：勝利ポーズのその場ジャンプ（社長指摘7/25＝位置・大きさは変えず上下に飛び跳ねるだけ） */
+  /* v4.4：勝利ポーズのその場ジャンプ（準也さん指摘7/25＝位置・大きさは変えず上下に飛び跳ねるだけ） */
   @keyframes tsHop{0%,100%{transform:translateY(0)}50%{transform:translateY(-16px)}}
   /* v4.1：シーン内会話カード＝フィールドの.hakase-talkと同じ見た目（左に顔・黒帯・白枠・タップで送り）。
      .mid=コンコース用（中段の空きフロアに出す）・.top=ホーム用（最上部・キャラを隠さない） */
@@ -1655,7 +1681,7 @@
   /* 顔つきセリフ（マナ）：tsVoiceの先頭に丸い顔アイコン */
   .ts-vface{width:58px;height:58px;border-radius:50%;border:3px solid #fff;background:#fff;
     vertical-align:middle;margin-right:10px;object-fit:cover}
-  /* v4.3：カンサイ到着（構図_7月25日_10時46分.json 後半）。到着ホーム＝v4版画像・斜めドア＝社長作成の透過PNG */
+  /* v4.3：カンサイ到着（構図_7月25日_10時46分.json 後半）。到着ホーム＝v4版画像・斜めドア＝準也さん作成の透過PNG */
   #tsBgArrive{position:absolute;left:-22.66%;top:-0.66%;width:125.3%;z-index:1;opacity:0;transition:opacity .5s ease}
   #tsBgArrive.show{opacity:1}
   #tsBgArrive img{width:100%;display:block}
@@ -1663,7 +1689,7 @@
     transition:opacity .45s ease;background-image:url('images/fullart/train-door-diag.webp');
     background-size:100% 100%;background-repeat:no-repeat}
   #tsDoorDiag.show{opacity:1}
-  /* v3.3 S2：乗車シーン（社長の構図ファイル=_一時\構図_7月25日_8時28分.json の7コマを正とする）。
+  /* v3.3 S2：乗車シーン（準也さんの構図ファイル=_一時\構図_7月25日_8時28分.json の7コマを正とする）。
      奥行きホーム(電光停車・ドア開)を背景に、マナは手前で見送り(後ろ姿・大)・主人公は奥のドアへ
      歩いて遠近法で小さくなる→振り向いて勝利ポーズ→横向き→ドアの中へ */
   #tsBgDepth{position:absolute;left:-22.1%;top:-0.76%;width:124%;z-index:1;opacity:0;transition:opacity .5s ease}
@@ -1683,14 +1709,14 @@
   /* v2 S4：車窓の風景3枚は幅を広げて右向きに横パン（窓の外が流れ続ける） */
   .ts-view{left:-10%;right:-10%;transform:translateX(-5%);transition:opacity .45s ease,transform 1.3s linear}
   .ts-view.pan{transform:translateX(5%)}
-  /* v3.1 S3：4層パララックス（社長の参考動画=車窓実写の速度差を再現）。
+  /* v3.1 S3：4層パララックス（準也さんの参考動画=車窓実写の速度差を再現）。
      奥から：山なみ(ほぼ動かない)→近景の田園・川(速い)→高架橋の壁(最速)→電光の車体(手前・ボブ)。
      壁はv3の「車体の前」から「車体と近景の間」へ移動（動画のとおり世界の一部として車体のうしろを流れる） */
   #tsBgSky{background:linear-gradient(180deg,#8ec9f0 0%,#cdeaff 55%,#fef3d6 100%)}
   #tsBgSide{background-image:url('images/fullart/train-denkou-side.webp')}
-  /* ---- v3.2：縦の配置は社長の構図ファイル（_一時\構図_7月25日_7時58分.json コマ1〜3）を正とする ----
+  /* ---- v3.2：縦の配置は準也さんの構図ファイル（_一時\構図_7月25日_7時58分.json コマ1〜3）を正とする ----
      山なみ＝上の帯(-7.2%〜33%)／近景＝中段(〜60%)／壁＝59%付近から／車体＝下1/3を大きく・下端ぴったり */
-  /* 社長指摘(7/25)：一番奥はループさせない。富士山（画像の右寄り）が画面左寄りから始まり、
+  /* 準也さん指摘(7/25)：一番奥はループさせない。富士山（画像の右寄り）が画面左寄りから始まり、
      一方向にゆっくり右へ流れるだけ（同じ富士山が2回出てくると遠景としておかしいため）。
      開始位置-27vh＝富士山が画面左1/4あたり。+18vhドリフトで右寄りまで動いて止まる */
   #tsMountains{position:absolute;left:0;right:0;top:-7.2%;height:40.3%;z-index:1;opacity:0;transition:opacity .45s ease;
@@ -1820,7 +1846,7 @@
       <!-- 弾R-1§1-4：コイン常時表示（現行は町でしか見えない→バトルでも右上に常設） -->
       <div class="battle-top-right">
         <div class="hp" id="bHp"></div>
-        <div class="battle-coins" id="bCoins">🪙 0</div>
+        <div class="battle-coins" id="bCoins">0<span class="yen-coin">円</span></div>
       </div>
     </div>
     <div class="scene battle" id="bScene">
@@ -2162,7 +2188,7 @@
 <div class="overlay" id="shopOverlay">
   <div class="panel">
     <h3 style="color:var(--orange)">🛍️ どうぐや</h3>
-    <div class="shop-coins" id="shopCoins">🪙 0</div>
+    <div class="shop-coins" id="shopCoins">0<span class="yen-coin">円</span></div>
     <div id="shopBody"></div>
     <button class="btn btn-ghost" style="margin-top:10px" onclick="closeShop()">とじる</button>
   </div>
@@ -2172,7 +2198,7 @@
 <div class="overlay" id="otetsudaiOverlay">
   <div class="panel">
     <h3 style="color:var(--orange)">📋 おてつだい</h3>
-    <div class="shop-coins" id="otetsudaiCoins">🪙 0</div>
+    <div class="shop-coins" id="otetsudaiCoins">0<span class="yen-coin">円</span></div>
     <div id="otetsudaiBody"></div>
     <button class="btn btn-ghost" style="margin-top:10px" onclick="closeOtetsudai()">とじる</button>
   </div>
@@ -5681,6 +5707,31 @@ let zoneVisited=[];     // バナー済みゾーン番号（1-8）の配列
 let freeZones=new Set();  // 自由移動解禁済みゾーン番号（1-8）
 // 第5.5弾：主人公キャラ（'boy'｜'girl'・既定'boy'）。セーブに含む（後方互換）
 let heroChar='boy';
+/* ===== 手直し_着替えシステム第1弾（2026-07-25）=====
+   見た目だけの着替え（強さには一切影響しない＝アイデア帳の原則）。
+   画像URLは「今までの名前 + suffix」で作るので、標準衣装(std)のURLは今までと1バイトも変わらない。
+   衣装を増やすときは、この表に1行足して画像6枚（歩行シート男女・後ろ姿男女・勝利ポーズ男女）を
+   置くだけでよい（他のコードは触らない）。
+   chars: 'both'＝男女どちらでも着られる（男女ぶんの絵がある）／'boy'・'girl'＝その主人公専用。
+   専用の服は、ちがう主人公のときは店の一覧にも出さない（準也さんの指示 7/25）。 */
+const COSTUMES=[
+  {key:'std',    name:'いつもの ふく', emoji:'👕', price:0,    suffix:'',        chars:'both', desc:'さいしょから きている ふく'},
+  {key:'wafuku', name:'わふく',        emoji:'👘', price:2000, suffix:'-wafuku', chars:'both', desc:'おまつりみたいな きもの・はかま'},
+  {key:'suit',   name:'スーツ',        emoji:'🤵', price:8000, suffix:'-suit',   chars:'both', desc:'びしっと きまる フォーマル'}
+  /* 予定（絵ができたら1行ずつ足す・値段と割り当ては準也さんの裁定 7/25）：
+     RPGふう 3000円(both)／うちゅうふく 5000円(boy)／ロボヒーロー 5000円(boy)／
+     ゆきのドレス 5000円(girl)／ピンクのドレス 5000円(girl) */
+];
+let heroCostume='std';        // いま きている ふく
+let ownedCostumes=['std'];    // もっている ふく（'std'は必ず含む）
+function costumeOf(key){ return COSTUMES.find(c=>c.key===key)||COSTUMES[0]; }
+function costumeSuffix(){ return costumeOf(heroCostume).suffix; }
+function ownsCostume(key){ return ownedCostumes.indexOf(key)>=0; }
+/* いまの主人公が着られる服か（'both'か、主人公と同じ性別の専用服）。買った服は消さずに残す＝
+   主人公を切り替えて戻せば、また着られる */
+function costumeUsable(key,ch){ const c=costumeOf(key); return c.chars==='both' || c.chars===(ch||heroChar); }
+/* 主人公の切り替え・セーブ読み込みのあとに呼ぶ。着られない服を着ていたら「いつもの ふく」に戻す */
+function ensureCostumeForChar(){ if(!costumeUsable(heroCostume)) heroCostume='std'; }
 let hadSaveAtBoot=false;     // 起動時にセーブが存在したか（完全新規プレイヤー判定・セッション値）
 let heroSelectShownOnce=false; // 同一セッションで初回選択ポップを2回出さないための番人
 function levelOf(idx){ return levels[idx]||1; }
@@ -5732,7 +5783,9 @@ function save(){
       shodoGuideSeen:shodoGuideSeen,   // 発注T-1
       kakitoriDaily:kakitoriDaily,           // 発注W-2
       kakitoriTotalCorrect:kakitoriTotalCorrect,
-      ownsForest:ownsForest             // 発注_村1
+      ownsForest:ownsForest,            // 発注_村1
+      heroCostume:heroCostume,          // 手直し_着替え第1弾（7/25）
+      ownedCostumes:[...ownedCostumes]
     }));
   }catch(e){}
 }
@@ -5795,6 +5848,15 @@ function load(){
     cleared.forEach(sn=>freeZones.add(sn));   // クリア済みゾーンは読み込み時に自動解禁
     // 第5.5弾：主人公キャラ（後方互換：heroChar無し・想定外値はすべて'boy'に倒す）
     heroChar = (d.heroChar==='girl') ? 'girl' : 'boy';
+    /* 手直し_着替え第1弾：もっている服・きている服（旧セーブは'std'のみ所持・'std'着用に倒す。
+       COSTUMESに無いキー・配列でない・きている服を持っていない、のいずれも'std'へ倒す＝
+       衣装をあとで減らしても壊れない） */
+    ownedCostumes=['std'];
+    if(Array.isArray(d.ownedCostumes)) d.ownedCostumes.forEach(k=>{
+      if(typeof k==='string' && k!=='std' && COSTUMES.some(c=>c.key===k) && ownedCostumes.indexOf(k)<0) ownedCostumes.push(k);
+    });
+    heroCostume = (typeof d.heroCostume==='string' && ownedCostumes.indexOf(d.heroCostume)>=0) ? d.heroCostume : 'std';
+    ensureCostumeForChar();   // 主人公の性別に合わない服なら「いつもの ふく」に倒す（準也さんの指示の男女出し分け）
     // 第12弾：まよいご初回説明を見たか（旧セーブは未見あつかい・第15弾でたましい用に改名）
     mayoigoLoreSeen = (d.mayoigoLoreSeen===true);
     // 第15弾：たましい初回説明を見たか（旧セーブは未見あつかい）
@@ -6408,22 +6470,33 @@ for(let sn=1;sn<=STAGE_COUNT;sn++){
   im.onerror=()=>{};
   im.src='images/battle-tate/stage'+sn+'.webp';
 }
-/* 主人公の後ろ姿（縦長モードのてもち列左端用・無ければ出さない） */
+/* 主人公の後ろ姿（縦長モードのてもち列左端用・無ければ出さない）
+   手直し_着替え第1弾：キーを衣装込み（'boy' / 'boy-wafuku' …）に拡張。標準衣装(suffix='')の
+   キーは今までどおり'boy'/'girl'のままなので、既存の「後ろ姿を出すか」の判定は無変更で動く。 */
 const heroBackOK=new Set();
-['boy','girl'].forEach(ch=>{
-  const im=new Image();
-  im.onload=()=>{ heroBackOK.add(ch); };
+COSTUMES.forEach(cs=>['boy','girl'].forEach(ch=>{
+  const im=new Image(); const key=ch+cs.suffix;
+  im.onload=()=>{ heroBackOK.add(key); };
   im.onerror=()=>{};
-  im.src='images/battle-tate/hero-back-'+ch+'.webp';
-});
+  im.src='images/battle-tate/hero-back-'+key+'.webp';
+}));
 /* 弾R-2：勝利ふり向き演出用の前向き画像（無ければ従来どおり後ろ姿のまま＝heroBackOKと同じ流儀） */
 const heroVictoryOK=new Set();
-['boy','girl'].forEach(ch=>{
-  const im=new Image();
-  im.onload=()=>{ heroVictoryOK.add(ch); };
+COSTUMES.forEach(cs=>['boy','girl'].forEach(ch=>{
+  const im=new Image(); const key=ch+cs.suffix;
+  im.onload=()=>{ heroVictoryOK.add(key); };
   im.onerror=()=>{};
-  im.src='images/battle-tate/hero-victory-'+ch+'.webp';
-});
+  im.src='images/battle-tate/hero-victory-'+key+'.webp';
+}));
+/* 手直し_着替え第1弾：着替え用の歩行シート（標準衣装のhero.webp/hero-girl.webpは既存の
+   heroImgOK/heroGirlImgOKが担当するので、ここは追加衣装（suffixあり）だけを見る） */
+const heroSheetOK=new Set();
+COSTUMES.filter(cs=>cs.suffix).forEach(cs=>['boy','girl'].forEach(ch=>{
+  const im=new Image(); const key=ch+cs.suffix;
+  im.onload=()=>{ heroSheetOK.add(key); };
+  im.onerror=()=>{};
+  im.src=(ch==='girl'?'images/sprites/hero-girl':'images/sprites/hero')+cs.suffix+'.webp';
+}));
 
 /* ==============================
    画面切り替え
@@ -6630,12 +6703,20 @@ const HOUSE1_ZONE=-2;         // 弾3-15：みんかのなか
 const SCHOOL_ZONE=-3;         // 弾3-16：がっこうのなか
 const SHODO_ZONE=-4;          // 発注T-1：しょどうきょうしつのなか
 const STATION_ZONE=-5;        // 発注_町南側と駅：えきのなか（今回はロック中＝入場不可）
-const STATION_OPEN=true;      // 手直し_駅構内(7/25)：駅構内フィールド実装にともない解放（社長指示＝入り口→改札→ホーム乗車シーン）
+const STATION_OPEN=true;      // 手直し_駅構内(7/25)：駅構内フィールド実装にともない解放（準也さんの指示＝入り口→改札→ホーム乗車シーン）
 const MURA_ZONE=-6;           // 発注_村1：むら ひろば よてい地のなか（村づくり第1弾。3年生＝カンサイ・シコク到達で解禁）
 function isTownLike(z){ return z<=0; }   // 町＋屋内＝非戦闘の疑似ゾーン
-// 発注_村1§0-2：お金の表現方針。新しい財布は作らずcoins（🪙）をそのまま使う。村の会話画面だけ円換算した表示にする。
-const YEN_PER_COIN=10000;     // 🪙1枚＝1万円（ユーザー調整用の定数。将来ここだけ変えればよい）
+/* ===== 手直し_お金のしくみ（2026-07-25・準也さんの裁定）=====
+   ①ねだんは「実際に売っている値段（良心的安め）」にそろえる ②もらえるお金は「学年レベル×○円」＝
+   進むほど増える（やりこみ） ③単位は「円」に統一（旧＝🪙コインと村の円表示の二重をやめる）。
+   お金の数え方そのものを勉強してほしい、というのが狙い（準也さん）。
+   ※ユーザーがまだ0人のため、旧セーブの持ち金の換算はしない（そのままの数字を円として引き継ぐ）。 */
+const YEN_PER_COIN=1;         // 財布の1が1円（村の円換算はこれで実質なくなる）
 function muraYen(coinAmount){ return (coinAmount*YEN_PER_COIN).toLocaleString('ja-JP')+'円'; }
+/* 金額の見せ方：数字＋「円」のコイン風バッジ（黄色い丸に円の字）。HTMLが使えない場所はyenText()。 */
+function yenNum(n){ return Number(n||0).toLocaleString('ja-JP'); }
+function yenHtml(n){ return yenNum(n)+'<span class="yen-coin">円</span>'; }
+function yenText(n){ return yenNum(n)+'円'; }
 // 価格は円建てで先に決め、コインへ逆算する向きで定数化（コイン価格を決め打ちで別途持たない）
 const MURA_AKICHI_YEN=3000000;    // 空き地（今回は購入不可・表示のみ）
 const MURA_MORI_YEN=100000;       // 森本体
@@ -6644,19 +6725,29 @@ const MURA_SEICHI_YEN=20000;      // 整地代
 const MURA_MORI_TOTAL_YEN=MURA_MORI_YEN+MURA_KIRIKATA_YEN+MURA_SEICHI_YEN;   // 森の合計＝150,000円
 function muraYenFmt(yenAmount){ return yenAmount.toLocaleString('ja-JP'); }   // 円の数字部分だけ（「円」は呼び出し側で付ける）
 function muraCoinsFor(yenAmount){ return Math.round(yenAmount/YEN_PER_COIN); }   // 円→コインの換算（実際に払わせる額はこちらを必ず経由）
-const COIN_WIN=2;             // 通常バトル勝利のコイン
-const COIN_BOSS=10;           // ボス系（もんばん・ツインボス・かくれラスボス・ゾーンボス）勝利のコイン
-const PRICE_GENKIDAMA=20;     // げんきだまのねだん
-const PRICE_FUE=30;           // ヨミのふえのねだん
-const OMAKE_PER_ITEM=2;       // 計算クイズ正解のオマケ（1こにつき◯コインもどす）
-// 弾3-13 ユーザー調整用（町のおてつだい）
-const ODACHIN_EASY=1;         // かんたん正解1問のおだちん
-const ODACHIN_NORMAL=2;       // ふつう正解1問のおだちん
-const ODACHIN_HARD=3;         // むずかしい正解1問のおだちん
-const ODACHIN_PERFECT=5;      // 全問正解ボーナス
+/* ---- もらえるお金＝学年レベル×○円（準也さんの裁定 7/25）----
+   バトルは「いま戦っている場所の学年」、町のミニゲーム（学校・かきとり・おてつだい）は
+   「いちばん進んだ学年」で計算する。数値はすべてここだけ直せばよい。 */
+const YEN_WIN_PER_GRADE=20;        // ふつうのバトル勝利＝学年×20円
+const YEN_BOSS_PER_GRADE=30;       // ボス級勝利＝学年×30円
+const YEN_SCHOOL_PERFECT_PER_GRADE=100;  // 学校のテスト 全問正解
+const YEN_SCHOOL_PARTIAL_PER_GRADE=20;   // 学校のテスト まちがいあり
+const YEN_KAKITORI_PER_GRADE=20;         // かきとりテスト 1字せいかい
+const YEN_KAKITORI_BONUS_PER_GRADE=100;  // かきとり 5問ぜんぶ正解ボーナス
+const OMAKE_RATE=0.1;              // 買い物の計算クイズ正解＝代金の1わりが もどる
+function battleYen(isBoss){ return zoneGrade(curStage||1)*(isBoss?YEN_BOSS_PER_GRADE:YEN_WIN_PER_GRADE); }
+function townYen(perGrade){ return progressGrade()*perGrade; }
+/* ---- ねだん（実際に売っている値段の良心的安め）---- */
+const PRICE_GENKIDAMA=150;    // げんきだま＝コンビニのおにぎり1個ぶん
+const PRICE_FUE=500;          // ヨミのふえ＝おもちゃの笛ぶん
+// 弾3-13 ユーザー調整用（町のおてつだい）＝学年×○円
+const ODACHIN_EASY=10;        // かんたん正解1問（学年倍率がかかる）
+const ODACHIN_NORMAL=20;      // ふつう正解1問
+const ODACHIN_HARD=30;        // むずかしい正解1問
+const ODACHIN_PERFECT=50;     // 全問正解ボーナス
 const OTETSUDAI_QCOUNT=5;     // 時計・グラムの問題数
 const YOMIATE_SEC=30;         // よみあてタイムアタック秒数
-const ODACHIN_YOMIATE=1;      // よみあて正解1問のおだちん
+const ODACHIN_YOMIATE=10;     // よみあて正解1問
 function genkiMaxOf(idx){ return GENKI_BASE + Math.floor((levelOf(idx)-1)/2)*GENKI_PER_2LV; }
 /* 現在値は常にこれ経由で読む：未登録の子は読み出し時に最大値で初期化。最大値を超えていたら丸める（レベル変動対策） */
 function genkiOf(idx){
@@ -7107,7 +7198,7 @@ function jukugoBossDefeated(att){
   setTimeout(()=>{
     if(seq!==spawnSeq) return;
     triggerHeroVictoryPose();   // 弾R-2：勝利メッセージが出るこの瞬間に後ろ姿→勝利ポーズへ
-    const coinHtml=awardCoinsHtml(COIN_BOSS);   // 弾3-12§4：もんばん・かくれラスボス勝利=+10
+    const coinHtml=awardCoinsHtml(battleYen(true));   // 弾3-12§4→手直し_お金(7/25)：ボス級＝学年×30円
     setMsg('『'+(jw?jw.w:'')+'』を たおした！<span class="meaning">『'+K[att].c+'』が つよくなった！</span>'+coinHtml);
     snd('get');
     const evo=planLevelUp(att);
@@ -7384,7 +7475,7 @@ function twinBossDefeatedBoth(att){
   setTimeout(()=>{
     if(seq!==spawnSeq) return;
     triggerHeroVictoryPose();   // 弾R-2：勝利メッセージが出るこの瞬間に後ろ姿→勝利ポーズへ
-    const coinHtml=awardCoinsHtml(COIN_BOSS);   // 弾3-12§4：ツインボス勝利=+10
+    const coinHtml=awardCoinsHtml(battleYen(true));   // 弾3-12§4→手直し_お金(7/25)：ツインボスもボス級＝学年×30円
     setMsg('『一心』『同体』を たおした！<span class="meaning">『'+K[att].c+'』が つよくなった！</span>'+coinHtml);
     snd('get');
     const evo=planLevelUp(att);
@@ -7511,7 +7602,7 @@ function exitBattle(){ if(evoLock) return;
 
 /* 弾R-1§1-4：バトル画面右上のコイン常時表示を更新（updateBattleHud()から毎回・awardCoinsHtml()から
    コイン加算直後にも呼ぶ＝勝利メッセージが数秒表示されている間もその場で増えて見える） */
-function updateBattleCoins(){ const el=$('bCoins'); if(el) el.textContent='🪙 '+coins; }
+function updateBattleCoins(){ const el=$('bCoins'); if(el) el.innerHTML=yenHtml(coins); }
 function updateBattleHud(){
   updateBattleCoins();
   $('bProgress').textContent=(enemyPos+1)+'／'+queue.length+' たいめ';
@@ -7533,7 +7624,14 @@ function updateBattleHud(){
    連続テキストごとに匿名flexアイテムに分割されて横に並び、2つの文が混ざったように見える（<br>も
    アイテム間の改行として効かない）。必ず1個の内側要素（.msg-in）で包み、flexアイテムを常に1つ＝
    中は普通のインラインフロー（<br>で明確な2行・赤い漢字も『』の中にインラインで収まる）にする */
-function setMsg(html){ $('bMsg').innerHTML = html ? '<span class="msg-in">'+html+'</span>' : ''; }
+function setMsg(html){
+  const el=$('bMsg');
+  el.innerHTML = html ? '<span class="msg-in">'+html+'</span>' : '';
+  /* 改善メモ_0725：はかせカード表示中は .msg を隠しているため、カードが出ていないときは必ず
+     見える状態に戻す（hideBattleHakase の呼び忘れがあってもメッセージが消えたままにならない保険） */
+  const box=$('battleHakase');
+  if(!box || !box.classList.contains('show')) el.style.visibility='';
+}
 /* 敵の表情切替（normal/pain/cool/danger/happy/shiny） */
 function setEnemyFace(expr){
   const f=$('enemyFace'); if(f) f.className='face '+expr;
@@ -7602,8 +7700,12 @@ function renderParty(){
     const expr=tired?'sleeping':((idx===selectedAttacker)?'cool':'normal');
     b.innerHTML='<span class="pc face-host"><span class="sel-ring"></span><span class="fc" style="color:'+k.cl+'">'+k.c+'</span>'+
                 '<span class="face '+expr+'"><span class="eyes"><span class="eye"></span><span class="eye"></span></span><span class="mouth"></span><span class="cheek l"></span><span class="cheek r"></span></span></span>'+
-                '<span class="pfuda">'+
-                  '<span class="pfuda-lv">Lv'+levelOf(idx)+'</span>'+
+                /* 改善メモ_0725 指摘2：バトル中、自分のかんじモンの属性が見えず「何で見分けるのか
+                   分からない」と指摘された。敵側には既に属性バッジ(#eType)が出ているので、
+                   てもちの札にも同じ絵文字（💧🔥🌿🪨⭐）を出し、さらに札の上に属性色の帯（--tcol）を
+                   出して、絵文字と色の両方で見分けられるようにする（準也さんの裁定7/25） */
+                '<span class="pfuda" style="--tcol:'+TYPE_COLOR[typeOf(idx)]+'">'+
+                  '<span class="pfuda-lv">'+TYPE_EMOJI[typeOf(idx)]+' Lv'+levelOf(idx)+'</span>'+
                   '<span class="pfuda-genki">'+gCur+'／'+gMax+'</span>'+
                   '<span class="pfuda-bar"><span class="pfuda-fill'+(gCur<=GENKI_TIRED?' low':'')+'" style="width:'+gPct+'%"></span></span>'+
                 '</span>';
@@ -7625,8 +7727,18 @@ function renderParty(){
 /* 弾R-2：勝利ふり向き演出。heroVictoryPose中はhero-back画像を前向き勝利ポーズへ差し替える（無ければ従来どおり後ろ姿）。
    renderParty()が呼ばれるたびにも一貫して同じ画像を選ぶための共通口 */
 function heroBackImgSrc(hbChar){
-  if(heroVictoryPose && heroVictoryOK.has(hbChar)) return 'images/battle-tate/hero-victory-'+hbChar+'.webp';
+  /* 手直し_着替え第1弾：きている服の画像があればそれを、無ければ標準衣装に倒す（2段のフォールバック） */
+  const sf=costumeSuffix();
+  if(heroVictoryPose && heroVictoryOK.has(hbChar)) return heroVictoryImgSrc(hbChar);
+  if(sf && heroBackOK.has(hbChar+sf)) return 'images/battle-tate/hero-back-'+hbChar+sf+'.webp';
   return 'images/battle-tate/hero-back-'+hbChar+'.webp';
+}
+/* 手直し_着替え第1弾：勝利ポーズ画像の共通口。バトル画面だけでなく新幹線シーン（乗車前のふり向き）
+   からも同じ口を通す＝着替えの反映漏れが起きないようにする */
+function heroVictoryImgSrc(hbChar){
+  const sf=costumeSuffix();
+  if(sf && heroVictoryOK.has(hbChar+sf)) return 'images/battle-tate/hero-victory-'+hbChar+sf+'.webp';
+  return 'images/battle-tate/hero-victory-'+hbChar+'.webp';
 }
 let heroVictoryPose=false;   // 勝利メッセージ表示中〜次の敵が出るまでtrue
 // 発注_勝利演出3件 作業2：戦闘勝利のたびに主人公が読み上げる短い掛け声（2〜4種からランダム・speakJa任せ＝🔇時は自動的に無音）
@@ -8373,7 +8485,7 @@ function awardCoinsHtml(n){
   coins+=n; save();
   if(isTownLike(fieldZone)) updateTownFieldInfo();   // 通常起こらないが念のため（表示鮮度）
   updateBattleCoins();   // 弾R-1§1-4：右上の常設コイン表示もこの場で即更新
-  return '<span class="meaning">🪙+'+n+'</span>';
+  return '<span class="meaning">＋'+yenHtml(n)+'</span>';   // 手直し_お金(7/25)：円のコイン風バッジ表示
 }
 function onEnemyDefeated(att){
   const seq=spawnSeq;   // 手直し(2026-07-04・積み残し解消①)：とどめ演出中に「おわる」→残タイマー無効化のガード
@@ -8385,7 +8497,7 @@ function onEnemyDefeated(att){
     // onCorrectSimple専用だった撃破カウントをここにも追加（tallyZone1AutoDefeat()に共通化）
     tallyZone1AutoDefeat();
     triggerHeroVictoryPose();   // 弾R-2：勝利メッセージが出るこの瞬間に後ろ姿→勝利ポーズへ
-    const coinHtml=awardCoinsHtml(enemyIsBoss?COIN_BOSS:COIN_WIN);   // 弾3-12§4：通常+2・ボス+10（乱入・ふくしゅう乱入も+2）
+    const coinHtml=awardCoinsHtml(battleYen(enemyIsBoss));   // 弾3-12§4→手直し_お金(7/25)：通常＝学年×20円・ボス＝学年×30円（乱入も通常あつかい）
     // 手直し(7/18朝)：はかせの手引き済みフラグはフィールドで1回勝った時点で立てる（onCorrectSimple側と同じ直し）
     const firstFieldWin=(!firstFieldBattleHelped && battleSource==='field');
     if(firstFieldWin){ firstFieldBattleHelped=true; save(); }
@@ -8698,7 +8810,7 @@ function launchEventBossIntro(zone){
         const scr=$('screen-field');
         if(!scr || !scr.classList.contains('active')) return;
         launchEventBossBattle(zone);
-      });
+      }, 'bh21');   // 手直し_はかせの声(7/25)：四国めたんの録音を割り当て（第3引数がsndId）
     });
   }else{
     launchEventBossBattle(zone);
@@ -8723,7 +8835,7 @@ function launchEventTwinBossIntro(zone){
         const scr=$('screen-field');
         if(!scr || !scr.classList.contains('active')) return;
         launchTwinBossBattle(zone);
-      });
+      }, 'bh22');   // 手直し_はかせの声(7/25)：四国めたんの録音を割り当て
     });
   }else{
     launchTwinBossBattle(zone);
@@ -8771,7 +8883,7 @@ function closeFree(){
   // §7-3：ゾーン1初回クリア時だけ はかせのセリフを挟んでからちずへ
   if(!tamashiiLoreSeen && fieldZone===1){
     tamashiiLoreSeen=true; save();
-    hakaseTalkOnce('みごとじゃ！ じゆうに あるける ように なったぞ。つぎへ いそぐでない。この フィールドには たおした かんじの たましいが さまよっておる。つかまえて めを さまさせて やるのじゃ！', ()=>{ openWorldMap(); });
+    hakaseTalkOnce('みごとよ！ じゆうに あるける ように なったわ。つぎへ いそがなくても だいじょうぶ。この フィールドには たおした かんじの たましいが さまよって いるの。つかまえて めを さまさせて あげてね！', ()=>{ openWorldMap(); }, 'bh23');   // 手直し_はかせの声(7/25)：老人口調→マナ（女性）の口調に直し、四国めたんの録音を割り当て
     return;
   }
   // 第15弾§8：クリア後はちずが自動で開く（ゲートへのオート歩行は廃止）
@@ -9714,7 +9826,14 @@ let worldmapNipponImgOK=false;  // 弾3-4: images/worldmap-nippon.webp（にほ�
   const wn=new Image(); wn.onload=()=>{worldmapNipponImgOK=true;}; wn.onerror=()=>{}; wn.src='images/worldmap-nippon.webp';
 })();
 /* 第5.5弾：現在の主人公のシートURL・存在フラグ（heroCharで切替） */
-function heroSheetUrl(){ return heroChar==='girl' ? 'images/sprites/hero-girl.webp' : 'images/sprites/hero.webp'; }
+function heroSheetUrl(){
+  /* 手直し_着替え第1弾：きている服のシートが読めていればそれを、無ければ従来のシートを返す
+     （＝和服画像が配信されていない環境でも今までどおり動く） */
+  const base=heroChar==='girl' ? 'images/sprites/hero-girl' : 'images/sprites/hero';
+  const sf=costumeSuffix();
+  if(sf && heroSheetOK.has((heroChar==='girl'?'girl':'boy')+sf)) return base+sf+'.webp';
+  return base+'.webp';
+}
 function heroCharImgOK(){ return heroChar==='girl' ? heroGirlImgOK : heroImgOK; }
 /* 第5.5弾：女の子画像があれば選択機能を出してよい（§2/§4のゲート） */
 function heroSelectAvailable(){ return heroGirlImgOK; }
@@ -9911,7 +10030,9 @@ function openHeroSelect(afterCb){
 function openHeroSelectFromTitle(){ openHeroSelect(null); }
 function selectHero(char){
   if(char!=='boy' && char!=='girl') return;
-  heroChar=char; save();
+  heroChar=char;
+  ensureCostumeForChar();   // 手直し_着替え(7/25)：切り替えた主人公が着られない服なら「いつもの ふく」に戻す（買った記録は残る）
+  save();
   ensureAudio(); sfxCorrect();        // ピロン↑（既存の選択確定音を流用）
   $('heroSelectOverlay').classList.remove('show');
   const cb=heroSelectAfter; heroSelectAfter=null;
@@ -9988,7 +10109,12 @@ function relayoutField(){ fitFieldHeight(); computeTileSize(); updateCamera(true
    スキップボタンで即座に最終状態へ飛ばせる。renderField()自身の続き（afterFieldRender・旧セーブ
    バナー）や、warpZone/enterNextZone/イベントボス導入等の「renderField直後」の処理は、
    afterFieldZoomIntro()経由で演出終了まで待たせることで、既存のバナー・はかせ会話の表示順序を変えずに済ませる。 */
-const FIELD_INTRO_HOLD_MS=1200;   // 「ゾーン全体」を静止して見せる時間（設計書に数値指定なし＝ちずと揃えた実装判断／OP2V1でゆっくり化）
+/* 改善メモ_0725 指摘1（準也さんの実機フィードバック 7/25）：「左右に動く速さが速すぎる。
+   ゆっくり全体をなめるように見せてから、ズームして主人公のところへ行ってほしい」
+   → ①静止して全体を見せる時間 1200→1800ms ②横パン 2500→4200ms（約1.7倍）
+     ③パンの終点を「プレイヤー側の画面端」から「プレイヤーが画面中央に来る位置」に変更＝
+       ズーム段階で横に戻る動き（＝往復して見える原因）がなくなり、なめる→寄る の一方通行になる */
+const FIELD_INTRO_HOLD_MS=1800;   // 「ゾーン全体」を静止して見せる時間（設計書に数値指定なし＝ちずと揃えた実装判断／OP2V1でゆっくり化）
 /* 発注_軽微調整3件(2026-07-20) 作業3：「サッと動いてしまう（速すぎる・急）」というフィードバックを受けて、
    FIELD_INTRO_MS 1800→3000ms（約1.67倍）・FIELD_PAN_MS 1400→2500ms（約1.79倍）に変更。
    発注書の目安レンジ（INTRO 2600〜3200ms・PAN 2200〜2800ms＝現状の1.5〜2倍程度）の中で、
@@ -9997,7 +10123,7 @@ const FIELD_INTRO_HOLD_MS=1200;   // 「ゾーン全体」を静止して見せ�
    両定数はこの演出（renderField内のfieldIntro）専用で、バトル開始等の他演出には使われていないことを
    grep済み（4か所すべてfieldIntro関連のtransition/フォールバックタイマー）。 */
 const FIELD_INTRO_MS=3000;        // 自分の位置へズーム/パンする所要時間（実装判断／OP2V1でゆっくり化→今回さらにゆっくり化）
-const FIELD_PAN_MS=2500;          // 横長ゾーンの横パン所要時間（発注_軽微調整3件でさらにゆっくり化）
+const FIELD_PAN_MS=4200;          // 横長ゾーンの横パン所要時間（改善メモ_0725 指摘1でさらにゆっくり化）
                                    // （HOLD1200+PAN1400+ZOOM1800=4400ms＝発注書の目安「トータル3〜4.5秒程度」に収まる。実機確認で選定）
 let fieldZoomLastZone=null;      // 直前にこの演出の判定対象にした(=renderFieldした)ゾーン。同じ値なら「入場」扱いしない
 let fieldIntro={playing:false,finish:null,queue:[]};   // 演出の再生状態＋演出終了を待つ処理のキュー
@@ -10057,6 +10183,10 @@ function playFieldZoomIntro(plan){
       // パン開始位置＝プレイヤーがいる側と逆の端（逆の端から始めて終盤で自然にプレイヤー側へ寄る見え方にする実装判断）
       const playerOnLeftHalf=(fieldHx < plan.FW/2);
       startX=playerOnLeftHalf ? (vw-mapW*fitH) : 0;
+      /* 改善メモ_0725 指摘1-b（準也さんの再指摘 7/25）：一度「プレイヤーが中央に来る位置で止める」に
+         変えたが、それだと**フィールド全体を見せきる前に止まってしまう**（真ん中で終わる）。
+         準也さんの要望は「端から端まで動かして全体を見せてから、主人公の位置へズーム」なので、
+         終点は反対側の端に戻す。ズーム段階で主人公の位置へ寄るのは意図どおりの動き */
       panEndX=playerOnLeftHalf ? 0 : (vw-mapW*fitH);
     }else{
       // パン不要（マップ幅が画面に収まる＝横パンする意味が無い）＝中央固定。高さだけ合わせた静止表示になる
@@ -10127,6 +10257,13 @@ function renderField(){
   hakaseMsgSeq++; hakaseTapTrigger=null;   // 保留中の表示時間タイマー・タップ先送りを無効化（残留なし）
   { const w=$('fieldWrap'); const old=w&&w.querySelector('.hakase-talk'); if(old) old.remove(); }
   $('fieldZoneName').textContent=zoneNameOf(fieldZone);   // 弾3-12§5-2：町対応のアクセサ経由
+  /* 改善メモ_0725 指摘3（準也さんの実機フィードバック 7/25）：ゾーンを歩いて移動してもBGMが
+     切り替わらず、バトルが終わった瞬間に急に別の曲へ変わる（例：ゾーン42=field56のまま43へ入り、
+     色違いバトル後に43の曲=field12へ切替）。原因はbgmPlay(fieldSongFor())の呼び出しが
+     画面遷移時とバトル関連にしか無かったこと。ここ（フィールドを描くたび）で必ず要求する。
+     bgmPlay()は「同じ曲なら何もしない」ので、同一ゾーン内の再描画では鳴り直さない。
+     ボス戦後の続き再生（bgmResumeFieldOnce）は showScreen 側の処理を邪魔しないよう避ける */
+  if(!bgmResumeFieldOnce && $('screen-field').classList.contains('active')) bgmPlay(fieldSongFor(fieldZone));
   // 弾3-12§4／§5：町＝ボス見出しの代わりにコインバッジ（常設は町のみ）。ボス系の参照（zoneBossIdx等）はindex -1で壊れるため通らない
   if(isTownLike(fieldZone)){
     updateTownFieldInfo();
@@ -10266,7 +10403,7 @@ function renderField(){
         cls+=' t-path t-town-door';
         txt='<span class="town-door-emoji">'+(ch==='L'?'🔬':(ch==='D'?'🛍️':(ch==='Y'?'🛏️':(ch==='H'?'📋':(ch==='M'?'🏬':(ch==='K'?'🏠':(ch==='F'?'🖌️':(ch==='N'?'🕰️':(ch==='O'?'🏡':(ch==='P'?'🚉':(ch==='Q'?'🎮':(ch==='V'?'🏞️':'🏫'))))))))))))+'</span>';
       }
-      else if(fieldZone<0 && (ch==='E'||ch==='M'||ch==='N'||(fieldZone===MURA_ZONE&&(ch==='F'||ch==='C'))||(fieldZone===STATION_ZONE&&ch==='K'))){
+      else if(fieldZone<0 && (ch==='E'||ch==='M'||ch==='N'||(fieldZone===MURA_ZONE&&(ch==='F'||ch==='C'))||(fieldZone===STATION_ZONE&&ch==='K')||(fieldZone===MALL_ZONE&&ch==='U'))){
         // 弾3-15：屋内の出口・店員・住人。画像が読めたNPCは後載せするため、タイル上の絵文字はフォールバック時だけ。
         // 発注_村1：MURA_ZONE専用のF(不動産屋)・C(大工兄弟)を追加。他ゾーンのM/Nの意味と衝突しないようfieldZone===MURA_ZONEを明示
         // 手直し_駅構内(7/25)：STATION_ZONE専用のK(改札)を追加（踏むと新幹線乗車シーン）
@@ -10276,6 +10413,8 @@ function renderField(){
         else if(fieldZone===MURA_ZONE&&ch==='F') txt='<span class="town-door-emoji">💼</span>';
         else if(fieldZone===MURA_ZONE&&ch==='C') txt='<span class="town-door-emoji">👷</span>';
         else if(fieldZone===STATION_ZONE&&ch==='K') txt='<span class="town-door-emoji">🎫</span>';
+        // 手直し_着替え第1弾(7/25)：U＝ふくやさん。店員画像(npc-fukuya)が読めればNPCとして後載せ・無ければ絵文字
+        else if(fieldZone===MALL_ZONE&&ch==='U') txt=(interiorActorSheetOK.has('fukuya')||interiorActorImgOK.has('fukuya'))?'':'<span class="town-door-emoji">👘</span>';
         else if(fieldZone===SCHOOL_ZONE) txt=teacherImagesOK?'':'<span class="town-door-emoji">👩‍🏫</span>';
         else txt=(interiorActorSheetOK.has('ojisan')||interiorActorImgOK.has('ojisan'))?'':'<span class="town-door-emoji">👴</span>';
       }
@@ -10428,7 +10567,9 @@ function renderField(){
   grid.appendChild(hero);
   if(heroOk){
     hero.innerHTML='<div class="hero-sprite"></div>';   // 帽子🧢・顔パーツは絵に含むので非表示
-    if(heroChar==='girl'){                              // 第5.5弾：CSS既定(hero.webp)を女の子シートへ上書き
+    // 第5.5弾：CSS既定(hero.webp)を女の子シートへ上書き
+    // 手直し_着替え第1弾：着替え中（suffixあり）は男の子でも上書きが要る
+    if(heroChar==='girl' || costumeSuffix()){
       const sp=hero.querySelector('.hero-sprite'); if(sp) sp.style.backgroundImage="url('"+heroSheetUrl()+"')";
     }
     applyHeroFacing();                                   // 向きに合わせてコマ(--bgx)を設定
@@ -10825,7 +10966,7 @@ function enterNextZone(){
       //   2回目以降は従来どおりの軽量バナーのみ（本編シーンは初回限定＝検品を意識した注意 項目3）。
       const showKansaiIntro=()=>{
         if(!kansaiHakaseSeen){
-          hakaseTalkOnce('カンサイ・シコクで かんじもんが あばれておるようじゃ。とおいから でんこうに のって いこうぞ！',()=>{
+          hakaseTalkOnce('カンサイ・シコクで かんじもんが あばれて いるみたい。とおいから でんこうに のって いきましょう！','bh24',()=>{
             if(enterSeq!==fieldSeq) return;   // ワープ等で離脱済みなら新幹線シーンへは進まない
             startTrainSceneEvent(()=>{
               if(enterSeq!==fieldSeq) return;   // 新幹線シーン再生中にワープ等で離脱済みなら以降は進めない
@@ -10833,7 +10974,7 @@ function enterNextZone(){
               setTimeout(()=>{
                 if(enterSeq!==fieldSeq) return;
                 kansaiHakaseSeen=true; save();
-                hakaseTalkOnce('ようこそ カンサイ・シコクへ！ ここからは ボスが じゅくごモンに なるぞ！');
+                hakaseTalkOnce('ようこそ カンサイ・シコクへ！ ここからは ボスが じゅくごモンに なるわよ！','bh25');
               },2300);   // 紹介バナーが消えてから、はかせの一言（初回のみ）
             });
           });
@@ -10857,7 +10998,7 @@ function enterNextZone(){
             setTimeout(()=>{
               if(enterSeq!==fieldSeq) return;
               chubuHakaseSeen=true; save();
-              hakaseTalkOnce('ようこそ チュウブへ！ やまと ゆきの くにの かんじが まっているぞ！');
+              hakaseTalkOnce('ようこそ チュウブへ！ やまと ゆきの くにの かんじが まっているわ！','bh26');
             },2300);   // 紹介バナーが消えてから、はかせの一言（初回のみ）
           }
         },2300);
@@ -10941,11 +11082,16 @@ function showBattleHakase(msg,sndId){
   const text=document.createElement('div'); text.className='battle-hakase-text'; text.textContent=msg;
   box.appendChild(face); box.appendChild(text);
   box.classList.add('show');
+  /* 改善メモ_0725（Fableが実物確認で発見）：はかせカードは通常メッセージ(.msg)とほぼ同じ位置に出るため、
+     .msg の文字がカードの下からはみ出して透けて見えていた（もんばん登場時のスクショで判明）。
+     カードが出ている間だけ .msg を隠し、閉じたら戻す（中身は消さない＝閉じれば元の文がそのまま見える） */
+  const msgBox=$('bMsg'); if(msgBox) msgBox.style.visibility='hidden';
   playBattleHakaseVoice(sndId);
 }
 function hideBattleHakase(){
   const box=$('battleHakase'); if(!box) return;
   box.classList.remove('show'); box.innerHTML='';
+  const msgBox=$('bMsg'); if(msgBox) msgBox.style.visibility='';   // 改善メモ_0725：カードを閉じたらメッセージを戻す
   stopBattleHakaseVoice();
 }
 /* 手直し はかせトーク2§3：はかせの会話ウィンドウ（左に顔・右にセリフ）。既存showFieldBanner（黒帯）は使わない。
@@ -11692,11 +11838,13 @@ function townBuildingFrontRow(b){
 }
 const MALL_DEF={ zone:MALL_ZONE, name:'ショッピングモール', bg:'interior-mall.webp',
   returnTo:{x:19,y:28},
+  /* 手直し_着替え第1弾（7/25）：U＝ふくやさん（中央の店舗の前）。肉屋Mと同じ「什器の下に立つ」流儀。
+     記号Uは壁T/R/W・すみかA〜L・既存のS/E/M/N/F/C/K・町のL/D/Y/H/G/O/P/Q/Vのどれとも重ならない */
   grid:[
 'TTTTTTTTTTTTTTTTTT',
 'T................T',
 'T.TTT..TTT..TTT..T',
-'T..M.............T',
+'T..M....U........T',
 'T................T',
 'T................T',
 'T................T',
@@ -11792,6 +11940,8 @@ const MURA_DEF={ zone:MURA_ZONE, name:'むら ひろば よてい地', bg:'mura-
 const PSEUDO_DEFS={ [TOWN_ZONE]:TOWN_DEF, [MALL_ZONE]:MALL_DEF, [HOUSE1_ZONE]:HOUSE1_DEF, [SCHOOL_ZONE]:SCHOOL_DEF, [SHODO_ZONE]:SHODO_DEF, [STATION_ZONE]:STATION_DEF, [MURA_ZONE]:MURA_DEF };
 const INTERIOR_ACTORS=[
   {zone:MALL_ZONE,key:'nikuya',sheet:'nikuya-field.webp',img:'nikuya-normal.webp',emoji:'🧑‍🍳',x:3,y:3,dir:'down',frame:'a'},
+  // 手直し_着替え第1弾(7/25)：ふくやさん。画像はまだ無い（Codex発注は仕上げ弾）＝読めない間はタイルの絵文字👘だけが出る
+  {zone:MALL_ZONE,key:'fukuya',sheet:'npc-fukuya-field.webp',img:'npc-fukuya.webp',emoji:'👘',x:8,y:3,dir:'down',frame:'a'},
   {zone:HOUSE1_ZONE,key:'ojisan',sheet:'npc-ojisan-field.webp',img:'npc-ojisan.webp',emoji:'👴',x:9,y:2,dir:'down',frame:'a'}
 ];
 /* 手直し弾3-15：将来の歩行イベントから、向きと歩行A/Bだけを切り替えられる共通口。 */
@@ -11909,13 +12059,13 @@ function warpTown(){
   renderField();
   if(!townGuideSeen){
     townGuideSeen=true; save();
-    hakaseTalkOnce('ここが みんなの まち じゃ！ どうぐやで かいものが できるぞ。つかれたら やどで やすむと いい');
+    hakaseTalkOnce('ここが みんなの まちよ！ どうぐやで かいものが できるわ。つかれたら やどで やすんでね','bh27');
   }
 }
 /* §4：町にいる間のコインバッジ（fieldInfoを流用＝常設は町のみ） */
 function updateTownFieldInfo(){
   if(!isTownLike(fieldZone)) return;
-  const el=$('fieldInfo'); if(el) el.innerHTML='🪙 '+coins;
+  const el=$('fieldInfo'); if(el) el.innerHTML=yenHtml(coins);
 }
 /* §5-4：町の建物いりぐち（onArriveTileの町分岐から呼ばれる） */
 function onArriveTownTile(ch){
@@ -11945,7 +12095,7 @@ function warpInterior(zone){
   fieldZone=zone; const s=zoneStartOf(zone); fieldHx=s.x; fieldHy=s.y;
   showScreen('screen-field'); renderField();
   // 手直し_駅構内(7/25)：初めて駅に入ったときだけ、マナに連れられてホームへ行く一連のシーンを自動再生
-  // （社長指示「初めて乗るときはフィールドを歩くのも自動で」。2回目以降は改札Kを踏んだときだけ）
+  // （準也さんの指示「初めて乗るときはフィールドを歩くのも自動で」。2回目以降は改札Kを踏んだときだけ）
   if(zone===STATION_ZONE && !stationSceneSeen && !trainSceneActive){
     stationSceneSeen=true; save();
     setTimeout(()=>{ if(!trainSceneActive) startTrainSceneEvent(); },600);
@@ -11960,7 +12110,7 @@ function warpInterior(zone){
   };
   if(!interiorGuideSeen){
     interiorGuideSeen=true; save();
-    hakaseTalkOnce('たてものの なかにも はいれるように なったぞ！ 🚪の マークを ふむと そとに でられる', showShodoIntro);
+    hakaseTalkOnce('たてものの なかにも はいれるように なったわ！ 🚪の マークを ふむと そとに でられるの','bh28', showShodoIntro);
   }else{
     showShodoIntro();
   }
@@ -11973,6 +12123,7 @@ function leaveInterior(){
 function onArriveInteriorTile(ch){
   if(ch==='E'){ leaveInterior(); return; }
   if(fieldZone===MALL_ZONE&&ch==='M'){ openInteriorCard('nikuya'); return; }
+  if(fieldZone===MALL_ZONE&&ch==='U'){ fukuyaOpen(); return; }   // 手直し_着替え第1弾(7/25)：ふくやさん
   if(fieldZone===HOUSE1_ZONE&&ch==='N'){ openInteriorCard('ojisan'); return; }
   if(fieldZone===SCHOOL_ZONE&&ch==='N'){ openTeacherCard(); return; }
   // 発注W-1：しょどうきょうしつの先生の席(SHODO_DEF.grid内のT・座標(9,2))の前のマス(9,3)。
@@ -12074,6 +12225,73 @@ function muraOpenDaiku(){
   $('interiorCardBody').innerHTML=html; $('interiorCardOverlay').classList.add('show');
 }
 
+/* ===== 手直し_着替えシステム第1弾（2026-07-25）：ふくやさん（モール中央の店舗・記号U） =====
+   村1の不動産屋と同じ方式＝既存のinteriorCardBody/interiorCardOverlayを専用関数群から使い回す
+   （新規DOM・新規CSSなし）。買った服は見た目だけで、強さ・ステータスには一切影響しない。 */
+function fukuyaFace(small){ const cls='interior-card-face'+(small?' small':''); return interiorActorImgOK.has('fukuya')?'<div class="'+cls+' has-img" style="background-image:url(\'images/npc-fukuya.webp\')"></div>':'<div class="'+cls+'">👘</div>'; }
+/* small=true＝ふくの一覧のとき（行が増えるので顔を小さくしてボタンを画面に収める） */
+function fukuyaShow(html,small){ $('interiorCardBody').innerHTML=fukuyaFace(small)+html; $('interiorCardOverlay').classList.add('show'); }
+function fukuyaOpen(){
+  fukuyaShow('<div class="interior-card-msg">いらっしゃい！ きょうは どんな ふくを おさがし？（もっているお金 '+yenHtml(coins)+'）</div>'+
+    '<button class="btn btn-primary" onclick="fukuyaBuyList()">ふくを かう</button>'+
+    '<button class="btn btn-primary" onclick="fukuyaWearList()">きがえる</button>'+
+    '<button class="btn btn-ghost" onclick="closeInteriorCard()">やめとく</button>');
+}
+function fukuyaBuyList(){
+  // 準也さんの指示(7/25)：男の子のときは男の子の服だけ・女の子のときは女の子の服だけを見せる
+  const rest=COSTUMES.filter(c=>!ownsCostume(c.key) && costumeUsable(c.key));
+  if(!rest.length){
+    fukuyaShow('<div class="interior-card-msg">ぜんぶ そろってるね！ あたらしい ふくが はいったら おしえるよ</div>'+
+      '<button class="btn btn-primary" onclick="fukuyaOpen()">もどる</button>');
+    return;
+  }
+  let html='<div class="interior-card-msg">どの ふくに する？（もっているお金 '+yenHtml(coins)+'）</div>';
+  rest.forEach(c=>{ html+='<button class="btn btn-primary" onclick="fukuyaConfirm(\''+c.key+'\')">'+c.emoji+' '+c.name+'　'+yenHtml(c.price)+'</button>'; });
+  html+='<button class="btn btn-ghost" onclick="fukuyaOpen()">もどる</button>';
+  fukuyaShow(html,true);
+}
+function fukuyaConfirm(key){
+  const c=costumeOf(key);
+  if(ownsCostume(key)){ fukuyaWearList(); return; }   // 二重購入の防止線（通常は一覧に出ない）
+  if(coins<c.price){   // 文言は道具屋(§6)と同じ＝子どもが同じ言い回しで理解できる
+    fukuyaShow('<div class="interior-card-msg">おかねが たりないよ。バトルで ためて また きてね！</div>'+
+      '<button class="btn btn-primary" onclick="fukuyaOpen()">もどる</button>');
+    return;
+  }
+  fukuyaShow('<div class="interior-card-msg">'+c.emoji+' '+c.name+'（'+yenHtml(c.price)+'）を ほんとうに かう？</div>'+
+    '<button class="btn btn-primary" onclick="fukuyaBuy(\''+key+'\')">かう</button>'+
+    '<button class="btn btn-ghost" onclick="fukuyaBuyList()">やめとく</button>');
+}
+function fukuyaBuy(key){
+  const c=costumeOf(key);
+  if(ownsCostume(key)||!costumeUsable(key)||coins<c.price){ fukuyaOpen(); return; }   // 最終防波堤（二重購入・性別ちがい・お金不足）
+  coins-=c.price;
+  ownedCostumes.push(key);
+  heroCostume=key;            // 買ったら その場で着る
+  save();
+  ensureAudio(); sfxCorrect();
+  fukuyaShow('<div class="interior-card-msg">'+c.emoji+' '+c.name+'を かった！ さっそく きがえたよ</div>'+
+    '<button class="btn btn-primary" onclick="closeInteriorCard()">とじる</button>');
+  renderField();   // 購入直後にその場で見た目を切り替える（村1の購入と同じ流儀・再読み込み不要）
+}
+function fukuyaWearList(){
+  let html='<div class="interior-card-msg">どれに きがえる？</div>';
+  COSTUMES.filter(c=>ownsCostume(c.key) && costumeUsable(c.key)).forEach(c=>{   // 主人公が着られる服だけ
+    const now=(c.key===heroCostume);
+    html+='<button class="btn '+(now?'btn-yellow':'btn-primary')+'" onclick="fukuyaWear(\''+c.key+'\')">'+c.emoji+' '+c.name+(now?'　✓ いま きている':'')+'</button>';
+  });
+  html+='<button class="btn btn-ghost" onclick="fukuyaOpen()">もどる</button>';
+  fukuyaShow(html,true);
+}
+function fukuyaWear(key){
+  if(!ownsCostume(key)||!costumeUsable(key)) return;   // 持っていない服・いまの主人公が着られない服は無視
+  heroCostume=key; save();
+  const c=costumeOf(key);
+  fukuyaShow('<div class="interior-card-msg">'+c.emoji+' '+c.name+'に きがえた！</div>'+
+    '<button class="btn btn-primary" onclick="closeInteriorCard()">とじる</button>');
+  renderField();
+}
+
 /* §9：屋内定義セルフテスト */
 function interiorSelfTest(){
   const fails=[];
@@ -12088,17 +12306,19 @@ function interiorSelfTest(){
     const wantM=def.zone===MALL_ZONE?1:0,wantN=(def.zone===HOUSE1_ZONE||def.zone===SCHOOL_ZONE)?1:0;
     const wantF=def.zone===MURA_ZONE?1:0,wantC=def.zone===MURA_ZONE?1:0;   // 発注_村1：不動産屋F・大工兄弟C
     const wantK=def.zone===STATION_ZONE?5:0;   // 手直し_駅構内(7/25)：改札K＝駅だけ5レーン
+    const wantU=def.zone===MALL_ZONE?1:0;      // 手直し_着替え第1弾(7/25)：ふくやさんU＝モールだけ1個
+    if((all.split('U').length-1)!==wantU) fails.push(tag+':U個数不正');
     if((all.split('M').length-1)!==wantM) fails.push(tag+':M個数不正');
     if((all.split('N').length-1)!==wantN) fails.push(tag+':N個数不正');
     if((all.split('F').length-1)!==wantF) fails.push(tag+':F個数不正');
     if((all.split('C').length-1)!==wantC) fails.push(tag+':C個数不正');
     if((all.split('K').length-1)!==wantK) fails.push(tag+':K個数不正');
     if(/[,>ABDGHIJL]/.test(all)) fails.push(tag+':くさむら/すみか/ゲートあり');   // 手直し_駅構内：Kを改札の正規記号にしたため除外（元は/[,>ABDG-L]/）
-    if(/[^T.SEMNFCK]/.test(all)) fails.push(tag+':不正な記号あり');   // 手直し_駅構内：Kを追加
+    if(/[^T.SEMNFCKU]/.test(all)) fails.push(tag+':不正な記号あり');   // 手直し_駅構内：Kを追加／手直し_着替え第1弾：Uを追加
     let sx=-1,sy=-1; for(let y=0;y<H;y++){ const x=g[y].indexOf('S'); if(x>=0){sx=x;sy=y;break;} }
     const seen=new Set(),q=[]; if(sx>=0){seen.add(sy*W+sx);q.push([sx,sy]);}
     while(q.length){ const [x,y]=q.shift(); [[1,0],[-1,0],[0,1],[0,-1]].forEach(([dx,dy])=>{ const nx=x+dx,ny=y+dy,k=ny*W+nx; if(nx>=0&&ny>=0&&nx<W&&ny<H&&!seen.has(k)&&g[ny][nx]!=='T'){seen.add(k);q.push([nx,ny]);} }); }
-    ['E','M','N','F','C','K'].forEach(c=>{ for(let y=0;y<H;y++){ const x=g[y].indexOf(c); if(x>=0&&!seen.has(y*W+x)) fails.push(tag+':S→'+c+'到達不能'); } });
+    ['E','M','N','F','C','K','U'].forEach(c=>{ for(let y=0;y<H;y++){ const x=g[y].indexOf(c); if(x>=0&&!seen.has(y*W+x)) fails.push(tag+':S→'+c+'到達不能'); } });
     const r=def.returnTo,tg=TOWN_DEF.grid;
     if(r.y<0||r.y>=tg.length||r.x<0||r.x>=tg[0].length||!isPassableTile(tg[r.y][r.x],TOWN_ZONE)) fails.push(tag+':returnTo不正');
   });
@@ -12172,7 +12392,8 @@ function buildSchoolQuestions(sourcePool,forcedTrueCount){
   return null;
 }
 function schoolScoreOf(circleCount){ return circleCount*10; }
-function schoolRewardOf(correctCount,completed){ return completed?(correctCount===11?10:2):0; }
+/* 手直し_お金(7/25)：学校のテスト＝全問正解は学年×100円・まちがいありは学年×20円（中断は0円のまま） */
+function schoolRewardOf(correctCount,completed){ return completed?townYen(correctCount===11?YEN_SCHOOL_PERFECT_PER_GRADE:YEN_SCHOOL_PARTIAL_PER_GRADE):0; }
 function schoolTeacherVisual(mood){
   if(!teacherImagesOK) return '<div class="school-teacher">👩‍🏫</div>';
   const file=mood==='happy'?'teacher-happy.webp':(mood==='encourage'?'teacher-encourage.webp':'teacher-normal.webp');
@@ -12349,8 +12570,8 @@ function finishSchoolTest(seq){
 function renderSchoolResult(reward){
   const s=schoolTestState;if(!s||s.phase!=='result')return;
   const circles=s.questions.filter(q=>q.isTrue).length,score=schoolScoreOf(circles);
-  const msg=s.answerCorrect===11?'こたえあわせ 11こ ぜんぶ せいかい！ おれい 🪙10':
-    'こたえあわせ 11このうち '+s.answerCorrect+'こ せいかい！<br>てつだってくれて ありがとう。おれい 🪙2';
+  const msg=s.answerCorrect===11?'こたえあわせ 11こ ぜんぶ せいかい！ おれい '+yenHtml(reward):
+    'こたえあわせ 11このうち '+s.answerCorrect+'こ せいかい！<br>てつだってくれて ありがとう。おれい '+yenHtml(reward);
   const inside='<div class="school-result-score">'+score+'てん</div><div class="school-msg">'+msg+'</div>';
   $('schoolTestBody').innerHTML=schoolStageHtml('happy',inside)+
     '<div class="school-actions"><button class="btn btn-primary" onclick="retrySchoolTest('+s.seq+')">もういちど</button>'+
@@ -12394,7 +12615,13 @@ function schoolTestSelfTest(){
     }
   });
   if(schoolScoreOf(5)!==50||schoolScoreOf(6)!==60||schoolScoreOf(7)!==70||schoolScoreOf(8)!==80)fails.push('採点対応不正');
-  if(schoolRewardOf(11,true)!==10||schoolRewardOf(10,true)!==2||schoolRewardOf(11,false)!==0)fails.push('報酬不正');
+  /* 手直し_お金(7/25)：報酬は「学年×○円」になったので固定値ではなく計算式で照合する
+     （全問正解＝学年×100円・まちがいあり＝学年×20円・中断＝0円・全問正解のほうが必ず多い） */
+  const g=progressGrade();
+  if(schoolRewardOf(11,true)!==g*YEN_SCHOOL_PERFECT_PER_GRADE)fails.push('報酬（全問正解）不正');
+  if(schoolRewardOf(10,true)!==g*YEN_SCHOOL_PARTIAL_PER_GRADE)fails.push('報酬（まちがいあり）不正');
+  if(schoolRewardOf(11,false)!==0)fails.push('報酬（中断）不正');
+  if(!(schoolRewardOf(11,true)>schoolRewardOf(10,true)))fails.push('報酬の大小が逆');
   const ok=fails.length===0;console.log('[schoolTestSelfTest] '+(ok?'OK':'FAIL')+'  '+(fails.length?fails.join(' / '):''));return {ok,fails};
 }
 
@@ -12914,7 +13141,7 @@ function renderKtTestQuestion(){
   let html='<div class="kt-head">テスト（'+(s.qpos+1)+'／'+s.targets.length+'もん）</div>'+
     '<div class="kt-test-q">『'+reading+'』を かこう</div>'+
     '<div class="kt-test-hint">―― '+hint+'</div>'+
-    (claimed?'<div class="kt-daily-tag">きょう すでに ゲットずみ・れんしゅう あつかい（コインなし）</div>':'')+
+    (claimed?'<div class="kt-daily-tag">きょう すでに ゲットずみ・れんしゅう あつかい（おかねなし）</div>':'')+
     '<div class="kt-canvas-wrap kt-test-paper" id="ktCanvasWrap"><canvas id="ktLiveCanvas" width="'+KT_CANVAS_PX+'" height="'+KT_CANVAS_PX+'"></canvas></div>'+
     '<div class="kt-msg" id="ktMsg">&nbsp;</div>'+
     '<div class="kt-actions">'+
@@ -12989,8 +13216,9 @@ function kttSubmit(){
     s.correctCount++;
     kakitoriTotalCorrect++;
     let coinText;
-    if(!ktDailyClaimed(targetIdx)){ ktDailyClaim(targetIdx); coins+=10; s.coinsGained+=10; coinText=' 🪙+10！'; }
-    else coinText=' （きょうは れんしゅう あつかい・コインなし）';
+    // 手直し_お金(7/25)：1字せいかい＝学年×20円（1日1回まで＝日次制限はそのまま）
+    if(!ktDailyClaimed(targetIdx)){ const g=townYen(YEN_KAKITORI_PER_GRADE); ktDailyClaim(targetIdx); coins+=g; s.coinsGained+=g; coinText=' ＋'+yenHtml(g)+'！'; }
+    else coinText=' （きょうは れんしゅう あつかい・おかねなし）';
     save(); updateTownFieldInfo();
     ktSetMsg('せいかい！'+coinText);
     setTimeout(()=>{ if(seq!==kakitoriSeq) return; s.submitting=false; kttAdvance(); },900);
@@ -13016,7 +13244,7 @@ function kttAdvance(){
   const s=kakitoriState; if(!s||s.phase!=='testQuestion') return;
   s.qpos++;
   if(s.qpos>=s.targets.length){
-    if(s.correctCount===s.targets.length){ s.coinsGained+=50; coins+=50; save(); updateTownFieldInfo(); }   // 5問全問正解ボーナス
+    if(s.correctCount===s.targets.length){ const b=townYen(YEN_KAKITORI_BONUS_PER_GRADE); s.coinsGained+=b; coins+=b; save(); updateTownFieldInfo(); }   // 5問全問正解ボーナス＝学年×100円
     s.phase='testResult';
     renderKtTestResult();
     return;
@@ -13030,7 +13258,7 @@ function renderKtTestResult(){
   const perfect=s.correctCount===s.targets.length;
   let html='<div class="kt-done-emojis"><span class="confetti">🎉</span><span class="confetti" style="animation-delay:.3s">✨</span></div>'+
     '<div class="kt-done-msg">'+s.correctCount+'／'+s.targets.length+'もん せいかい！</div>'+
-    '<div class="kt-test-hint">🪙 '+s.coinsGained+'コイン ゲット'+(perfect?'（ぜんもん せいかい ボーナス＋50 こみ）':'')+'</div>'+
+    '<div class="kt-test-hint">'+yenHtml(s.coinsGained)+' ゲット'+(perfect?'（ぜんもん せいかい ボーナス＋'+yenHtml(townYen(YEN_KAKITORI_BONUS_PER_GRADE))+' こみ）':'')+'</div>'+
     '<div class="kt-actions">'+
       '<button class="btn btn-primary" onclick="startKakitoriTest()">もういちど</button>'+
       '<button class="btn btn-ghost" onclick="backToKakitoriGrid()">じを えらぶ がめんへ</button>'+
@@ -13163,7 +13391,7 @@ function otGuideHtml(){
 }
 function renderOtetsudaiMenu(msg){
   otClearTimer(); otetsudaiState=null;
-  $('otetsudaiCoins').textContent='🪙 '+coins;
+  $('otetsudaiCoins').innerHTML=yenHtml(coins);
   let html=otGuideHtml();
   if(msg) html+='<div class="shop-msg">'+msg+'</div>';
   html+='<button class="shop-item" onclick="renderClockSelect()"><span class="shop-item-emoji">🕒</span><span class="shop-item-body"><b>とけいやさん</b><small>とけいの よみかたを こたえる</small></span><span class="shop-item-price">×1〜3</span></button>';
@@ -13283,11 +13511,12 @@ function otetsudaiQuit(){
 function finishOtetsudai(title,correct,rate,canPerfect,extra){
   otClearTimer();
   const perfect=canPerfect && correct>=OTETSUDAI_QCOUNT;
-  const bonus=perfect?ODACHIN_PERFECT:0;
-  const earn=correct*rate+bonus;
-  coins+=earn; save(); updateTownFieldInfo(); $('otetsudaiCoins').textContent='🪙 '+coins;
-  let html=(title==='にくやさん'?meatSceneHtml(perfect?'happy':'normal'):'')+'<div class="shop-msg">'+title+'の おてつだい おわり！<br>'+correct+'もん せいかい → おだちん 🪙'+earn+'</div>';
-  if(perfect) html+='<div class="shop-msg">パーフェクト！ ボーナス 🪙'+ODACHIN_PERFECT+'</div>';
+  const g=progressGrade();   // 手直し_お金(7/25)：おだちんも「学年×○円」（町は進行度学年で計算）
+  const bonus=perfect?ODACHIN_PERFECT*g:0;
+  const earn=correct*rate*g+bonus;
+  coins+=earn; save(); updateTownFieldInfo(); $('otetsudaiCoins').innerHTML=yenHtml(coins);
+  let html=(title==='にくやさん'?meatSceneHtml(perfect?'happy':'normal'):'')+'<div class="shop-msg">'+title+'の おてつだい おわり！<br>'+correct+'もん せいかい → おだちん '+yenHtml(earn)+'</div>';
+  if(perfect) html+='<div class="shop-msg">パーフェクト！ ボーナス '+yenHtml(ODACHIN_PERFECT*g)+'</div>';
   if(extra) html+='<div class="shop-msg">'+extra+'</div>';
   html+=otetsudaiOrigin==='mall'
     ? '<button class="btn btn-primary" onclick="closeOtetsudai()">とじる</button>'
@@ -13317,23 +13546,23 @@ function shopGuideHtml(){
   if(shopGuideSeen) return '';
   shopGuideSeen=true; save();
   const face=hakaseFaceImgOK?'<div class="battle-hakase-face has-img" style="background-image:url(\'images/sprites/hakase-face.webp\')"></div>':'<div class="battle-hakase-face">🧑‍🔬</div>';
-  return '<div class="battle-hakase show" style="margin-bottom:10px">'+face+'<div class="battle-hakase-text">かいものの ときは ぜんぶで なんコインか かんがえて みよう。あたると おまけが もらえるぞ！</div></div>';
+  return '<div class="battle-hakase show" style="margin-bottom:10px">'+face+'<div class="battle-hakase-text">かいものの ときは ぜんぶで なん円か かんがえて みよう。あたると おまけが もらえるぞ！</div></div>';
 }
 function renderShopList(extraMsg){
-  $('shopCoins').textContent='🪙 '+coins;
+  $('shopCoins').innerHTML=yenHtml(coins);
   let html=shopGuideHtml();
   if(extraMsg) html+='<div class="shop-msg">'+extraMsg+'</div>';
   SHOP_GOODS.forEach(gd=>{
     html+='<button class="shop-item" onclick="shopSelect(\''+gd.key+'\')">'+
       '<span class="shop-item-emoji">'+gd.emoji+'</span>'+
       '<span class="shop-item-body"><b>'+gd.name+'</b><small>'+gd.desc+'</small></span>'+
-      '<span class="shop-item-price">🪙'+gd.price+'</span></button>';
+      '<span class="shop-item-price">'+yenHtml(gd.price)+'</span></button>';
   });
   $('shopBody').innerHTML=html;
 }
 function shopSelect(key){
   const gd=shopGoodsOf(key); if(!gd) return;
-  let html='<div class="shop-msg">'+gd.emoji+' '+gd.name+'（🪙'+gd.price+'）<br>なんこ かう？</div>';
+  let html='<div class="shop-msg">'+gd.emoji+' '+gd.name+'（'+yenHtml(gd.price)+'）<br>なんこ かう？</div>';
   html+='<div class="shop-count-row">';
   [1,2,3].forEach(n=>{ html+='<button class="btn btn-yellow shop-count-btn" onclick="shopCount(\''+key+'\','+n+')">'+n+'こ</button>'; });
   html+='</div>';
@@ -13344,21 +13573,22 @@ function shopCount(key,n){
   const gd=shopGoodsOf(key); if(!gd) return;
   const total=gd.price*n;
   if(coins<total){   // §6：定価で足りない→クイズに入らない
-    renderShopList('コインが たりないよ。バトルで ためて また きてね！');
+    renderShopList('おかねが たりないよ。バトルで ためて また きてね！');
     return;
   }
-  // 合計金額3択クイズ：まちがいは±10コインや1こぶんズレなど自然な値・すべて正の数・重複なし
+  /* 合計金額3択クイズ。手直し_お金(7/25)：値段が円になったので、まちがいの選び方も
+     「1こぶん多い／少ない」「100円ずれ」という、子どもが実際にやる計算ミスの形にそろえる */
   const used=new Set([total]); const wrongs=[];
-  [total+10, total-10, total+gd.price, total-gd.price, total+20, total+gd.price+10].forEach(c=>{
+  [total+gd.price, total-gd.price, total+100, total-100, total+gd.price*2, total+50].forEach(c=>{
     if(wrongs.length<2 && c>0 && !used.has(c)){ used.add(c); wrongs.push(c); }
   });
-  let guard=30;
-  while(wrongs.length<2){ const c=total+guard; if(!used.has(c)){ used.add(c); wrongs.push(c); } guard+=10; }   // 保険（通常到達しない）
+  let guard=50;
+  while(wrongs.length<2){ const c=total+guard; if(!used.has(c)){ used.add(c); wrongs.push(c); } guard+=50; }   // 保険（通常到達しない）
   const opts=[total,...wrongs];
   for(let i=opts.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [opts[i],opts[j]]=[opts[j],opts[i]]; }
-  let html='<div class="shop-msg">'+gd.emoji+' '+gd.name+'を '+n+'こ。<br>ぜんぶで なんコイン？</div>';
+  let html='<div class="shop-msg">'+gd.emoji+' '+gd.name+'を '+n+'こ。<br>ぜんぶで なん円？</div>';
   html+='<div class="shop-count-row">';
-  opts.forEach(v=>{ html+='<button class="btn btn-yellow shop-count-btn" onclick="shopAnswer(\''+key+'\','+n+','+v+')">'+v+'コイン</button>'; });
+  opts.forEach(v=>{ html+='<button class="btn btn-yellow shop-count-btn" onclick="shopAnswer(\''+key+'\','+n+','+v+')">'+yenHtml(v)+'</button>'; });
   html+='</div>';
   $('shopBody').innerHTML=html;
 }
@@ -13366,7 +13596,7 @@ function shopAnswer(key,n,val){
   const gd=shopGoodsOf(key); if(!gd) return;
   const total=gd.price*n;
   const correct=(val===total);
-  const omake=correct?OMAKE_PER_ITEM*n:0;
+  const omake=correct?Math.round(total*OMAKE_RATE):0;   // 手直し_お金(7/25)：おまけ＝代金の1わり
   const pay=total-omake;
   if(coins<pay) return;   // 念のため（shopCountで定価チェック済みのため通常来ない）
   coins-=pay;
@@ -13374,11 +13604,11 @@ function shopAnswer(key,n,val){
   save();
   ensureAudio(); sfxCorrect();
   let html;
-  if(correct) html='<div class="shop-msg">せいかい！ おまけで 🪙'+omake+' もどってきた！</div>';
-  else html='<div class="shop-msg">ざんねん！ こたえは '+total+'コインだったよ。</div>';
+  if(correct) html='<div class="shop-msg">せいかい！ おまけで '+yenHtml(omake)+' もどってきた！</div>';
+  else html='<div class="shop-msg">ざんねん！ こたえは '+yenHtml(total)+'だったよ。</div>';
   html+='<div class="shop-msg">'+gd.emoji+' '+gd.name+'を '+n+'こ かった！</div>';
   html+='<button class="btn btn-primary" onclick="renderShopList()">つづける</button>';
-  $('shopCoins').textContent='🪙 '+coins;
+  $('shopCoins').innerHTML=yenHtml(coins);
   $('shopBody').innerHTML=html;
 }
 
@@ -13461,7 +13691,7 @@ function closeItems(){
   if($('screen-field').classList.contains('active')){ autoPaused=false; afterFieldRender(); }
 }
 function renderItemsList(extraMsg){
-  let html='<div class="shop-msg">🪙 '+coins+'</div>';
+  let html='<div class="shop-msg">'+yenHtml(coins)+'</div>';
   if(extraMsg) html+='<div class="shop-msg">'+extraMsg+'</div>';
   SHOP_GOODS.forEach(gd=>{
     const cnt=items[gd.key]||0;
@@ -13585,7 +13815,10 @@ function makeGradeStartSave(n){
     travelContinueSeen:(startZone>STAGE2_COUNT+1), kansaiHakaseSeen:(startZone>STAGE2_COUNT+1),
     stationSceneSeen:(startZone>STAGE2_COUNT+1),   // 手直し_駅構内(7/25)：学年スタートも同じ基準で既見あつかい
     travelContinueSeen2:(startZone>STAGE3_COUNT+1), chubuHakaseSeen:(startZone>STAGE3_COUNT+1),
-    coins:30, items:{genkidama:0,fue:0}
+    /* 手直し_お金(7/25・準也さんの指示)：お金の単位が「円」になったので、テスト用の学年スタートの
+       所持金も実額にする。3年生以降＝20,000円（わふく2,000＋スーツ8,000＋αが買えて着替えを試せる）／
+       2年生＝10,000円。旧値の30は「コイン時代」の名残で、円では何も買えないため差し替え */
+    coins:(n>=3?20000:10000), items:{genkidama:0,fue:0}
   };
 }
 function startFromGrade(n){
@@ -14207,7 +14440,7 @@ function trainSceneFinish(){
   // フィールドが見える、というシンプルな終わり方で今回は十分）。
 }
 
-/* ---- v4.1：シーン内会話カード（社長指示7/25＝いつもの吹き出しスタイル・左に顔・読める時間確保・
+/* ---- v4.1：シーン内会話カード（準也さんの指示7/25＝いつもの吹き出しスタイル・左に顔・読める時間確保・
    タップで先送り・タップされなくても自動で進む・録音ボイス付き） ----
    pos='mid'(コンコース中段)/'top'(ホーム最上部)。voiceFile=audio/battle/◯◯.mp3（無ければ無音・エラーなし）。
    autoMs=自動送りまでの時間（声の長さ＋読み時間を呼び出し側で指定）。onDoneは1回だけ呼ばれる */
@@ -14243,7 +14476,7 @@ function trainScenePlayS0(){
   trainSceneResetLayers();
   const seq=trainSceneSeq;
   $('tsBgConcourse').classList.add('show');
-  sePlay('train-station-amb',{loop:true,volume:.35});   // 社長提供の駅ホーム環境音（コンコース＋ホームで流す）
+  sePlay('train-station-amb',{loop:true,volume:.35});   // 準也さん提供の駅ホーム環境音（コンコース＋ホームで流す）
   tsChimeStation();
   const bh=$('tsBoardHero'), mw=$('tsManaWalk');
   const sheet=heroSheetUrl();
@@ -14253,7 +14486,7 @@ function trainScenePlayS0(){
   bh.style.transform='none';
   const put=(x,y,w,dur)=>{ bh.style.transitionDuration=`${dur}s,${dur}s,${dur}s,.35s`; bh.style.left=x+'%'; bh.style.top=y+'%'; bh.style.width=w+'%'; };
   const mput=(x,y,w,dur)=>{ mw.style.transitionDuration=`${dur}s,${dur}s,${dur}s,.4s`; mw.style.left=x+'%'; mw.style.top=y+'%'; mw.style.width=w+'%'; };
-  // 構図コマ1：入り口側に2人（後ろ姿）。主人公はマナより手前＝常に前面（社長指摘7/25＝奥行きの上下関係）
+  // 構図コマ1：入り口側に2人（後ろ姿）。主人公はマナより手前＝常に前面（準也さん指摘7/25＝奥行きの上下関係）
   bh.style.zIndex='7';
   put(45.1,66.6,21.9,0); mput(57.8,63.3,24.3,0);
   bh.style.opacity='1'; mw.classList.add('show');
@@ -14277,7 +14510,7 @@ function trainScenePlayS0(){
   setTimeout(()=>{
     if(seq!==trainSceneSeq) return;
     manaBack=false; mw.src='images/sprites/hakase.webp';
-    trainSceneStopWalkAnims();                     // 社長指摘7/25：会話中に主人公が足踏みし続けない＝止まって聞く
+    trainSceneStopWalkAnims();                     // 準也さん指摘7/25：会話中に主人公が足踏みし続けない＝止まって聞く
     bh.style.backgroundPosition='50% 0%';
     tsTalkShow('ここが えきだよ！ ここから しんかんせんに のれるんだ。ついてきて！','mid','st01',6800,()=>{
       // コマ5：会話後、2人で改札の奥へ（歩き再開）
@@ -14292,7 +14525,7 @@ function trainScenePlayS0(){
 }
 /* ---- S1 v4：ホーム乗車（6.7秒・構図コマ7〜15）。マナが顔つきで「いってらっしゃい」→会話が終わってから
    主人公が奥のドアへ歩いて遠近法で小さくなる→振り向いて勝利ポーズ→横向き→ドアの中へ→ドアが閉まる（灯りが消える）。
-   主人公はheroCharで男女切り替え（社長指示） ---- */
+   主人公はheroCharで男女切り替え（準也さんの指示） ---- */
 function trainScenePlayS1(){
   const seq=trainSceneSeq;
   $('tsBgDepth').classList.add('show');
@@ -14303,7 +14536,7 @@ function trainScenePlayS1(){
   const bh=$('tsBoardHero');
   const sheet=heroSheetUrl();
   const put=(x,y,w,dur)=>{ bh.style.transitionDuration=`${dur}s,${dur}s,${dur}s,.35s`; bh.style.left=x+'%'; bh.style.top=y+'%'; bh.style.width=w+'%'; };
-  // 構図コマ：後ろ向きで手前に立つ（会話が終わるまで歩かない＝社長指示）
+  // 構図コマ：後ろ向きで手前に立つ（会話が終わるまで歩かない＝準也さんの指示）
   bh.classList.remove('pose');
   bh.style.backgroundImage=`url('${sheet}')`;
   bh.style.backgroundSize='300% 200%';
@@ -14314,7 +14547,7 @@ function trainScenePlayS1(){
   let bhRow=false, bhBgX='50%';
   bh.style.backgroundPosition='50% 0%';
   // マナのいってらっしゃい（いつもの吹き出しカード・最上部＝2人を隠さない・録音ボイスst02・
-  // タップで先送り／4.2秒（声3.3秒＋読み時間）で自動送り）。会話が終わってから歩き出す（社長指示）
+  // タップで先送り／4.2秒（声3.3秒＋読み時間）で自動送り）。会話が終わってから歩き出す（準也さんの指示）
   setTimeout(()=>{
     if(seq!==trainSceneSeq) return;
     tsTalkShow('いってらっしゃい！ きをつけてね！','top','st02',4200,()=>{
@@ -14323,13 +14556,13 @@ function trainScenePlayS1(){
       put(35.9,46.0,52.6,.7);
       setTimeout(()=>{ if(seq!==trainSceneSeq) return; put(47.7,37.5,36.3,.7); },700);
       setTimeout(()=>{ if(seq!==trainSceneSeq) return; put(61.6,28.6,24.3,.7); },1400);
-      // 振り向いて勝利ポーズ（社長指摘7/25：位置・大きさは変えない＝吹っ飛び演出禁止。
+      // 振り向いて勝利ポーズ（準也さん指摘7/25：位置・大きさは変えない＝吹っ飛び演出禁止。
       // その場で小さくぴょんぴょん飛び跳ねるだけ。containへの明示上書き＝手足切れ対策は維持）
       setTimeout(()=>{
         if(seq!==trainSceneSeq) return;
         trainSceneStopWalkAnims();
         bh.classList.add('pose');
-        bh.style.backgroundImage=`url('images/battle-tate/hero-victory-${girl?'girl':'boy'}.webp')`;
+        bh.style.backgroundImage=`url('${heroVictoryImgSrc(girl?'girl':'boy')}')`;   // 手直し_着替え第1弾：きている服を反映
         bh.style.backgroundSize='contain';
         bh.style.backgroundPosition='center bottom';
         bh.style.animation='tsHop .5s ease 2';   // その場ジャンプ2回
@@ -14351,7 +14584,7 @@ function trainScenePlayS1(){
       // ドアの中へ（ドアの奥へ歩き込みながら消える）
       setTimeout(()=>{ if(seq!==trainSceneSeq) return; put(60.5,28.6,13,.5); },3400);
       setTimeout(()=>{ if(seq!==trainSceneSeq) return; trainSceneStopWalkAnims(); bh.style.opacity='0'; },3850);
-      // 構図コマ15：ドアが閉まる＝社長編集の斜めドアPNG＋実録のドア音（社長提供7/25）
+      // 構図コマ15：ドアが閉まる＝準也さん編集の斜めドアPNG＋実録のドア音（準也さん提供7/25）
       setTimeout(()=>{
         if(seq!==trainSceneSeq) return;
         $('tsDoorDiag').classList.add('show');
@@ -14374,9 +14607,9 @@ function trainScenePlayS2(){
   $('trainSceneStage').classList.add('ts-shake');
   $('tsSpeedLines').classList.add('show');
   seStop('train-station-amb');
-  sePlay('train-run-amb',{loop:true,volume:.5});   // 社長提供の走行音（決めカット〜トンネルまで流しっぱなし）
+  sePlay('train-run-amb',{loop:true,volume:.5});   // 準也さん提供の走行音（決めカット〜トンネルまで流しっぱなし）
   tsNoise(0,2.4,260,1500,.16);
-  // ドア・見送りマナは次のシーンへ引きずらない（社長指摘7/25＝マナの頭が薄く残る問題）＝フェードなしで即座に消す
+  // ドア・見送りマナは次のシーンへ引きずらない（準也さん指摘7/25＝マナの頭が薄く残る問題）＝フェードなしで即座に消す
   [['tsDoorDiag'],['tsManaBack']].forEach(([id])=>{
     const el=$(id); el.style.transition='none'; el.classList.remove('show');
     requestAnimationFrame(()=>{ el.style.transition=''; });
@@ -14387,7 +14620,7 @@ function trainScenePlayS2(){
     $('tsBgDepth').classList.remove('show');
     const bh=$('tsBoardHero'); if(bh){ bh.classList.remove('pose'); bh.removeAttribute('style'); }
   },550);
-  // カメラワーク4区分（構図コマ14〜25の座標を区分でつなぐ。最終コマ25=構図_9時56分.jsonで社長が追加）
+  // カメラワーク4区分（構図コマ14〜25の座標を区分でつなぐ。最終コマ25=構図_9時56分.jsonで準也さんが追加）
   requestAnimationFrame(()=>{ if(seq!==trainSceneSeq) return;
     hc.style.transition='opacity .3s ease,left 1.2s linear,width 1.2s linear';
     hc.style.left='-96.9%'; });
@@ -14424,11 +14657,11 @@ function trainScenePlayS3(){
   $('tsPoles').classList.add('run');
   $('tsSpeedLines').classList.add('show');
   $('trainSceneStage').classList.add('ts-push');
-  // ガタンゴトン等の合成音は廃止（社長提供の実録走行音train-run-ambがS2から流れ続けているため）
+  // ガタンゴトン等の合成音は廃止（準也さん提供の実録走行音train-run-ambがS2から流れ続けているため）
   setTimeout(()=>{ if(seq!==trainSceneSeq) return; trainScenePlayS4a(); },TRAIN_SCENE_MS.s3);
 }
 /* ---- S4 v4.3：通り抜け（3.0秒・構図_10時46分.json前半）。車体が加速して左へ抜けていき、
-   背景は窓枠なしで 富士山→田園→都会 が一瞬ずつ流れる（社長指示「今までと同じ一瞬映す感じ」。
+   背景は窓枠なしで 富士山→田園→都会 が一瞬ずつ流れる（準也さんの指示「今までと同じ一瞬映す感じ」。
    壁と車体は今まで通りの構図のまま続投） ---- */
 function trainScenePlayS4a(){
   const seq=trainSceneSeq;
@@ -14451,7 +14684,7 @@ function trainScenePlayS5(){
   tsNoise(0,.9,200,90,.2);
   setTimeout(()=>{ if(seq!==trainSceneSeq) return; trainScenePlayS6(); },TRAIN_SCENE_MS.s5);
 }
-/* ---- S6 v4.3：カンサイ到着ホーム（5秒・構図_10時46分.json後半）。停車（社長作成の斜めドア閉）→
+/* ---- S6 v4.3：カンサイ到着ホーム（5秒・構図_10時46分.json後半）。停車（準也さん作成の斜めドア閉）→
    ドアが開く→主人公が降りて（よこ向き→まえ向き）、コマ9〜14の位置どおり手前へ歩いてくる ---- */
 function trainScenePlayS6(){
   const seq=trainSceneSeq;
@@ -14504,7 +14737,7 @@ function trainScenePlayS7(){
   const bh=$('tsBoardHero');
   const put=(x,y,w,dur)=>{ bh.style.transitionDuration=`${dur}s,${dur}s,${dur}s,.35s`; bh.style.left=x+'%'; bh.style.top=y+'%'; bh.style.width=w+'%'; };
   let row=false;
-  // 社長指摘7/25：ホーム→改札の切り替え中にキャラが早く出て二重に見える＝
+  // 準也さん指摘7/25：ホーム→改札の切り替え中にキャラが早く出て二重に見える＝
   // まず主人公を即座に消し、コンコース背景のクロスフェードが終わってから改札側に登場させる
   bh.style.transition='none'; bh.style.opacity='0';
   bh.style.left='41.5%'; bh.style.top='7.2%'; bh.style.width='24.3%';
