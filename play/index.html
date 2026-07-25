@@ -5882,16 +5882,26 @@ const COSTUMES=[
      RPGふう 3000円(both)／うちゅうふく 5000円(boy)／ロボヒーロー 5000円(boy)／
      ゆきのドレス 5000円(girl)／ピンクのドレス 5000円(girl) */
 ];
-let heroCostume='std';        // いま きている ふく
-let ownedCostumes=['std'];    // もっている ふく（'std'は必ず含む）
+/* 手直し(2026-07-25夜・準也さんの指摘)：ふくは「男の子・女の子べつべつ」に持つ。
+   それまでは1着ぶん買うと、主人公を切り替えたときにもう片方も着られてしまっていた
+   （絵は男女で別物なので、1着ぶんの値段で2着ぶん手に入るのはおかしい）。
+   持っているふくも、いま着ているふくも、主人公ごとに分けて持つ。 */
+let heroCostumeBy={boy:'std',girl:'std'};        // 主人公ごとに いま きている ふく
+let ownedCostumes={boy:['std'],girl:['std']};    // 主人公ごとに もっている ふく（'std'は必ず含む）
 function costumeOf(key){ return COSTUMES.find(c=>c.key===key)||COSTUMES[0]; }
-function costumeSuffix(){ return costumeOf(heroCostume).suffix; }
-function ownsCostume(key){ return ownedCostumes.indexOf(key)>=0; }
-/* いまの主人公が着られる服か（'both'か、主人公と同じ性別の専用服）。買った服は消さずに残す＝
-   主人公を切り替えて戻せば、また着られる */
+function wornCostume(ch){ return heroCostumeBy[ch||heroChar]||'std'; }
+function setWornCostume(key){ heroCostumeBy[heroChar]=key; }
+function ownedListOf(ch){ const a=ownedCostumes[ch||heroChar]; return Array.isArray(a)?a:[]; }
+function costumeSuffix(){ return costumeOf(wornCostume()).suffix; }
+function ownsCostume(key,ch){ return ownedListOf(ch).indexOf(key)>=0; }
+/* いまの主人公が着られる服か（'both'か、主人公と同じ性別の専用服）＝店にどれを並べるかの判定 */
 function costumeUsable(key,ch){ const c=costumeOf(key); return c.chars==='both' || c.chars===(ch||heroChar); }
-/* 主人公の切り替え・セーブ読み込みのあとに呼ぶ。着られない服を着ていたら「いつもの ふく」に戻す */
-function ensureCostumeForChar(){ if(!costumeUsable(heroCostume)) heroCostume='std'; }
+/* 主人公の切り替え・セーブ読み込みのあとに呼ぶ。
+   いまの主人公が「持っていない服」「着られない服」を着ていたら「いつもの ふく」に戻す */
+function ensureCostumeForChar(){
+  const k=wornCostume();
+  if(!ownsCostume(k) || !costumeUsable(k)) setWornCostume('std');
+}
 let hadSaveAtBoot=false;     // 起動時にセーブが存在したか（完全新規プレイヤー判定・セッション値）
 let heroSelectShownOnce=false; // 同一セッションで初回選択ポップを2回出さないための番人
 function levelOf(idx){ return levels[idx]||1; }
@@ -5944,8 +5954,9 @@ function save(){
       kakitoriDaily:kakitoriDaily,           // 発注W-2
       kakitoriTotalCorrect:kakitoriTotalCorrect,
       ownsForest:ownsForest,            // 発注_村1
-      heroCostume:heroCostume,          // 手直し_着替え第1弾（7/25）
-      ownedCostumes:[...ownedCostumes]
+      // 手直し_着替え（7/25）：どちらも主人公ごと（男の子ぶん・女の子ぶんを別々に保存する）
+      heroCostume:{boy:heroCostumeBy.boy,girl:heroCostumeBy.girl},
+      ownedCostumes:{boy:[...ownedListOf('boy')],girl:[...ownedListOf('girl')]}
     }));
   }catch(e){}
 }
@@ -6008,15 +6019,34 @@ function load(){
     cleared.forEach(sn=>freeZones.add(sn));   // クリア済みゾーンは読み込み時に自動解禁
     // 第5.5弾：主人公キャラ（後方互換：heroChar無し・想定外値はすべて'boy'に倒す）
     heroChar = (d.heroChar==='girl') ? 'girl' : 'boy';
-    /* 手直し_着替え第1弾：もっている服・きている服（旧セーブは'std'のみ所持・'std'着用に倒す。
-       COSTUMESに無いキー・配列でない・きている服を持っていない、のいずれも'std'へ倒す＝
-       衣装をあとで減らしても壊れない） */
-    ownedCostumes=['std'];
-    if(Array.isArray(d.ownedCostumes)) d.ownedCostumes.forEach(k=>{
-      if(typeof k==='string' && k!=='std' && COSTUMES.some(c=>c.key===k) && ownedCostumes.indexOf(k)<0) ownedCostumes.push(k);
+    /* 手直し_着替え：もっている服・きている服は主人公ごとに持つ（7/25夜の指摘）。
+       男女の区別がなかったころの古いセーブは、**いまの主人公のぶん**として引き継ぐ
+       ＝もう片方は買い直し（1着ぶんの値段で2着ぶん手に入っていたのを直したもの）。
+       COSTUMESに無いキー・持っていない服を着ている・型ちがい、のいずれも'std'へ倒す＝
+       衣装をあとで減らしても壊れない。 */
+    ownedCostumes={boy:['std'],girl:['std']};
+    const addOwned=(ch,list)=>{
+      if(!Array.isArray(list)) return;
+      list.forEach(k=>{
+        if(typeof k==='string' && k!=='std' && COSTUMES.some(c=>c.key===k)
+           && ownedCostumes[ch].indexOf(k)<0) ownedCostumes[ch].push(k);
+      });
+    };
+    const od=d.ownedCostumes;
+    if(Array.isArray(od)) addOwned(heroChar, od);                                   // 古いセーブ（男女の区別なし）
+    else if(od && typeof od==='object'){ addOwned('boy',od.boy); addOwned('girl',od.girl); }
+    heroCostumeBy={boy:'std',girl:'std'};
+    const hc=d.heroCostume;
+    if(typeof hc==='string') heroCostumeBy[heroChar]=hc;                            // 古いセーブ
+    else if(hc && typeof hc==='object'){
+      if(typeof hc.boy==='string') heroCostumeBy.boy=hc.boy;
+      if(typeof hc.girl==='string') heroCostumeBy.girl=hc.girl;
+    }
+    ['boy','girl'].forEach(ch=>{     // 持っていない服・着られない服を着ていたら倒す（男女とも）
+      const k=heroCostumeBy[ch];
+      if(!ownsCostume(k,ch) || !costumeUsable(k,ch)) heroCostumeBy[ch]='std';
     });
-    heroCostume = (typeof d.heroCostume==='string' && ownedCostumes.indexOf(d.heroCostume)>=0) ? d.heroCostume : 'std';
-    ensureCostumeForChar();   // 主人公の性別に合わない服なら「いつもの ふく」に倒す（準也さんの指示の男女出し分け）
+    ensureCostumeForChar();
     // 第12弾：まよいご初回説明を見たか（旧セーブは未見あつかい・第15弾でたましい用に改名）
     mayoigoLoreSeen = (d.mayoigoLoreSeen===true);
     // 第15弾：たましい初回説明を見たか（旧セーブは未見あつかい）
@@ -6147,6 +6177,24 @@ function _tone(freq,start,dur,type,vol){
   g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
   o.start(t); o.stop(t+dur+0.03);
 }
+/* 手直し_打撃の音（2026-07-25）：短い雑音（「シャッ」「パリン」の芯になる音）。
+   オシレーター（_tone）だけでは打撃の質感が出ないので、その場で作った雑音を帯域で色づけして鳴らす。
+   音源ファイルは使わないので、読み込みゼロ・権利の心配なし（既存の効果音と同じ方針）。 */
+function _noise(start,dur,vol,freq){
+  if(!audioCtx) return;
+  const n=Math.max(1,Math.floor(audioCtx.sampleRate*dur));
+  const buf=audioCtx.createBuffer(1,n,audioCtx.sampleRate);
+  const d=buf.getChannelData(0);
+  for(let i=0;i<n;i++){ d[i]=(Math.random()*2-1)*(1-i/n); }   // だんだん小さくなる雑音
+  const src=audioCtx.createBufferSource(); src.buffer=buf;
+  const f=audioCtx.createBiquadFilter(), g=audioCtx.createGain();
+  f.type='bandpass'; f.frequency.value=freq||1200; f.Q.value=0.9;
+  src.connect(f); f.connect(g); g.connect(audioCtx.destination);
+  const t=audioCtx.currentTime+start;
+  g.gain.setValueAtTime(vol||0.1,t);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  src.start(t); src.stop(t+dur+0.02);
+}
 function snd(name){
   if(!soundOn) return;
   ensureAudio(); if(!audioCtx) return;
@@ -6162,6 +6210,16 @@ function snd(name){
     case 'magicmax': _tone(78,0,0.45,'sawtooth',0.16); _tone(196,0.02,0.12,'square',0.11);
                      _tone(392,0.13,0.12,'square',0.11); _tone(784,0.25,0.26,'square',0.10);
                      _tone(1568,0.32,0.34,'triangle',0.09); break;
+    /* 手直し_打撃の演出（7/25）：4種類の打撃それぞれの音。正解音（ピロン↑）に重ねるので、
+       ぶつからないよう短く・控えめにする（当たった瞬間の感触だけを足す） */
+    case 'hitzan':   _noise(0,0.15,0.085,2800); _tone(1600,0,0.05,'sawtooth',0.045);
+                     _tone(900,0.05,0.06,'sawtooth',0.035); break;                       // シャッ（きりさく）
+    case 'hitban':   _tone(88,0,0.20,'sine',0.17); _tone(150,0,0.08,'square',0.075);
+                     _noise(0,0.10,0.07,420); break;                                     // ドン（たたく）
+    case 'hittotsu': _tone(1500,0,0.035,'square',0.085); _noise(0.02,0.07,0.055,1900);
+                     _tone(640,0.05,0.07,'square',0.055); break;                         // ビシッ（つきさす）
+    case 'hitsai':   _noise(0,0.05,0.085,2200); _noise(0.06,0.05,0.065,3200);
+                     _noise(0.12,0.06,0.05,2600); _tone(1900,0.02,0.05,'triangle',0.045); break;  // パリン（くだく）
   }
 }
 function toggleSound(){
@@ -8770,6 +8828,7 @@ function playHitFx(targetEl, critical, forceKind){
     add('hit-ring');
   }
   scene.appendChild(box);
+  snd('hit' + kind);   // 種類ごとの音（きりさく＝シャッ／たたく＝ドン／つきさす＝ビシッ／くだく＝パリン）
   setTimeout(()=>{ if(box.parentNode) box.parentNode.removeChild(box); }, 900);
 }
 
@@ -12560,8 +12619,8 @@ function fukuyaBuy(key){
   const c=costumeOf(key);
   if(ownsCostume(key)||!costumeUsable(key)||coins<c.price){ fukuyaOpen(); return; }   // 最終防波堤（二重購入・性別ちがい・お金不足）
   coins-=c.price;
-  ownedCostumes.push(key);
-  heroCostume=key;            // 買ったら その場で着る
+  ownedCostumes[heroChar].push(key);   // 買った主人公だけが持つ（男女べつべつ・7/25夜の指摘）
+  setWornCostume(key);                 // 買ったら その場で着る
   save();
   ensureAudio(); sfxCorrect();
   fukuyaShow('<div class="interior-card-msg">'+c.emoji+' '+c.name+'を かった！ さっそく きがえたよ</div>'+
@@ -12571,7 +12630,7 @@ function fukuyaBuy(key){
 function fukuyaWearList(){
   let html='<div class="interior-card-msg">どれに きがえる？</div>';
   COSTUMES.filter(c=>ownsCostume(c.key) && costumeUsable(c.key)).forEach(c=>{   // 主人公が着られる服だけ
-    const now=(c.key===heroCostume);
+    const now=(c.key===wornCostume());
     html+='<button class="btn '+(now?'btn-yellow':'btn-primary')+'" onclick="fukuyaWear(\''+c.key+'\')">'+c.emoji+' '+c.name+(now?'　✓ いま きている':'')+'</button>';
   });
   html+='<button class="btn btn-ghost" onclick="fukuyaOpen()">もどる</button>';
@@ -12579,7 +12638,7 @@ function fukuyaWearList(){
 }
 function fukuyaWear(key){
   if(!ownsCostume(key)||!costumeUsable(key)) return;   // 持っていない服・いまの主人公が着られない服は無視
-  heroCostume=key; save();
+  setWornCostume(key); save();
   const c=costumeOf(key);
   fukuyaShow('<div class="interior-card-msg">'+c.emoji+' '+c.name+'に きがえた！</div>'+
     '<button class="btn btn-primary" onclick="closeInteriorCard()">とじる</button>');
