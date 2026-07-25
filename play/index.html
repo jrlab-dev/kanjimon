@@ -384,6 +384,62 @@
   .magic-flash{position:absolute;inset:0;background:var(--mcol,#fff);opacity:0;
     animation:magicFlash .5s ease-out forwards;mix-blend-mode:screen}
   @keyframes magicFlash{0%{opacity:0}18%{opacity:.55}100%{opacity:0}}
+  /* 最高（max）：画面が暗くなる→属性の魔法陣が回りながら迫る→特大の一撃。
+     準也さんの「一番最強のものは、もう結構大げさにしたい」(7/25)。
+     絵（images/magic/max-◯◯.webp）が用意できていれば重ねるが、無くても
+     この演出だけで成立するように作ってある＝絵は後から足せる。 */
+  .magic-fx.max{z-index:60}
+  .magic-fx.max .magic-dim{position:absolute;inset:0;
+    background:radial-gradient(circle at 50% 44%,rgba(10,12,30,.42),rgba(4,6,18,.82));
+    animation:magicDim 1.35s ease-out forwards}
+  @keyframes magicDim{0%{opacity:0}10%{opacity:1}72%{opacity:.9}100%{opacity:0}}
+  /* 放射状の集中線（マンガの「ドーン」の線）。暗くした上に白で描くのではっきり出る */
+  .magic-rays{position:absolute;left:50%;top:44%;width:230%;aspect-ratio:1;transform:translate(-50%,-50%);
+    background:repeating-conic-gradient(from 0deg at 50% 50%,rgba(255,255,255,.92) 0deg 1.4deg,transparent 1.4deg 7deg);
+    -webkit-mask-image:radial-gradient(circle,transparent 26%,#000 60%);
+    mask-image:radial-gradient(circle,transparent 26%,#000 60%);
+    opacity:0;animation:magicRays 1.2s ease-out forwards}
+  @keyframes magicRays{
+    0%{opacity:0;transform:translate(-50%,-50%) scale(.5) rotate(0deg)}
+    22%{opacity:.75}70%{opacity:.4}
+    100%{opacity:0;transform:translate(-50%,-50%) scale(1.15) rotate(26deg)}}
+  /* 魔法陣（属性色の二重リング） */
+  /* にじみ（box-shadow）は控えめに。強くすると画面全体が属性色で埋まって
+     肝心の一撃が見えなくなる（7/25の見た目確認で判明） */
+  .magic-ring{position:absolute;left:50%;top:46%;width:74%;aspect-ratio:1;border-radius:50%;
+    border:5px solid var(--mcol,#fff);box-shadow:0 0 14px var(--mcol,#fff);
+    transform:translate(-50%,-50%);opacity:0;animation:magicRing 1.15s cubic-bezier(.2,.8,.3,1) forwards}
+  .magic-ring.r2{width:48%;border-width:3px;border-style:dashed;animation-delay:.12s;animation-duration:1.05s}
+  @keyframes magicRing{
+    0%{opacity:0;transform:translate(-50%,-50%) scale(.2) rotate(0deg)}
+    20%{opacity:1}70%{opacity:.85}
+    100%{opacity:0;transform:translate(-50%,-50%) scale(1.5) rotate(160deg)}}
+  /* 特大の一撃（絵があれば画像・無ければ属性の絵文字を特大で） */
+  .magic-art,.magic-glyph{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);
+    animation:magicArt 1.25s cubic-bezier(.15,.85,.25,1) forwards}
+  .magic-art{width:118%;max-width:none;filter:drop-shadow(0 0 26px var(--mcol,#fff))}
+  /* 絵が無いときの代役。光に埋もれないよう、黒い縁取り（text-shadowの多重がけ）で輪郭を立てる */
+  .magic-glyph{font-size:clamp(7rem,30vw,12rem);line-height:1;
+    text-shadow:0 0 14px rgba(0,0,0,.9),0 0 34px var(--mcol,#fff),0 6px 10px rgba(0,0,0,.6);
+    filter:drop-shadow(0 0 26px var(--mcol,#fff))}
+  @keyframes magicArt{
+    0%{transform:translate(-50%,-50%) scale(.2) rotate(-10deg);opacity:0}
+    16%{transform:translate(-50%,-50%) scale(1.22) rotate(3deg);opacity:1}
+    26%{transform:translate(-50%,-50%) scale(1) rotate(0deg);opacity:1}
+    74%{opacity:1}
+    100%{transform:translate(-50%,-50%) scale(1.18);opacity:0}}
+  .magic-fx.max .mp{font-size:3rem;animation:magicMid 1.2s cubic-bezier(.2,.7,.3,1) forwards}
+  .magic-fx.max .magic-flash{animation:magicFlashMax .8s ease-out forwards}
+  @keyframes magicFlashMax{0%{opacity:0}9%{opacity:.85}26%{opacity:.16}45%{opacity:.28}100%{opacity:0}}
+  /* 光の輪は「塗りつぶし」ではなく衝撃波のリングにする（塗りだと画面が属性色で埋まって
+     肝心の一撃が見えなくなるため。7/25の見た目確認で判明） */
+  .magic-fx.max .magic-burst{width:46px;height:46px;background:transparent;
+    border:4px solid var(--mcol,#fff);box-shadow:0 0 10px var(--mcol,#fff);
+    animation:magicBurstMax .85s ease-out forwards}
+  @keyframes magicBurstMax{
+    0%{transform:translate(-50%,-50%) scale(.25);opacity:1}
+    100%{transform:translate(-50%,-50%) scale(6.5);opacity:0}}
+  .magic-fx.max .magic-burst.b2{animation-delay:.2s;animation-duration:.75s}
   .enemy-wrap{position:relative;display:inline-block;animation:efloat 3s ease-in-out infinite}
   @keyframes efloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
 
@@ -6034,6 +6090,10 @@ function snd(name){
     case 'levelup':  _tone(523,0,0.12); _tone(659,0.12,0.12); _tone(784,0.24,0.12); _tone(1047,0.36,0.12); _tone(1319,0.48,0.28); break; // 長ファンファーレ
     case 'evo':      _tone(659,0,0.14); _tone(880,0.14,0.14); _tone(1047,0.28,0.14); _tone(1319,0.42,0.14); _tone(1568,0.56,0.32); break;
     case 'gatepass': _tone(1319,0,0.07,'sine',0.10); _tone(1760,0.06,0.11,'sine',0.10); break;  // 第17弾§2：シュン・キラン（ゲート通過・fanfareより短く控えめ）
+    // 手直し_まほうの演出：最高（max）の一撃。低い「ドン」＋駆け上がり＋キラン（mp3を使わないので権利の心配なし）
+    case 'magicmax': _tone(78,0,0.45,'sawtooth',0.16); _tone(196,0.02,0.12,'square',0.11);
+                     _tone(392,0.13,0.12,'square',0.11); _tone(784,0.25,0.26,'square',0.10);
+                     _tone(1568,0.32,0.34,'triangle',0.09); break;
   }
 }
 function toggleSound(){
@@ -8510,8 +8570,9 @@ function onCorrectParty(btn){
       setEnemyFace('surprised');
       /* 手直し_まほうの演出(7/25)：相性がいいときだけ、属性のまほうを出す。
          強さ（ダメージ）には一切影響しない＝見た目だけ。段階はレベル帯の比較で決まる */
-      playMagicFx(typeOf(att), magicLevelOf(att, enemyIdx, enemyIsBoss));
-      setTimeout(runHit,600);
+      const mlv = magicLevelOf(att, enemyIdx, enemyIsBoss);
+      playMagicFx(typeOf(att), mlv);
+      setTimeout(runHit, mlv==='max' ? 1000 : 600);   // 最高は演出が長いぶん、当たるのを少し待つ
     }else{
       runHit();
     }
@@ -8529,7 +8590,17 @@ const MAGIC_PARTS = {
   'つち':     ['🪨', '⛰️', '💥'],
   'かみなり': ['⚡', '✨', '🌟'],
 };
-/* 段階：weak＝自分のレベル帯が下／mid＝同じ／max＝自分が上（maxは準也さんの指示待ちなので今はmid扱い） */
+/* 最高（max）で重ねる属性ごとの絵。ファイル名は images/magic/max-<ローマ字>.webp。
+   heroBackOKと同じ「無ければ出さない」流儀＝絵が未完成でも演出は成立する（絵文字の特大版で代用）。 */
+const MAGIC_ART_KEY={'みず':'mizu','ひ':'hi','き':'ki','つち':'tsuchi','かみなり':'kaminari'};
+const magicArtOK=new Set();
+Object.keys(MAGIC_ART_KEY).forEach(t=>{
+  const im=new Image(); const key=MAGIC_ART_KEY[t];
+  im.onload=()=>{ magicArtOK.add(key); };
+  im.onerror=()=>{};
+  im.src='images/magic/max-'+key+'.webp';
+});
+/* 段階：weak＝自分のレベル帯が下／mid＝同じ／max＝自分が上 */
 function magicLevelOf(attackerIdx, defenderIdx, defenderIsBoss){
   const selfLv = (attackerIdx!=null) ? levelOf(attackerIdx) : 1;
   const enemyLv = enemyLevelFor(defenderIdx, defenderIsBoss);
@@ -8542,32 +8613,44 @@ function playMagicFx(type, level){
   if(!scene) return;
   const parts = MAGIC_PARTS[type] || MAGIC_PARTS['かみなり'];
   const color = (typeof TYPE_COLOR!=='undefined' && TYPE_COLOR[type]) || '#fff';
+  const isWeak = (level === 'weak'), isMax = (level === 'max');
+  const artKey = MAGIC_ART_KEY[type];
+  const hasArt = isMax && magicArtOK.has(artKey);   // 絵が用意できていれば重ねる
   const box = document.createElement('div');
-  // maxはまだ作っていないので中と同じ見た目にしておく（準也さんの指示が出たら差し替える）
-  box.className = 'magic-fx ' + (level === 'weak' ? 'weak' : 'mid');
+  box.className = 'magic-fx ' + (isWeak ? 'weak' : isMax ? 'max' : 'mid');
   box.style.setProperty('--mcol', color);
-  const isWeak = (level === 'weak');
+  const add=(cls,tag)=>{ const el=document.createElement(tag||'div'); el.className=cls; box.appendChild(el); return el; };
   if(!isWeak){
-    const flash = document.createElement('div'); flash.className = 'magic-flash';
-    const burst = document.createElement('div'); burst.className = 'magic-burst';
-    box.appendChild(flash); box.appendChild(burst);
+    if(isMax){ add('magic-dim'); add('magic-rays'); }   // 暗転＋集中線（maxだけ）
+    add('magic-flash'); add('magic-burst');
+    if(isMax){
+      add('magic-burst b2'); add('magic-ring'); add('magic-ring r2');
+      if(hasArt){ const art=add('magic-art','img'); art.alt=''; art.src='images/magic/max-'+artKey+'.webp'; }
+      else { add('magic-glyph','span').textContent = parts[0]; }   // 絵が無いときは属性の絵文字を特大で
+    }
   }
-  const n = isWeak ? 4 : 9;
+  const n = isWeak ? 4 : (isMax ? 14 : 9);
   for(let i=0;i<n;i++){
     const sp = document.createElement('span');
     sp.className = 'mp';
     sp.textContent = parts[i % parts.length];
-    // 敵のあたり（右上）から散らす
-    sp.style.left = (52 + Math.random()*36) + '%';
-    sp.style.top  = (26 + Math.random()*34) + '%';
-    sp.style.setProperty('--dx', (Math.random()*140-70).toFixed(0) + 'px');
-    sp.style.setProperty('--dy', (-40 - Math.random()*(isWeak?30:70)).toFixed(0) + 'px');
+    // 敵のあたり（右上）から散らす。maxは画面全体に大きく散らす
+    sp.style.left = (isMax ? 12 + Math.random()*76 : 52 + Math.random()*36) + '%';
+    sp.style.top  = (isMax ? 14 + Math.random()*58 : 26 + Math.random()*34) + '%';
+    sp.style.setProperty('--dx', (Math.random()*(isMax?260:140)-(isMax?130:70)).toFixed(0) + 'px');
+    sp.style.setProperty('--dy', (-40 - Math.random()*(isWeak?30:(isMax?120:70))).toFixed(0) + 'px');
     sp.style.setProperty('--rot', (Math.random()*360-180).toFixed(0) + 'deg');
-    sp.style.animationDelay = (i * (isWeak ? 45 : 55)) + 'ms';
+    sp.style.animationDelay = (i * (isWeak ? 45 : isMax ? 40 : 55)) + 'ms';
     box.appendChild(sp);
   }
   scene.appendChild(box);
-  setTimeout(()=>{ if(box.parentNode) box.parentNode.removeChild(box); }, isWeak ? 1200 : 1600);
+  if(isMax){
+    snd('magicmax');
+    // 画面ゆれ（ボス着地・かいしんの一撃と同じ既存のしくみを流用）
+    const app=$('app');
+    if(app){ app.classList.add('shake'); setTimeout(()=>app.classList.remove('shake'),500); }
+  }
+  setTimeout(()=>{ if(box.parentNode) box.parentNode.removeChild(box); }, isWeak ? 1200 : (isMax ? 2000 : 1600));
 }
 
 /* 弾3-12§4：バトル勝利のコイン加算（partyモード専用＝onEnemyDefeatedは常にparty経由）。
