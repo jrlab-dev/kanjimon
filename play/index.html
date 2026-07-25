@@ -197,7 +197,7 @@
   /* ===== タイプ ===== */
   .tbadge{display:inline-block;padding:3px 10px;border-radius:50px;font-size:.78rem;font-weight:900;color:#fff;
     text-shadow:1px 1px 0 rgba(0,0,0,.25)}
-  .t-みず{background:#38bdf8}.t-ひ{background:#f87171}.t-き{background:#4ade80}.t-つち{background:#d4a373}.t-ふつう{background:#adb5bd}
+  .t-みず{background:#38bdf8}.t-ひ{background:#f87171}.t-き{background:#4ade80}.t-つち{background:#d4a373}.t-かみなり{background:#facc15}
 
   /* ===== タイトル画面 ===== */
   .title-hero{position:relative;isolation:isolate;overflow:hidden;min-height:310px;
@@ -352,6 +352,38 @@
   /* 弾R-2：勝利ふり向き演出＝画像差し替え＋軽いポップ（派手なアニメはしない・0.5秒で収まる） */
   #screen-battle.tate .hero-back.victory-pop img{animation:heroVictoryPop .5s ease-out}
   @keyframes heroVictoryPop{0%{transform:scale(.85)}55%{transform:scale(1.08)}100%{transform:scale(1)}}
+  /* ===== 手直し_まほうの演出（2026-07-25・準也さんの発案）=====
+     相性がいい（ばつぐん）ときだけ、属性の「まほう」が出る。子どもは演出を見て
+     「相性がいい＝まほうが出る」と自然に覚える、という狙い（クロノトリガー風）。
+     段階は3つ：弱＝自分のレベル帯が下／中＝同じ／最高＝自分が上。
+     ここでは弱・中を実装（最高は準也さんの指示を受けてから、もっと大げさに作る）。 */
+  .magic-fx{position:absolute;inset:0;pointer-events:none;z-index:55;overflow:hidden}
+  .magic-fx .mp{position:absolute;font-size:2rem;line-height:1;will-change:transform,opacity;
+    filter:drop-shadow(0 2px 3px rgba(0,0,0,.35))}
+  /* 弱：小さめの粒がふわっと舞う */
+  .magic-fx.weak .mp{font-size:1.6rem;animation:magicWeak .75s ease-out forwards}
+  @keyframes magicWeak{
+    0%{transform:translate(0,10px) scale(.6);opacity:0}
+    30%{opacity:1}
+    100%{transform:translate(var(--dx,0),var(--dy,-46px)) scale(1);opacity:0}
+  }
+  /* 中：属性色の光が広がり、粒が大きく回りながら散る */
+  .magic-fx.mid .mp{font-size:2.4rem;animation:magicMid 1s cubic-bezier(.2,.7,.3,1) forwards}
+  @keyframes magicMid{
+    0%{transform:translate(0,0) scale(.4) rotate(0deg);opacity:0}
+    25%{opacity:1}
+    100%{transform:translate(var(--dx,0),var(--dy,-70px)) scale(1.35) rotate(var(--rot,180deg));opacity:0}
+  }
+  .magic-burst{position:absolute;left:50%;top:46%;width:14px;height:14px;border-radius:50%;
+    transform:translate(-50%,-50%);background:var(--mcol,#fff);opacity:.9;
+    box-shadow:0 0 24px 10px var(--mcol,#fff);animation:magicBurst .62s ease-out forwards}
+  @keyframes magicBurst{
+    0%{transform:translate(-50%,-50%) scale(.2);opacity:.95}
+    100%{transform:translate(-50%,-50%) scale(11);opacity:0}
+  }
+  .magic-flash{position:absolute;inset:0;background:var(--mcol,#fff);opacity:0;
+    animation:magicFlash .5s ease-out forwards;mix-blend-mode:screen}
+  @keyframes magicFlash{0%{opacity:0}18%{opacity:.55}100%{opacity:0}}
   .enemy-wrap{position:relative;display:inline-block;animation:efloat 3s ease-in-out infinite}
   @keyframes efloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
 
@@ -2069,15 +2101,17 @@
       💧みず <span class="arr">→</span> 🔥ひ<br>
       🔥ひ <span class="arr">→</span> 🌿き<br>
       🌿き <span class="arr">→</span> 🪨つち<br>
-      🪨つち <span class="arr">→</span> 💧みず
+      🪨つち <span class="arr">→</span> ⚡かみなり<br>
+      ⚡かみなり <span class="arr">→</span> 💧みず
     </div>
     <div class="aff-note">
       「→」の ひだりが つよい！<br>
       みずは ひに かつ（ひを けす）／ひは きに かつ（きを もやす）<br>
-      きは つちに かつ（ねっこで わる）／つちは みずに かつ（せきとめる）<br>
+      きは つちに かつ（ねっこを はる）／つちは かみなりに かつ（でんきを つちに にがす）<br>
+      かみなりは みずに かつ（みずは でんきを よく とおす）<br>
       ・つよい：ダメージ 2ばいで「あいしょう バッチリ！」<br>
       ・よわい：ダメージ はんぶんで「いまいち…」<br>
-      ・ふつうタイプは いつでも ふつう
+      ・おなじ タイプ どうしは ふつう
     </div>
     <button class="btn btn-primary" onclick="closeAffinity()">とじる</button>
   </div>
@@ -6661,7 +6695,7 @@ function guideToZukan(){ $('guideOverlay').classList.remove('show'); showScreen(
 ================================ */
 let curStage=1, queue=[], enemyPos=0, hp=3, answering=false, curCorrectSet=new Set();
 let battleMode='simple';       // 'simple'(St1-2) or 'party'(St3+)
-let enemyIdx=0, enemyType='ふつう', enemyHp=1, enemyMaxHp=1, enemyIsBoss=false;
+let enemyIdx=0, enemyType='かみなり', enemyHp=1, enemyMaxHp=1, enemyIsBoss=false;   // 手直し_属性5すくみ(7/25)：「ふつう」廃止にともない初期値を変更（実際はバトル開始時に必ず上書きされる）
 let enemyShiny=false, enemyAlt=null;     // 色違い（オンヨミフォーム）
 let isIntruder=false, intrudeCount=0;    // おじゃまかんじもん（復習乱入）
 let phase='select';            // party モード: 'select' | 'quiz'
@@ -8474,6 +8508,9 @@ function onCorrectParty(btn){
     if(aff>=2){
       // 手直し(表情システム弾)§3：こうかばつぐん＝いたいの直前0.6秒だけsurprisedを追加（既存のいたいは消さず0.6秒後にそのまま発火）
       setEnemyFace('surprised');
+      /* 手直し_まほうの演出(7/25)：相性がいいときだけ、属性のまほうを出す。
+         強さ（ダメージ）には一切影響しない＝見た目だけ。段階はレベル帯の比較で決まる */
+      playMagicFx(typeOf(att), magicLevelOf(att, enemyIdx, enemyIsBoss));
       setTimeout(runHit,600);
     }else{
       runHit();
@@ -8481,6 +8518,58 @@ function onCorrectParty(btn){
   };
   playAttackDash(att, doContact);   // 第10弾§4：突進→接触でダメージ
 }
+/* ===== 手直し_まほうの演出（2026-07-25・準也さんの発案）=====
+   相性がいい（ばつぐん）ときだけ属性のまほうを出す。バトルの操作は増やさないので子どもに難しくならない。
+   段階＝自分と相手の「レベル帯」（既存 levelBandOf）の比較。判定はもともとバトルの計算に
+   使っているものをそのまま流用しているだけ＝新しいルールは足していない。 */
+const MAGIC_PARTS = {
+  'みず':     ['💧', '💦', '🌊'],
+  'ひ':       ['🔥', '✨', '☄️'],
+  'き':       ['🌿', '🍃', '🌱'],
+  'つち':     ['🪨', '⛰️', '💥'],
+  'かみなり': ['⚡', '✨', '🌟'],
+};
+/* 段階：weak＝自分のレベル帯が下／mid＝同じ／max＝自分が上（maxは準也さんの指示待ちなので今はmid扱い） */
+function magicLevelOf(attackerIdx, defenderIdx, defenderIsBoss){
+  const selfLv = (attackerIdx!=null) ? levelOf(attackerIdx) : 1;
+  const enemyLv = enemyLevelFor(defenderIdx, defenderIsBoss);
+  const sb = levelBandOf(selfLv), eb = levelBandOf(enemyLv);
+  return sb > eb ? 'max' : (sb === eb ? 'mid' : 'weak');
+}
+/* 敵のいるあたりに、属性のまほうを出す。演出だけで、ダメージ計算には一切関与しない。 */
+function playMagicFx(type, level){
+  const scene = document.querySelector('#screen-battle .scene.battle') || document.getElementById('screen-battle');
+  if(!scene) return;
+  const parts = MAGIC_PARTS[type] || MAGIC_PARTS['かみなり'];
+  const color = (typeof TYPE_COLOR!=='undefined' && TYPE_COLOR[type]) || '#fff';
+  const box = document.createElement('div');
+  // maxはまだ作っていないので中と同じ見た目にしておく（準也さんの指示が出たら差し替える）
+  box.className = 'magic-fx ' + (level === 'weak' ? 'weak' : 'mid');
+  box.style.setProperty('--mcol', color);
+  const isWeak = (level === 'weak');
+  if(!isWeak){
+    const flash = document.createElement('div'); flash.className = 'magic-flash';
+    const burst = document.createElement('div'); burst.className = 'magic-burst';
+    box.appendChild(flash); box.appendChild(burst);
+  }
+  const n = isWeak ? 4 : 9;
+  for(let i=0;i<n;i++){
+    const sp = document.createElement('span');
+    sp.className = 'mp';
+    sp.textContent = parts[i % parts.length];
+    // 敵のあたり（右上）から散らす
+    sp.style.left = (52 + Math.random()*36) + '%';
+    sp.style.top  = (26 + Math.random()*34) + '%';
+    sp.style.setProperty('--dx', (Math.random()*140-70).toFixed(0) + 'px');
+    sp.style.setProperty('--dy', (-40 - Math.random()*(isWeak?30:70)).toFixed(0) + 'px');
+    sp.style.setProperty('--rot', (Math.random()*360-180).toFixed(0) + 'deg');
+    sp.style.animationDelay = (i * (isWeak ? 45 : 55)) + 'ms';
+    box.appendChild(sp);
+  }
+  scene.appendChild(box);
+  setTimeout(()=>{ if(box.parentNode) box.parentNode.removeChild(box); }, isWeak ? 1200 : 1600);
+}
+
 /* 弾3-12§4：バトル勝利のコイン加算（partyモード専用＝onEnemyDefeatedは常にparty経由）。
    加算してから勝利メッセージ末尾に添える小さな表示HTMLを返す（既存<span class="meaning">流儀） */
 function awardCoinsHtml(n){
