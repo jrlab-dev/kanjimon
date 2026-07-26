@@ -1609,6 +1609,43 @@
     padding:7px 14px;font-size:.72rem;font-weight:900;font-family:inherit;cursor:pointer;
     box-shadow:0 3px 8px rgba(0,0,0,.25)}
   .intro-skip-btn.show{display:block}
+  /* ===== 手直し_ゾーンの名前カード（2026-07-26・準也さんの発案）=====
+     ズーム演出のあいだだけ、まん中に「名前＋雰囲気＋出る漢字」を出す。
+     ・pointer-events:none＝スキップボタンや操作を邪魔しない
+     ・演出が無いゾーン（すでに全体が見えている）では、そもそも呼ばれないので出ない
+     ・文字は白＋濃い影。背景がどんな色の一枚絵でも読めるようにする（半透明の黒帯も敷く） */
+  /* 消えるときもフェードさせたいので display ではなく visibility で出し入れする
+     （display:none だと transition が効かず、パッと消えてしまうため） */
+  /* 幅は「内容に合わせる」ではなく **画面の86%で固定** する。
+     width:max-content / fit-content にすると、狭い画面で文字が折り返されず右にはみ出した
+     （2026-07-26に実機スクショで確認）。固定幅なら必ず折り返すのでどの機種でも切れない。
+     位置は left/right を0にして margin:0 auto で中央寄せ（transformは縦だけに使う）。 */
+  .zone-card{position:absolute;z-index:28;left:0;right:0;top:42%;margin:0 auto;
+    width:86%;max-width:420px;padding:14px 22px;box-sizing:border-box;text-align:center;
+    /* 説明文には意味のかたまりごとに半角スペースを入れてある。keep-all にすると
+       そのスペースの位置だけで折り返すので「くさ／はら」のような途中切れが起きない。
+       スペース無しの長いかたまりが来たときだけ overflow-wrap で逃がす（はみ出し防止の保険）。 */
+    word-break:keep-all;overflow-wrap:anywhere;transform:translateY(-50%) scale(.96);
+    background:rgba(15,18,32,.62);border-radius:16px;backdrop-filter:blur(2px);
+    box-shadow:0 6px 24px rgba(0,0,0,.35);pointer-events:none;opacity:0;visibility:hidden;
+    transition:opacity .55s ease, transform .55s cubic-bezier(.2,.8,.2,1), visibility 0s linear .55s}
+  .zone-card.show{opacity:1;visibility:visible;transform:translateY(-50%) scale(1);
+    transition:opacity .55s ease, transform .55s cubic-bezier(.2,.8,.2,1), visibility 0s}
+  .zone-card .zc-name{display:block;color:#fff;font-weight:900;font-size:1.42rem;line-height:1.35;
+    letter-spacing:.04em;text-shadow:0 2px 8px rgba(0,0,0,.7)}
+  .zone-card .zc-rule{display:block;width:56%;margin:7px auto 8px;height:2px;border-radius:2px;
+    background:linear-gradient(90deg,rgba(255,209,102,0),#ffd166,rgba(255,209,102,0))}
+  .zone-card .zc-desc{display:block;color:#fff;font-size:.9rem;line-height:1.6;
+    text-shadow:0 1px 5px rgba(0,0,0,.7)}
+  .zone-card .zc-kanji{display:block;margin-top:5px;color:#ffe08a;font-size:.8rem;line-height:1.5;
+    text-shadow:0 1px 5px rgba(0,0,0,.7)}
+  /* 小さい画面では詰める（iPhone SE 320px幅でもはみ出さない） */
+  @media (max-width:360px){
+    .zone-card{padding:11px 14px}
+    .zone-card .zc-name{font-size:1.16rem}
+    .zone-card .zc-desc{font-size:.82rem}
+    .zone-card .zc-kanji{font-size:.74rem}
+  }
 
   /* ===== 第6弾：汎用トースト（じゅくごずかんシルエット・けんきゅうじょヒント等） ===== */
   .toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);
@@ -2100,6 +2137,13 @@
         <button class="d-empty"></button>
         <button class="d-down" id="dDown">▼</button>
         <button class="d-empty"></button>
+      </div>
+      <!-- 手直し_ゾーンの名前カード：ズーム演出中だけ、まん中に名前と説明を出す -->
+      <div class="zone-card" id="zoneCard">
+        <span class="zc-name" id="zcName"></span>
+        <span class="zc-rule"></span>
+        <span class="zc-desc" id="zcDesc"></span>
+        <span class="zc-kanji" id="zcKanji"></span>
       </div>
       <!-- 手直し はじまりズーム演出：ゾーン全体→自分の位置ズームのスキップボタン（演出中だけ表示） -->
       <button class="intro-skip-btn" id="fieldSkipBtn" onclick="fieldSkipIntro()">▶ スキップ</button>
@@ -4179,6 +4223,79 @@ const STAGE_DEFS=[
 ];
 STAGE_DEFS.forEach(sd=>{ sd.indices=[...sd.chars].map(c=>IDX[c]).filter(i=>i!=null); });
 const STAGE_COUNT=STAGE_DEFS.length;
+/* ===== 手直し_ゾーンの名前カード（2026-07-26・準也さんの発案）=====
+   ゾーンに入ったときのズーム演出中に、まん中へ「名前＋説明2行」を出す。
+   1行目＝その場所の雰囲気（下のZONE_DESC＝手書き）。
+   2行目＝そこで出る漢字（zoneKanjiHintOf()が STAGE_DEFS[].chars から自動生成＝手書きしない
+           ＝漢字を入れ替えても説明が古くならない）。
+   書くときの決まり：18〜26文字・ひらがな中心（1年生が読める）・意味のかたまりで半角スペース・
+   ゾーン名をそのまま繰り返さない・64本すべて書き出しを変える。 */
+const ZONE_DESC=[
+  'かぞえる こえが きこえる、ひろい くさはら',        //  1 かずの そうげん
+  'はっぱの におい、むしの こえ。みどりが いっぱい',   //  2 もりと はなばたけ
+  'そらが うつる みずべ。あおが きれいな ところ',      //  3 そらと みずべ
+  'あかく もえる やま。ひかる いしが かくれてる',      //  4 かざんの たからやま
+  'みんなが くらす むら。げんきな こえが とびかう',    //  5 ひとの むら
+  'くるまが はしり、かねが なる。にぎやかな まいにち',  //  6 まちと がっこう
+  'みぎ？ ひだり？ しろい みちが まがりくねる',        //  7 ふしぎの めいろ
+  'たかい もんが そびえる。ここが さいごの ばしょ',    //  8 かんじの しろ
+  'おかえりの こえが する、あたたかい ばしょ',        //  9 かぞくの いえ
+  'ほんの ページを めくる おとが ひびく もり',        // 10 まなびやの もり
+  'ごつごつした いわが つづく、たかい ばしょ',        // 11 いわやまの さと
+  'うしや うまの なきごえ。ひろい まきばが つづく',    // 12 まきばと どうぶつえん
+  'ふるい もんを くぐると、しずかな にわが ある',      // 13 ひかりの おてら
+  'カチカチと はりが うごく。じかんの まちだ',        // 14 とけいの とう
+  'えのぐの いろが とびちる、たのしい もり',          // 15 えかきの もり
+  'しおの かおり。ふねに のって とおくへ いこう',      // 16 うみの ぼうけん
+  'ピカピカ ひかる きかい。あたらしい ものを つくる',   // 17 はつめいの まち
+  'ずっと つづく みち。どこまでも あるいて いける',    // 18 たびの かいどう
+  'はるも ふゆも ある、ふしぎな はなぞの',            // 19 きせつの はなばたけ
+  'どこからか うたが きこえる、やさしい むら',        // 20 うたと おはなしの むら
+  'くらい あなの おく。ちからくらべが まっている',     // 21 ちからだめしの どうくつ
+  'いらっしゃいの こえ。おみせが ずらりと ならぶ',     // 22 にぎやかな しょうてんがい
+  'ふねが つく たびに、だれかと であえる まち',        // 23 であいの みなとまち
+  'かがみに うつる じぶんと むきあう ばしょ',         // 24 じぶんの しろ
+  'ながい かいだんの さき、かみさまが まっている',     // 25 おいせまいりの さんどう
+  'かぜのように はやい。にんじゃたちの かくれが',      // 26 にんじゃの さと
+  'うみみたいに ひろい みずうみが きらきら ひかる',    // 27 びわこの みずうみ
+  'むかしの みやこ。ときを こえて やってきた',        // 28 みやこの じだい
+  'いしだたみを あるくと、ゆげの においが する',      // 29 にわの みち
+  'ふでや さらを ひとつずつ てで しあげる まち',      // 30 でんとうこうげいの まち
+  'にもつを はこぶ ひとで いっぱい。あきないの まち',  // 31 しょうにんの まち
+  'おおきな いしがきが まもる、りっぱな てんしゅかく', // 32 おおさかじょうの しろ
+  'ふえの おとと ひとの なみ。おまつりの ばん',        // 33 にぎわいの まつり
+  'まっしろな かべが お日さまに ひかる しろ',         // 34 ひめじじょうの しろ
+  'せかいじゅうの ふねが あつまる、うみの げんかん',   // 35 こうべの みなと
+  'みあげるほど おおきな ほとけさまが すわる',        // 36 だいぶつの おてら
+  'くさの したに、むかしの みやこが ねむってる',      // 37 こだいの みやこあと
+  'みかんの きが ならぶ やまみち。たびは つづく',      // 38 みかんやまと くまのこどう
+  'ごうごうと うずまく しお。はしを わたろう',        // 39 うずしおの かいきょう
+  'つるつる、おいしい においが ただよう さと',        // 40 うどんの さと
+  'うみの うえを わたる、ながい ながい はし',         // 41 しまなみかいどうの はし
+  'ゆげが ほわほわ。あったかい おゆの まち',          // 42 どうごおんせんの まち
+  'あおくて ふかい うみ。しおの ながれが はやい',      // 43 くろしおの うみ
+  'おひさまが つよい。やしの きが ゆれる まち',        // 44 なんごくの まち
+  'きんいろの いねが かぜに ゆれる、ひろい たんぼ',    // 45 こめどころの たんぼ
+  'しんしんと ゆきが つもる、しずかな まいにち',      // 46 ゆきぐにの くらし
+  'うみに ぽつんと うかぶ、むかしばなしの しま',      // 47 さどの しま
+  'くもより うえに つらなる、ゆきの やまやま',        // 48 たてやまれんぽう
+  'こまかい みちが つづく、おちついた まちなみ',      // 49 かなざわじょうかまち
+  'きかいが うごき、つぎつぎ かたちに なっていく',     // 50 でんとうこうげいの まち
+  'じめんの したから ほねが みつかる、ふしぎな さと',  // 51 きょうりゅうの さと
+  'いよいよ のぼりぐち。てっぺんを めざそう',         // 52 ふじとざんぐちの みち
+  'あまい かおりの つぶが、たわわに みのる',          // 53 ぶどうばたけと ワイン
+  'すずしい かぜが ふきぬける、ひろびろ した はら',    // 54 アルプスの たかはら
+  'そばの しろい はなが いちめんに さいている',       // 55 しんしゅうそばの さと
+  'まっかな みが えだに ずらり。もぎたてが うまい',    // 56 りんごばたけ
+  'かわを みおろす やまの しろ。よるは ひが ともる',   // 57 ぎふじょうと ながらがわ
+  'くろい きの いえが ならぶ、ふるい とおり',         // 58 ひだたかやまの まちなみ
+  'みどりの うねの むこうに、おおきな やまが みえる',  // 59 ちゃばたけと ふじさん
+  'むした はっぱの かおりが たちこめる しごとば',      // 60 おちゃの かこう
+  'こうばしい けむりが たちのぼる、しょくじどころ',    // 61 うなぎと あまざけ
+  'あさから ばんまで、ものを つくる おとが やまない',  // 62 ものづくりの まち
+  'やねの うえで きんの しゃちほこが ひかる',         // 63 なごやじょうの しろ
+  'たびびとが やすんだ まちが、いまも のこる'          // 64 とうかいどうの しゅくば
+];
 const STAGE1_COUNT=8;   // 第18弾§5：トウキョウの区切り（1〜8）。9以降がカントウ
 const STAGE2_COUNT=24;  // 弾3-6§6-1：カントウの区切り（9〜24）。25以降がカンサイ・シコク
 /* 弾3-6§6-2：学年⇔ゾーン対応表（3年生バージョン全体設計図§3-2）。今は全ゾーン無料（課金判定コードは書かない＝構造の用意だけ） */
@@ -10553,6 +10670,31 @@ function computeFieldZoomIntro(){
   if(!FW||!FH||!tile) return null;   // 測れない場合は演出なしで安全側に倒す
   return { isTall: FH>FW, FW, FH, tile };   // 設計書§3の3：縦長ゾーンだけ自動でボス位置版に切替（現行64ゾーンは全て横長）
 }
+/* ===== 手直し_ゾーンの名前カード（2026-07-26・準也さんの発案）=====
+   ズーム演出のあいだだけ、まん中に「ゾーン名＋雰囲気の1行＋出る漢字」を出す。
+   ・出す：演出のはじめ（フィールド全体が見えている瞬間）
+   ・消す：主人公へ寄るズーム段階に入って ZONE_CARD_OUT_MS 後。スキップ時は finish() が即消す
+   ・要素や名前が無ければ何もしない（画像と同じ「無ければ出さない」流儀）＝演出は壊れない */
+const ZONE_CARD_OUT_MS=1200;   // 横パンが無いゾーン（静止1.8秒のみ）でも合計3秒は読める長さ
+function showZoneCard(zone){
+  const card=$('zoneCard'); if(!card) return;
+  let name='';
+  try{ name=zoneNameOf(zone)||''; }catch(e){ return; }   // 町など未知のゾーンでも落とさない
+  if(!name) return;
+  const ne=$('zcName'), de=$('zcDesc'), ke=$('zcKanji');
+  if(!ne) return;
+  ne.textContent=name;
+  let d='', k='';
+  try{ d=zoneDescOf(zone)||''; k=zoneKanjiHintOf(zone)||''; }catch(e){}
+  if(de){ de.textContent=d; de.style.display=d?'block':'none'; }   // 説明が無い町は名前だけのカードになる
+  if(ke){ ke.textContent=k; ke.style.display=k?'block':'none'; }
+  card.classList.remove('show');
+  void card.offsetWidth;   // reflow強制＝連続ワープでも必ずフェードインし直す（グリッドと同じ作法）
+  card.classList.add('show');
+}
+function hideZoneCard(){
+  const card=$('zoneCard'); if(card) card.classList.remove('show');
+}
 function playFieldZoomIntro(plan){
   const grid=$('fieldGrid'), wrap=$('fieldWrap');
   if(!grid||!wrap) return;
@@ -10604,6 +10746,7 @@ function playFieldZoomIntro(plan){
   // 実機確認で違和感が小さいと判断できたための実装判断）。pbg自身の transform は
   // 演出中は一切書き換えない＝直前のupdateCamera(true)が設定した最終位置のまま止まって見える。
   const skip=$('fieldSkipBtn'); if(skip) skip.classList.add('show');
+  showZoneCard(fieldZone);   // 手直し_ゾーンの名前カード：全体が見えている間に名前と説明を読ませる
   grid.style.transition='none';
   grid.style.transform='translate('+startX+'px,'+startY+'px) scale('+startScale+')';
   void grid.offsetWidth;   // reflow強制（この後のtransition指定を次の変化から効かせるため）
@@ -10611,10 +10754,12 @@ function playFieldZoomIntro(plan){
   let stage=needPan?'pan':'zoom';
   grid.style.transition='transform '+(needPan?FIELD_PAN_MS:FIELD_INTRO_MS)+'ms cubic-bezier(.2,.8,.2,1)';
   let done=false, fallback=null;
-  const cleanup=()=>{ grid.removeEventListener('transitionend',onEnd); clearTimeout(holdTimer); clearTimeout(fallback); };
+  let cardTimer=null;   // 手直し_ゾーンの名前カード：ズーム段階に入ってからカードを消すまでのタイマー
+  const cleanup=()=>{ grid.removeEventListener('transitionend',onEnd); clearTimeout(holdTimer); clearTimeout(fallback); clearTimeout(cardTimer); };
   const finish=()=>{
     if(done) return; done=true;
     cleanup();
+    hideZoneCard();   // スキップでも必ず消える（残留させない）
     fieldIntro.playing=false; fieldIntro.finish=null;
     grid.style.transition=''; grid.style.transform='';   // クラス側(--cam-x/--cam-y)の制御へそのまま戻る（値は既に一致）
     // 発注_しまなみ海道 作業3：pbgのopacityはもう演出中に触っていないため、ここでの復元も不要
@@ -10627,6 +10772,10 @@ function playFieldZoomIntro(plan){
   // 発注_ズーム横パン：パン段階の完了を受けて、自分の位置へのズーム段階へ引き継ぐ
   const startZoomStage=()=>{
     stage='zoom';
+    /* 手直し_ゾーンの名前カード：主人公へ寄っていく前に消す。ズーム開始から少し残すのは、
+       横パンが無いゾーン（静止1.8秒だけ）でも2行を読み切れる時間を確保するため。 */
+    clearTimeout(cardTimer);
+    cardTimer=setTimeout(hideZoneCard, ZONE_CARD_OUT_MS);
     grid.style.transition='transform '+FIELD_INTRO_MS+'ms cubic-bezier(.2,.8,.2,1)';
     grid.style.transform='translate('+endX+'px,'+endY+'px) scale(1)';
     fallback=setTimeout(finish, FIELD_INTRO_MS+500);   // 保険（ズーム段階のtransitionendが来ない環境向け）
@@ -12355,6 +12504,17 @@ function setInteriorActorPose(el,dir,frame){
 /* 弾3-15§3：アクセサ（疑似ゾーンは対応表、通常ゾーンは従来値をそのまま返す） */
 function zoneGridOf(zone){ return isTownLike(zone) ? PSEUDO_DEFS[zone].grid : ZONES[zone-1].grid; }
 function zoneNameOf(zone){ return isTownLike(zone) ? PSEUDO_DEFS[zone].name : STAGE_DEFS[zone-1].name; }
+/* 手直し_ゾーンの名前カード(2026-07-26)：説明の共通口。町など（PSEUDO_DEFS）は説明を持たないので空。
+   カードは「名前だけ」でも成立する作りにしてあるので、町に説明が無くても崩れない。 */
+function zoneDescOf(zone){ return isTownLike(zone) ? (PSEUDO_DEFS[zone].desc||'') : (ZONE_DESC[zone-1]||''); }
+/* カードの2行目＝そこで出る漢字。手書きせず STAGE_DEFS[].chars から作るので、
+   漢字の割り当てを変えても説明が古くならない（＝食い違いが起きない）。 */
+function zoneKanjiHintOf(zone){
+  if(isTownLike(zone)) return '';
+  const cs=[...((STAGE_DEFS[zone-1]||{}).chars||'')];
+  if(!cs.length) return '';
+  return cs.slice(0,3).join('・')+' など '+cs.length+'この かんじが でるよ';
+}
 function zoneFullartOf(zone){ return zone===TOWN_ZONE ? TOWN_DEF.fullart[0] : (zone<0?PSEUDO_DEFS[zone].bg:ZONE_FULLART[zone-1]); }
 let interiorFullartOK=new Set(), interiorActorSheetOK=new Set(), interiorActorImgOK=new Set(), meatSceneOK=false;
 let teacherImagesOK=false, schoolBuildingOK=false, shodoBuildingOK=false;
