@@ -2012,9 +2012,12 @@
       <button class="btn btn-ghost lab-btn" id="labBtn" onclick="goLab()" style="display:none">けんきゅうじょ<span class="new-badge">NEW!</span></button>
     </div>
     <div class="diff-toggle">
-      <span class="diff-label">ひらがなヒント</span>
-      <button class="diff-pill" id="diffEasy" onclick="setDifficulty('easy')">なまえを なのる<br><small>（かんたん）</small></button>
-      <button class="diff-pill" id="diffHard" onclick="setDifficulty('hard')">なまえは ひみつ<br><small>（むずかしい）</small></button>
+      <!-- 手直し(2026-07-26)：ラベルは「ひらがなヒント」だった。文字の吹き出しだった頃の名残で、
+           いまは声で名乗るかどうかを決めるスイッチ。実態とずれていて準也さん自身が
+           「名乗りが鳴らない」と迷った（正体はこの設定）。何が切り替わるかを言葉にした。 -->
+      <span class="diff-label">てきの なまえ</span>
+      <button class="diff-pill" id="diffEasy" onclick="setDifficulty('easy')">こえで なのる<br><small>（かんたん）</small></button>
+      <button class="diff-pill" id="diffHard" onclick="setDifficulty('hard')">ひみつにする<br><small>（むずかしい）</small></button>
     </div>
     <!-- 発注_OP3 作業2-2：AUTOえらび切替。難易度ピルと同じ場所・同じ見た目の作法（.diff-toggle/.diff-pill流用） -->
     <div class="diff-toggle">
@@ -5910,7 +5913,9 @@ let jukugo=new Set();   // 発見済み熟語（熟語文字列のセット）
 let shiny=new Set();    // オンヨミフォーム取得済み Kインデックス
 // 弾3-8§1-2：発見済み四字熟語（辞書エントリ・文字列のセット。今回は'一心同体'の1件のみ）
 let yoji=new Set();
-let difficulty='easy';  // 'easy'(なまえをなのる) | 'hard'(なまえはひみつ)
+// 'easy'(こえで なのる＝どの敵も声で読みを叫ぶ) | 'hard'(ひみつにする＝まだ捕まえていない敵は声を出さず「？？？…！」の文字だけ)
+// ※画面の表示は2026-07-26に「ひらがなヒント／なまえを なのる／なまえは ひみつ」から変更した（値そのものは不変＝セーブ互換あり）
+let difficulty='easy';
 // 発注_OP3 作業2：AUTOえらび（カントウ開放まで自動選択）。新規ゲーム＝AUTOオン（既定値どおり）
 let autoPick=true;          // true=自動でこうげきする子を選ぶ／false=じぶんでタップ
 let autoPickExplained=false; // カントウ開放後の「じぶんで えらんでみて」説明カードを見せた（＝AUTOをオフにした）か
