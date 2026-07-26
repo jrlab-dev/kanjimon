@@ -7974,14 +7974,42 @@ function heroVictoryImgSrc(hbChar){
   return 'images/battle-tate/hero-victory-'+hbChar+'.webp';
 }
 let heroVictoryPose=false;   // 勝利メッセージ表示中〜次の敵が出るまでtrue
-// 発注_勝利演出3件 作業2：戦闘勝利のたびに主人公が読み上げる短い掛け声（2〜4種からランダム・speakJa任せ＝🔇時は自動的に無音）
-const HERO_VICTORY_LINES=['やった！','よし！','やったね！','いいぞ！'];
+/* 手直し_勝利の声(2026-07-26・準也さんの指摘「みっともない」)
+   以前はパソコンの読み上げ(speakJa＝Windows標準ボイス)で「やった！」等をしゃべらせていたが、
+   機械の声が場面に合わなかったため、VOICEVOXの音声ファイルに差し替えた。
+   セリフ4つ（やった／よし／やったね／いいぞ）は以前のまま＝内容は変えず、声だけ本物にした。
+
+   ★声のキャストは勝手に決めていない。以下の裁定に従っている：
+     ・設計書\音声置き換え記録.md（2026-07-25制定）＝Windows標準ボイス全面禁止・裁定キャスト表に従う
+     ・設計書\オープニング計画_設計方針.md 58〜59行（2026-07-19 準也さん裁定・発案）
+       「主人公男の子＝満別花丸／女の子＝春歌ナナ」「勝利『やったー！』等を主人公の声で鳴らす」
+   ★義務：VOICEVOXの声を公開サイトで使うので、top.htmlフッターにクレジット1行が必要
+     （同設計書62行・無料利用の条件。声を組み込む弾と同じ弾で実装すること）
+   ・読み上げへの巻き戻しはしない（機械の声はもう使わない＝ファイルが無ければ無音）。
+     勝利そのものはメッセージ・ポーズ・コイン加算で伝わるので、無音でも演出は成立する。 */
+const HERO_VICTORY_VOICES={
+  boy: ['voice-win-boy-1','voice-win-boy-2','voice-win-boy-3','voice-win-boy-4'],    // 満別花丸（ボーイ）
+  girl:['voice-win-girl-1','voice-win-girl-2','voice-win-girl-3','voice-win-girl-4'] // 春歌ナナ（ノーマル）
+};
+let _lastWinVoice=-1;
+function playHeroVictoryVoice(){
+  if(!soundOn) return;
+  const list=HERO_VICTORY_VOICES[(heroChar==='girl')?'girl':'boy']||HERO_VICTORY_VOICES.boy;
+  if(!list.length) return;
+  let i=Math.floor(Math.random()*list.length);
+  if(list.length>1 && i===_lastWinVoice) i=(i+1)%list.length;   // 2回続けて同じ声は出さない（打撃4種と同じ流儀）
+  _lastWinVoice=i;
+  seFx(list[i],0.9,null);
+  // 声が埋もれないようBGMを一時的に下げる（名乗り・読み上げと同じダッキングの仕組みを流用）
+  bgmDuckCount++; _bgmApplyVolume();
+  setTimeout(()=>{ bgmDuckCount=Math.max(0,bgmDuckCount-1); _bgmApplyVolume(); },1700);
+}
 /* 敵を倒した瞬間（勝利メッセージが最初に出るタイミング）に1回だけ呼ぶ。
    画像が無ければ何もしない（heroBackOKと同じ「無ければ出さない」流儀）。
    既にDOM上にhero-back要素があれば即座に画像差し替え＋軽いポップ（renderParty()の再構築を待たない） */
 function triggerHeroVictoryPose(){
   if(heroVictoryPose) return;         // 多重発火防止（同じ勝利の中で何度も呼ばれても1回だけ）
-  speakJa(HERO_VICTORY_LINES[Math.floor(Math.random()*HERO_VICTORY_LINES.length)]);   // 発注_勝利演出3件 作業2：ボス戦・じゅくご戦・通常戦いずれもこの共通口を通るので一律で発火
+  playHeroVictoryVoice();   // 発注_勝利演出3件 作業2：ボス戦・じゅくご戦・通常戦いずれもこの共通口を通るので一律で発火
   const hbChar=(heroChar==='girl')?'girl':'boy';
   if(!heroVictoryOK.has(hbChar)) return;
   heroVictoryPose=true;
@@ -8782,8 +8810,14 @@ function playMagicFx(type, level){
     box.appendChild(sp);
   }
   scene.appendChild(box);
+  /* 手直し_まほうの音(2026-07-26・準也さんが効果音ラボから調達)：属性×段階の15本を鳴らす。
+     ファイル名は audio/se/magic-<ローマ字>-<weak|mid|max>.mp3（magicArtOKと同じローマ字を使う）。
+     音源は演出の長さに合わせて切り詰め済み（weak1.3秒／mid1.9秒／max2.6秒・終わりはフェードアウト）。
+     seFxを使うので🔇連動・読込失敗の握りつぶしは既存どおり。ファイルが無いときは
+     これまでどおり合成音(magicmax)に倒れる＝演出が無音になることはない。 */
+  seFx('magic-' + (MAGIC_ART_KEY[type] || 'kaminari') + '-' + (isWeak ? 'weak' : isMax ? 'max' : 'mid'),
+       isMax ? 0.55 : 0.45, isMax ? (()=>snd('magicmax')) : null);
   if(isMax){
-    snd('magicmax');
     // 画面ゆれ（ボス着地・かいしんの一撃と同じ既存のしくみを流用）
     const app=$('app');
     if(app){ app.classList.add('shake'); setTimeout(()=>app.classList.remove('shake'),500); }
@@ -8838,6 +8872,9 @@ function playHitFx(targetEl, critical, forceKind){
   }
   scene.appendChild(box);
   snd('hit' + kind);   // 種類ごとの音（きりさく＝シャッ／たたく＝ドン／つきさす＝ビシッ／くだく＝パリン）
+  /* 手直し_まほうの音(2026-07-26)：効果音ラボの打撃音を薄く重ねて「当たった重み」を足す。
+     4種類の鳴き分けは今までどおり上の合成音が担当するので、こちらは共通の下敷き（音量控えめ）。 */
+  sePlay('hit-thud', {volume:0.3});
   setTimeout(()=>{ if(box.parentNode) box.parentNode.removeChild(box); }, 900);
 }
 
