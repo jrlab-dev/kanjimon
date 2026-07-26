@@ -6723,9 +6723,17 @@ function buildCry(idx,isBoss,known,altReading){
    連続で鳴る場面では前の名乗りを必ず止めてから鳴らす。404・play()失敗はspeechSynthesisへフォールバック（進行を止めない）。
 ================================ */
 let nanoriAudioEl=null;
-// 追加発注OP5b§2：名乗りmp3の音量増幅倍率（WebAudioのGainNode経由）。AudioContextが使えない/
-// 接続に失敗した環境ではel.volume=1.0のまま再生を続行し、無音事故を起こさない（発注書の明示要求）。
-const NANORI_GAIN=2.0;
+/* 手直し_名乗りの音量（2026-07-26・準也さん「パソコンで声が小さい」）
+   以前はここで2.0倍に増幅していた（追加発注OP5b§2）。増幅はやめ、音声ファイル側で
+   大きさを揃えた（平均-20.5dB・上下9割の幅0.4dB／まほう-20.5・勝利の声-19.2と同じ土俵）。
+   やめた理由は2つ：
+     ①一律の増幅ではファイルごとのばらつきが直らない。元は平均-43.3〜-17.3dBと26dBの開きがあり、
+       小さい声は聞き取れないまま、大きい声27本はむしろ割れていた
+     ②増幅にはWebAudio(createMediaElementSource)が必要で、名乗りだけが他の音と違う経路を通っていた。
+       この経路は音の土台(AudioContext)が眠ると無音になる＝名乗りだけ聞こえない事故が起こりうる
+   いまはBGM・効果音とまったく同じ「ふつうの再生」。土台の状態に左右されない。
+   音量を変えたくなったらコードではなく音声ファイルを作り直す
+   （作り方＝_一時\_名乗り調査\名乗りの大きさを揃える.py／設計書＝音声置き換え記録.md）。 */
 // 追加発注OP5b§2(b)：名乗り中のBGMダッキング排他フラグ（speakJaのducked/failTimerと同じ流儀）。
 // onended・onerror・stopNanoriVoice・保険タイマーのどの経路から呼ばれてもnanoriDuckedで
 // 二重解放を防ぎ、必ず1回だけbgmDuckCountを戻す。
@@ -6755,22 +6763,9 @@ function playNanoriVoice(idx,isBoss,altReading,fallbackText){
   const toFallback=()=>{ if(nanoriAudioEl===el) nanoriAudioEl=null; nanoriEndDuck(); if(fallbackText) speakJa(fallbackText); };
   el.onerror=toFallback;
   el.onended=nanoriEndDuck;   // 追加発注OP5b§2(b)：再生終了で必ずダッキングを戻す
-  // 追加発注OP5b§2(a)：WebAudioのGainNode経由で約2倍に増幅。createMediaElementSourceは1要素につき
-  // 1回しか呼べない仕様だが、el自体が呼び出しごとにnew Audio()した新規オブジェクトなので問題ない。
-  // 接続の途中で例外が出た場合はgainOK=falseのままel.volume=1.0の従来経路にフォールバックする
-  // （無音のまま宙に浮いた接続を残さないよう、成功したときだけWebAudio経由にする）。
-  ensureAudio();
-  let gainOK=false;
-  if(audioCtx){
-    try{
-      const src=audioCtx.createMediaElementSource(el);
-      const gain=audioCtx.createGain();
-      gain.gain.value=NANORI_GAIN;
-      src.connect(gain); gain.connect(audioCtx.destination);
-      gainOK=true;
-    }catch(e){ gainOK=false; }
-  }
-  if(!gainOK) el.volume=1.0;   // フォールバック：AudioContext未対応/失敗環境でも従来どおり等倍で鳴らす（無音事故防止）
+  // 手直し_名乗りの音量（2026-07-26）：BGM・効果音とまったく同じふつうの再生。
+  // 大きさは音声ファイル側で揃えてあるので、ここで増幅しない（増幅すると割れる）。
+  el.volume=1.0;
   bgmDuckCount++; _bgmApplyVolume(); nanoriDucked=true;   // 追加発注OP5b§2(b)：mp3再生開始でダッキング
   nanoriFailTimer=setTimeout(nanoriEndDuck,4000);          // onended/onerrorが発火しない環境の保険（speakJaと同流儀）
   try{
