@@ -812,6 +812,11 @@
   .school-q{font-weight:900;font-size:clamp(1.02rem,4vw,1.4rem);line-height:1.5;color:#3b2a1e}
   .school-msg{font-weight:900;line-height:1.5;color:#642f18;background:rgba(255,248,218,.9);border-radius:12px;padding:6px 10px}
   .school-actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px}
+  /* 手直し(2026-07-27)：○×ボタンと「せいかい！」メッセージを同じ高さの箱に入れる。
+     切り替わるたびに全体の高さが変わると、まん中ぞろえのせいで用紙（問題）が上下に動いて見えるため。
+     142px＝○×ボタン2つぶんの実測値（414×896で140px・320×568で142px）。 */
+  .school-answer-area{min-height:142px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .school-answer-area>*{margin:0}   /* 中身の外側の余白も消して、切り替えで高さが変わらないようにする */
   .school-mark-btn{min-width:112px;font-size:1.25rem;color:#b91c1c;background:#fffaf0;border:3px solid #dc2626;box-shadow:0 4px 0 #991b1b}
   .school-mark-btn:disabled{opacity:.55}
   .school-mark-btn.chosen{box-shadow:0 0 0 4px #fecaca,0 2px 0 #991b1b;transform:translateY(2px)}
@@ -1159,6 +1164,19 @@
     --grass-a:#bef264;--grass-b:#a3e635; --path-a:#fef3c7;--path-b:#fde68a;
     --wall-a:#16a34a;--wall-b:#15803d; --wall-fg:#bbf7d0;
     --grass-tint:rgba(132,204,22,.22); --path-tint:rgba(217,197,156,.28)}
+  /* ===== 手直し しまなみ橋B案（2026-07-27）：背景を層に分けて奥行きを出す =====
+     準也さんの指摘「橋が高すぎて島も空も見えない」「島が画面の下半分に寄っている」への対応。
+     空・遠くの島・海・中間の島・近くの島を別々の絵にして、**動く速さを変える**（奥ほど遅い）。
+     各層は画面（#fieldWrap）に対する割合で位置と高さを決め、横は repeat-x で無限に続く。
+     動かすのは transform だけ（レイアウトを触らないので軽い）。定義＝ZONE_PARALLAX_LAYERS。 */
+  .field-parallax-layers{display:none;position:absolute;left:0;top:0;width:100%;height:100%;
+    overflow:hidden;pointer-events:none}
+  .field-parallax-layers.show{display:block}
+  .field-parallax-layer{position:absolute;left:0;width:100%;pointer-events:none;
+    background-repeat:repeat-x;background-position:0 0;will-change:transform}
+  /* 水平線のかすみ（空気遠近）。遠くの海のざらつきを沈めて奥行きを出す＝絵ではなくCSSで作る */
+  .field-parallax-haze{position:absolute;left:0;width:100%;pointer-events:none;
+    background:linear-gradient(180deg,rgba(238,246,250,.72),rgba(238,246,250,0))}
   /* 弾3-7：しまなみパララックス背景層。#fieldGridと同じ論理サイズ(マス数×タイル幅)を持たせ、
      background-size:100% 100%で画像をフィットさせる。動きだけカメラの一部(30%)に抑えて視差を出す */
   .field-parallax-bg{display:none;position:absolute;left:0;top:0;
@@ -1238,7 +1256,12 @@
      画像上端(y=0)で既にクロップされている（塔の頂部が画像に収まっていない）意匠のため、
      すみかA〜Jの浮きはv2と実機スクリーンショット比較でほぼ同程度（明らかな悪化は無し・
      詳細は報告書参照）。 */
-  .field-grid.has-fullart.bridge-tile{background-size:calc(8*var(--tile)) calc(8*var(--tile));background-position:0 calc(6*var(--tile));background-repeat:repeat-x}
+  /* 手直し しまなみ橋B案(2026-07-27)：道路を新しい絵（縦パイプ柵・zone41-road.webp・1139×1254）に差し替え。
+     画像の中の路面は y=450〜700。それを2マスぶんの高さで見せるので倍率は 90/250=0.36。
+     幅 1139×0.36＝9.11マス／高さ 1254×0.36＝10.03マス。路面のまん中(y=575)が行13.5(道路3行のまん中)に
+     来るように、上端を 13.5−575×0.36/45＝8.9マスに置く。
+     ※画像の幅は柵の周期(76px)の倍数(76×15=1139)に切りそろえてある。ここを変えると継ぎ目が空く。 */
+  .field-grid.has-fullart.bridge-tile{background-size:calc(9.11*var(--tile)) calc(10.03*var(--tile));background-position:0 calc(8.9*var(--tile));background-repeat:repeat-x}
   .field-grid.has-fullart .tile.t-grass,.field-grid.has-fullart .tile.t-path{background:transparent}
   .field-grid.has-fullart .tile.t-tree{background:transparent;box-shadow:none;color:transparent}
   /* フェーズD試作(2026-07-11)：一枚絵ゾーンに内側の水W・岩Rが初登場（ゾーン3）。絵に描かれている想定で水・岩タイルも透明化する */
@@ -1261,6 +1284,13 @@
     width:calc(var(--tw)*var(--tile));height:calc(var(--th)*var(--tile));z-index:calc(10 + var(--tz,14));pointer-events:none;
     background-repeat:no-repeat;background-position:center bottom;background-size:contain;
     filter:drop-shadow(0 6px 8px rgba(0,0,0,.24))}
+  /* 手直し しまなみ橋B案(2026-07-27)：橋の主塔。町の建物(.town-building)とまったく同じ考え方で、
+     z-indexを「10＋行番号」にして主人公との前後を決める。手前の塔(行14)は主人公(行12〜14)より
+     手前に出るので、塔の裏を通ると主人公が隠れる＝柱かくれ。定義＝BRIDGE_PARTS。 */
+  .bridge-part{position:absolute;left:calc(var(--bx)*var(--tile));top:calc(var(--by)*var(--tile));
+    width:calc(var(--bw)*var(--tile));height:calc(var(--bh)*var(--tile));
+    background-size:100% 100%;background-repeat:no-repeat;pointer-events:none;
+    z-index:calc(10 + var(--bz,14))}
   @keyframes waterSway{0%,100%{background-position:50% 0;filter:brightness(1)}50%{background-position:50% 100%;filter:brightness(1.08)}}
   @keyframes gateGlow{0%,100%{box-shadow:inset 0 0 6px #fff}50%{box-shadow:inset 0 0 13px #fff}}
   @keyframes gateGlowImg{0%,100%{filter:drop-shadow(0 0 2px #fff)}50%{filter:drop-shadow(0 0 7px #fff)}}   /* 手直し みがき§1：門画像のアルファ形状に沿って光らせる */
@@ -2128,6 +2158,9 @@
     <div class="field-info" id="fieldInfo"></div>
     <div class="field-wrap" id="fieldWrap">
       <span class="auto-badge" id="autoBadge">▶ オートたんけんちゅう</span>
+      <!-- 手直し しまなみ橋B案(2026-07-27)：背景を層に分けて、奥ほどゆっくり動かす（空・遠くの島・海・中間の島・近くの島）。
+           中身は renderField() が ZONE_PARALLAX_LAYERS から作る。対象ゾーン以外では空のまま。 -->
+      <div class="field-parallax-layers" id="fieldParallaxLayers"></div>
       <div class="field-parallax-bg" id="fieldParallaxBg"></div>
       <div class="field-grid" id="fieldGrid"></div>
       <div class="dpad">
@@ -10406,7 +10439,7 @@ const ZONE_FULLART=['zone1.webp','zone2.webp','zone3.webp','zone4.webp','zone5.w
                     'zone17.webp','zone18.webp','zone19.webp','zone20.webp','zone21.webp','zone22.webp','zone23.webp','zone24.webp',
                     /* 弾3-6§2-4：3年カンサイ・シコク20ゾーンぶん。41番目だけnull（弾3-7で一枚絵を差し替え・nullはプリロードをスキップ＝フォールバック） */
                     'zone25.webp','zone26.webp','zone27.webp','zone28.webp','zone29.webp','zone30.webp','zone31.webp','zone32.webp','zone33.webp','zone34.webp',
-                    'zone35.webp','zone36.webp','zone37.webp','zone38.webp','zone39.webp','zone40.webp','zone41-bridge-v3-tile.webp','zone42.webp','zone43.webp','zone44.webp',
+                    'zone35.webp','zone36.webp','zone37.webp','zone38.webp','zone39.webp','zone40.webp','zone41-road.webp','zone42.webp','zone43.webp','zone44.webp',
                     // 弾4-6§2-4：4年チュウブ20ゾーンぶん
                     'zone45.webp','zone46.webp','zone47.webp','zone48.webp','zone49.webp','zone50.webp','zone51.webp','zone52.webp','zone53.webp','zone54.webp','zone55.webp','zone56.webp','zone57.webp','zone58.webp','zone59.webp','zone60.webp','zone61.webp','zone62.webp','zone63.webp','zone64.webp'];
 /* 弾3-7：パララックス背景を使うゾーンの対応表。ゾーン41以外は未登録＝通常表示のまま */
@@ -10419,6 +10452,33 @@ const ZONE_PARALLAX_BG={41:'zone41-bg-tile.webp'};
    実質的な影響範囲はゾーン41のみ（grep・実機確認で裏取り済み・詳細は_一時\_しまなみ海道リアル化実装\
    実装報告.md参照） */
 const PARALLAX_SPEED=0.18;  // 背景の移動速度係数（1=前景と同速、0=完全固定。奥にあるほど小さい値）
+/* ===== 手直し しまなみ橋B案（2026-07-27）＝背景を層に分けて奥行きを出す =====
+   準也さんの指摘：「橋が高すぎて空と島が見えない」「島が画面の下半分に寄っている」
+   「遠くの島が遠すぎて近い島が1つだけ」「遠くの海が汚い」への対応。
+   ・top / h ＝ 画面（#fieldWrap）の高さに対する割合で位置と高さを決める
+   ・speed ＝ カメラの動きへの追従率。**小さいほど遠くに見える**（空はほぼ止まる）
+   ・haze ＝ 絵ではなくCSSのグラデーション。水平線のかすみ＝遠くの海のざらつきを沈める
+   ・配列は**奥から手前の順**（この順に重ねる）
+   位置の微調整は ツール\橋の配置ツール.html で数字を作り、ここに貼る。 */
+const ZONE_PARALLAX_LAYERS={41:[
+  {img:'zone41-sky.webp',         top:0.00, h:0.62, speed:0.06},
+  {img:'zone41-sea.webp',         top:0.50, h:0.56, speed:0.45},
+  {img:'zone41-far-islands.webp', top:0.37, h:0.13, speed:0.14},
+  {haze:true,                     top:0.49, h:0.11},
+  {img:'zone41-mid-islands.webp', top:0.41, h:0.12, speed:0.30},
+  {img:'zone41-near-island.webp', top:0.42, h:0.16, speed:0.60},
+]};
+/* 橋の主塔。町の建物と同じ「10＋行番号」の物差しで前後を決める（z）。
+   奥の塔=行11（主人公より奥）／手前の塔=行14（主人公より手前＝柱かくれ）。
+   dcol/top はマス単位。1枚の絵から切り出した2部品なので、この相対位置を崩さないこと。 */
+const BRIDGE_PARTS={41:[
+  {img:'zone41-tower-back.webp',  dcol:2.78, top:3.45, w:4.76, h:8.64, z:11},
+  {img:'zone41-tower-front.webp', dcol:5.70, top:2.53, w:1.88, h:14.94, z:14},
+]};
+const BRIDGE_TOWER_COLS={41:[34,80]};   // 主塔を立てる列（120マスに2本＝遠くに1本ずつ）
+/* ゾーン41だけカメラを下げて、橋を画面の下の方に置く（上に空と島を広く見せる）。
+   値＝主人公（＝道路）を画面の高さの何割の位置に置くか。0.5=まん中／大きいほど下。 */
+const ZONE_CAM_Y={41:0.78};
 /* 第20弾§4-2：一枚絵プリロード（groundImgOKと同じ流儀＝onload/onerror。無ければfullartOKに入らず従来表示） */
 const fullartOK=new Set();
 ZONE_FULLART.forEach((file,i)=>{
@@ -10616,12 +10676,30 @@ function updateCamera(instant){
   if(mapW<=vw) camX=(vw-mapW)/2;                                                     // 収まる→中央（動かさない）
   else{ camX=Math.round(vw/2-(fieldHx+0.5)*tile); camX=Math.max(vw-mapW,Math.min(0,camX)); }   // 端クランプ
   if(mapH<=vh) camY=(vh-mapH)/2;
+  else if(ZONE_CAM_Y[fieldZone]!==undefined){
+    /* 手直し しまなみ橋B案(2026-07-27)：ゾーン41だけ、橋を画面の下の方に置く（準也さんの指摘
+       「橋が高すぎると遠くの島も空も見えない」）。上下のはみ出しは背景の層が埋めるので、
+       ふつうの端クランプ（マップの外を見せない）はここでは掛けない。 */
+    camY=Math.round(vh*ZONE_CAM_Y[fieldZone]-(fieldHy+0.5)*tile);
+  }
   else{ camY=Math.round(vh/2-(fieldHy+0.5)*tile); camY=Math.max(vh-mapH,Math.min(0,camY)); }
   grid.style.setProperty('--cam-x',camX+'px');
   grid.style.setProperty('--cam-y',camY+'px');
   const pbg=$('fieldParallaxBg');
   if(pbg && pbg.classList.contains('show')){
     pbg.style.transform='translate('+(camX*PARALLAX_SPEED)+'px,'+(camY*PARALLAX_SPEED)+'px)';
+  }
+  /* 手直し しまなみ橋B案(2026-07-27)：背景の層を、層ごとに違う速さで動かす。
+     speedが小さいほどゆっくり＝遠くに見える（空はほぼ止まり、近くの島はよく流れる）。
+     縦は動かさない（層の位置は画面に対する割合で固定＝カメラを下げても水平線がぶれない）。 */
+  const players=$('fieldParallaxLayers');
+  if(players && players.classList.contains('show')){
+    players.querySelectorAll('.field-parallax-layer').forEach(el=>{
+      const sp=parseFloat(el.dataset.speed)||0;
+      /* 層そのものを動かす（transform）と、動かした分だけ画面の端が空いてしまう。
+         層は画面に固定したまま、**背景の位置だけ**を流す。横は repeat-x なので無限に続く。 */
+      el.style.backgroundPositionX=Math.round(camX*sp)+'px';
+    });
   }
 }
 /* 第7弾§2：ビューポート再計算（リサイズ・画面復帰時に呼ぶ） */
@@ -10877,6 +10955,32 @@ function renderField(){
   // 発注_しまなみ海道 作業2：パララックス背景側もゾーン41だけタイル敷き(repeat-x)クラスを付ける
   pbg.classList.toggle('bg-tile', fieldZone===41);
   pbg.style.backgroundImage = pbgFile ? "url('images/fullart/"+pbgFile+"')" : 'none';
+  /* 手直し しまなみ橋B案(2026-07-27)：背景の層を作る。層があるゾーンでは、
+     従来の1枚もの(#fieldParallaxBg)は出さない（二重に見えてしまうため）。 */
+  const layerDefs=ZONE_PARALLAX_LAYERS[fieldZone];
+  const players=$('fieldParallaxLayers');
+  if(players){
+    players.innerHTML='';
+    const useLayers=!!layerDefs && fullart;
+    players.classList.toggle('show',useLayers);
+    if(useLayers){
+      pbg.classList.remove('show');            // 層を使うときは旧1枚ものを止める
+      layerDefs.forEach(L=>{
+        const el=document.createElement('div');
+        el.style.top=(L.top*100)+'%';
+        el.style.height=(L.h*100)+'%';
+        if(L.haze){
+          el.className='field-parallax-haze';
+        }else{
+          el.className='field-parallax-layer';
+          el.style.backgroundImage="url('images/fullart/"+L.img+"')";
+          el.style.backgroundSize='auto 100%';
+          el.dataset.speed=L.speed;
+        }
+        players.appendChild(el);
+      });
+    }
+  }
   grid.innerHTML='';
   const g=zoneGridOf(fieldZone);              // 弾3-12§5-2：町対応のアクセサ経由
   const FW=g[0].length, FH=g.length;          // 第7弾§1：ゾーン実寸（可変サイズ）
@@ -11029,6 +11133,24 @@ function renderField(){
       el.style.setProperty('--tz',townBuildingFrontRow(b));   /* 修正_町建物前後判定：主人公と同じ物差しの基準行 */
       el.style.backgroundImage="url('images/buildings/"+b.img+"')";
       grid.appendChild(el);
+    });
+  }
+  /* 手直し しまなみ橋B案(2026-07-27)：橋の主塔を後から載せる（町の建物と同じやり方）。
+     BRIDGE_TOWER_COLS の列ごとに、奥の塔と手前の塔をペアで置く。
+     前後は z（＝行番号の物差し）で決まるので、手前の塔の裏を通ると主人公が隠れる。 */
+  if(BRIDGE_PARTS[fieldZone] && fullart){
+    (BRIDGE_TOWER_COLS[fieldZone]||[]).forEach(baseCol=>{
+      BRIDGE_PARTS[fieldZone].forEach(p=>{
+        const el=document.createElement('span');
+        el.className='bridge-part';
+        el.style.setProperty('--bx',baseCol+p.dcol);
+        el.style.setProperty('--by',p.top);
+        el.style.setProperty('--bw',p.w);
+        el.style.setProperty('--bh',p.h);
+        el.style.setProperty('--bz',p.z);
+        el.style.backgroundImage="url('images/fullart/"+p.img+"')";
+        grid.appendChild(el);
+      });
     });
   }
   // 弾3-15手直し：歩行シートを優先し、無ければ従来静止画像、両方無ければ上のタイル絵文字。
@@ -13045,13 +13167,20 @@ function renderSchoolQuestion(){
   const s=schoolTestState;if(!s||s.phase!=='question')return;
   const q=s.questions[s.pos];
   let inside='<div class="school-qno">'+(s.pos+1)+'もんめ／10もん</div>'+schoolPaperTrackHtml(s);
+  /* 手直し(2026-07-27・準也さん報告「テストの採点が途中からズレて見れない」)：
+     答えると○×ボタン(高さ約140px)が消えてメッセージ(約40px)に変わるため、その差だけ
+     全体の高さが縮み、まん中ぞろえのせいで**用紙（問題）が下に動いて見えていた**
+     （実測：414×896で56pxずれる／320×568は中身が画面より高いのでズレない）。
+     ○×ボタンとメッセージを同じ高さの箱に入れて、切り替えても位置が動かないようにする。 */
+  let ansHtml;
   if(!s.answered){
-    inside+='<div class="school-actions"><button class="btn btn-primary school-mark-btn" onclick="answerSchoolMark(true,'+s.seq+')">○</button>'+
+    ansHtml='<div class="school-actions"><button class="btn btn-primary school-mark-btn" onclick="answerSchoolMark(true,'+s.seq+')">○</button>'+
       '<button class="btn btn-primary school-mark-btn" onclick="answerSchoolMark(false,'+s.seq+')">×</button></div>';
   }else{
     const right=s.lastChoiceCorrect;
-    inside+='<div class="school-msg">'+(right?'せいかい！':'おしい！ 「'+q.char+'」は「'+q.correctReading+'」だよ')+'</div>';
+    ansHtml='<div class="school-msg">'+(right?'せいかい！':'おしい！ 「'+q.char+'」は「'+q.correctReading+'」だよ')+'</div>';
   }
+  inside+='<div class="school-answer-area">'+ansHtml+'</div>';
   const mood=s.answered?(s.lastChoiceCorrect?'happy':'encourage'):'normal';
   const below='<div class="school-actions"><button class="btn btn-ghost" '+(s.slideLocked?'disabled':'')+' onclick="confirmSchoolQuit('+s.seq+')">やめる</button></div>';
   $('schoolTestBody').innerHTML=schoolStageHtml(mood,inside)+below;
