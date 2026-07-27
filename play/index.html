@@ -6765,7 +6765,18 @@ function playNanoriVoice(idx,isBoss,altReading,fallbackText){
   try{ el=new Audio(nanoriPathFor(idx,isBoss,altReading)); }catch(e){ el=null; }
   if(!el){ if(fallbackText) speakJa(fallbackText); return; }
   nanoriAudioEl=el;
-  const toFallback=()=>{ if(nanoriAudioEl===el) nanoriAudioEl=null; nanoriEndDuck(); if(fallbackText) speakJa(fallbackText); };
+  /* 2026-07-27：この声が「まだ現役」のときだけ読み上げへ逃げる。
+     声が鳴り出す前に止められると（stopNanoriVoice／次の名乗りが始まる＝nanoriAudioElが差し替わる）、
+     pause()の影響でplay()の約束が失敗し、遅れてここへ来る。これは「音声が無い」わけではないので、
+     ①止めたはずの名前を読み上げが喋ってしまう ②あとから来た解放が“次の名乗り”のダッキングを
+     消してしまう（BGMが下がらない）という2つの副作用があった。差し替わっていたら何もしない。
+     観測＝_一時\_op5b修理\観測_同じ瞬間に3連発.js／経緯＝設計書\手直し_検証スクリプトの修理_op5b.md §3 */
+  const toFallback=()=>{
+    if(nanoriAudioEl!==el) return;
+    nanoriAudioEl=null;
+    nanoriEndDuck();
+    if(fallbackText) speakJa(fallbackText);
+  };
   el.onerror=toFallback;
   el.onended=nanoriEndDuck;   // 追加発注OP5b§2(b)：再生終了で必ずダッキングを戻す
   // 手直し_名乗りの音量（2026-07-26）：BGM・効果音とまったく同じふつうの再生。
