@@ -1261,7 +1261,8 @@
      幅 1139×0.36＝9.11マス／高さ 1254×0.36＝10.03マス。路面のまん中(y=575)が行13.5(道路3行のまん中)に
      来るように、上端を 13.5−575×0.36/45＝8.9マスに置く。
      ※画像の幅は柵の周期(76px)の倍数(76×15=1139)に切りそろえてある。ここを変えると継ぎ目が空く。 */
-  .field-grid.has-fullart.bridge-tile{background-size:calc(9.11*var(--tile)) calc(10.03*var(--tile));background-position:0 calc(8.9*var(--tile));background-repeat:repeat-x}
+  /* 数字は 2026-07-28 に準也さんが ツール\橋の配置ツール.html で決めた値 */
+  .field-grid.has-fullart.bridge-tile{background-image:none}   /* 2026-07-28：道路は部品(.bridge-road)に移したので、背景としては出さない */
   .field-grid.has-fullart .tile.t-grass,.field-grid.has-fullart .tile.t-path{background:transparent}
   .field-grid.has-fullart .tile.t-tree{background:transparent;box-shadow:none;color:transparent}
   /* フェーズD試作(2026-07-11)：一枚絵ゾーンに内側の水W・岩Rが初登場（ゾーン3）。絵に描かれている想定で水・岩タイルも透明化する */
@@ -1287,6 +1288,20 @@
   /* 手直し しまなみ橋B案(2026-07-27)：橋の主塔。町の建物(.town-building)とまったく同じ考え方で、
      z-indexを「10＋行番号」にして主人公との前後を決める。手前の塔(行14)は主人公(行12〜14)より
      手前に出るので、塔の裏を通ると主人公が隠れる＝柱かくれ。定義＝BRIDGE_PARTS。 */
+  /* 手直し(2026-07-28・準也さん発案)：柱と柱をつなぐ吊り橋のケーブル。
+     絵にすると柱の間かくを変えるたびに描き直しになるので、SVGで描いて幅に合わせて伸ばす。
+     奥の塔と同じ z（＝主人公より奥）に置き、たれ下がりの形は放物線。 */
+  /* 手直し(2026-07-28・準也さん指摘)：前後の順番は 手前の柱 → 道路 → 奥の柱 → ケーブル。
+     道路を「グリッドの背景」にしていると、必ず全部の部品より奥になってしまう（背景は要素の後ろ）。
+     そこで道路も部品（要素）にして、z-indexで順番を作る。
+       ケーブル1 ／ 奥の柱3 ／ 道路5 ／ 主人公 10+行番号(22〜24) ／ 手前の柱24 */
+  .bridge-road{position:absolute;left:0;top:calc(var(--rt)*var(--tile));
+    width:100%;height:calc(var(--rh)*var(--tile));background-repeat:repeat-x;
+    pointer-events:none;z-index:5}
+  .bridge-cable{position:absolute;left:calc(var(--cx)*var(--tile));top:calc(var(--cy)*var(--tile));
+    width:calc(var(--cw)*var(--tile));height:calc(var(--ch)*var(--tile));
+    pointer-events:none;z-index:calc(10 + var(--cz,11));overflow:visible}
+  .bridge-cable svg{width:100%;height:100%;display:block;overflow:visible}
   .bridge-part{position:absolute;left:calc(var(--bx)*var(--tile));top:calc(var(--by)*var(--tile));
     width:calc(var(--bw)*var(--tile));height:calc(var(--bh)*var(--tile));
     background-size:100% 100%;background-repeat:no-repeat;pointer-events:none;
@@ -7423,6 +7438,17 @@ function launchJukugoBossBattle(zone){
   $('affHelp').style.display='none';   // 熟語モンはタイプ「ふつう」固定＝相性ヘルプは出さない
   spawnJukugoBossEnemy();
 }
+/* 手直し(2026-07-28・準也さん決定)：もんばんボス（熟語モン）のHP。
+   これまでは一律5発だったので、どれだけ育てても手応えが変わらなかった。
+   熟語モンは属性を持たない（enemyType='ふつう'）＝こうかばつぐんにならず**まほうが出ない**ため、
+   まほうの段階のかわりに「てもちの中でいちばん強い子のレベル帯」で決める。
+     レベル帯3（Lv7〜9）＝2発／帯2（Lv4〜6）＝3発／帯1（Lv1〜3）＝5発
+   ※ボスの強さの微調整は、この数字ではなく**ゾーンごとの敵レベル表**で行う方針（準也さん）。 */
+function jukugoBossHp(){
+  const lvs=party.filter(i=>i!=null).map(i=>levelOf(i));
+  const band=levelBandOf(lvs.length?Math.max(...lvs):1);
+  return band>=3 ? 2 : (band===2 ? 3 : 5);
+}
 function spawnJukugoBossEnemy(){
   const seq=++spawnSeq;
   playEncounterSe(seq);
@@ -7430,7 +7456,7 @@ function spawnJukugoBossEnemy(){
   enemyType='ふつう';
   enemyIsBoss=true;
   enemyShiny=false; enemyAlt=null;
-  enemyMaxHp=5; enemyHp=5;   // §5-3：HP＝5（既存ボスと同じ）
+  enemyMaxHp=jukugoBossHp(); enemyHp=enemyMaxHp;   // 手直し(2026-07-28)：一律5発をやめ、育てたぶん楽になるようにした（下の関数）
   bgmPlay('boss');           // §5-3：登場演出とBGMは既存ボスと同じ（continueモードでboss曲）
   applySceneBg(curStage,{s:'s-cream'});   // curStage(25〜44)はbattle-tate画像がある想定＝k.sは使われないためダミーでよい
   const wrap=$('enemyWrap');
@@ -8681,7 +8707,13 @@ function requiredHitsFor(attackerIdx,defenderIdx,defenderIsBoss){
   const bandRel = selfBand>enemyBand ? 'yuri' : (selfBand===enemyBand ? 'gokaku' : 'furi');
   const aff=affinity(selfType, typeOf(defenderIdx));
   const affRel = aff>=2 ? 'batsugun' : (aff<1 ? 'nigate' : 'futsuu');
-  return REQUIRED_HITS_TABLE[bandRel][affRel];
+  const hits = REQUIRED_HITS_TABLE[bandRel][affRel];
+  /* 手直し(2026-07-28・準也さん決定)：ボスだけは「1発は耐える」。
+     通常の敵は最強のまほう（自分のレベル帯が上＋こうかばつぐん）で一撃だが、
+     ボスまで一撃だと戦った手応えが無くなるため、最低2発は必要にする。
+     ※もんばんボス（熟語モン）・ツインボスは別のしくみ（HP固定）なのでここは通らない。 */
+  if(defenderIsBoss && hits<2) return 2;
+  return hits;
 }
 
 /* ==============================
@@ -10460,22 +10492,35 @@ const PARALLAX_SPEED=0.18;  // 背景の移動速度係数（1=前景と同速�
    ・haze ＝ 絵ではなくCSSのグラデーション。水平線のかすみ＝遠くの海のざらつきを沈める
    ・配列は**奥から手前の順**（この順に重ねる）
    位置の微調整は ツール\橋の配置ツール.html で数字を作り、ここに貼る。 */
+/* 数字は 2026-07-28 に準也さんが ツール\橋の配置ツール.html で決めた値 */
 const ZONE_PARALLAX_LAYERS={41:[
-  {img:'zone41-sky.webp',         top:0.00, h:0.62, speed:0.06},
-  {img:'zone41-sea.webp',         top:0.50, h:0.56, speed:0.45},
-  {img:'zone41-far-islands.webp', top:0.37, h:0.13, speed:0.14},
-  {haze:true,                     top:0.49, h:0.11},
-  {img:'zone41-mid-islands.webp', top:0.41, h:0.12, speed:0.30},
-  {img:'zone41-near-island.webp', top:0.42, h:0.16, speed:0.60},
+  {img:'zone41-sky.webp',         top:0.00,  h:0.35,  speed:0.06},
+  {img:'zone41-sea.webp',         top:0.35,  h:0.66,  speed:0.45},
+  {img:'zone41-far-islands.webp', top:0.27,  h:0.125, speed:0.14},
+  {haze:true,                     top:0.335, h:0.11},
+  {img:'zone41-mid-islands.webp', top:0.325, h:0.10,  speed:0.25},
+  {img:'zone41-near-island.webp', top:0.44,  h:0.16,  speed:0.55},
 ]};
 /* 橋の主塔。町の建物と同じ「10＋行番号」の物差しで前後を決める（z）。
    奥の塔=行11（主人公より奥）／手前の塔=行14（主人公より手前＝柱かくれ）。
    dcol/top はマス単位。1枚の絵から切り出した2部品なので、この相対位置を崩さないこと。 */
+/* 数字は2026-07-28に準也さんが橋の配置ツールで決めた値。
+   z＝前後の順番（CSSは 10＋z で z-index にする）。準也さんの指定：
+     手前の柱(24) → 道路(5) → 奥の柱(3) → ケーブル(1) の順に奥へ。
+   奥の柱とケーブルは道路より奥に出すため、10を引いた小さい値を入れる。 */
 const BRIDGE_PARTS={41:[
-  {img:'zone41-tower-back.webp',  dcol:2.78, top:3.45, w:4.76, h:8.64, z:11},
-  {img:'zone41-tower-front.webp', dcol:5.70, top:2.53, w:1.88, h:14.94, z:14},
+  {img:'zone41-tower-back.webp',  dcol:2.78, top:4.10, w:4.76, h:8.64, z:-7},
+  {img:'zone41-tower-front.webp', dcol:5.79, top:3.20, w:1.74, h:14.94, z:14},   /* 2026-07-28：柱の絵を切り直したので、同じ見え方になるよう幅と横位置を計算しなおした */
 ]};
 const BRIDGE_TOWER_COLS={41:[34,80]};   // 主塔を立てる列（120マスに2本＝遠くに1本ずつ）
+/* 手直し(2026-07-28・準也さん発案)：柱と柱をつなぐ吊り橋のケーブル。
+   dcol＝塔のてっぺんの横位置（塔の中心。BRIDGE_TOWER_COLSからの相対マス）
+   top/h＝ケーブルを描く箱の位置と高さ（マス）／outer＝いちばん外がわを何マス伸ばすか
+   hangers＝縦のつり材の本数／mainW・hangerW＝線の太さ（px相当） */
+const BRIDGE_CABLE={41:{dcol:3.55, top:4.55, h:9.6, sag:0.7, hangers:16, mainW:5, hangerW:2, color:'#c0c2c4', z:-9}};
+/* 道路（部品）。数字は橋の配置ツールの「道路の大きさ・上下」から作られる：
+   w＝絵の横幅（マス）／h＝絵の高さ（マス）／top＝置く高さ（マス） */
+const BRIDGE_ROAD={41:{img:'zone41-road.webp', w:9.49, h:10.45, top:8.71}};
 /* ゾーン41だけカメラを下げて、橋を画面の下の方に置く（上に空と島を広く見せる）。
    値＝主人公（＝道路）を画面の高さの何割の位置に置くか。0.5=まん中／大きいほど下。 */
 const ZONE_CAM_Y={41:0.78};
@@ -11138,6 +11183,71 @@ function renderField(){
   /* 手直し しまなみ橋B案(2026-07-27)：橋の主塔を後から載せる（町の建物と同じやり方）。
      BRIDGE_TOWER_COLS の列ごとに、奥の塔と手前の塔をペアで置く。
      前後は z（＝行番号の物差し）で決まるので、手前の塔の裏を通ると主人公が隠れる。 */
+  /* 手直し(2026-07-28・準也さん発案)：柱と柱をつなぐ吊り橋のケーブルを渡す。
+     塔のてっぺん（bridgeCableTopRow）から、となりの塔のてっぺんへ、放物線でたれ下がる。
+     いちばん外がわ（最初の塔の左・最後の塔の右）は、画面の外へ向かって上がっていくように描く。
+     縦のつり材（ハンガーロープ）も等間隔に下ろすと、ぐっと吊り橋らしくなる。 */
+  /* 道路（部品として置く）。背景のままだと必ず一番奥になり、
+     「奥の柱・ケーブルを道路より後ろに出す」ができないため（2026-07-28・準也さん指摘）。 */
+  if(BRIDGE_ROAD[fieldZone] && fullart){
+    const R=BRIDGE_ROAD[fieldZone];
+    const tilePx=parseFloat(grid.style.getPropertyValue('--tile'))||45;
+    const el=document.createElement('div');
+    el.className='bridge-road';
+    el.style.setProperty('--rt',R.top); el.style.setProperty('--rh',R.h);
+    el.style.backgroundImage="url('images/fullart/"+R.img+"')";
+    el.style.backgroundSize=(R.w*tilePx)+'px '+(R.h*tilePx)+'px';
+    grid.appendChild(el);
+  }
+  if(BRIDGE_CABLE[fieldZone] && fullart){
+    const C=BRIDGE_CABLE[fieldZone];
+    const cols=(BRIDGE_TOWER_COLS[fieldZone]||[]).map(c=>c+C.dcol).sort((a,b)=>a-b);
+    const spans=[];
+    if(cols.length){
+      /* 2026-07-28・準也さん指摘「最初のケーブルが空中から生まれている」：
+         外がわは決まった長さで切らず、**マップの端まで**伸ばす。こうすると画面の外へ
+         自然に消えていき、途中で途切れて見えない。 */
+      const FWc=parseInt(grid.style.getPropertyValue('--fw'),10)||120;
+      spans.push([0, cols[0], 'up-left']);                         // 左の岸（マップの端）へ
+      for(let i=0;i<cols.length-1;i++) spans.push([cols[i], cols[i+1], 'sag']);
+      spans.push([cols[cols.length-1], FWc, 'up-right']);           // 右の岸（マップの端）へ
+    }
+    spans.forEach(([x1,x2,kind])=>{
+      const w=x2-x1; if(w<=0) return;
+      const el=document.createElement('span');
+      el.className='bridge-cable';
+      el.style.setProperty('--cx',x1); el.style.setProperty('--cy',C.top);
+      el.style.setProperty('--cw',w);  el.style.setProperty('--ch',C.h);
+      el.style.setProperty('--cz',C.z);
+      const W=1000, H=1000*C.h/w;                       // SVGの中の座標系（比率だけ合わせる）
+      /* 線の太さはpx指定なので、SVGの座標系（横1000）に直す。
+         ここで「マス数」ではなく「実際のpx幅」で割らないと、とんでもなく太い線になる（2026-07-28の失敗）。 */
+      const tilePx=parseFloat(grid.style.getPropertyValue('--tile'))||45;
+      const k=1000/(w*tilePx);
+      const sag=(kind==='sag')?H*(C.sag!=null?C.sag:0.86):H*0.10;   // 塔の間はたれ下がる／外がわは浅く
+      /* いちばん外がわ（岸へ向かう側）は、道路を突き抜けないように途中までしか下げない。
+         実際の吊り橋でも、岸のアンカーへ向かうケーブルは道路より上を通る。 */
+      const y1=(kind==='up-left')?H*0.55:0, y2=(kind==='up-right')?H*0.55:0;
+      const cy=(kind==='sag')?(sag*2-(y1+y2)/2):((y1+y2)/2+sag);
+      let hangers='';
+      /* 手直し(2026-07-28夜・準也さん決定)：柱の外がわ（岸へ向かう区間）には、つり材を出さない。
+         ほんものの吊り橋でも、岸のアンカーへ向かう綱からロープは下りていない。
+         出すと、道路よりずっと上（海の上）に縦線だけが浮いて見える。 */
+      if(kind==='sag'){
+        const n=C.hangers;
+        for(let i=1;i<n;i++){
+          const t=i/n, mt=1-t;
+          const hx=mt*mt*0 + 2*mt*t*(W/2) + t*t*W;
+          const hy=mt*mt*y1 + 2*mt*t*cy + t*t*y2;
+          hangers+='<line x1="'+hx+'" y1="'+hy+'" x2="'+hx+'" y2="'+H+'" stroke="'+C.color+'" stroke-width="'+(C.hangerW*k)+'" opacity=".85"/>';
+        }
+      }
+      el.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">'+hangers+
+        '<path d="M0,'+y1+' Q'+(W/2)+','+cy+' '+W+','+y2+'" fill="none" stroke="'+C.color+
+        '" stroke-width="'+(C.mainW*k)+'" stroke-linecap="round"/></svg>';
+      grid.appendChild(el);
+    });
+  }
   if(BRIDGE_PARTS[fieldZone] && fullart){
     (BRIDGE_TOWER_COLS[fieldZone]||[]).forEach(baseCol=>{
       BRIDGE_PARTS[fieldZone].forEach(p=>{
