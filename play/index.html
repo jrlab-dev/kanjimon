@@ -4387,48 +4387,50 @@ const ZONES=[
        T/R/W/未開ゲート以外なので通行可（ただの床と同じ）。pickAutoTarget/autoTickの専用分岐でのみ意味を持つ。 */
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT>TTTTTTTTTTTTTTT",
-    "TTTTTTT,,,,,,,.L,TT,,,,TTTTTTT",
-    "TTTTT,,,TT,E,R.TRF,,,,,,TTTTTT",
-    "TTTTT,,,,,,TT,.,,,,TT,,,,TTTTT",
+    "TTTTTTTTTTTTTT>>TTTTTTTTTTTTTT",
+    "TTTTTTT,,,,,,,.L,T,,,,,TTTTTTT",
+    "TTTTT,,,TT,E,,.,,F,,,,,,TTTTTT",
+    "TTTTT,,,,,,,,,.,,,,T,,,,,TTTTT",
     "TTTTT,,,,,,,,,.,,,,,TR,,,TTTTT",
-    "TTTT,,,,,DT,,,.,,,,G,,,,,TTTTT",
-    "TTTT,,,,,,,,,,.,,,,,,,,HTTTTTT",
-    "TTTT,,,,,z,,,,.,TR,,,,,,,TTTTT",
-    "TTTT,,,,,,,,,..,K,R,,,,,,TTTTT",
-    "TTTT,,C,,R,,,..,,,,,,,I,,TTTTT",
-    "TTTT,,,,,,,,,..,,,,,TTT,,TTTTT",
-    "TTTTTTTT,,,,,.,,,,,,,,,,TTTTTT",
-    "TTTTTTT,,,B,,.,,,,J,TT,TTTTTTT",
-    "TTTTTTT,,,,,,.,A,,,TTTTTTTTTTT",
-    "TTTTTTTTTTTTT.TTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTT.TTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTSTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"] },
+    "TTTT,,,,,DT,,R.,,,,G,,,,,TTTTT",
+    "TTTT,,,,,,,,,,.,,,,,,,,H,TTTTT",
+    "TTTT,R,,,z,,,,.,TR,,,,,,RTTTTT",
+    "TTTTRR,,,,,,,..,K,,,,,,,,TTTTT",
+    "TTTT,,C,,R,,,..,,,R,,,I,,TTTTT",
+    "TTTT,,,,,,,,,..,,,,,,,,,,TTTTT",
+    "TTTT,,TT,,,,,.,,,,,,,,,,,TTTTT",
+    "TTTTT,,,,,B,,.,,,,J,T,,,,TTTTT",
+    "TTTTTT,,,,,,,.,A,,,,,,,TTTTTTT",
+    "TTTTTTTTTTT,,.,,,,,TTTTTTTTTTT",
+    "TTTTTTTTTTTTTT,,TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTSTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"
+  ] },
   { name:'もりと はなばたけ', scene:'s-forest', grid:[
     /* 第22弾：新一枚絵(images/fullart/zone2.webp・量産レシピ版)に合わせた横長30×20（フェーズDの型）。
        旧一枚絵＋16×24（第20弾確定版）は _一時\zone2_旧一枚絵_第20弾バックアップ.webp と本設計書に退避。
        検証：verify_grid.js（行長30×20・S/>/A〜J各1・BFS全到達・歩ける227/600）＋重ね絵目視2周。 */
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTT>TTTTTTTTTTTTTT",
-    "TTTTT,,TT,,,,,,.J,,,,,TTTTTTTT",
-    "TTTTT,,TT,,,F,,.,,G,,,,,,TTTTT",
-    "TTTT,,,,,RR,,,,.,,,TTR,,,TTTTT",
-    "TTTT,,,,ERR,,,,.R,,,,,,RR,TTTT",
-    "TTTT,,T,,,,,,,,.,,,,,,,,,,TTTT",
-    "TTTT,D,,,,,T,,,.,TTT,,H,,,TTTT",
-    "TTTT,,,,,,,TTR,.,,TT,,,,,,TTTT",
-    "TTTT,,R,,,,,TR,.,,,TT,,,,RTTTT",
-    "TTTT,,T,,,,,,,,.,,,,,I,,,,TTTT",
-    "TTTT,,CT,,,,,,,.,,,,,,,,,TTTTT",
-    "TTTT,,,,,,,B,,,.,,TT,,,,,TTTTT",
-    "TTTTT,,,,,,,,R,.,,TTR,,,TTTTTT",
-    "TTTTT,,,,RR,,,,.ATTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTT.TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT>>TTTTTTTTTTTTTT",
+    "TTTT,,,,,,,,,,,.J,,,,,TT,TTTTT",
+    "TTTT,,TTT,,,F,,.,,G,,,TT,TTTTT",
+    "TTT,,,,,,R,,,,,.,,,TT,,,,TTTTT",
+    "TT,,,T,,E,,,,,,.R,,,,,,,R,,TTT",
+    "TT,,T,,,,,,,,,,.,,,,,,,,,,,TTT",
+    "TT,,,D,,,,,,,T,.,TT,,,H,T,,TTT",
+    "TT,,,,,TT,,T,,,.,TT,,,,,,,,TTT",
+    "TT,,,,,,,,TTT,,.,,,T,,,,,RTTTT",
+    "TTT,,RT,,,,,,,,.,,,,,I,,,,,TTT",
+    "TTT,,,CT,,,,,,,.,,,,,,,,,,,TTT",
+    "TTT,,,,,,,,B,R,.,TTT,,,,,,TTTT",
+    "TTTT,,,,,,,,,,,.,,,TR,TT,TTTTT",
+    "TTTTT,,T,,,,,,,.AT,,,TTTTTTTTT",
+    "TTTTTTTTTTTTT,,.,,,TTTTTTTTTTT",
     "TTTTTTTTTTTTTTT.TTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTSTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"] },
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"
+  ] },
   { name:'そらと みずべ', scene:'s-sky', grid:[
     /* フェーズD試作v3（2026-07-11）：単純化版の一枚絵(images/fullart/zone3.webp)＝Codex直接発注1号。
        v2はユーザー実機評価「複雑で歩きにくい」で絵ごと差し替え。深い森の外周＋草原＋木立障害物＋川1本橋2本。
@@ -5302,20 +5304,21 @@ const ZONES=[
     "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
     "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
     "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+    "WWWWWWWWWWWWWWWTTTTWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    ",....................A...................C.................E..................G...................I....................>",
+    "S......................................................................................................................>",
+    ".......................................................................................................................>",
+    "...............................B...................D.................F..................H....................J.........>",
+    ".............................,................,...,...................,...............,......................,.........>",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
     "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
     "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
     "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
     "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
-    "W,,,,,,,,,WWWWWWWW,,,A,,,,,,WWWWWWWWWW,,,C,,,,,,WWWWWWWWWW,,,E,,,,,,WWWWWWWWWW,,,G,,,,,,WWWWWWWWWW,,,I,,,,,,,,,,,,,,,,,W",
-    "W,,,,,,,,,WWWWWWWW,,,,,,,,,,WWWWWWWWWW,,,,,,,,,,WWWWWWWWWW,,,,,,,,,,WWWWWWWWWW,,,,,,,,,,WWWWWWWWWW,,,,,,,,,,,,,,,,,,,,,W",
-    ".S.....................................................................................................................>",
-    ".......................................................................................................................W",
-    "W,,,,,,,,,WWWWWWWW,,,,,,,,,,WWWWWWWWWW,,,,,,,,,,WWWWWWWWWW,,,,,,,,,,WWWWWWWWWW,,,,,,,,,,WWWWWWWWWW,,,,,,,,,,,,,,,,,,,,,W",
-    "W,,,,,,,,,WWWWWWWW,,,,,B,,,,WWWWWWWWWW,,,,,D,,,,WWWWWWWWWW,,,,,F,,,,WWWWWWWWWW,,,,,H,,,,WWWWWWWWWW,,,,,J,,,,,,,,,,,,,,,W",
-    "W,,,,,,,,,WWWWWWWW,,,,,,,,,,WWWWWWWWWW,,,,,,,,,,WWWWWWWWWW,,,,,,,,,,WWWWWWWWWW,,,,,,,,,,WWWWWWWWWW,,,,,,,,,,,,,,,,,,,,,W",
-    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
-    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
-    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"] },
+    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"
+  ] },
   { name:'どうごおんせんの まち', scene:'s-sunset', grid:[
     /* 弾3-6§2-2：_一時\量産候補\grids\zone42_final.txt を1文字も変えず転記 */
     "TTTTTTTTTTTTTT>TTTTTTTTTTTTTTT",
@@ -10494,11 +10497,11 @@ const PARALLAX_SPEED=0.18;  // 背景の移動速度係数（1=前景と同速�
    位置の微調整は ツール\橋の配置ツール.html で数字を作り、ここに貼る。 */
 /* 数字は 2026-07-28 に準也さんが ツール\橋の配置ツール.html で決めた値 */
 const ZONE_PARALLAX_LAYERS={41:[
-  {img:'zone41-sky.webp',         top:0.00,  h:0.35,  speed:0.06},
-  {img:'zone41-sea.webp',         top:0.35,  h:0.66,  speed:0.45},
-  {img:'zone41-far-islands.webp', top:0.27,  h:0.125, speed:0.14},
+  {img:'zone41-sky.webp',         top:0.00,  h:0.35,  speed:0.01},
+  {img:'zone41-sea.webp',         top:0.35,  h:0.66,  speed:0.40},
+  {img:'zone41-far-islands.webp', top:0.27,  h:0.125, speed:0.05},
   {haze:true,                     top:0.335, h:0.11},
-  {img:'zone41-mid-islands.webp', top:0.325, h:0.10,  speed:0.25},
+  {img:'zone41-mid-islands.webp', top:0.325, h:0.10,  speed:0.21},
   {img:'zone41-near-island.webp', top:0.44,  h:0.16,  speed:0.55},
 ]};
 /* 橋の主塔。町の建物と同じ「10＋行番号」の物差しで前後を決める（z）。
@@ -10881,21 +10884,43 @@ function playFieldZoomIntro(plan){
   // 演出中は一切書き換えない＝直前のupdateCamera(true)が設定した最終位置のまま止まって見える。
   const skip=$('fieldSkipBtn'); if(skip) skip.classList.add('show');
   showZoneCard(fieldZone);   // 手直し_ゾーンの名前カード：全体が見えている間に名前と説明を読ませる
+  /* 手直し(2026-07-29・準也さん指摘)：はじまりのズーム演出のあいだ、空や島がまったく動かなかった。
+     グリッド本体は transform で動かしているが、背景の層は別の要素なので置き去りになっていたため。
+     演出のあいだだけ、毎コマ grid の実際の位置を読んで、層の流れをそれに合わせる。
+     （層そのものを動かすと画面の端が空くので、ここでも動かすのは background-position-x だけ） */
+  let introRaf=null;
+  const syncIntroLayers=()=>{
+    const pl=$('fieldParallaxLayers');
+    if(pl && pl.classList.contains('show')){
+      let tx=0;
+      try{
+        const t=getComputedStyle(grid).transform;
+        if(t && t!=='none'){ const m=new DOMMatrixReadOnly(t); tx=m.e; }   // m.e＝いま画面上で横にずれている量
+      }catch(e){}
+      pl.querySelectorAll('.field-parallax-layer').forEach(el=>{
+        const sp=parseFloat(el.dataset.speed)||0;
+        el.style.backgroundPositionX=Math.round(tx*sp)+'px';
+      });
+    }
+    if(fieldIntro.playing) introRaf=requestAnimationFrame(syncIntroLayers);
+  };
   grid.style.transition='none';
   grid.style.transform='translate('+startX+'px,'+startY+'px) scale('+startScale+')';
   void grid.offsetWidth;   // reflow強制（この後のtransition指定を次の変化から効かせるため）
   // 発注_ズーム横パン：段階を区別する変数（'pan'＝横パン中／'zoom'＝自分の位置へズーム中）。onEnd/fallbackがどちらの完了か判定するのに使う
   let stage=needPan?'pan':'zoom';
   grid.style.transition='transform '+(needPan?FIELD_PAN_MS:FIELD_INTRO_MS)+'ms cubic-bezier(.2,.8,.2,1)';
+  syncIntroLayers();   // 手直し(2026-07-29)：ここから背景の層を毎コマ追随させる（finish()で止まる）
   let done=false, fallback=null;
   let cardTimer=null;   // 手直し_ゾーンの名前カード：ズーム段階に入ってからカードを消すまでのタイマー
-  const cleanup=()=>{ grid.removeEventListener('transitionend',onEnd); clearTimeout(holdTimer); clearTimeout(fallback); clearTimeout(cardTimer); };
+  const cleanup=()=>{ grid.removeEventListener('transitionend',onEnd); clearTimeout(holdTimer); clearTimeout(fallback); clearTimeout(cardTimer); if(introRaf) cancelAnimationFrame(introRaf); };
   const finish=()=>{
     if(done) return; done=true;
     cleanup();
     hideZoneCard();   // スキップでも必ず消える（残留させない）
     fieldIntro.playing=false; fieldIntro.finish=null;
     grid.style.transition=''; grid.style.transform='';   // クラス側(--cam-x/--cam-y)の制御へそのまま戻る（値は既に一致）
+    updateCamera(true);   // 手直し(2026-07-29)：演出中に層を動かしたので、終わったら本来の位置へそろえ直す
     // 発注_しまなみ海道 作業3：pbgのopacityはもう演出中に触っていないため、ここでの復元も不要
     const skipBtn=$('fieldSkipBtn'); if(skipBtn) skipBtn.classList.remove('show');
     if(introSeq===fieldSeq) heroLock=false;   // 世代が変わっていなければロック解除（別ゾーンへ離脱済みなら次のrenderFieldに委ねる）
