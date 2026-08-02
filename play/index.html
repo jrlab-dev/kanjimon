@@ -1558,6 +1558,333 @@
   .pe-slots{display:flex;gap:10px;justify-content:center;margin:4px 0 10px;flex-wrap:wrap}
   .pe-hint{font-size:.82rem;color:var(--sub);font-weight:700;margin:4px 0 6px;line-height:1.4}
 
+  /* ============================================================
+     船シーン「つがるかいきょうを わたる」（弾S-1・2026-08-03）
+     設計書＝設計書\弾S-1_船シーン_つがるかいきょう.md
+     新幹線シーン（train-scene系）と同じ作法で、名前だけ ship-scene系/sp* で新設。
+     既存のtrain-scene系・op1系には一切触れていない。
+  ============================================================ */
+
+/* ===========================================================
+   船シーン「つがるかいきょうを わたる」試作
+   設計書＝設計書\弾S-1_船シーン_つがるかいきょう.md
+   新幹線シーン（train-scene系）の作法をそのまま踏襲し、名前だけ ship-scene系/sp* で新設。
+   ★本体に入れるときはこのCSS/DOM/JSをそのまま移植できるように書いている。
+=========================================================== */
+  /* ---- オーバーレイ（#appと同じ幅・中央。パソコンで見切れない＝改善メモ_0725 指摘B） ---- */
+  .ship-scene-overlay{position:fixed;top:0;bottom:0;left:50%;transform:translateX(-50%);
+    width:min(100vw,480px);z-index:9999;display:none;background:#000;overflow:hidden;
+    font-family:inherit;-webkit-user-select:none;user-select:none}
+  .ship-scene-overlay.show{display:block}
+  .ship-scene-stage{position:absolute;inset:0;overflow:hidden}
+
+  /* 船の縦ゆれ（ローリング）＝新幹線の小刻みな揺れと対になる、ゆっくり大きい上下 */
+  .ship-scene-stage.sp-roll{animation:spRoll 3.4s ease-in-out infinite}
+  /* ★批判エージェントの指摘（1回目）＝回転させると画面の上端に1〜2pxの黒い線が出続けていた。
+     少しだけ拡大しながら回すことで、回してもふちが見えないようにする。 */
+  @keyframes spRoll{
+    0%,100%{transform:scale(1.04) translate(0,0) rotate(0deg)}
+    25%{transform:scale(1.04) translate(-2px,4px) rotate(-.35deg)}
+    50%{transform:scale(1.04) translate(0,-3px) rotate(0deg)}
+    75%{transform:scale(1.04) translate(2px,4px) rotate(.35deg)}
+  }
+  /* 出航のときの短い震え（機関がかかる） */
+  .ship-scene-stage.sp-shake{animation:spShake .42s ease-in-out infinite}
+  @keyframes spShake{
+    0%,100%{transform:scale(1.03) translate(0,0)}
+    25%{transform:scale(1.03) translate(-2px,2px)}
+    50%{transform:scale(1.03) translate(2px,-2px)}
+    75%{transform:scale(1.03) translate(-2px,-1px)}
+  }
+  /* 航行中のじわっと寄り */
+  .ship-scene-stage.sp-push{animation:spPush 3.4s ease-in forwards}
+  @keyframes spPush{from{transform:scale(1)}to{transform:scale(1.05)}}
+
+  .ship-scene-layer{position:absolute;inset:0;background-size:cover;background-position:center center;
+    opacity:0;transition:opacity .6s ease;z-index:1}
+  .ship-scene-layer.show{opacity:1}
+
+  /* ---- 背景の倍率について（自己チェック1回目で直した点）----
+     新幹線の値をそのまま使うと、縦長のスマホ（390×780）で絵の高さが足りず画面の下に黒帯が出た。
+     絵の縦横比から「画面の高さを満たす最小の幅」を計算して決める：
+       横長の絵(1536×1024)＝高さ780pxを満たすには幅1170px＝300% → 余裕を見て305%
+       縦長の絵(1024×1536)＝高さ780pxを満たすには幅520px＝133.3% → 余裕を見て134%
+     left は中央を見せる値（-(幅-100)/2）にする。 */
+  /* S0 青森ターミナル（横長1536×1024） */
+  /* ★批判エージェント（8回目）の指摘＝S7でキャラがガラス壁の前の空中に浮いていた（480×900で51px）。
+     原因は**基準がそろっていない**こと：
+       背景は `width:305%` ＝ 画面の**幅**を基準に拡大
+       キャラは `top:34%`  ＝ 画面の**高さ**を基準に配置
+     画面の縦横比は 390/780=0.500・320/568=0.563・480/900=0.533 と違うので、
+     床の線は 43.6%／49.2%／46.6% と動くのに、足の位置は37%で固定されていた。
+     → 背景も**画面の高さ**を基準にする（height:102% ＋ aspect-ratio）。これで1組の数字が全画面比で通る。 */
+  #spBgTerminal{position:absolute;top:-1%;height:102%;aspect-ratio:3/2;left:50%;transform:translateX(-50%);
+    z-index:1;opacity:0;transition:opacity .5s ease}
+  #spBgTerminal.show{opacity:1}
+  #spBgTerminal img{height:100%;width:auto;display:block}
+  /* S7 函館ターミナル（同じ作り） */
+  #spBgTerminalH{position:absolute;top:-1%;height:102%;aspect-ratio:3/2;left:50%;transform:translateX(-50%);
+    z-index:1;opacity:0;transition:opacity .5s ease}
+  #spBgTerminalH.show{opacity:1}
+  #spBgTerminalH img{height:100%;width:auto;display:block}
+
+  /* S1 岸壁（縦長1024×1536・奥行き） */
+  /* ★S0・S7と同じく、画面の高さ基準にそろえる（8回目の直しがS0・S7だけで止まっていた。
+     幅基準のままだと 320×568 で28px・480×900 で23px、キャラが敷居から浮く）。
+     390×780 での見え方は今までとまったく同じになる値にしてある。 */
+  #spBgPier{position:absolute;top:0;height:100.5%;aspect-ratio:2/3;left:50%;transform:translateX(-50%);
+    z-index:1;opacity:0;transition:opacity .5s ease}
+  #spBgPier.show{opacity:1}
+  #spBgPier img{height:100%;width:auto;display:block}
+  /* S6 函館到着（縦長1024×1536・奥行き）
+     この絵はタラップが画面の左寄りにあるので、left を少し右へずらして左側を多めに見せる */
+  /* S6も同じ。left:-10% は中央より絵幅の5.22%ぶん右にずれているので、その分だけ足す */
+  #spBgArrive{position:absolute;top:0;height:100.5%;aspect-ratio:2/3;left:50%;transform:translateX(-44.78%);
+    z-index:1;opacity:0;transition:opacity .5s ease}
+  #spBgArrive.show{opacity:1}
+  #spBgArrive img{height:100%;width:auto;display:block}
+
+  /* S2 決めカット：超横長にして左へ舐める（新幹線の #tsHeroCut と同じ） */
+  /* ★批判エージェントの指摘（1回目）＝390×780のときだけ、決めカットの最初の1.25秒に
+     画面の下端へ約14pxの黒帯が出ていた。3:2の絵を295.5%で出すと高さが768pxで780pxに足りないため。
+     305%（高さ793px）にして満たす。 */
+  #spHeroCut{position:absolute;left:0;top:-.5%;width:305%;max-width:none;z-index:8;opacity:0;
+    transition:opacity .3s ease}
+  #spHeroCut.show{opacity:1}
+
+  /* S3の土台＝空＋遠くの本州の雪山なみ（発注した絵を、自分の水際より上だけ切って使う）
+     ★批判エージェント（2回目）の指摘：
+       「陸が2つあるのが地理的にありえないのではない。津軽海峡は幅約20kmで、海峡の真ん中からは
+        後ろに本州・前に北海道が**同じ1本の水平線の上に**見える。問題は水平線が2本になる置き方だった」
+       ＝1回目に山なみを捨てた判断は誤りだった。絵の水際（高さの65.4%）より上だけを切り出し
+       （`ship-bg-mountains_帯.png`）、その下端を北海道の帯の水際とそろえる。水平線は1本のまま。
+       CSSで作っていた空のグラデーションと丸い雲は、この絵の本物の空と雲に置き換えて廃止。 */
+  #spBgSky{position:absolute;inset:0;z-index:0;opacity:0;transition:opacity .5s ease;
+    background:linear-gradient(180deg,#4295e1 0%,#79b4e2 20%,#a4cbe6 36%,#cfe3ef 47%,#7d9dbe 51%,#5f83a2 58%,#2a4d68 76%,#16303f 100%)}
+  #spBgSky.show{opacity:1}
+  #spBgMt{position:absolute;left:-55%;top:5%;width:210%;z-index:1;opacity:0;transition:opacity .5s ease;
+    -webkit-mask-image:linear-gradient(180deg,transparent 0%,#000 9%,#000 100%);
+    mask-image:linear-gradient(180deg,transparent 0%,#000 9%,#000 100%)}
+  #spBgMt.show{opacity:1}
+  #spBgMt img{width:100%;display:block}
+  #spBgMt.run{animation:spMt 22s linear forwards}
+  /* ごく薄い雲（絵を大きく引き伸ばしたぶん、空が平坦になるのを補う）。横に平たい形にする */
+  #spClouds{position:absolute;left:0;right:0;top:4%;height:26%;z-index:1;opacity:0;
+    transition:opacity .6s ease;background-repeat:repeat-x;background-size:58% 100%;
+    background-image:
+      radial-gradient(ellipse 32% 7% at 14% 26%,rgba(255,255,255,.38),rgba(255,255,255,0) 92%),
+      radial-gradient(ellipse 24% 5% at 36% 52%,rgba(255,255,255,.26),rgba(255,255,255,0) 94%),
+      radial-gradient(ellipse 36% 6% at 62% 20%,rgba(255,255,255,.32),rgba(255,255,255,0) 92%),
+      radial-gradient(ellipse 22% 4% at 86% 44%,rgba(255,255,255,.24),rgba(255,255,255,0) 94%)}
+  #spClouds.run{opacity:1;animation:spCloud 26s linear infinite}
+  @keyframes spCloud{from{background-position:0 0}to{background-position:58% 0}}
+  @keyframes spMt{from{transform:translateX(0)}to{transform:translateX(-4.5%)}}
+  /* ---- 層の重なり（自己チェック3回目で作り直した）----
+       空 → 雲(1%〜33%) → 前方の陸(28%〜54%) → 海の色(53%〜) → 波(60%〜116%) → 船体(66%〜98%)
+       新幹線は 空／富士山／田園／高架橋の壁／車体 の5段。船は6段。
+
+     ★はじめは「本州の雪山なみ」の絵を奥の層に置いていたが、下の「北海道の陸」と上下に並んで
+       画面に**水平線が2本**でき、地理的にありえない絵になった。海の上に見える陸は前方の1つだけにし、
+       奥の層は流れる雲に置き換えた（雲ならいくつ重なっても不自然でない）。 */
+  /* 中＝遠い陸（北海道が近づいてくる）
+     ★横に繰り返さない。この絵は「島が1つ」なので、繰り返すと同じ島が何度も出てきておかしい。
+       （新幹線でも富士山を繰り返さず一方向に流すだけにしていた＝同じ考え）
+       代わりに、少しずつ大きくして「近づいてくる」を表す。 */
+  /* ★上下の端をぼかして、空と海に溶け込ませる。
+       ぼかさないと、絵の切り口がまっすぐな横線として見えて「絵を貼っただけ」になる
+       （自己チェック3回目で実際にそう見えた）。新幹線は手前の層の空を透過させて同じことをしている。 */
+  /* ★批判エージェント（3回目）の指摘＝この帯が本州の山なみを完全に覆っていて、
+     「両岸が見える／水平線は1本」が画面上で実現していなかった。帯を5%下げて山の稜線を出す。 */
+  /* ★批判エージェント（6・7回目）の指摘＝空のまん中に「長方形の角」（横線＋縦線）が出ていた。
+       横線＝background-size:cover が絵の上を切り、ぼかしの途中（不透明度21〜58%）から始まっていた
+       縦線＝CSSのマスクが96deg（ほぼ横向き）で上端に効かず、左が折れ目に見えた
+     → ①絵の側で上端42%・左端22%をぼかす（CSSのマスク2枚重ねはブラウザで効かないため）
+        ②**高さを%で指定しない。** 画面の縦横比は 390/780=0.500・320/568=0.563・480/900=0.533 と
+          バラバラなので、%の高さでは3サイズ同時に絵の比(3:2)へ合わせられず cover が必ずどこかを切る。
+          aspect-ratio:3/2 と bottom で留めれば、どの画面でも切られない。 */
+  #spSeaFar{position:absolute;left:30%;right:-18%;bottom:41%;aspect-ratio:3/2;z-index:2;opacity:0;
+    transition:opacity .45s ease;background-image:url('images/fullart/ship-view-hokkaido.webp');
+    background-size:cover;background-position:center bottom}
+  #spSeaFar.run{opacity:1;animation:spFar 9.8s ease-out forwards}
+  @keyframes spFar{from{transform:scale(1) translateX(0)}to{transform:scale(1.13) translateX(-3%)}}
+  /* 手前＝寄せる波（速い。新幹線の高架橋の壁にあたる層）
+     ★船体より手前(z5)に置く。船は海に浮かんでいるので、船体の下端は波に隠れるのが正しい。
+       絵は上半分が透明なので、実際に波が見えるのは要素の下半分＝画面の88%〜116%。
+     ★流す距離は vh で指定する。1周＝帯の高さ×2.6148（＝絵の縦横比 1344/514）。
+       どの画面サイズでも継ぎ目でカクつかない（新幹線の壁も vh 指定だった）。 */
+  #spWaves{position:absolute;left:0;right:0;top:78%;height:26%;z-index:5;opacity:0;
+    transition:opacity .3s ease;background-image:url('images/fullart/ship-bg-waves.webp');
+    background-size:auto 100%;background-repeat:repeat-x}
+  #spWaves.run{opacity:1;animation:spWav 1.4s linear infinite}
+  @keyframes spWav{from{background-position:0 0}to{background-position:67.98vh 0}}
+  /* 水平線から下を海の色で埋める（層のすき間から空が見えないように）
+     ★自己チェック4回目：①上端の色が陸の絵の海の色と違って横線が見えた ②海の真ん中が
+       単調で何も動いていなかった。新幹線には「流れる地面(ts-ground)」があり画面下部が常に動いている。
+       →上端の色を陸の絵の海に合わせ、ゆっくり流れる「うねり」を重ねた。 */
+  #spSeaFill{position:absolute;left:0;right:0;top:50%;bottom:0;z-index:3;opacity:0;
+    transition:opacity .3s ease;overflow:hidden;
+    /* 上端の色は「陸の絵の海の色」を実測して合わせた（#7d9dbe）。さらに上端を透明から始めて
+       水平線のところで色が急に変わらないようにする（自己チェック5回目＝まだ横線が見えていた） */
+    background:linear-gradient(180deg,rgba(125,157,190,0) 0%,rgba(125,157,190,1) 5%,
+      #6d8fae 14%,#4f7392 30%,#35597a 52%,#1d3a4e 78%,#16303f 100%)}
+  #spSeaFill.run{opacity:1}
+  /* 遠くの波（小さく・ゆっくり）。手前の波との2段で海の遠近を作る。
+     ★自己チェック5回目：海の真ん中に絵が何もなく単調だった。新幹線でいう「近景の田園」にあたる層。 */
+  /* ★遠くの波は「小さく」する。手前と同じ大きさだと遠近が出ない（自己チェック6回目）。
+       絵の高さを62%に縮めて下端に置き、上下の端をぼかして海に溶け込ませる。 */
+  /* ★批判エージェント（3回目）の指摘＝絵のある部分が42pxしか出ておらず、海の中ほどが
+     「1行まるごと同じ色」の平坦な帯になっていた（新幹線は平坦な行が1本もない）。
+     絵の下半分がちょうど中景の位置に来るよう、高さと倍率を取り直した。 */
+  /* ★透明な上半分を落とした「波だけの帯」(`ship-bg-waves_帯.png`)を使う。
+     もとの絵をそのまま使うと、要素の上半分が透明で海に何も出ず、
+     画面の48〜61%が「1行まるごと同じ色」の平坦な帯になっていた（批判エージェント3回目の指摘）。 */
+  #spWavesFar{position:absolute;left:0;right:0;top:51%;height:8%;z-index:4;opacity:0;
+    transition:opacity .3s ease;background-image:url('images/fullart/ship-bg-waves.webp');
+    background-size:auto 100%;background-repeat:repeat-x;
+    -webkit-mask-image:linear-gradient(180deg,transparent 0%,#000 22%,#000 100%);
+    mask-image:linear-gradient(180deg,transparent 0%,#000 22%,#000 100%)}
+  #spWavesFar.run{opacity:.9;animation:spWavFar 4.6s linear infinite}
+  @keyframes spWavFar{from{background-position:0 0}to{background-position:20.92vh 0}}
+  /* 中くらいの波（遠い波と手前の波のあいだを埋める） */
+  #spWavesMid{position:absolute;left:0;right:0;top:58%;height:22%;z-index:4;opacity:0;
+    transition:opacity .3s ease;background-image:url('images/fullart/ship-bg-waves.webp');
+    background-size:auto 100%;background-repeat:repeat-x}
+  #spWavesMid.run{opacity:.95;animation:spWavMid 2.4s linear infinite}
+  @keyframes spWavMid{from{background-position:0 0}to{background-position:57.53vh 0}}
+  /* 海面のうねり＝細長い光の筋がゆっくり右へ流れる（新幹線の「流れる地面」にあたる） */
+  #spSeaFill::after{content:'';position:absolute;inset:0;
+    /* 海面の筋は水平に近い角度にする（縦に近いと海に見えない） */
+    background:repeating-linear-gradient(178deg,rgba(255,255,255,0) 0 22px,rgba(255,255,255,.055) 22px 26px,rgba(255,255,255,0) 26px 58px);
+    animation:spSwell 3.4s linear infinite}
+  @keyframes spSwell{from{background-position:0 0}to{background-position:0 58px}}
+  /* いちばん手前＝船体（ゆっくり上下にローリング）
+     ★新幹線は車体を画面幅の531%まで拡大して「一部だけ大きく見せる」ことで迫力を出している。
+       船は絵の縦横比が3.09:1。★自己チェック4回目で225%では小さく、画面の下1/4しか占めていなかった
+       （新幹線の車体は画面下1/3を大きく占める）ため285%に拡大し、位置も上げた。 */
+  #spShipSide{position:absolute;left:-6%;top:50%;width:160%;max-width:none;z-index:4;opacity:0;
+    transition:opacity .45s ease}
+  #spShipSide.run{opacity:1;animation:spShipBob 3.4s ease-in-out infinite}
+  @keyframes spShipBob{0%,100%{transform:translateY(0) rotate(0deg)}
+    50%{transform:translateY(-9px) rotate(-.5deg)}}
+
+  /* S4 甲板
+     ★自己チェック2回目で見つけた不具合：甲板は .ship-scene-layer の既定の z-index:1 だったため、
+       前のカットの「遠い陸(z2)」と「船体(z4)」が甲板の絵の上に重なって表示されていた。
+       甲板は「船の上から見た絵」なので、航行カットのどの層よりも手前に置く。 */
+  #spDeck{background-image:url('images/fullart/ship-deck-view.webp');z-index:6}
+  /* ★批判エージェント（3回目）の指摘＝S4だけ設計書の時間帯（午後おそく）になっておらず、
+     昼→（霧1.6秒）→濃い夕暮れ と一段飛んでいた。夕方寄りの色を薄くかぶせて橋渡しにする。 */
+  #spDeck::after{content:'';position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(180deg,rgba(255,163,96,.15) 0%,rgba(180,120,150,.12) 46%,rgba(60,70,110,.16) 100%)}
+  /* ★批判エージェントの指摘（1回目）＝S4で「陸が見えてくる」はずが、甲板(z6)が陸(z2)を
+     全部隠していて水平線に何もなかった。甲板の手すりの向こう＝水平線の位置に、陸を細い帯で重ねる。 */
+  #spDeckLand{position:absolute;left:-6%;right:-6%;top:24%;height:17%;z-index:7;opacity:0;
+    transition:opacity 1s ease;background-image:url('素材/ship-view-hokkaido.png');
+    background-size:cover;background-position:center 66%;
+    -webkit-mask-image:linear-gradient(180deg,transparent 0%,#000 34%,#000 74%,transparent 100%);
+    mask-image:linear-gradient(180deg,transparent 0%,#000 34%,#000 74%,transparent 100%)}
+  #spDeckLand.show{opacity:.95}
+  /* S4の海と陸は右へゆっくり流す（甲板の手すりは止まったまま＝船から見た景色） */
+  .sp-view{left:-10%;right:-10%;transform:translateX(-5%);transition:opacity .45s ease,transform 3s linear}
+  .sp-view.pan{transform:translateX(5%)}
+
+  /* S5 霧（白ワイプ）＝新幹線のトンネル（黒ワイプ）と対になる締め
+     ★批判エージェントの指摘（1回目）＝①視界が消えきらず「白っぽくなっただけ」だった
+       （新幹線のトンネルは完全な黒。だから抜けたときの到着が効く）②濃淡が縦じま模様＝
+       ブラインドのように見え、霧ではなく描画バグに見えた。
+       → 中心も真っ白まで上げ、縞は横向き（186deg）＋色の切れ目をぼかす。 */
+  #spFog{position:absolute;inset:0;z-index:30;opacity:0;pointer-events:none;
+    background:radial-gradient(ellipse at 50% 55%,rgba(255,255,255,.90) 0%,rgba(250,253,255,.99) 55%,#fff 100%);
+    transition:opacity .5s ease}
+  #spFog.show{opacity:1}
+  /* いちばん濃いときは完全な白（S5の中ほどで一度なにも見えなくする） */
+  #spFog.peak{background:#fff}
+  /* 霧の中を流れる濃淡（白一色で止めない）。横に流れる薄い層にする */
+  #spFogDrift{position:absolute;inset:-14%;z-index:31;opacity:0;pointer-events:none;
+    background:repeating-linear-gradient(186deg,
+      rgba(255,255,255,0) 0 40px,rgba(226,238,245,.30) 70px,rgba(255,255,255,0) 110px 150px);
+    transition:opacity .5s ease}
+  #spFogDrift.show{opacity:1;animation:spFogRun 3.2s linear infinite}
+  @keyframes spFogRun{from{transform:translateX(0)}to{transform:translateX(-150px)}}
+
+  /* 雪＝全カット共通。JSで粒を作って降らせる（画面がいつも動いている状態を保つ） */
+  #spSnow{position:absolute;inset:0;z-index:35;pointer-events:none;opacity:0;transition:opacity .8s ease}
+  #spSnow.show{opacity:1}
+  .sp-flake{position:absolute;top:-6%;border-radius:50%;background:#fff;opacity:.85;
+    animation:spFall linear infinite}
+  @keyframes spFall{
+    0%{transform:translate(0,-10vh)}
+    100%{transform:translate(var(--dx),112vh)}
+  }
+  /* カモメ（S3〜S4） */
+  .sp-gull{position:absolute;z-index:20;opacity:0;font-size:0;pointer-events:none}
+  .sp-gull svg{display:block}
+  .sp-gull.fly{opacity:.9;animation:spGullFly linear forwards}
+  @keyframes spGullFly{from{transform:translate(0,0)}to{transform:translate(var(--gx),var(--gy))}}
+
+  /* しぶき・スピード線（決めカット用） */
+  .sp-speedlines{position:absolute;inset:0;z-index:12;opacity:0;transition:opacity .25s ease;pointer-events:none}
+  .sp-speedlines.show{opacity:1}
+  /* ★批判エージェント（3回目）の指摘＝7本とも top を指定しておらず、全部が同じ場所（上端）に
+     重なって同じ速さで動いていた＝決めカットの「速さ」を作る要素が実質ゼロだった。
+     お手本は1本ずつ 高さ・長さ・速さ・遅れ を散らしている。そのまま移植する。 */
+  .sp-speedlines span{position:absolute;height:3px;border-radius:99px;background:rgba(255,255,255,.55);
+    animation:spLine .55s linear infinite}
+  .sp-speedlines span:nth-child(1){top:9%;width:34%;animation-duration:.5s}
+  .sp-speedlines span:nth-child(2){top:21%;width:22%;animation-duration:.42s;animation-delay:-.2s;opacity:.75}
+  .sp-speedlines span:nth-child(3){top:34%;width:40%;animation-duration:.6s;animation-delay:-.35s}
+  .sp-speedlines span:nth-child(4){top:47%;width:18%;animation-duration:.38s;animation-delay:-.1s;opacity:.6}
+  .sp-speedlines span:nth-child(5){top:61%;width:30%;animation-duration:.52s;animation-delay:-.28s}
+  .sp-speedlines span:nth-child(6){top:74%;width:24%;animation-duration:.45s;animation-delay:-.05s;opacity:.7}
+  .sp-speedlines span:nth-child(7){top:87%;width:36%;animation-duration:.58s;animation-delay:-.4s}
+  @keyframes spLine{from{transform:translateX(-45vw)}to{transform:translateX(115vw)}}
+
+  /* 主人公：歩行シート(300%200%格子)を1コマ表示。位置と大きさはJSが書き換える（新幹線と同じ） */
+  #spBoardHero{position:absolute;z-index:5;aspect-ratio:1;pointer-events:none;opacity:0;
+    background-repeat:no-repeat;background-size:300% 200%;
+    transition:left .7s linear,top .7s linear,width .7s linear,opacity .35s ease}
+  #spBoardHero.pose{background-size:contain;background-position:center bottom}
+  @keyframes spHop{0%,100%{transform:translateY(0)}50%{transform:translateY(-22%)}}   /* px固定だと小さい画面で跳ねすぎる */
+  /* マナ（先導する後ろ姿・見送り） */
+  #spManaWalk{position:absolute;z-index:6;opacity:0;max-width:none;pointer-events:none;
+    transition:left .9s linear,top .9s linear,width .9s linear,opacity .4s ease}
+  #spManaWalk.show{opacity:1}
+  #spManaBack{position:absolute;left:44%;top:58%;width:92%;max-width:none;z-index:6;opacity:0;
+    transition:opacity .5s ease;pointer-events:none}
+  #spManaBack.show{opacity:1}
+
+  /* 会話カード＝フィールドのはかせ会話と同じ見た目（新幹線 .ts-talk と同型） */
+  .sp-talk{position:absolute;left:2%;width:96%;z-index:40;display:none;align-items:center;gap:12px;
+    background:rgba(0,0,0,.82);color:#fff;border:3px solid rgba(255,255,255,.85);border-radius:18px;
+    padding:10px 18px 10px 10px;box-shadow:0 4px 14px rgba(0,0,0,.28);cursor:pointer}
+  .sp-talk.show{display:flex;animation:spTalkIn .22s ease forwards}
+  @keyframes spTalkIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  /* ★批判エージェントの指摘（1回目）＝吹き出しがキャラを覆っていた。
+     会話①のときキャラは画面の 37〜46% にいるので、カードは下段へ動かす。
+     新幹線はキャラが吹き出しより上にいて、マナが手を振る姿がちゃんと見える。 */
+  .sp-talk.mid{top:63%}
+  .sp-talk.top{top:6%}
+  .sp-talk-face{flex:0 0 auto;width:clamp(84px,24%,124px);aspect-ratio:1;height:auto;border-radius:14px;
+    border:2px solid rgba(255,255,255,.75);background-size:cover;background-position:center top;overflow:hidden}
+  .sp-talk-text{font-weight:900;font-size:1.148rem;line-height:1.4;text-align:left}
+  /* ★批判エージェントの指摘（1回目）＝390px幅だと台詞が3行になり、絶対配置の「▼タップ」が
+     最終行の文字に重なっていた（480px幅では起きないので、狭い画面でしか出ない）。
+     カードの下に余白を確保して、そこへ置く。 */
+  .sp-talk{padding-bottom:22px}
+  .sp-talk-next{position:absolute;right:12px;bottom:4px;font-size:.8rem;opacity:.85;
+    animation:spTalkNext 1s ease-in-out infinite}
+  @keyframes spTalkNext{0%,100%{transform:translateY(0)}50%{transform:translateY(3px)}}
+
+  /* 白フラッシュ（締め） */
+  .sp-flash{position:absolute;inset:0;background:#fff;opacity:0;z-index:60;pointer-events:none;
+    transition:opacity .35s ease}
+  .sp-flash.show{opacity:1}
+
+  /* とばすボタン */
+  .sp-skip{position:absolute;right:10px;top:10px;z-index:80;background:rgba(0,0,0,.55);color:#fff;
+    border:2px solid rgba(255,255,255,.7);border-radius:999px;padding:7px 16px;font-weight:900;
+    font-size:.92rem;cursor:pointer}
+
   /* ===== 第5弾§2：ヒーロー歩行スプライト（フォールバック方式） ===== */
   /* hero.webp(768×512・256格子・6コマ)を1コマ切り出し表示。無ければ今の丸キャラ */
   .hero.has-sprite .hero-body{display:none}                 /* スプライト時は丸キャラ非表示 */
@@ -2335,6 +2662,41 @@
     <div class="ts-flash" id="tsFlash"></div>
   </div>
 </div>
+
+<!-- 船シーン「つがるかいきょうを わたる」（弾S-1）＝ゾーン76→77のゲート通過で1回だけ流す -->
+<div class="ship-scene-overlay" id="shipSceneOverlay">
+    <button class="sp-skip" id="shipSceneSkipBtn" onclick="shipSceneSkip()">▶ とばす</button>
+    <div class="ship-scene-stage" id="shipSceneStage">
+      <!-- 背景（カットごとに出し入れ） -->
+      <div id="spBgTerminal"><img src="images/fullart/ship-terminal-aomori.webp" alt=""></div>
+      <div id="spBgPier"><img src="images/fullart/ship-pier-depth.webp" alt=""></div>
+      <img id="spHeroCut" src="images/fullart/ship-hero-cut.webp" alt="">
+      <div id="spBgSky"></div>
+      <div id="spBgMt"><img src="images/fullart/ship-bg-mountains.webp" alt=""></div>
+      <div id="spClouds"></div>
+      <div id="spSeaFar"></div>
+      <div id="spSeaFill"></div>
+      <div id="spWavesFar"></div>
+      <div id="spWavesMid"></div>
+      <div id="spWaves"></div>
+      <img id="spShipSide" src="images/fullart/ship-side-clear.webp" alt="">
+      <div class="ship-scene-layer sp-view" id="spDeck"></div>
+      <div id="spDeckLand"></div>
+      <div id="spBgArrive"><img src="images/fullart/ship-arrive-hakodate.webp" alt=""></div>
+      <div id="spBgTerminalH"><img src="images/fullart/ship-terminal-hakodate.webp" alt=""></div>
+      <!-- キャラ -->
+      <div id="spBoardHero"></div>
+      <img id="spManaWalk" src="../../ゲーム/images/mana-back-a.webp" alt="">
+      <img id="spManaBack" src="../../ゲーム/images/mana-back-a.webp" alt="">
+      <!-- 効果 -->
+      <div class="sp-speedlines" id="spSpeedLines"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      <div id="spFogDrift"></div>
+      <div id="spFog"></div>
+      <div id="spSnow"></div>
+      <div class="sp-talk" id="spTalk"></div>
+      <div class="sp-flash" id="spFlash"></div>
+    </div>
+  </div>
 
 <!-- 音ボタン -->
 <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
@@ -8002,6 +8364,7 @@ let yojiHiddenIntroSeen=new Set();
 // 弾3-6§6-1：カンサイ突入時のはかせ一言を見たか（旧セーブは未見あつかい）
 let kansaiHakaseSeen=false;
 let stationSceneSeen=false;   // 手直し_駅構内(7/25)：初回入駅で新幹線シーンを自動再生したか
+let shipSceneSeen=false;      // 弾S-1：ゾーン76→77で船シーン（つがるかいきょう）を見たか
 // 弾3-6§6-3：「たびの つづき」通知（旧セーブ移行）を見たか（旧セーブは未見あつかい）
 let travelContinueSeen=false;
 let pendingTravelContinueBanner=false;   // セッション値：load()で判定し、次のrenderField()で1回だけ消費
@@ -8091,6 +8454,7 @@ function save(){
       jukugoBossGuideSeen:jukugoBossGuideSeen, // 弾3-6§5-4
       kansaiHakaseSeen:kansaiHakaseSeen,       // 弾3-6§6-1
       stationSceneSeen:stationSceneSeen,       // 手直し_駅構内(7/25)：初回入駅の自動シーンを見たか
+      shipSceneSeen:shipSceneSeen,             // 弾S-1：船シーンを見たか
       travelContinueSeen:travelContinueSeen,   // 弾3-6§6-3
       chubuHakaseSeen:chubuHakaseSeen,         // 弾4-6§6-1
       travelContinueSeen2:travelContinueSeen2, // 弾4-6§6-3
@@ -8235,6 +8599,7 @@ function load(){
     jukugoBossGuideSeen = (d.jukugoBossGuideSeen===true);
     kansaiHakaseSeen = (d.kansaiHakaseSeen===true);
     stationSceneSeen = (d.stationSceneSeen===true);   // 手直し_駅構内(7/25)：旧セーブは未見あつかい
+    shipSceneSeen = (d.shipSceneSeen===true);         // 弾S-1：旧セーブは未見あつかい
     travelContinueSeen = (d.travelContinueSeen===true);
     // 弾4-6§6-1／§6-3：新規セーブ項目（旧セーブは未見あつかい）
     chubuHakaseSeen = (d.chubuHakaseSeen===true);
@@ -13960,6 +14325,10 @@ function enterNextZone(){
   const enteringChubu=(fieldZone===STAGE3_COUNT);
   // 弾5-6§7-1：チュウブ最終(64)クリアの瞬間だけバナーを1枚はさんでからトウホク・ホッカイドウ1番目へ進む（移動手段は暫定・§11裁定待ち）
   const enteringTohoku=(fieldZone===STAGE4_COUNT);
+  /* 弾S-1：青森(76)→函館(77) のゲート通過で、船で津軽海峡を渡るシーンを1回だけ流す。
+     学年の変わり目ではなく学年の中の移動なので、ここだけゾーン番号で判定する。 */
+  const SHIP_ZONE_FROM=76;   // 「つがるかいきょうの ふゆ」（青森）
+  const enteringHakodate=(fieldZone===SHIP_ZONE_FROM);
   fieldZone=fieldZone+1;
   const s=zoneStartOf(fieldZone); fieldHx=s.x; fieldHy=s.y;
   fieldPos={zone:fieldZone,x:fieldHx,y:fieldHy}; save();
@@ -13990,7 +14359,7 @@ function enterNextZone(){
       //   2回目以降は従来どおりの軽量バナーのみ（本編シーンは初回限定＝検品を意識した注意 項目3）。
       const showKansaiIntro=()=>{
         if(!kansaiHakaseSeen){
-          hakaseTalkOnce('カンサイ・シコクで かんじもんが あばれて いるみたい。とおいから でんこうに のって いきましょう！','bh24',()=>{
+          hakaseTalkOnce('カンサイ・シコクで かんじもんが あばれて いるみたい。とおいから でんこうに のって いきましょう！',()=>{
             if(enterSeq!==fieldSeq) return;   // ワープ等で離脱済みなら新幹線シーンへは進まない
             startTrainSceneEvent(()=>{
               if(enterSeq!==fieldSeq) return;   // 新幹線シーン再生中にワープ等で離脱済みなら以降は進めない
@@ -13998,7 +14367,7 @@ function enterNextZone(){
               setTimeout(()=>{
                 if(enterSeq!==fieldSeq) return;
                 kansaiHakaseSeen=true; save();
-                hakaseTalkOnce('ようこそ カンサイ・シコクへ！ ここからは ボスが じゅくごモンに なるわよ！','bh25');
+                hakaseTalkOnce('ようこそ カンサイ・シコクへ！ ここからは ボスが じゅくごモンに なるわよ！',null,'bh25');
               },2300);   // 紹介バナーが消えてから、はかせの一言（初回のみ）
             });
           });
@@ -14022,13 +14391,36 @@ function enterNextZone(){
             setTimeout(()=>{
               if(enterSeq!==fieldSeq) return;
               chubuHakaseSeen=true; save();
-              hakaseTalkOnce('ようこそ チュウブへ！ やまと ゆきの くにの かんじが まっているわ！','bh26');
+              hakaseTalkOnce('ようこそ チュウブへ！ やまと ゆきの くにの かんじが まっているわ！',null,'bh26');
             },2300);   // 紹介バナーが消えてから、はかせの一言（初回のみ）
           }
         },2300);
       };
       if(willShowTravelBanner2) setTimeout(()=>{ if(enterSeq!==fieldSeq) return; showChubuIntro(); },2300);   // 「たびの つづき」を見せ終えてかられっしゃバナーへ
       else showChubuIntro();
+    }else if(enteringHakodate){
+      /* 弾S-1：初回だけ「マナの一言 → 船シーン → ゾーン紹介バナー → ようこそ」。
+         2回目以降は軽量バナーのみ（新幹線＝enteringKansai とまったく同じ流儀）。 */
+      const showHakodateIntro=()=>{
+        if(!shipSceneSeen){
+          hakaseTalkOnce('この さきは うみ。ふねで つがるかいきょうを わたるわよ！',()=>{
+            if(enterSeq!==fieldSeq) return;   // ワープ等で離脱済みなら船シーンへは進まない
+            startShipSceneEvent(()=>{
+              if(enterSeq!==fieldSeq) return;   // 船シーン再生中に離脱済みなら以降は進めない
+              ensureFieldIntro();   // ゾーン77の紹介バナー
+              setTimeout(()=>{
+                if(enterSeq!==fieldSeq) return;
+                shipSceneSeen=true; save();
+                hakaseTalkOnce('ようこそ ホッカイドウへ！ ここは みなとまち。ふねの かんじが たくさん あるわよ！',null,'bh77');
+              },2300);   // 紹介バナーが消えてから、はかせの一言（初回のみ）
+            });
+          });
+        }else{
+          showFieldBanner('ふねに のって つがるかいきょうを わたった！');
+          setTimeout(()=>{ if(enterSeq!==fieldSeq) return; ensureFieldIntro(); },2300);
+        }
+      };
+      showHakodateIntro();
     }else if(enteringTohoku){
       /* 弾5-6§7-1：チュウブ→トウホク・ホッカイドウ（移動手段は暫定・シンプルバナー） */
       const showTohokuIntro=()=>{
@@ -15130,7 +15522,7 @@ function warpTown(){
   renderField();
   if(!townGuideSeen){
     townGuideSeen=true; save();
-    hakaseTalkOnce('ここが みんなの まちよ！ どうぐやで かいものが できるわ。つかれたら やどで やすんでね','bh27');
+    hakaseTalkOnce('ここが みんなの まちよ！ どうぐやで かいものが できるわ。つかれたら やどで やすんでね',null,'bh27');
   }
 }
 /* §4：町にいる間のコインバッジ（fieldInfoを流用＝常設は町のみ） */
@@ -15181,7 +15573,7 @@ function warpInterior(zone){
   };
   if(!interiorGuideSeen){
     interiorGuideSeen=true; save();
-    hakaseTalkOnce('たてものの なかにも はいれるように なったわ！ 🚪の マークを ふむと そとに でられるの','bh28', showShodoIntro);
+    hakaseTalkOnce('たてものの なかにも はいれるように なったわ！ 🚪の マークを ふむと そとに でられるの', showShodoIntro, 'bh28');
   }else{
     showShodoIntro();
   }
@@ -16893,6 +17285,7 @@ function makeGradeStartSave(n){
     travelContinueSeen:(startZone>STAGE2_COUNT+1), kansaiHakaseSeen:(startZone>STAGE2_COUNT+1),
     stationSceneSeen:(startZone>STAGE2_COUNT+1),   // 手直し_駅構内(7/25)：学年スタートも同じ基準で既見あつかい
     travelContinueSeen2:(startZone>STAGE3_COUNT+1), chubuHakaseSeen:(startZone>STAGE3_COUNT+1),
+    shipSceneSeen:(startZone>77),   // 弾S-1：77より先から始めたら船シーンは見たことにする
     travelContinueSeen3:(startZone>STAGE4_COUNT+1),   // 弾5-6§7：トウホク突入の「たびのつづき」は学年5未満なら未見あつかい
     /* 手直し_お金(7/25・準也さんの指示)：お金の単位が「円」になったので、テスト用の学年スタートの
        所持金も実額にする。3年生以降＝20,000円（わふく2,000＋せいふく8,000＋αが買えて着替えを試せる）／
@@ -17422,7 +17815,23 @@ let trainSceneOnDone=null;    // Phase2作業1：startTrainSceneEvent(onDone)で
 
 const TRAIN_SCENE_MS={ s0:5600, s1:6700, s2:3100, s3:3000, s4a:3000, s5:1050, s6:5000, s7:4300 };  // v4.4秒数表（s7=改札登場を遅らせたぶん延長。s0/s1は自動送り込みの目安値）
 
-function trainSceneStopWalkAnims(){ trainSceneWalkHandles.forEach(h=>{ if(h&&h.stop) h.stop(); }); trainSceneWalkHandles=[]; }
+/* ★準也さんの指摘（2026-08-02）＝フィールドの歩き方を第9弾で「絵は変えずコードで左右反転」に
+   変えたのに、このシーンの中はその変更が入っていなかった。
+   歩行シートの**正面(0%)と後ろ姿(50%)は上段と下段がまったく同じ絵**（実測の違い 0.00）なので、
+   反転しないと同じ絵が交互に出るだけ＝歩かずに滑って見える。
+   フィールドの setHeroSpriteFrame（13822行）と同じことをする：
+     Bコマは少し浮かせる／正面・背面は左右反転する／よこ向き(100%)は別の絵なので反転しない。 */
+function tsWalkFrame(el,useB,col){
+  const ud = (col==='0%'||col==='50%');
+  el.style.transformOrigin='center bottom';
+  el.style.transform='translateY('+(useB?'-3%':'0')+') scaleX('+((useB&&ud)?-1:1)+')';
+}
+
+function trainSceneStopWalkAnims(){
+  trainSceneWalkHandles.forEach(h=>{ if(h&&h.stop) h.stop(); }); trainSceneWalkHandles=[];
+  const bh=$('tsBoardHero');                        // 止まったら反転と浮きを戻す（鏡像のまま止めない）
+  if(bh && !bh.classList.contains('pose')) bh.style.transform='none';
+}
 
 /* 全レイヤーを初期状態(非表示)へ戻す。S0開始時・Finish時の両方から呼ぶ（再視聴時に前回の表示状態を持ち越さない＝op1PlayS0のリセット流儀と同じ） */
 function trainSceneResetLayers(){
@@ -17575,6 +17984,7 @@ function trainScenePlayS0(){
     const tick=setInterval(()=>{
       row=!row;
       bh.style.backgroundPosition='50% '+(row?'100%':'0%');
+      tsWalkFrame(bh,row,'50%');
       if(manaBack) mw.src='images/mana-back-'+(row?'b':'a')+'.webp';
     },160);
     trainSceneWalkHandles.push({stop(){ clearInterval(tick); }});
@@ -17630,7 +18040,7 @@ function trainScenePlayS1(){
   setTimeout(()=>{
     if(seq!==trainSceneSeq) return;
     tsTalkShow('いってらっしゃい！ きをつけてね！','top','st02',4200,()=>{
-      const tick=setInterval(()=>{ bhRow=!bhRow; bh.style.backgroundPosition=bhBgX+' '+(bhRow?'100%':'0%'); },150);
+      const tick=setInterval(()=>{ bhRow=!bhRow; bh.style.backgroundPosition=bhBgX+' '+(bhRow?'100%':'0%'); tsWalkFrame(bh,bhRow,bhBgX); },150);
       trainSceneWalkHandles.push({stop(){ clearInterval(tick); }});
       put(35.9,46.0,52.6,.7);
       setTimeout(()=>{ if(seq!==trainSceneSeq) return; put(47.7,37.5,36.3,.7); },700);
@@ -17657,7 +18067,7 @@ function trainScenePlayS1(){
         bhBgX='100%'; bh.style.backgroundPosition='100% 0%';
         bh.style.transform='scaleX(-1)';
         put(56.9,28.8,17.7,.35);
-        const tick2=setInterval(()=>{ bhRow=!bhRow; bh.style.backgroundPosition=bhBgX+' '+(bhRow?'100%':'0%'); },160);
+        const tick2=setInterval(()=>{ bhRow=!bhRow; bh.style.backgroundPosition=bhBgX+' '+(bhRow?'100%':'0%'); tsWalkFrame(bh,bhRow,bhBgX); },160);
         trainSceneWalkHandles.push({stop(){ clearInterval(tick2); }});
       },2950);
       // ドアの中へ（ドアの奥へ歩き込みながら消える）
@@ -17793,7 +18203,7 @@ function trainScenePlayS6(){
     bh.style.transform='none';
     bh.style.backgroundPosition='100% 0%';
     put(62.0,29.5,19.7,0); bh.style.opacity='1';
-    const tick=setInterval(()=>{ row=!row; bh.style.backgroundPosition=col+' '+(row?'100%':'0%'); },150);
+    const tick=setInterval(()=>{ row=!row; bh.style.backgroundPosition=col+' '+(row?'100%':'0%'); tsWalkFrame(bh,row,col); },150);
     trainSceneWalkHandles.push({stop(){ clearInterval(tick); }});
   },1500);
   // コマ10：まえ向きに転換（0%列=正面）
@@ -17825,7 +18235,7 @@ function trainScenePlayS7(){
   setTimeout(()=>{
     if(seq!==trainSceneSeq) return;
     bh.style.opacity='1';
-    const tick=setInterval(()=>{ row=!row; bh.style.backgroundPosition='0% '+(row?'100%':'0%'); },160);
+    const tick=setInterval(()=>{ row=!row; bh.style.backgroundPosition='0% '+(row?'100%':'0%'); tsWalkFrame(bh,row,'0%'); },160);
     trainSceneWalkHandles.push({stop(){ clearInterval(tick); }});
   },650);
   setTimeout(()=>{ if(seq!==trainSceneSeq) return; put(40.1,20.2,24.3,.7); },850);
@@ -17835,6 +18245,652 @@ function trainScenePlayS7(){
   setTimeout(()=>{ if(seq!==trainSceneSeq) return; $('tsFlash').classList.add('show'); },3900);
   setTimeout(()=>{ if(seq!==trainSceneSeq) return; trainSceneFinish(); },TRAIN_SCENE_MS.s7);
 }
+
+/* ==============================
+   船シーン「つがるかいきょうを わたる」（弾S-1・2026-08-03）
+   ゾーン76「つがるかいきょうの ふゆ」→ ゾーン77「はこだての みなとと ようかん」で1回だけ。
+   新幹線シーンと同じ作法（世代番号ガード・とばす・onDone1回・専用音バス・レイヤー初期化）。
+================================ */
+/* ==============================================================
+   船シーン「つがるかいきょうを わたる」
+   新幹線シーン（trainScene系）の作法をそのまま踏襲：
+     ・世代番号ガード shipSceneSeq（とばす／完走で++し、残ったsetTimeoutを無効化）
+     ・startShipSceneEvent(onDone) / shipSceneSkip() / shipSceneFinish() に集約
+     ・音は専用バス spBus 経由＝spBusKill() で一発ミュート
+     ・クロスフェードは「上が不透明になってから下を消す」（550ms遅らせる）
+============================================================== */
+/* $ / soundOn / audioCtx / ensureAudio は本体のものを使う */
+
+/* 試作では主人公は男の子固定（本体では heroChar / heroSheetUrl() を使う） */
+/* 主人公の絵は本体の関数から取る（着替え・男女に対応するため）。新幹線シーンと同じ流儀 */
+const MANA_FACE='images/sprites/hakase-face.webp';
+const MANA_FRONT='images/sprites/hakase.webp';
+const MANA_BACK_A='images/mana-back-a.webp';
+const MANA_BACK_B='images/mana-back-b.webp';
+
+
+
+let shipSceneActive=false;
+let shipSceneSeq=0;
+let shipSceneWalkHandles=[];
+let shipSceneOnDone=null;
+
+/* カットの長さ（ミリ秒）。会話のあるS0/S1は会話の終わりで次へ進むので目安値 */
+/* s0/s1は会話の終わりで次へ進むのでここでは使わない（実際の長さは会話のautoMsが決める）。
+   参考＝S0は約11.2秒・S1は約9.9秒。 */
+const SHIP_SCENE_MS={ s2:3000, s3:7000, s4:3000, s5:1600, s6:5000, s7:4200 };   /* s3を伸ばした（2026-08-03・準也さんの指摘「短すぎる」） */
+
+/* ★準也さんの指摘（2026-08-02）＝フィールドの歩き方を「絵は変えずコードで左右反転」に変えたのに、
+   シーンの中はその変更が入っていなかった。歩行シートの**正面と後ろ姿は上段と下段がまったく同じ絵**
+   （実測の違い 0.00）なので、反転しないと同じ絵が交互に出るだけ＝歩かずに滑って見える。
+   本体の setHeroSpriteFrame（kanjimon.html 13822行）と同じことをする：
+     Bコマは少し浮かせる／正面・背面は左右反転する／よこ向きは反転しない（進む向きが逆になるため）。 */
+function spWalkFrame(el,useB,col){
+  const ud = (col==='0%'||col==='50%');           // 0%=正面・50%=後ろ姿
+  el.style.transformOrigin='center bottom';
+  el.style.transform='translateY('+(useB?'-3%':'0')+') scaleX('+((useB&&ud)?-1:1)+')';
+}
+
+function shipSceneStopWalkAnims(){
+  shipSceneWalkHandles.forEach(h=>{ if(h&&h.stop) h.stop(); }); shipSceneWalkHandles=[];
+  const bh=$('spBoardHero');                       // 止まったら反転と浮きを戻す（鏡像のまま止めない）
+  if(bh && !bh.classList.contains('pose')) bh.style.transform='none';
+}
+
+/* ---------------- 音（すべて合成・専用バス spBus 経由） ---------------- */
+let spBus=null, spLoopNodes=[];
+function spBusGet(){
+  if(!soundOn) return null;
+  ensureAudio(); if(!audioCtx) return null;
+  if(!spBus){
+    spBus=audioCtx.createGain(); spBus.gain.value=1;
+    const comp=audioCtx.createDynamicsCompressor();   // 音割れ防止（飛行機シーンv3.4の知見）
+    spBus.connect(comp); comp.connect(audioCtx.destination);
+  }
+  return spBus;
+}
+function spBusKill(){
+  spLoopNodes.forEach(n=>{ try{ n.stop(); }catch(e){} try{ n.disconnect(); }catch(e){} });
+  spLoopNodes=[];
+  spLoopGains={waves:null,engine:null,harbor:null};
+  if(spBus){ try{ spBus.disconnect(); }catch(e){} spBus=null; }
+}
+/* ★批判エージェントの指摘（1回目）＝鳴らしっぱなしのループ音を一度も止めていなかった。
+   港の環境音はS0とS6で2回鳴らして二重になり、機関と波は函館に着いてからも鳴り続けていた。
+   新幹線は seStop() でカットごとに止めている。同じことをするため、音量つまみを覚えておいて
+   カットの変わり目でゆっくり0まで下げる。 */
+let spLoopGains={waves:null,engine:null,harbor:null};
+function spFadeOut(key,sec){
+  const g=spLoopGains[key]; if(!g||!audioCtx) return;
+  try{
+    const t=audioCtx.currentTime;
+    g.gain.cancelScheduledValues(t);
+    g.gain.setValueAtTime(g.gain.value,t);
+    g.gain.linearRampToValueAtTime(0.0001,t+(sec||.7));
+  }catch(e){}
+  spLoopGains[key]=null;
+}
+function spTone(freq,start,dur,type,vol){
+  const bus=spBusGet(); if(!bus) return;
+  const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+  o.type=type||'sine'; o.frequency.value=freq;
+  o.connect(g); g.connect(bus);
+  const t=audioCtx.currentTime+start;
+  g.gain.setValueAtTime(0.0001,t);
+  g.gain.linearRampToValueAtTime(vol||.12,t+.012);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  o.start(t); o.stop(t+dur+.03);
+}
+function spNoise(start,dur,f0,f1,vol,q){
+  const bus=spBusGet(); if(!bus) return;
+  const len=Math.max(1,Math.floor(audioCtx.sampleRate*dur));
+  const buf=audioCtx.createBuffer(1,len,audioCtx.sampleRate);
+  const ch=buf.getChannelData(0);
+  for(let i=0;i<len;i++) ch[i]=Math.random()*2-1;
+  const src=audioCtx.createBufferSource(); src.buffer=buf;
+  const f=audioCtx.createBiquadFilter(); f.type='bandpass'; f.Q.value=q||.9;
+  const g=audioCtx.createGain();
+  const t=audioCtx.currentTime+start;
+  f.frequency.setValueAtTime(Math.max(40,f0),t);
+  f.frequency.linearRampToValueAtTime(Math.max(40,f1),t+dur);
+  g.gain.setValueAtTime(0.0001,t);
+  g.gain.linearRampToValueAtTime(vol,t+dur*.3);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  src.connect(f); f.connect(g); g.connect(bus);
+  src.start(t); src.stop(t+dur+.05);
+}
+/* 汽笛＝低い音を2つ重ね、ゆっくり立ち上げて長く伸ばす。muffled=霧笛（こもらせる） */
+function spHorn(start,dur,vol,muffled){
+  const bus=spBusGet(); if(!bus) return;
+  const t=audioCtx.currentTime+start;
+  const g=audioCtx.createGain();
+  let node=g;
+  if(muffled){
+    const lp=audioCtx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=420;
+    g.connect(lp); lp.connect(bus); node=g;
+  }else{
+    const lp=audioCtx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=1400;
+    g.connect(lp); lp.connect(bus);
+  }
+  g.gain.setValueAtTime(0.0001,t);
+  g.gain.linearRampToValueAtTime(vol,t+dur*.28);      // ゆっくり立ち上がる＝汽笛らしさ
+  g.gain.setValueAtTime(vol,t+dur*.62);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  [110,165,222].forEach((f,i)=>{
+    const o=audioCtx.createOscillator();
+    o.type=i===2?'triangle':'sawtooth';
+    o.frequency.value=f;
+    const og=audioCtx.createGain(); og.gain.value=i===0?1:(i===1?.55:.22);
+    o.connect(og); og.connect(g);
+    o.start(t); o.stop(t+dur+.1);
+  });
+}
+/* 波＝ノイズをループ再生し、フィルタをゆっくり往復させる（寄せては返す） */
+function spWavesStart(vol){
+  const bus=spBusGet(); if(!bus) return;
+  const len=Math.floor(audioCtx.sampleRate*4);
+  const buf=audioCtx.createBuffer(1,len,audioCtx.sampleRate);
+  const ch=buf.getChannelData(0);
+  for(let i=0;i<len;i++) ch[i]=Math.random()*2-1;
+  const src=audioCtx.createBufferSource(); src.buffer=buf; src.loop=true;
+  const f=audioCtx.createBiquadFilter(); f.type='bandpass'; f.Q.value=.7;
+  const lfo=audioCtx.createOscillator(); lfo.frequency.value=.22;   // 4.5秒で1往復
+  const lfoGain=audioCtx.createGain(); lfoGain.gain.value=300;
+  f.frequency.value=500;
+  lfo.connect(lfoGain); lfoGain.connect(f.frequency);
+  const g=audioCtx.createGain();
+  const t=audioCtx.currentTime;
+  g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(vol,t+.8);
+  src.connect(f); f.connect(g); g.connect(bus);
+  src.start(); lfo.start();
+  spLoopNodes.push(src,lfo);
+  spLoopGains.waves=g;
+  return g;
+}
+/* 機関の唸り＝低い三角波にわずかなうねり */
+function spEngineStart(vol){
+  const bus=spBusGet(); if(!bus) return;
+  const o=audioCtx.createOscillator(); o.type='triangle'; o.frequency.value=55;
+  const o2=audioCtx.createOscillator(); o2.type='sine'; o2.frequency.value=27;
+  const g=audioCtx.createGain(), g2=audioCtx.createGain();
+  g2.gain.value=.4; o2.connect(g2); g2.connect(g);
+  const lfo=audioCtx.createOscillator(); lfo.frequency.value=3.1;
+  const lg=audioCtx.createGain(); lg.gain.value=6;
+  lfo.connect(lg); lg.connect(o.frequency);
+  const t=audioCtx.currentTime;
+  g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(vol,t+1.0);
+  o.connect(g); g.connect(bus);
+  o.start(); o2.start(); lfo.start();
+  spLoopNodes.push(o,o2,lfo);
+  spLoopGains.engine=g;
+  return g;
+}
+/* 港の環境音＝低いノイズ */
+function spHarborStart(vol){
+  const bus=spBusGet(); if(!bus) return;
+  const len=Math.floor(audioCtx.sampleRate*3);
+  const buf=audioCtx.createBuffer(1,len,audioCtx.sampleRate);
+  const ch=buf.getChannelData(0);
+  for(let i=0;i<len;i++) ch[i]=Math.random()*2-1;
+  const src=audioCtx.createBufferSource(); src.buffer=buf; src.loop=true;
+  const f=audioCtx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=520;
+  const g=audioCtx.createGain();
+  const t=audioCtx.currentTime;
+  g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(vol,t+.6);
+  src.connect(f); f.connect(g); g.connect(bus);
+  src.start(); spLoopNodes.push(src);
+  spLoopGains.harbor=g;
+  return g;
+}
+/* カモメの声＝高い音が2〜3回、上がって下がる */
+function spGullCry(start){
+  const bus=spBusGet(); if(!bus) return;
+  for(let i=0;i<3;i++){
+    const t0=start+i*.28;
+    const o=audioCtx.createOscillator(); o.type='sawtooth';
+    const g=audioCtx.createGain();
+    const f=audioCtx.createBiquadFilter(); f.type='bandpass'; f.Q.value=6; f.frequency.value=1500;
+    const t=audioCtx.currentTime+t0;
+    o.frequency.setValueAtTime(980,t);
+    o.frequency.linearRampToValueAtTime(1420,t+.07);
+    o.frequency.linearRampToValueAtTime(760,t+.22);
+    g.gain.setValueAtTime(0.0001,t);
+    g.gain.linearRampToValueAtTime(.055,t+.04);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+.24);
+    o.connect(f); f.connect(g); g.connect(bus);
+    o.start(t); o.stop(t+.3);
+  }
+}
+/* 出航案内チャイム（ピンポンパンポン・新幹線と同型） */
+function spChime(){ [[784,0],[988,.21],[659,.42],[784,.63]].forEach(p=>spTone(p[0],p[1],.19,'sine',.11)); }
+/* 接岸のきしみ */
+function spCreak(start){
+  spTone(72,start,.5,'square',.05);
+  spTone(96,start+.18,.42,'square',.04);
+  spNoise(start,.6,120,70,.05,2);
+}
+
+/* ---------------- 雪・カモメ（画面をいつも動かしておく） ---------------- */
+function spSnowBuild(){
+  const box=$('spSnow');
+  if(box.childElementCount) return;
+  for(let i=0;i<38;i++){
+    const f=document.createElement('div');
+    f.className='sp-flake';
+    const size=1.6+Math.random()*3.4;
+    f.style.width=size+'px'; f.style.height=size+'px';
+    f.style.left=(Math.random()*100)+'%';
+    f.style.setProperty('--dx',(Math.random()*60-30)+'px');
+    f.style.animationDuration=(4.5+Math.random()*5.5)+'s';
+    f.style.animationDelay=(-Math.random()*8)+'s';
+    f.style.opacity=(.35+Math.random()*.5).toFixed(2);
+    box.appendChild(f);
+  }
+}
+function spGullFly(leftPct,topPct,scale,dur,gx,gy,delay){
+  const seq=shipSceneSeq;
+  setTimeout(()=>{
+    if(seq!==shipSceneSeq) return;
+    const g=document.createElement('div');
+    g.className='sp-gull';
+    g.style.left=leftPct+'%'; g.style.top=topPct+'%';
+    g.style.setProperty('--gx',gx+'px'); g.style.setProperty('--gy',gy+'px');
+    g.style.animationDuration=dur+'s';
+    g.innerHTML='<svg width="'+(26*scale)+'" height="'+(12*scale)+'" viewBox="0 0 26 12">'+
+      '<path d="M1 8 Q7 1 13 7 Q19 1 25 8" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" opacity=".92"/></svg>';
+    $('shipSceneStage').appendChild(g);
+    requestAnimationFrame(()=>g.classList.add('fly'));
+    setTimeout(()=>{ if(g.parentNode) g.parentNode.removeChild(g); },dur*1000+200);
+  },delay);
+}
+
+/* ---------------- レイヤーの初期化 ---------------- */
+function shipSceneResetLayers(){
+  ['spBgTerminal','spBgTerminalH','spBgPier','spBgArrive','spHeroCut','spBgSky','spBgMt','spDeck','spFog','spFogDrift','spManaWalk','spManaBack','spSnow','spDeckLand']
+    .forEach(id=>{ const el=$(id); if(el) el.classList.remove('show','pan','run'); });
+  ['spBgMt','spClouds','spSeaFar','spWavesFar','spWavesMid','spWaves','spSeaFill','spShipSide'].forEach(id=>{ const el=$(id); if(el) el.classList.remove('run'); });
+  const bh=$('spBoardHero'); if(bh){ bh.classList.remove('pose'); bh.removeAttribute('style'); }
+  const mw=$('spManaWalk'); if(mw){ mw.removeAttribute('style'); mw.src=MANA_BACK_A; }
+  const hc=$('spHeroCut'); if(hc){ hc.removeAttribute('style'); }
+  const ss=$('spShipSide'); if(ss){ ss.style.transition=''; ss.style.left=''; }
+  spTalkHide();
+  const sl=$('spSpeedLines'); if(sl) sl.classList.remove('show');
+  const fl=$('spFlash'); if(fl) fl.classList.remove('show');
+  const fg=$('spFog'); if(fg) fg.classList.remove('peak');
+  $('shipSceneStage').classList.remove('sp-shake','sp-push','sp-roll');
+  document.querySelectorAll('.sp-gull').forEach(g=>{ if(g.parentNode) g.parentNode.removeChild(g); });
+}
+
+/* ---------------- 発火・とばす・終了 ---------------- */
+function startShipSceneEvent(onDone){
+  if(shipSceneActive) return;
+  shipSceneActive=true;
+  shipSceneOnDone=(typeof onDone==='function')?onDone:null;
+  $('shipSceneOverlay').classList.add('show');
+  spSnowBuild();
+  shipScenePlayS0();
+}
+function shipSceneSkip(){ if(shipSceneActive) shipSceneFinish(); }
+function shipSceneFinish(){
+  shipSceneSeq++;
+  shipSceneActive=false;
+  spBusKill();
+  shipSceneStopWalkAnims();
+  $('shipSceneOverlay').classList.remove('show');
+  shipSceneResetLayers();
+  const onDone=shipSceneOnDone; shipSceneOnDone=null;
+  if(onDone) onDone();
+}
+
+/* ---------------- 会話カード（新幹線 tsTalkShow と同型） ---------------- */
+let spTalkTimer=null, spTalkAudio=null;
+function spTalkStopAudio(){ if(spTalkAudio){ try{ spTalkAudio.pause(); }catch(e){} spTalkAudio=null; } }
+function spTalkHide(){
+  if(spTalkTimer){ clearTimeout(spTalkTimer); spTalkTimer=null; }
+  spTalkStopAudio();
+  const el=$('spTalk'); if(el){ el.classList.remove('show','mid','top'); el.onclick=null; }
+}
+function spTalkShow(msg,pos,voiceFile,autoMs,onDone){
+  const seq=shipSceneSeq;
+  const el=$('spTalk');
+  el.classList.remove('mid','top'); el.classList.add(pos,'show');
+  el.innerHTML='<div class="sp-talk-face" style="background-image:url(\''+MANA_FACE+'\')"></div>'+
+    '<div class="sp-talk-text">'+msg+'</div><div class="sp-talk-next">▼ タップ</div>';
+  if(voiceFile && soundOn){
+    try{
+      spTalkAudio=new Audio('audio/battle/'+voiceFile+'.mp3');
+      spTalkAudio.onerror=()=>{};
+      const p=spTalkAudio.play(); if(p&&p.catch) p.catch(()=>{});
+    }catch(e){}
+  }
+  let finished=false;
+  const finish=()=>{
+    if(finished) return; finished=true;
+    spTalkHide();
+    if(seq!==shipSceneSeq) return;
+    if(onDone) onDone();
+  };
+  el.onclick=e=>{ e.stopPropagation(); finish(); };
+  spTalkTimer=setTimeout(finish,autoMs);
+}
+
+/* ==============================================================
+   S0：青森のフェリーターミナル（6.8秒）
+   マナが先導して乗船口へ歩く → 振り向いて会話①
+============================================================== */
+function shipScenePlayS0(){
+  shipSceneResetLayers();
+  const seq=shipSceneSeq;
+  $('spBgTerminal').classList.add('show');
+  spHarborStart(.09);
+  spChime();
+  const bh=$('spBoardHero'), mw=$('spManaWalk');
+  bh.classList.remove('pose');
+  bh.style.backgroundImage=`url('${heroSheetUrl()}')`;
+  bh.style.backgroundSize='300% 200%';
+  bh.style.transform='none';
+  bh.style.zIndex='7';                 // 主人公はマナより手前（奥行きの上下関係・7/25の指摘）
+  const put=(x,y,w,dur)=>{ bh.style.transitionDuration=dur+'s,'+dur+'s,'+dur+'s,.35s'; bh.style.left=x+'%'; bh.style.top=y+'%'; bh.style.width=w+'%'; };
+  const mput=(x,y,w,dur)=>{ mw.style.transitionDuration=dur+'s,'+dur+'s,'+dur+'s,.4s'; mw.style.left=x+'%'; mw.style.top=y+'%'; mw.style.width=w+'%'; };
+  // 自己チェック1回目で直した点：新幹線の座標を流用したらキャラが奥に寄って小さすぎた。
+  // この絵（強い一点透視）に合わせ、画面の手前中央から奥の乗船口へ、大きさを変えながら歩かせる。
+  put(34,70,32,0); mput(50,64,30,0);
+  bh.style.opacity='1'; mw.classList.add('show');
+  let row=false, manaBack=true;
+  bh.style.backgroundPosition='50% 0%';    // 50%=後ろ姿の列
+  const mkTick=()=>{
+    const tick=setInterval(()=>{
+      row=!row;
+      bh.style.backgroundPosition='50% '+(row?'100%':'0%');
+      spWalkFrame(bh,row,'50%');
+      if(manaBack) mw.src=row?MANA_BACK_B:MANA_BACK_A;
+    },160);
+    shipSceneWalkHandles.push({stop(){ clearInterval(tick); }});
+  };
+  mkTick();
+  setTimeout(()=>{ if(seq!==shipSceneSeq) return; put(38,60,26,.9); mput(52,54,25,.9); },100);
+  setTimeout(()=>{ if(seq!==shipSceneSeq) return; put(42,50,21,.9); mput(54,44,20,.9); },1000);
+  setTimeout(()=>{ if(seq!==shipSceneSeq) return; put(45,43,17,.8); mput(56,37,16,.8); },1900);
+  // マナが振り向いて会話①（声5.79秒＋読み時間＝6.4秒で自動送り）
+  // 自己チェック1回目：会話が早すぎて「歩いている絵」がほとんど映らなかった＝2.65秒→3.5秒に遅らせた
+  setTimeout(()=>{
+    if(seq!==shipSceneSeq) return;
+    manaBack=false; mw.src=MANA_FRONT;
+    shipSceneStopWalkAnims();          // 会話中は足踏みしない＝止まって聞く
+    bh.style.backgroundPosition='50% 0%';
+    spTalkShow('ここから ふねに のって、うみを わたるの。<br>つがるかいきょうって いうのよ。ついてきて！','mid','sp01',6400,()=>{
+      manaBack=true; mw.src=MANA_BACK_B;
+      mkTick();
+      mput(52,31,13,.9); put(47,36,14,.9);   // 乗船口の奥へ消えていく
+      setTimeout(()=>{ if(seq!==shipSceneSeq) return; bh.style.opacity='0'; mw.classList.remove('show'); },850);
+      setTimeout(()=>{ if(seq!==shipSceneSeq) return; shipSceneStopWalkAnims(); shipScenePlayS1(); },1250);
+    });
+  },3500);
+}
+
+/* ==============================================================
+   S1：乗船（7.4秒）
+   岸壁。マナ「いってらっしゃい」→ 主人公がタラップを歩いて小さくなる →
+   振り向いて勝利ポーズ → 船内へ → 汽笛1回目
+============================================================== */
+function shipScenePlayS1(){
+  const seq=shipSceneSeq;
+  $('spBgPier').classList.add('show');
+  $('spSnow').classList.add('show');      // ここから屋外＝雪を降らせる（S0は屋内なので降らせない）
+  $('spManaBack').classList.add('show');
+  setTimeout(()=>{ if(seq!==shipSceneSeq) return; $('spBgTerminal').classList.remove('show'); },550);
+  const bh=$('spBoardHero');
+  const put=(x,y,w,dur)=>{ bh.style.transitionDuration=dur+'s,'+dur+'s,'+dur+'s,.35s'; bh.style.left=x+'%'; bh.style.top=y+'%'; bh.style.width=w+'%'; };
+  bh.classList.remove('pose');
+  bh.style.backgroundImage=`url('${heroSheetUrl()}')`;
+  bh.style.backgroundSize='300% 200%';
+  bh.style.transform='none';
+  bh.style.zIndex='5';                 // 岸壁では手前で見送るマナ(z6)が前
+  /* ★批判エージェントの指摘（1回目）＝勝利ポーズの主人公が船の外壁に浮いていた。
+     原因は「歩く経路がタラップの階段と合っていなかった」こと。
+     実測：乗降口は絵の x46.5〜52.1% / y29.2〜46.4%。階段はそこから**右下へ**降りている
+     （岸壁に接するのは画面の x≈77% / y≈60%）。真上に歩かせていたので壁に登っていた。
+     以下は階段に沿わせた座標。put(left,top,width) で、
+     足元の高さ ≒ top + width×0.43 ／ 体の中心 ≒ left + width/2 になる。 */
+  put(27,66.5,50,0);          // 黄色いラインの上（手前）に立つ
+  bh.style.opacity='1';
+  let bhRow=false;
+  bh.style.backgroundPosition='50% 0%';
+  setTimeout(()=>{
+    if(seq!==shipSceneSeq) return;
+    // 会話②（声4.60秒＋読み時間＝5.2秒で自動送り）。会話が終わってから歩き出す
+    spTalkShow('いってらっしゃい！ むこうぎしは ホッカイドウ。<br>さむいから きを つけてね！','top','sp02',5200,()=>{
+      const tick=setInterval(()=>{ bhRow=!bhRow; bh.style.backgroundPosition='50% '+(bhRow?'100%':'0%'); spWalkFrame(bh,bhRow,'50%'); },150);
+      shipSceneWalkHandles.push({stop(){ clearInterval(tick); }});
+      /* ①〜③は黄色いラインに沿って奥へ。④で階段の下端の真横まで来てから横へ寄る。
+         ⑤⑥で階段を上る。こうしないと、斜めに突っ切って階段の中腹に乗ってしまう。 */
+      put(46,58.8,40,.8);                                                          // ① 黄色いラインに沿って奥へ
+      setTimeout(()=>{ if(seq!==shipSceneSeq) return; put(69,51.1,30,.8); },800);  // ② 階段の下端の「真横」（まだ地面）
+      setTimeout(()=>{ if(seq!==shipSceneSeq) return; put(61,47.8,26,.6); },1600); // ③ ★横へ寄って階段の一段目
+      setTimeout(()=>{ if(seq!==shipSceneSeq) return; put(52,41.4,20,.7); },2200); // ④ 階段の中ほど
+      setTimeout(()=>{ if(seq!==shipSceneSeq) return; put(42.5,37.6,15,.7); },2900);
+      /* ★批判エージェント（2回目）の指摘＝勝利ポーズが「壁の上」から「手すりの上」に移っただけで、
+         まだ床に立っていなかった。乗降口の実測（絵のx46.5〜52.1% / 敷居y46.4%）から、
+         明るいドアの中（敷居の上）に立たせる。新幹線もドアの中で振り向いており、手すりとも重ならない。 */
+      // 振り向いて勝利ポーズ（その場で小さく跳ねるだけ＝位置と大きさは変えない）
+      setTimeout(()=>{
+        if(seq!==shipSceneSeq) return;
+        shipSceneStopWalkAnims();
+        bh.classList.add('pose');
+        bh.style.backgroundImage=`url('${heroVictoryImgSrc((typeof heroChar!=='undefined'&&heroChar==='girl')?'girl':'boy')}')`;
+        bh.style.backgroundSize='contain';
+        bh.style.backgroundPosition='center bottom';
+        bh.style.animation='spHop .5s ease 2';
+        spTone(784,0,.12,'sine',.1); spTone(1047,.12,.2,'sine',.1);
+      },3600);
+      // 横を向いてドアの中へ歩き込む（お手本と同じ流れ。ここが無いとキャラのいない絵が2秒続く）
+      setTimeout(()=>{
+        if(seq!==shipSceneSeq) return;
+        bh.style.animation='';
+        bh.classList.remove('pose');
+        bh.style.backgroundImage=`url('${heroSheetUrl()}')`;
+        bh.style.backgroundSize='300% 200%';
+        bh.style.backgroundPosition='100% 0%';       // 100%=よこ向き
+        let r2=false;
+        const t2=setInterval(()=>{ r2=!r2; bh.style.backgroundPosition='100% '+(r2?'100%':'0%'); spWalkFrame(bh,r2,'100%'); },150);
+        shipSceneWalkHandles.push({stop(){ clearInterval(t2); }});
+        put(45,41,13,.6);                            // ドアの奥へ
+      },4400);
+      setTimeout(()=>{ if(seq!==shipSceneSeq) return; bh.style.transition='opacity .4s ease'; bh.style.opacity='0'; },5100);
+      // 汽笛1回目（出航の合図）
+      setTimeout(()=>{ if(seq!==shipSceneSeq) return; spHorn(0,2.6,.30,false); },4800);
+      setTimeout(()=>{ if(seq!==shipSceneSeq) return; shipSceneStopWalkAnims(); shipScenePlayS2(); },5900);
+    });
+  },300);
+}
+
+/* ==============================================================
+   S2：出航の決めカット（3.0秒）
+   船の全景を先端から舐めるカメラワーク4区分＋画面の震え＋しぶきの線
+============================================================== */
+function shipScenePlayS2(){
+  const seq=shipSceneSeq;
+  const hc=$('spHeroCut');
+  hc.style.transition='opacity .3s ease';
+  hc.style.left='0.1%'; hc.style.width='305%';
+  hc.classList.add('show');
+  $('shipSceneStage').classList.add('sp-shake');
+  $('spSpeedLines').classList.add('show');
+  /* ★7/25に新幹線で起きた「マナの頭が薄く残る」と同じ不具合。フェードさせず即座に消す */
+  const mb=$('spManaBack'); mb.style.transition='none'; mb.classList.remove('show');
+  requestAnimationFrame(()=>{ mb.style.transition=''; });
+  spFadeOut('harbor',.8);        // 岸を離れるので港の環境音は消す
+  spEngineStart(.10);
+  spWavesStart(.07);
+  spNoise(0,2.2,240,1300,.10);          // 船首が波を割る音
+  setTimeout(()=>{
+    if(seq!==shipSceneSeq) return;
+    $('spBgPier').classList.remove('show');
+    const bh=$('spBoardHero'); if(bh){ bh.classList.remove('pose'); bh.removeAttribute('style'); }
+  },550);
+  // カメラワーク4区分（新幹線と同じ流儀＝だんだん速く・大きく）
+  requestAnimationFrame(()=>{ if(seq!==shipSceneSeq) return;
+    hc.style.transition='opacity .3s ease,left 1.2s linear,width 1.2s linear';
+    hc.style.left='-96.9%'; });
+  setTimeout(()=>{ if(seq!==shipSceneSeq) return;
+    hc.style.transition='opacity .3s ease,left .8s ease-in,width .8s ease-in';
+    hc.style.left='-188%'; hc.style.width='336%'; },1200);
+  setTimeout(()=>{ if(seq!==shipSceneSeq) return;
+    hc.style.transition='opacity .3s ease,left .6s ease-in,width .6s ease-in';
+    hc.style.left='-262%'; hc.style.width='372%'; },2000);
+  setTimeout(()=>{ if(seq!==shipSceneSeq) return;
+    hc.style.transition='opacity .3s ease,left .5s ease-in,width .5s ease-in,top .5s ease-in';
+    // ★width は |left|+100 以上にする。470%だと右端が画面の90%までしか届かず、
+    //   S2→S3のクロスフェード中に画面右へまっすぐな縦の切れ目が出ていた（批判エージェント2回目の指摘）
+    hc.style.left='-322%'; hc.style.width='432%'; hc.style.top='-7%'; },2600);
+  setTimeout(()=>{ if(seq!==shipSceneSeq) return; shipScenePlayS3(); },SHIP_SCENE_MS.s2);
+}
+
+/* ==============================================================
+   S3：航行（3.6秒）4層パララックス
+   奥＝本州の雪山なみ／遠い陸／寄せる波（速い）／船体（手前・ローリング）＋カモメ
+============================================================== */
+function shipScenePlayS3(){
+  const seq=shipSceneSeq;
+  $('spBgSky').classList.add('show');
+  $('spBgMt').classList.add('show','run');
+  $('spClouds').classList.add('run');
+  $('spSeaFar').classList.add('run');
+  $('spWavesFar').classList.add('run');
+  $('spWavesMid').classList.add('run');
+  $('spWaves').classList.add('run');
+  $('spSeaFill').classList.add('run');
+  $('spShipSide').classList.add('run');
+  setTimeout(()=>{ if(seq!==shipSceneSeq) return; $('spHeroCut').classList.remove('show'); },550);
+  $('shipSceneStage').classList.remove('sp-shake');
+  /* ★批判エージェント（5回目）の報告＝sp-push があとに書いてあるので transform が上書きされ、
+     S3の3コマとも傾きがほぼ0だった（sp-rollだけのS4は±1.4〜1.6度）。
+     「船の揺れは全カット共通で常に動く」が売りなので、S3では push をやめてローリングを生かす。 */
+  $('shipSceneStage').classList.add('sp-roll');
+  $('spSpeedLines').classList.remove('show');
+  spGullCry(.5);
+  spGullFly(-12,17,1.0,3.4,240,-30,300);
+  spGullFly(-18,25,.75,4.0,260,26,900);
+  setTimeout(()=>{ if(seq!==shipSceneSeq) return; shipScenePlayS4(); },SHIP_SCENE_MS.s3);
+}
+
+/* ==============================================================
+   S4：甲板（3.0秒）
+   手すり越しの海。前方に北海道の陸が見えてくる。雪が強くなる
+============================================================== */
+function shipScenePlayS4(){
+  const seq=shipSceneSeq;
+  $('spDeck').classList.add('show');
+  requestAnimationFrame(()=>{ if(seq!==shipSceneSeq) return; $('spDeck').classList.add('pan'); });
+  setTimeout(()=>{ if(seq!==shipSceneSeq) return; $('spDeckLand').classList.add('show'); },700);   // 手すりの向こうに陸が見えてくる
+  setTimeout(()=>{
+    if(seq!==shipSceneSeq) return;
+    ['spBgMt','spClouds','spSeaFar','spWavesFar','spWavesMid','spWaves','spSeaFill','spShipSide'].forEach(id=>$(id).classList.remove('run'));
+    $('spBgMt').classList.remove('show');
+    $('spBgSky').classList.remove('show');
+  },600);
+  spNoise(0,2.6,320,900,.07,1.2);        // 甲板の風
+  spGullCry(1.2);
+  spGullFly(-14,12,.9,3.2,250,18,200);
+  setTimeout(()=>{ if(seq!==shipSceneSeq) return; shipScenePlayS5(); },SHIP_SCENE_MS.s4);
+}
+
+/* ==============================================================
+   S5：霧（1.6秒）＝新幹線のトンネル（黒）と対になる「白」
+   白が満ちて視界が消え、霧笛が鳴る
+============================================================== */
+function shipScenePlayS5(){
+  const seq=shipSceneSeq;
+  $('spFog').classList.add('show');
+  $('spFogDrift').classList.add('show');
+  spHorn(.15,1.9,.26,true);              // 霧笛（こもった音）
+  spNoise(0,1.2,180,80,.10,1.4);
+  setTimeout(()=>{ if(seq!==shipSceneSeq) return; $('spFog').classList.add('peak'); },680);
+  setTimeout(()=>{ if(seq!==shipSceneSeq) return; shipScenePlayS6(); },SHIP_SCENE_MS.s5);
+}
+
+/* ==============================================================
+   S6：函館到着（5.0秒）
+   霧が晴れて港。接岸 → 主人公が降りて手前へ歩いてくる
+============================================================== */
+function shipScenePlayS6(){
+  const seq=shipSceneSeq;
+  $('spDeck').classList.remove('show','pan');
+  $('spDeckLand').classList.remove('show');
+  $('spFog').classList.remove('peak');
+  $('shipSceneStage').classList.remove('sp-roll');
+  $('spBgArrive').classList.add('show');
+  spCreak(.2);
+  spFadeOut('engine',1.2);       // 着いたので機関の唸りを止める
+  spFadeOut('waves',1.6);        // 接岸したので波の音も引かせる（S7の屋内まで鳴り続けていた）
+  spHarborStart(.08);
+  // 霧が晴れる（黒ワイプが抜ける新幹線に対して、白が引いていく）
+  setTimeout(()=>{ if(seq!==shipSceneSeq) return; $('spFog').classList.remove('show'); $('spFogDrift').classList.remove('show'); spChime(); },400);
+  const bh=$('spBoardHero');
+  const put=(x,y,w,dur)=>{ bh.style.transitionDuration=dur+'s,'+dur+'s,'+dur+'s,.35s'; bh.style.left=x+'%'; bh.style.top=y+'%'; bh.style.width=w+'%'; };
+  let row=false, col='100%';             // 100%=よこ向き（降りる一歩目）
+  setTimeout(()=>{
+    if(seq!==shipSceneSeq) return;
+    bh.classList.remove('pose');
+    bh.style.backgroundImage=`url('${heroSheetUrl()}')`;
+    bh.style.backgroundSize='300% 200%';
+    bh.style.transform='none';
+    bh.style.backgroundPosition='100% 0%';
+    /* ★批判エージェント（4回目）の指摘＝S6の主人公が階段から40〜60px外れて船の外壁に浮いていた。
+       原因は「乗降口が画面の左にある」という**目視の判断が間違っていた**こと。
+       ★1度目の測り直しも誤っていた（夕暮れの絵で、濡れた岸壁の反射を金属の階段と誤検出した）。
+       拡大画像で目視して確定した位置：
+         上端（乗降口の敷居）＝画面の x≈16% / y≈45%
+         下端（岸壁に着く）  ＝画面の x≈56% / y≈64%
+       つまり**画面の左**から右下へ降りている。その線に足元を乗せる。
+       put(left,top,width)：足元 ≒ top + width×0.43 ／ 体の中心 ≒ left + width/2 */
+    put(11,40,11,0); bh.style.opacity='1';
+    const tick=setInterval(()=>{ row=!row; bh.style.backgroundPosition=col+' '+(row?'100%':'0%'); spWalkFrame(bh,row,col); },150);
+    shipSceneWalkHandles.push({stop(){ clearInterval(tick); }});
+  },1400);
+  setTimeout(()=>{ if(seq!==shipSceneSeq) return; put(25,47,16,.5); },2000);   // 階段の中ほど
+  setTimeout(()=>{ if(seq!==shipSceneSeq) return; col='0%'; bh.style.backgroundPosition='0% 0%'; put(45,55,22,.55); },2500);   // 岸壁に降りて正面を向く
+  setTimeout(()=>{ if(seq!==shipSceneSeq) return; put(46,56,36,.55); },3050);
+  setTimeout(()=>{ if(seq!==shipSceneSeq) return; put(30,63,48,.55); },3600);
+  setTimeout(()=>{ if(seq!==shipSceneSeq) return; put(13,69,62,.55); },4150);
+  setTimeout(()=>{ if(seq!==shipSceneSeq) return; shipSceneStopWalkAnims(); shipScenePlayS7(); },SHIP_SCENE_MS.s6);
+}
+
+/* ==============================================================
+   S7：上陸（4.2秒）
+   函館のターミナルを前向きに歩いてきて、白フラッシュで終了
+============================================================== */
+function shipScenePlayS7(){
+  const seq=shipSceneSeq;
+  $('spBgTerminalH').classList.add('show');
+  $('spSnow').classList.remove('show');   // 建物の中に入ったので雪をやめる
+  setTimeout(()=>{ if(seq!==shipSceneSeq) return; $('spBgArrive').classList.remove('show'); },550);
+  const bh=$('spBoardHero');
+  const put=(x,y,w,dur)=>{ bh.style.transitionDuration=dur+'s,'+dur+'s,'+dur+'s,.35s'; bh.style.left=x+'%'; bh.style.top=y+'%'; bh.style.width=w+'%'; };
+  let row=false;
+  // 背景の切り替え中にキャラが二重に見えないよう、いったん消してから登場させる
+  bh.style.transition='none'; bh.style.opacity='0';
+  // 奥（出口の手前）から手前へ。遠近をつけるため大きさも変える
+  /* ★合格後の仕上げ（批判10回目の推奨）＝出てきた瞬間だけ足元が床の線より23px上に出ていた。
+     根っこは「キャラの身長だけがまだ画面の幅基準」なこと。本体へ移すときに合わせて直す。 */
+  bh.style.left='47%'; bh.style.top='36.5%'; bh.style.width='14%';
+  bh.style.backgroundPosition='0% 0%';
+  requestAnimationFrame(()=>{ bh.style.transition=''; });
+  setTimeout(()=>{
+    if(seq!==shipSceneSeq) return;
+    bh.style.opacity='1';
+    const tick=setInterval(()=>{ row=!row; bh.style.backgroundPosition='0% '+(row?'100%':'0%'); spWalkFrame(bh,row,'0%'); },160);
+    shipSceneWalkHandles.push({stop(){ clearInterval(tick); }});
+  },650);
+  setTimeout(()=>{ if(seq!==shipSceneSeq) return; put(47,44,18,.7); },850);
+  setTimeout(()=>{ if(seq!==shipSceneSeq) return; put(46,55,23,.7); },1550);
+  setTimeout(()=>{ if(seq!==shipSceneSeq) return; put(45,66,28,.7); },2250);
+  setTimeout(()=>{ if(seq!==shipSceneSeq) return; put(44,76,34,.7); },2950);
+  setTimeout(()=>{ if(seq!==shipSceneSeq) return; $('spFlash').classList.add('show'); },3800);
+  setTimeout(()=>{ if(seq!==shipSceneSeq) return; shipSceneFinish(); },SHIP_SCENE_MS.s7);
+}
+
+/* ---------------- 試作の入口 ---------------- */
 
 /* ==============================
    初期化
