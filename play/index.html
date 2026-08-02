@@ -25,6 +25,57 @@
     box-shadow:0 0 40px rgba(255,107,107,.12);
   }
 
+  /* ===== 弾TB-1 タブレット拡張（2026-08-02・準也さん裁定） =====
+     もくてき＝タブレットで左右にできる大きなあき（たて820pxで片がわ170px＝画面の41%）を、
+     絵で うめる。裁定は「スマホの見え方は1pxも変えない・ボタンや札の配置は一切いじらない・
+     その分タブレットで見える絵を増やすだけ」。フィールドは見えるマスが増えてよい（＝先の敵が
+     見えるのは むしろ望むところ、という裁定）。
+     しくみ＝この中の指定はすべて @media (min-width:481px) に閉じこめる。スマホ（480px以下）は
+     1行も適用されないので、見え方が変わりようがない。
+       ・フィールド … #app ごと広げて マップのビューポートを大きくする。1マスの大きさは
+         computeTileSize() 側で 480px相当に頭打ちにしてあるので、マスが大きくなるのではなく
+         「見えるマスが増える」（スマホと同じ大きさのキャラのまま、視野だけ広がる）
+       ・バトル … UIは480pxのまま中央に置く（札・メッセージ・選択肢は position:absolute の
+         実測値が480px幅前提のため #app は広げない）。背景の絵だけを 画面いっぱいの
+         固定レイヤー #battleWideBg に敷き、#app を透明にして 1枚の絵に見せる */
+  #battleWideBg{display:none}
+  @media (min-width:481px){
+    body.wide-field #app{max-width:min(100vw,1100px)}
+    body.wide-field #screen-field{max-width:none}
+    /* ★ここは触るときに必ず読む（2026-08-02・準也さんの差し戻し）★
+       やってはいけないこと＝background-size:cover や position:center にすること。
+       それをやると 絵そのものが 横にずれ、敵が立つ位置に 橋がなくなって 宙に浮く。
+       敵の立ち位置は CSS の規格値で固定されており、絵のほうは 弾R-1/R-3 で
+       「右はし基準・auto 145%・たて32%」に そろえてある。この3つは 絶対に変えない。
+       正しいやり方＝480pxのはばの中は 今までと1pxも同じ絵・同じ位置のまま、
+       その「外がわ」に 絵の続きを 見せるだけ。
+         ・下の層(::before) … 絵をぼかして 画面いっぱいに敷く（右がわの すき間うめ。
+           絵の右はしは もともと画面の右はしに来ているので、右に足せる絵が無いため）
+         ・上の層(::after)  … 本物の絵。大きさ auto 145%・たて32% は そのまま。
+           よこ位置だけ「絵の右はしが #app の右はしに ぴったり重なる」px を計算して置く。
+           #app の右はし＝(100vw+480px)/2 ／ 絵のはば＝100vh×1.45×(1024/1536)＝96.667vh */
+    body.wide-battle #battleWideBg{display:block;position:fixed;inset:0;z-index:0;
+      background-repeat:no-repeat;background-size:0 0}
+    /* ぼかし層＝よこ向きなど「絵が画面のはばに とどかない」ときの すき間うめ。
+       たて向きのタブレットでは 絵が画面ぜんたいを おおうので これは見えない。
+       案②では すき間は 絵の右どなり（＝#appの右はしより外）に出るので、
+       位置を right にして 絵の右がわの色でうめると 自然につながる */
+    body.wide-battle #battleWideBg::before{content:'';position:absolute;inset:0;
+      background-image:inherit;background-size:cover;background-position:right center;
+      filter:blur(34px);transform:scale(1.15)}
+    body.wide-battle #battleWideBg::after{content:'';position:absolute;inset:0;
+      background-image:inherit;background-repeat:no-repeat;background-size:auto 145%;
+      background-position:calc((100vw + 480px)/2 - 96.667vh) 32%}
+    /* box-shadow も消す。透明にしただけだと #app のふちの影が絵の上に
+       うすい縦線として残る（タブレットで実際に見えた） */
+    /* 準也さん裁定（2026-08-02）＝案②「480pxの枠は 画面の中央のまま」。
+       右はしへ寄せる案③は「右に寄りすぎておかしい」ため不採用。
+       ★大前提＝スマホがメイン。タブレットは「あいた場所に絵が見えるだけ」の
+       おまけであって、タブレットに合わせてレイアウトを動かさない。 */
+    body.wide-battle #app{background:transparent;box-shadow:none;z-index:1}
+    body.wide-battle #screen-battle.tate{background-image:none!important}
+  }
+
   /* ===== 画面ベース ===== */
   .screen{display:none;padding:18px 16px 28px;animation:fadeIn .3s}
   .screen.active{display:block}
@@ -2040,6 +2091,9 @@
 </style>
 </head>
 <body>
+<!-- 弾TB-1：タブレットでバトルの絵を画面いっぱいに敷くための層。#app の外（下）に置く。
+     スマホ（480px以下）では CSS で display:none のまま＝存在しないのと同じ -->
+<div id="battleWideBg"></div>
 <div id="app">
 
   <!-- ===== タイトル ===== -->
@@ -8866,6 +8920,11 @@ function showScreen(id){
   cleanupDeatta();    // 手直し(であった演出)§2：であった演出中の「もどる」等の画面遷移で複製・タイマーが残らないように即掃除（無関係な遷移では何もしない）
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   $(id).classList.add('active');
+  /* 弾TB-1：タブレットのときだけ効く「広げる」印。フィールド＝#appごと広げる／
+     バトル＝背景の絵だけ画面いっぱいに敷く。スマホ幅ではCSS側が全部止まるので何も起きない。
+     バトルは縦長背景(tate)のときだけ＝それ以外の戦場で黒い帯が出るのを防ぐ（applySceneBg側で判定して付け直す） */
+  document.body.classList.toggle('wide-field', id==='screen-field');
+  if(id!=='screen-battle') document.body.classList.remove('wide-battle');
   window.scrollTo(0,0);
   if(id==='screen-title') { updateTitle(); bgmPlay('title'); }                       // 第9弾：タイトル系=title
   if(id==='screen-stages') { renderStages(); bgmPlay('title'); }                     // タイトル系=title
@@ -10044,6 +10103,13 @@ function applySceneBg(sn,k){
   if(scr){
     scr.classList.toggle('tate',tate);
     scr.style.backgroundImage=tate?"url('images/battle-tate/stage"+sn+".webp')":'';
+  }
+  /* 弾TB-1：タブレットのときだけ、同じ絵を画面いっぱいの層(#battleWideBg)にも敷く。
+     縦長背景がある戦場だけ。スマホ幅ではCSSがdisplay:noneで止めるので、印を付けても何も起きない */
+  const wbg=$('battleWideBg');
+  if(wbg){
+    wbg.style.backgroundImage=tate?"url('images/battle-tate/stage"+sn+".webp')":'';
+    document.body.classList.toggle('wide-battle',tate);
   }
   if(tate){
     sc.className='scene battle tatebg';
@@ -12828,7 +12894,12 @@ function fitFieldHeight(){
 function computeTileSize(){
   const wrap=$('fieldWrap'); if(!wrap) return;
   const vw=wrap.clientWidth; if(vw<=0) return;     // 非表示等はスキップ
-  const tile=Math.max(10, Math.floor(vw/9));        // 第7弾§2：1タイル＝ビューポート幅の1/9
+  /* 第7弾§2：1タイル＝ビューポート幅の1/9。
+     弾TB-1（2026-08-02）：ただし480px相当で頭打ちにする。タブレットでマップの幅が広がったとき、
+     この上限が無いと「1マスが大きくなるだけ」で見える範囲が9マスのまま変わらない。
+     頭打ちにすると マスの大きさはスマホと同じまま、見えるマスの数だけが増える（＝準也さんの裁定
+     「タブレットで見える場所を増やす」）。480px以下の画面では min() が素通りするので計算は従来と1pxも変わらない */
+  const tile=Math.max(10, Math.floor(Math.min(vw,480)/9));
   const grid=$('fieldGrid'); if(grid) grid.style.setProperty('--tile',tile+'px');
   // 検品修正弾3-7：CSS変数はsetPropertyした要素自身にしか効かず兄弟要素には継承されないため、
   //   #fieldGridの兄弟である#fieldParallaxBgにも同じ値を明示的に設定する（無ければ.field-parallax-bgのvar()既定値12/8/100%にフォールバックし、背景ボックスが実寸と大きくズレて空しか映らなくなる不具合があった）
