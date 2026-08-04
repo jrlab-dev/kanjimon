@@ -2415,6 +2415,69 @@
     color:#fff;font-weight:900;font-size:1.15rem;line-height:1.6;padding:0 26px;
     text-shadow:0 2px 8px rgba(0,0,0,.75);opacity:0;transition:opacity .6s ease;z-index:10}
   .train-scene-voice.show{opacity:1}
+
+/* ===========================================================
+   弾6-1：飛行機シーン（北海道 → トットリ）
+   絵は1枚も使わず、すべてCanvasに計算で描く。試作＝_一時\_飛行機シーン試作\
+=========================================================== */
+  /* ---- オーバーレイ（#appと同じ幅・中央。船シーンと同じ作り） ---- */
+  .plane-scene-overlay{position:fixed;top:0;bottom:0;left:50%;transform:translateX(-50%);
+    width:min(100vw,480px);z-index:9999;display:none;background:#000;overflow:hidden;
+    font-family:inherit;-webkit-user-select:none;user-select:none}
+  .plane-scene-overlay.show{display:block}
+  #plCanvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  /* ---------------- ここから v3.6＝キャラ・会話・とばす ----------------
+     会話カードは船シーン（.sp-talk）と同じ見た目をそのまま持ってきている。
+     ★飛行機は「ずっと景色が流れ続ける」映像なので、会話で時間を止めない。
+       船・新幹線は会話の終わりで次のカットへ進むが、それをやると空撮が静止してしまう。
+       ＝カードは映像と並行して出し、時間で自動的に消える（タップで早く消せる）。 */
+  .ps-talk{position:absolute;left:2%;width:96%;z-index:40;display:none;align-items:center;gap:12px;
+    background:rgba(0,0,0,.82);color:#fff;border:3px solid rgba(255,255,255,.85);border-radius:18px;
+    padding:10px 18px 22px 10px;box-shadow:0 4px 14px rgba(0,0,0,.28);cursor:pointer;
+    font-family:system-ui,sans-serif;box-sizing:border-box;}
+  .ps-talk.show{display:flex;animation:psTalkIn .22s ease forwards}
+  @keyframes psTalkIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  .ps-talk.top{top:6%}
+  .ps-talk.mid{top:63%}
+  .ps-talk-face{flex:0 0 auto;width:clamp(84px,24%,124px);aspect-ratio:1;height:auto;border-radius:14px;
+    border:2px solid rgba(255,255,255,.75);background-size:cover;background-position:center top;overflow:hidden}
+  .ps-talk-text{font-weight:900;font-size:1.148rem;line-height:1.4;text-align:left}
+  .ps-talk-next{position:absolute;right:12px;bottom:4px;font-size:.8rem;opacity:.85;
+    animation:psTalkNext 1s ease-in-out infinite}
+  @keyframes psTalkNext{0%,100%{transform:translateY(0)}50%{transform:translateY(3px)}}
+
+  /* 機内カット＝「座席から窓の外を見ている主人公の後ろ姿」。
+     ★1回目の自己チェックで直した点：はじめは主人公とマナの2人を並べたが、
+       スマホ縦だと2人＋窓で画面が窮屈になり、どちらも小さくなって誰だか分からなかった。
+       マナは会話カードに顔が出るので、機内は主人公ひとりにして構図を締める。
+     窓の外側だけを暗くするのに box-shadow の広がりを使う（＝窓の形に穴があいて見える）。
+     キャラは逆光のシルエット（brightnessを落とす）＝機内は暗い、という当たり前の見え方。
+     ただし落としすぎると真っ黒で誰か分からないので、輪郭が残る明るさにしてある。 */
+  #psCabin{position:absolute;inset:0;z-index:30;pointer-events:none;opacity:0;display:none;}
+  #psWindow{position:absolute;right:5%;top:36%;width:44%;height:30%;border-radius:26%/34%;
+    box-shadow:0 0 0 200vmax rgba(5,9,20,.94), inset 0 0 26px rgba(120,170,220,.30);}
+  #psWindow::after{content:'';position:absolute;inset:0;border-radius:26%/34%;
+    border:4px solid rgba(160,178,198,.5);}
+  /* 座席の背もたれ＝機内であることが一目で分かる手がかり（窓だけだと船にも列車にも見える） */
+  /* 背もたれは主人公の肩から下を隠す高さにする＝「立っている」ではなく「座っている」に見せるため */
+  #psSeat{position:absolute;left:-6%;bottom:0;width:72%;height:22%;
+    background:rgba(11,17,30,.96);border-radius:26px 26px 0 0;
+    box-shadow:inset 0 3px 0 rgba(255,255,255,.12);}
+  /* saturate を落とすのは、逆光で色が飛ぶのが自然だから。
+     落とさないと帽子の黄色だけが暗い機内で浮いて見える（自己チェック2回目で発見） */
+  #psHero{position:absolute;left:5%;bottom:12%;width:62%;aspect-ratio:1;
+    background-repeat:no-repeat;filter:brightness(.32) saturate(.35) contrast(1.2);}
+  /* 横長の画面では窓と主人公が離れすぎるので、横だけ配置を寄せる（スマホ縦は1pxも変えない） */
+  @media (min-aspect-ratio: 1/1){
+    /* 横画面は会話カードの背が高くなる（幅96%でも文字が大きい）ので、窓を下げて重ならないようにする */
+    #psWindow{right:12%;top:34%;width:30%;height:40%;}
+    #psHero{left:18%;width:22%;bottom:6%;}
+    #psSeat{left:10%;width:32%;height:18%;}
+  }
+
+  #psSkip{position:absolute;right:12px;top:12px;z-index:50;padding:8px 16px;border:0;border-radius:20px;
+    background:rgba(0,0,0,.55);color:#fff;font-size:14px;font-family:system-ui,sans-serif;cursor:pointer;
+    border:1px solid rgba(255,255,255,.5);}
 </style>
 </head>
 <body>
@@ -2984,6 +3047,17 @@
 <!-- 弾W-1：かきとりの筆順データ（KanjiVG由来・642字分）。fetchはfile://で動かないためscriptタグで読む。
      deferなので実行はHTML全体のパース完了後＝下方の巨大な同期実行スクリプトより後になるが、
      KAKITORI_STROKESはユーザーがかきとり画面を開いた時点（ずっと後）で参照するだけなので問題ない。 -->
+<!-- 弾6-1：飛行機シーン（北海道 → トットリ）。中身は1つの箱に閉じてあり本体の名前とぶつからない -->
+<div class="plane-scene-overlay" id="planeSceneOverlay">
+  <canvas id="plCanvas"></canvas>
+  <div id="psCabin">
+    <div id="psWindow"></div>
+    <div id="psHero"></div>
+    <div id="psSeat"></div>
+  </div>
+  <div class="ps-talk" id="psTalk"></div>
+  <button id="psSkip">とばす ▶</button>
+</div>
 <script src="data/kakitori-strokes.js" defer></script>
 <script>
 /* ==============================
@@ -8365,6 +8439,7 @@ let yojiHiddenIntroSeen=new Set();
 let kansaiHakaseSeen=false;
 let stationSceneSeen=false;   // 手直し_駅構内(7/25)：初回入駅で新幹線シーンを自動再生したか
 let shipSceneSeen=false;      // 弾S-1：ゾーン76→77で船シーン（つがるかいきょう）を見たか
+let planeSceneSeen=false;     // 弾6-1：ゾーン83→84で飛行機シーン（北海道→トットリ）を見たか
 // 弾3-6§6-3：「たびの つづき」通知（旧セーブ移行）を見たか（旧セーブは未見あつかい）
 let travelContinueSeen=false;
 let pendingTravelContinueBanner=false;   // セッション値：load()で判定し、次のrenderField()で1回だけ消費
@@ -8455,6 +8530,7 @@ function save(){
       kansaiHakaseSeen:kansaiHakaseSeen,       // 弾3-6§6-1
       stationSceneSeen:stationSceneSeen,       // 手直し_駅構内(7/25)：初回入駅の自動シーンを見たか
       shipSceneSeen:shipSceneSeen,             // 弾S-1：船シーンを見たか
+      planeSceneSeen:planeSceneSeen,           // 弾6-1：飛行機シーンを見たか
       travelContinueSeen:travelContinueSeen,   // 弾3-6§6-3
       chubuHakaseSeen:chubuHakaseSeen,         // 弾4-6§6-1
       travelContinueSeen2:travelContinueSeen2, // 弾4-6§6-3
@@ -8600,6 +8676,7 @@ function load(){
     kansaiHakaseSeen = (d.kansaiHakaseSeen===true);
     stationSceneSeen = (d.stationSceneSeen===true);   // 手直し_駅構内(7/25)：旧セーブは未見あつかい
     shipSceneSeen = (d.shipSceneSeen===true);         // 弾S-1：旧セーブは未見あつかい
+    planeSceneSeen = (d.planeSceneSeen===true);       // 弾6-1：旧セーブは未見あつかい
     travelContinueSeen = (d.travelContinueSeen===true);
     // 弾4-6§6-1／§6-3：新規セーブ項目（旧セーブは未見あつかい）
     chubuHakaseSeen = (d.chubuHakaseSeen===true);
@@ -12899,7 +12976,28 @@ const ZONE_PAL=[
   {grass:['#bef264','#a3e635'],path:['#e7d7b1','#d6c4a0'],wall:['#16a34a','#15803d','#bbf7d0'],we:'🌲'},   // 80 ぼくじょう
   {grass:['#fef08a','#fde047'],path:['#fde68a','#fbbf24'],wall:['#a16207','#78350f','#fef3c7'],we:'🌾'},   // 81 とかち
   {grass:['#bef264','#a3e635'],path:['#e7d7b1','#d6c4a0'],wall:['#16a34a','#15803d','#bbf7d0'],we:'🦩'},   // 82 くしろしつげん
-  {grass:['#e0f2fe','#bae6fd'],path:['#f0f9ff','#e0f2fe'],wall:['#64748b','#334155','#e2e8f0'],we:'🧊'}    // 83 りゅうひょう
+  {grass:['#e0f2fe','#bae6fd'],path:['#f0f9ff','#e0f2fe'],wall:['#64748b','#334155','#e2e8f0'],we:'🧊'},   // 83 りゅうひょう
+  /* 弾6-1で追加：6年チュウゴク・キュウシュウ・オキナワ（84〜102）。
+     弾6-6でここだけ抜けていて、ゾーン84に入るとフィールドが描けず止まっていた */
+  {grass:['#fef3c7','#fde68a'],path:['#f5e6c8','#e8d5a8'],wall:['#a16207','#78350f','#fef3c7'],we:'🐪'},   // 84 さきゅうと らくだの せなか
+  {grass:['#bbf7d0','#86efac'],path:['#e7d7b1','#d6c4a0'],wall:['#b91c1c','#7f1d1d','#fecaca'],we:'⛩️'},   // 85 いずもの おおやしろ
+  {grass:['#bef264','#a3e635'],path:['#fef3c7','#fde68a'],wall:['#16a34a','#15803d','#bbf7d0'],we:'🍑'},   // 86 ももたろうの さと
+  {grass:['#d9f99d','#bef264'],path:['#e5e7eb','#d1d5db'],wall:['#f1f5f9','#94a3b8','#1f2937'],we:'🏮'},   // 87 くらしきの くらと せんい（白壁）
+  {grass:['#bbf7d0','#86efac'],path:['#e0f2fe','#bae6fd'],wall:['#dc2626','#991b1b','#fee2e2'],we:'⛩️'},   // 88 みやじまの おおとりい
+  {grass:['#d9f99d','#bef264'],path:['#e5e7eb','#d1d5db'],wall:['#78716c','#44403c','#e7e5e4'],we:'🕊️'},   // 89 へいわこうえんの おりづる
+  {grass:['#a8a29e','#78716c'],path:['#57534e','#44403c'],wall:['#44403c','#292524','#d6d3d1'],we:'💧'},   // 90 しょうにゅうどうの たんけん
+  {grass:['#334155','#1e293b'],path:['#475569','#334155'],wall:['#b45309','#78350f','#fed7aa'],we:'🏮'},   // 91 はかたの やたいどおり（夜）
+  {grass:['#bbf7d0','#86efac'],path:['#e7d7b1','#d6c4a0'],wall:['#be185d','#831843','#fce7f3'],we:'🌸'},   // 92 だざいふの がくもんどころ
+  {grass:['#d9f99d','#bef264'],path:['#d6c4a0','#b8a179'],wall:['#a16207','#713f12','#fef3c7'],we:'🏕️'},   // 93 よしのがりの いせき
+  {grass:['#bef264','#a3e635'],path:['#e5e7eb','#d1d5db'],wall:['#0369a1','#075985','#e0f2fe'],we:'📖'},   // 94 らんがくの しんりょうじょ
+  {grass:['#bbf7d0','#86efac'],path:['#e7d7b1','#d6c4a0'],wall:['#0e7490','#155e75','#cffafe'],we:'⚓'},   // 95 でじまの ぼうえきみなと
+  {grass:['#bef264','#a3e635'],path:['#e5e7eb','#d1d5db'],wall:['#1f2937','#111827','#e5e7eb'],we:'🏯'},   // 96 くまもとじょうの てんしゅかく（黒い城）
+  {grass:['#86efac','#4ade80'],path:['#d6c4a0','#b8a179'],wall:['#15803d','#14532d','#bbf7d0'],we:'🌋'},   // 97 あその おおくさはらと うし
+  {grass:['#bbf7d0','#86efac'],path:['#e5e7eb','#d1d5db'],wall:['#0891b2','#0e7490','#cffafe'],we:'♨️'},   // 98 べっぷの じごくむし おんせん
+  {grass:['#86efac','#4ade80'],path:['#a8a29e','#78716c'],wall:['#166534','#14532d','#bbf7d0'],we:'⛩️'},   // 99 たかちほ かみさまの さと
+  {grass:['#d6d3d1','#a8a29e'],path:['#a8a29e','#78716c'],wall:['#57534e','#292524','#e7e5e4'],we:'🌋'},   // 100 さくらじまの かざんばい（灰）
+  {grass:['#bbf7d0','#86efac'],path:['#e5e7eb','#d1d5db'],wall:['#1e40af','#1e3a8a','#dbeafe'],we:'🚀'},   // 101 たねがしまの うちゅうセンター
+  {grass:['#86efac','#4ade80'],path:['#fde68a','#fbbf24'],wall:['#dc2626','#991b1b','#fee2e2'],we:'🌺'}    // 102 しゅりじょうと さとうきびばたけ（赤瓦）
 ];
 /* 第4.5弾：地面テクスチャ画像（groundN.webp があれば敷き詰め・無ければ単色フォールバック） */
 const groundImgOK=new Set();
@@ -14329,6 +14427,9 @@ function enterNextZone(){
      学年の変わり目ではなく学年の中の移動なので、ここだけゾーン番号で判定する。 */
   const SHIP_ZONE_FROM=76;   // 「つがるかいきょうの ふゆ」（青森）
   const enteringHakodate=(fieldZone===SHIP_ZONE_FROM);
+  /* 弾6-1：トウホク・ホッカイドウ最終(83)クリアの瞬間だけ、飛行機で南西のトットリへ飛ぶシーンを1回流す
+     （6年＝飛行機で南国へ、という学年ごとの移動手段の憲法どおり） */
+  const enteringChugoku=(fieldZone===STAGE5_COUNT);
   fieldZone=fieldZone+1;
   const s=zoneStartOf(fieldZone); fieldHx=s.x; fieldHy=s.y;
   fieldPos={zone:fieldZone,x:fieldHx,y:fieldHy}; save();
@@ -14432,6 +14533,30 @@ function enterNextZone(){
       };
       if(willShowTravelBanner3) setTimeout(()=>{ if(enterSeq!==fieldSeq) return; showTohokuIntro(); },2300);
       else showTohokuIntro();
+    }else if(enteringChugoku){
+      /* 弾6-1：初回だけ「マナの一言 → 飛行機シーン → ゾーン紹介バナー → ようこそ」。
+         船シーン（enteringHakodate）とまったく同じ流儀。2回目以降は軽量バナーのみ。
+         ★hakaseTalkOnce の引数は (msg, onDone, sndId) の順（2026-08-03に7か所直した順番）。 */
+      const showChugokuIntro=()=>{
+        if(!planeSceneSeen){
+          hakaseTalkOnce('つぎは とおい みなみの くに。ひこうきで いっきに とぶわよ！',()=>{
+            if(enterSeq!==fieldSeq) return;   // ワープ等で離脱済みなら飛行機シーンへは進まない
+            PlaneScene.start(()=>{
+              if(enterSeq!==fieldSeq) return;   // 飛行機シーン再生中に離脱済みなら以降は進めない
+              ensureFieldIntro();   // ゾーン84の紹介バナー
+              setTimeout(()=>{
+                if(enterSeq!==fieldSeq) return;
+                planeSceneSeen=true; save();
+                hakaseTalkOnce('ようこそ トットリへ！ にほんいち おおきな すなの おか、さきゅうが あるところよ！',null,'bh84');
+              },2300);   // 紹介バナーが消えてから、はかせの一言（初回のみ）
+            });
+          },'bh83');
+        }else{
+          showFieldBanner('ひこうきで みなみの ちほうへ とんだ！');
+          setTimeout(()=>{ if(enterSeq!==fieldSeq) return; ensureFieldIntro(); },2300);
+        }
+      };
+      showChugokuIntro();
     }else{
       ensureFieldIntro();
     }
@@ -17286,6 +17411,7 @@ function makeGradeStartSave(n){
     stationSceneSeen:(startZone>STAGE2_COUNT+1),   // 手直し_駅構内(7/25)：学年スタートも同じ基準で既見あつかい
     travelContinueSeen2:(startZone>STAGE3_COUNT+1), chubuHakaseSeen:(startZone>STAGE3_COUNT+1),
     shipSceneSeen:(startZone>77),   // 弾S-1：77より先から始めたら船シーンは見たことにする
+    planeSceneSeen:(startZone>84),  // 弾6-1：84より先から始めたら飛行機シーンは見たことにする
     travelContinueSeen3:(startZone>STAGE4_COUNT+1),   // 弾5-6§7：トウホク突入の「たびのつづき」は学年5未満なら未見あつかい
     /* 手直し_お金(7/25・準也さんの指示)：お金の単位が「円」になったので、テスト用の学年スタートの
        所持金も実額にする。3年生以降＝20,000円（わふく2,000＋せいふく8,000＋αが買えて着替えを試せる）／
@@ -18974,6 +19100,1400 @@ window.addEventListener('resize', ()=>{
   if($('screen-field').classList.contains('active')) relayoutField();
   wmReclampOnResize();   // 手直し ちず拡大とパン：ワールドマップが開いているときだけ内部で判定して再クランプ
 });
+
+
+/* ===========================================================
+   弾6-1：飛行機シーン（北海道 → トットリ）＝ゾーン83クリア→84の突入演出
+   ★中身はまるごとこの箱の中で完結させている（IIFE）。
+     外へ出るのは PlaneScene.start(onDone) と PlaneScene.skip() だけなので、
+     箱の中の名前（W・H・render・clamp・lerp など）は本体と1つもぶつからない。
+   試作＝_一時\_飛行機シーン試作\試作_飛行機シーン.html（作業記録も同じフォルダ）
+=========================================================== */
+var PlaneScene=(function(){
+let planeSceneActive=false, planeSceneOnDone=null;
+/* =========================================================================
+   試作v3：飛行機シーン（北海道→九州）
+   準也さん指摘（2026-08-02）を受けた作り直し：
+     ① 雲への突入が上昇の途中に挟まっていて違和感 → 離陸したらすぐ雲に入る順序へ
+     ② 棒状の陸が斜めに規則正しく重なるのは地球上に存在しない地形
+        → 「帯を並べる」方式を全廃。カメラの透視投影で地表を1枚の大地として描く
+     ③ 北海道→九州なら片側が陸・片側が海。海岸線は日本らしいギザギザ。
+        島は棒ではなく丸〜楕円の複雑な形
+   ・絵の素材は1枚も使わない。すべてCanvas 2Dに計算で描く
+   ・尺15.0秒。カット割り：
+       S1  0.0- 3.4  滑走路：後ろ姿で加速し、浮く
+       S2  3.4- 5.2  離陸直後：地面が遠ざかり、雲が迫る（短い）
+       S3  5.2- 7.0  雲を突き抜ける
+       S4  7.0-13.4  巡航：右に日本列島、左に海。北海道→九州を一気に流す
+       S5 13.4-15.0  降下・フェード
+   ========================================================================= */
+
+const cv=document.getElementById('plCanvas'), ctx=cv.getContext('2d');
+let W=0,H=0,DPR=1,UK=1;
+function resize(){
+  DPR=Math.min(window.devicePixelRatio||1,2);
+  W=cv.clientWidth; H=cv.clientHeight;
+  if(!W||!H) return;                       // オーバーレイが閉じている間は幅0＝測れない
+  cv.width=Math.floor(W*DPR); cv.height=Math.floor(H*DPR);
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  /* 縦長の画面は横の視野が狭く、海岸線がすぐ画面の外へ逃げてしまう。
+     東西方向だけ縮めて画面内に収める（縦横比は多少変わるが破綻はしない） */
+  UK=Math.max(0.26,Math.min(1,(W/H)/1.78));
+}
+window.addEventListener('resize',resize);
+
+/* ---- 便利関数 ---- */
+/* かんじモンはスマホ縦が本番。横基準で組むと、縦では左右が切れて見どころが画面の外に出る。
+   縦のときは「地平線を上げる／カメラを陸側へ寄せる／少し引く／機体を小さく」の4つで構図を作り直す */
+const PORT=()=>(W/H<0.85);
+
+const clamp=(v,a,b)=>v<a?a:(v>b?b:v);
+const lerp=(a,b,t)=>a+(b-a)*t;
+const ease=t=>t<0?0:t>1?1:t*t*(3-2*t);
+const easeIn=t=>{t=clamp(t,0,1);return t*t;};
+const easeOut=t=>{t=clamp(t,0,1);return 1-(1-t)*(1-t);};
+const seg=(t,a,b)=>clamp((t-a)/(b-a),0,1);
+function mixColor(c1,c2,t){
+  t=clamp(t,0,1);
+  return [Math.round(lerp(c1[0],c2[0],t)),Math.round(lerp(c1[1],c2[1],t)),Math.round(lerp(c1[2],c2[2],t))];
+}
+const rgb=c=>`rgb(${c[0]},${c[1]},${c[2]})`;
+
+/* 決まった乱数（毎回同じ絵になるように） */
+let _seed=20260802;
+function rnd(){ _seed=(_seed*1664525+1013904223)&0x7fffffff; return _seed/0x7fffffff; }
+function reseed(s){ _seed=Math.abs(Math.floor(s))%0x7fffffff||1; }
+
+/* value noise → fBm。海岸線・山の形の下地。
+   サインカーブで作ると必ず規則的に見えるので、決まった乱数をなめらかにつないだものを
+   周波数を倍々にしながら重ねる＝大きなうねりの中に小さな入り江がある形になる */
+function vnoise(x,seed){
+  const i=Math.floor(x), f=x-i;
+  reseed(i*374761+seed*66826+911);      const a=rnd();
+  reseed((i+1)*374761+seed*66826+911);  const b=rnd();
+  const u=f*f*(3-2*f);
+  return lerp(a,b,u)*2-1;
+}
+function fbm(x,seed,oct){
+  let v=0,amp=1,fr=1,norm=0;
+  for(let i=0;i<(oct||4);i++){ v+=vnoise(x*fr,seed+i*17)*amp; norm+=amp; amp*=0.52; fr*=2.13; }
+  return v/norm;
+}
+
+/* =========================================================================
+   空・太陽
+   ========================================================================= */
+const SKY_LOW_TOP =[ 96,150,214];
+const SKY_LOW_BOT =[255,190,130];
+const SKY_HI_TOP  =[  8, 22, 66];
+const SKY_HI_BOT  =[ 92,148,214];
+
+function drawSky(alt){
+  const a=easeOut(alt);
+  const top=mixColor(SKY_LOW_TOP,SKY_HI_TOP,a);
+  const bot=mixColor(SKY_LOW_BOT,SKY_HI_BOT,a*0.72);
+  const g=ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,rgb(top));
+  g.addColorStop(0.62,rgb(mixColor(top,bot,0.55)));
+  g.addColorStop(1,rgb(bot));
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+}
+function drawSun(alt,horizonY){
+  const y=horizonY-H*0.02-alt*H*0.04;
+  const r=Math.min(W,H)*(0.075-alt*0.02);
+  const g=ctx.createRadialGradient(W*0.78,y,0,W*0.78,y,r*7);
+  g.addColorStop(0,'rgba(255,244,214,0.95)');
+  g.addColorStop(0.10,'rgba(255,206,132,0.58)');
+  g.addColorStop(0.35,'rgba(255,164,96,0.18)');
+  g.addColorStop(1,'rgba(255,150,90,0)');
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  ctx.beginPath(); ctx.arc(W*0.78,y,r,0,Math.PI*2);
+  ctx.fillStyle='rgba(255,250,232,0.95)'; ctx.fill();
+}
+
+/* =========================================================================
+   雲
+   ========================================================================= */
+function puff(x,y,rx,ry,alpha,tint){
+  if(rx<=0.2) return;
+  ctx.save();
+  ctx.translate(x,y); ctx.scale(1,ry/rx); ctx.translate(-x,-y);
+  const g=ctx.createRadialGradient(x,y-rx*0.30,rx*0.10,x,y,rx);
+  g.addColorStop(0,`rgba(255,255,255,${alpha})`);
+  g.addColorStop(0.45,`rgba(${tint},${alpha*0.80})`);
+  g.addColorStop(0.78,`rgba(${tint},${alpha*0.30})`);
+  g.addColorStop(1,`rgba(${tint},0)`);
+  ctx.fillStyle=g;
+  ctx.beginPath(); ctx.arc(x,y,rx,0,Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+function cloud(x,y,scale,alpha,tint){
+  reseed(Math.floor(x*13.7+y*7.3)+9901);
+  for(let i=0;i<14;i++){
+    const dx=(rnd()-0.5)*scale*3.8;
+    const dy=(rnd()-0.5)*scale*0.40;
+    const rx=scale*(0.32+rnd()*0.95);
+    const ry=rx*(0.17+rnd()*0.20);
+    puff(x+dx,y+dy,rx,ry,alpha*(0.30+rnd()*0.48),tint);
+  }
+}
+function cloudBand(offset,y,scale,alpha,gap,tint){
+  const span=gap*scale;
+  let x=-((offset%span)+span)%span;
+  while(x<W+span){ cloud(x,y,scale,alpha,tint); x+=span; }
+}
+
+/* =========================================================================
+   カメラ（地表を見下ろす透視投影）
+   地表の点は (u, v) で持つ。 v=前方への距離（大きいほど奥）／u=東西（右が＋）。
+   飛ぶ＝地物の v が減って手前に来る。ワールド上の位置 vw は動かさず、
+   travel（進んだ距離）を引いて v を出す。これで地物が流れていく。
+   高度 ch を分母の v で割るので、遠いものは自然に地平線へ収束する
+   ＝棒状の帯を並べていた前のやり方と根本的に違う点。
+   ========================================================================= */
+function makeCam(horizonY,camH,uc){ return {hy:horizonY, ch:camH, f:H*1.05, uc:uc||0}; }
+const yAt=(c,v,h)=> c.hy + (c.ch-(h||0))*c.f/v;          // h=地表からの高さ（山）
+const xAt=(c,u,v)=> W*0.5 + (u-c.uc)*UK*c.f/v;           // uc=カメラの真下の東西位置
+const vAtY=(c,y)=> c.ch*c.f/Math.max(1,(y-c.hy));
+const sAt=(c,v)=> c.f/v;                                  // 見かけの大きさ
+/* 明かりの粒や線の太さは画面の短い辺を基準にする。縦画面はHが大きいぶん
+   sAt が大きくなり、粒が太って「点々」が目立ってしまう */
+const sMin=(c,v)=> Math.min(W,H)*1.05/v;
+/* 見える一番奥。高いところほど遠くまで見える */
+const vFarOf=c=> clamp(62*Math.sqrt(c.ch),7,62);
+
+/* =========================================================================
+   通り過ぎる地方（北海道→九州を1回ずつ）
+     cb : 海岸線の基準位置。大きいほど陸が右へ退く＝海が広く見える
+     ca : 海岸線の入り組み具合
+     lb : 左側にも陸がある場合その位置（瀬戸内＝左に四国）
+   ========================================================================= */
+/* len＝その地方が続く長さ。海だけの区間を長く取ると画面が青一色で間延びするので短く、
+   見どころ（関東の夜景・瀬戸内の島）は長めにする */
+const REGION=[
+  {n:'北海道',   k:'plain',    len:34, cb:-1.60, ca:1.05, lb:null},
+  {n:'津軽海峡', k:'sea',      len:15, cb: 4.80, ca:0.50, lb:null},
+  {n:'東北',     k:'mountain', len:27, cb: 0.20, ca:1.30, lb:null},
+  {n:'関東',     k:'city',     len:40, cb:-1.20, ca:1.15, lb:null},
+  {n:'中部',     k:'mountain', len:24, cb: 0.40, ca:1.25, lb:null},
+  {n:'瀬戸内',   k:'islands',  len:36, cb: 1.70, ca:0.85, lb:-2.90},
+  {n:'九州',     k:'plain',    len:32, cb:-0.60, ca:1.20, lb:null}
+];
+const REG_ACC=[]; { let a=0; for(const r of REGION){ REG_ACC.push(a); a+=r.len; } }
+const REG_TOTAL=REG_ACC[REGION.length-1]+REGION[REGION.length-1].len;
+/* その地点がどの地方の何割目か */
+function regAt(vw){
+  let i=0;
+  while(i<REGION.length-1 && vw>=REG_ACC[i+1]) i++;
+  return {i:i, fr:clamp((vw-REG_ACC[i])/REGION[i].len,0,1)};
+}
+const regKind=vw=>REGION[regAt(vw).i].k;
+/* 地方の変わり目で海岸線が段差にならないよう、境目だけなめらかに混ぜる。
+   混ぜる幅が広いと「北海道らしさ」が出る前に次の地方に寄ってしまうので、
+   終わりの2割だけで切り替える */
+function regBlend(vw){
+  const {i,fr}=regAt(vw);
+  const a=REGION[i], b=REGION[Math.min(i+1,REGION.length-1)];
+  const m=ease(clamp((fr-0.80)/0.20,0,1));
+  return {
+    cb:lerp(a.cb,b.cb,m), ca:lerp(a.ca,b.ca,m),
+    lb:(a.lb==null&&b.lb==null)?null:lerp(a.lb==null?-9.5:a.lb, b.lb==null?-9.5:b.lb, m)
+  };
+}
+/* 山の高さの効き具合（山地の地方だけ高く、境目でなだらかに変わる） */
+function mtAmp(vw){
+  const {i,fr}=regAt(vw);
+  const h=k=>{const r=REGION[clamp(k,0,REGION.length-1)];return r.k==='mountain'?1:(r.k==='city'?0.05:0.22);};
+  return lerp(h(i),h(Math.min(i+1,REGION.length-1)),ease(clamp((fr-0.80)/0.20,0,1)));
+}
+
+/* ---- 海岸線 ----
+   大きなうねり＋湾＋細かい岬の3段重ね。岬は 0.5-|noise| で作ると尖った形になり、
+   日本の海岸線らしいギザギザになる（なめらかな波では絶対に出ない形） */
+function coastU(vw,side){
+  const r=regBlend(vw);
+  const s=(side==='L')?71:13;
+  const big=fbm(vw*0.060,s,4);
+  const bay=fbm(vw*0.215,s+31,3)*0.44;
+  const cape=(0.42-Math.abs(fbm(vw*0.520,s+77,2)))*0.62;
+  const w=(big+bay+cape)*r.ca;
+  return side==='L' ? (r.lb==null?-9.5:r.lb)-w : r.cb+w;
+}
+function hasLeftLand(vw){ return regBlend(vw).lb>-6.5; }
+
+/* ---- 海岸線をなぞった点列（画面座標）---- */
+function coastPoints(c,travel,side,N){
+  const vN=Math.max(0.16,vAtY(c,H+60)), vF=vFarOf(c);
+  const pts=[];
+  for(let i=0;i<=N;i++){
+    const v=vN*Math.pow(vF/vN,i/N);
+    const u=coastU(v+travel,side);
+    pts.push([xAt(c,u,v),yAt(c,v,0),v,u]);
+  }
+  return pts;   // i=0 が手前、i=N が最奥
+}
+function landPath(c,pts,side){
+  const p=new Path2D(), edge=(side==='L')?-80:W+80;
+  p.moveTo(pts[0][0],pts[0][1]);
+  for(let i=1;i<pts.length;i++) p.lineTo(pts[i][0],pts[i][1]);
+  p.lineTo(edge,pts[pts.length-1][1]);
+  p.lineTo(edge,H+80);
+  p.lineTo(pts[0][0],H+80);
+  p.closePath();
+  return p;
+}
+
+/* =========================================================================
+   地表の中身（畑・町の明かり・山・川・島）
+   すべて「ワールドのマス目（セル）」ごとに決まった乱数で作る。
+   画面ではなくワールドに固定されるので、進んでもチラチラせず正しく流れる。
+   ========================================================================= */
+const CELL=6;
+function eachCell(c,travel,fn){
+  const vN=Math.max(0.16,vAtY(c,H+60)), vF=vFarOf(c);
+  const c0=Math.floor((travel+vN)/CELL), c1=Math.ceil((travel+vF)/CELL);
+  for(let ci=c0;ci<=c1;ci++) fn(ci, ci*CELL, vN, vF);
+}
+
+/* 陸の色は昼と夜で変える（lightK＝夜の深さ）。1色で通すと、昼のカットでは暗すぎ、
+   夜のカットでは明かりが埋もれて灰色にのっぺりする */
+const LAND_DAY  =[ 76,102, 70];
+const LAND_NIGHT=[ 22, 36, 36];
+const CITY_DAY  =[ 84, 98, 84];
+const CITY_NIGHT=[ 24, 32, 40];
+const LAND_FAR  =[150,176,204];
+
+/* セルの中の海岸線は5点だけ計算して間を埋める（地物1つずつ計算すると重い） */
+function coastTable(base){
+  const t=[];
+  for(let i=0;i<=4;i++) t.push(coastU(base+CELL*i/4,'R'));
+  return t;
+}
+function coastLerp(t,fr){ const p=clamp(fr,0,0.9999)*4, i=Math.floor(p); return lerp(t[i],t[i+1],p-i); }
+
+/* 畑のパッチワーク（平野） */
+function drawFields(c,travel,hazeK){
+  eachCell(c,travel,(ci,base,vN,vF)=>{
+    if(regKind(base+CELL*0.5)!=='plain') return;
+    const tb=coastTable(base);
+    reseed(ci*7919+41);
+    for(let k=0;k<34;k++){
+      const fr=rnd(), vw=base+fr*CELL, v=vw-travel;
+      if(v<vN*0.9||v>vF) continue;
+      const u=coastLerp(tb,fr)+0.25+Math.pow(rnd(),0.85)*7.0;
+      const du=0.30+rnd()*0.55, dv=0.30+rnd()*0.60;
+      const x0=xAt(c,u,v), x1=xAt(c,u+du,v);
+      const y0=yAt(c,v,0), y1=yAt(c,Math.max(v+dv,vN*0.5),0);
+      if(x1<-60||x0>W+60||y0<c.hy) continue;
+      const hz=clamp(Math.pow(clamp(1-v/vF,0,1),0.9),0,1);
+      ctx.fillStyle=`rgba(${(96+rnd()*40)|0},${(112+rnd()*32)|0},${(78+rnd()*30)|0},${0.30*hz})`;
+      ctx.beginPath();
+      ctx.moveTo(x0,y0); ctx.lineTo(x1,y0);
+      ctx.lineTo(xAt(c,u+du,Math.max(v+dv,vN*0.5)),y1);
+      ctx.lineTo(xAt(c,u,Math.max(v+dv,vN*0.5)),y1);
+      ctx.closePath(); ctx.fill();
+    }
+  });
+}
+
+/* 山なみ。尾根は進行方向に沿って走る（日本の背骨と同じ向き）ので、
+   奥から手前へ伸びてくる。帯を並べたときのような横縞にはならない */
+function drawRidges(c,travel,hazeK){
+  const vN=Math.max(0.16,vAtY(c,H+60)), vF=vFarOf(c);
+  const N=64;
+  for(let k=0;k<3;k++){
+    const off=0.9+k*1.30;      // 海岸寄りに置かないと画面の外へ出て山が見えない
+    const top=[], bot=[];
+    let any=false;
+    for(let i=0;i<=N;i++){
+      const v=vN*Math.pow(vF/vN,i/N), vw=v+travel;
+      const amp=mtAmp(vw);
+      const u=coastU(vw,'R')+off+fbm(vw*0.10+k*13,k*5+3,3)*0.85;
+      const h=amp*(0.24+0.42*(fbm(vw*0.30+k*29,k*7+11,4)*0.5+0.5));
+      if(amp>0.3) any=true;
+      top.push([xAt(c,u,v),yAt(c,v,h)]);
+      bot.push([xAt(c,u,v),yAt(c,v,0)]);
+    }
+    if(!any) continue;
+    ctx.beginPath();
+    ctx.moveTo(top[0][0],top[0][1]);
+    for(let i=1;i<=N;i++) ctx.lineTo(top[i][0],top[i][1]);
+    for(let i=N;i>=0;i--) ctx.lineTo(bot[i][0],bot[i][1]);
+    ctx.closePath();
+    ctx.fillStyle=rgb(mixColor(k%2?[16,28,34]:[22,36,40],LAND_FAR,0.26*hazeK));
+    ctx.fill();
+    // 尾根に夕日が当たる（これが無いと陸と同化して山が見えない）
+    ctx.beginPath();
+    ctx.moveTo(top[0][0],top[0][1]);
+    for(let i=1;i<=N;i++) ctx.lineTo(top[i][0],top[i][1]);
+    ctx.strokeStyle='rgba(255,206,158,0.42)';
+    ctx.lineWidth=Math.max(0.9,Math.min(W,H)*0.0024); ctx.stroke();
+  }
+}
+
+/* 川。陸の中を蛇行しながら奥から手前へ */
+function drawRivers(c,travel){
+  const vN=Math.max(0.16,vAtY(c,H+60)), vF=vFarOf(c);
+  for(let k=0;k<3;k++){
+    const off=0.9+k*2.1;
+    ctx.beginPath();
+    for(let i=0;i<=48;i++){
+      const v=vN*Math.pow(vF/vN,i/48), vw=v+travel;
+      const u=coastU(vw,'R')+off+fbm(vw*0.16+k*37,k*9+5,3)*1.05;
+      const x=xAt(c,u,v), y=yAt(c,v,0);
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.strokeStyle='rgba(150,190,226,0.30)';
+    ctx.lineWidth=Math.max(0.7,Math.min(W,H)*0.0022); ctx.stroke();
+  }
+}
+
+/* 町の明かり。海沿いほど密＝日本の夜景の見え方。
+   ここが夜景の主役なので、粒は小さすぎると消えてしまう（前の版で1つも見えなかった原因）。
+   最低でも1px以上を保ち、都市は数を大きく増やす */
+function drawLights(c,travel,lightK){
+  if(lightK<0.01) return;
+  eachCell(c,travel,(ci,base,vN,vF)=>{
+    const kind=regKind(base+CELL*0.5);
+    if(kind==='sea') return;
+    const city=(kind==='city');
+    const n=city?820:(kind==='plain'?120:30);
+    const tb=coastTable(base);
+    reseed(ci*7919+83);
+    for(let k=0;k<n;k++){
+      const fr=rnd(), vw=base+fr*CELL, v=vw-travel;
+      if(v<vN*0.85||v>vF*0.98) continue;
+      const d=Math.pow(rnd(),city?1.15:1.30)*(city?9.0:8.0);   // 海沿いだけでなく内陸まで光る
+      const u=coastLerp(tb,fr)+0.12+d;
+      const x=xAt(c,u,v), y=yAt(c,v,0);
+      if(x<-30||x>W+30||y<c.hy) continue;
+      const near=clamp(1-v/vF,0,1);
+      const r=Math.max(0.85,sMin(c,v)*0.0042*(0.45+rnd()*1.25));
+      const w=rnd();
+      const col=city?(w<0.12?'255,250,228':(w<0.72?'255,224,152':'255,190,112')):'255,222,152';
+      ctx.fillStyle=`rgba(${col},${lightK*(0.46+rnd()*0.54)*(0.34+near*0.78)})`;
+      ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+    }
+  });
+}
+
+/* 大都市のぼんやりした光（光害）と幹線道路 */
+function drawCityGlow(c,travel,lightK){
+  if(lightK<0.01) return;
+  eachCell(c,travel,(ci,base,vN,vF)=>{
+    if(regKind(base+CELL*0.5)!=='city') return;
+    const vw=base+CELL*0.5, v=vw-travel;
+    if(v<vN*0.6||v>vF) return;
+    const u=coastU(vw,'R')+2.6;
+    const x=xAt(c,u,v), y=yAt(c,v,0);
+    const rad=sAt(c,v)*UK*3.4;
+    const g=ctx.createRadialGradient(x,y,0,x,y,Math.max(24,rad));
+    g.addColorStop(0,`rgba(255,214,150,${0.30*lightK})`);
+    g.addColorStop(0.45,`rgba(255,206,144,${0.12*lightK})`);
+    g.addColorStop(1,'rgba(255,206,144,0)');
+    ctx.fillStyle=g; ctx.fillRect(x-rad,Math.max(c.hy,y-rad*0.7),rad*2,rad*1.6);
+    reseed(ci*7919+151);
+    for(let r=0;r<6;r++){
+      const a=rnd()*Math.PI*2, len=1.6+rnd()*3.4;
+      const u2=u+Math.cos(a)*len, v2=Math.max(vN*0.7,v+Math.sin(a)*len);
+      ctx.beginPath(); ctx.moveTo(x,y);
+      ctx.lineTo(xAt(c,u2,v2),yAt(c,v2,0));
+      ctx.strokeStyle=`rgba(255,232,178,${0.22*lightK})`;
+      ctx.lineWidth=Math.max(0.7,Math.min(W,H)*0.0018); ctx.stroke();
+    }
+  });
+}
+
+/* 島。角度ごとに半径を変えた閉じた形＝丸〜楕円の入り組んだ形。
+   透視投影に乗せるので、奥のものほど自然に小さく平たくなる */
+function drawIslands(c,travel,hazeK,lightK){
+  eachCell(c,travel,(ci,base,vN,vF)=>{
+    const kind=regKind(base+CELL*0.5);
+    const n=(kind==='islands')?15:((kind==='sea')?1:2);
+    reseed(ci*7919+211);
+    for(let k=0;k<n;k++){
+      const vw=base+rnd()*CELL, v=vw-travel;
+      if(v<vN*1.05||v>vF*0.96) continue;
+      const cu=coastU(vw,'R'), lu=hasLeftLand(vw)?coastU(vw,'L'):cu-9.0;
+      const span=cu-lu;
+      if(span<0.8) continue;
+      const u=lu+0.5+rnd()*(span-0.9);
+      const r=(kind==='islands'?0.16+rnd()*0.40:0.10+rnd()*0.22);
+      const x0=xAt(c,u,v);
+      if(x0<-120||x0>W+120) continue;
+      ctx.beginPath();
+      /* 角ばって見えないよう細かく刻む。半径の揺らぎもゆるやかにして
+         「丸〜楕円の入り組んだ形」に寄せる（棒状にはしない） */
+      for(let a=0;a<=Math.PI*2+0.001;a+=Math.PI/26){
+        const rr=r*(0.62+0.48*(fbm(a*1.35+k*11+ci*3,ci*13+k,3)*0.5+0.5));
+        const uu=u+Math.cos(a)*rr, vv=Math.max(vN*0.6,v+Math.sin(a)*rr);
+        const px=xAt(c,uu,vv), py=yAt(c,vv,0);
+        if(a===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+      }
+      ctx.closePath();
+      const hz=clamp(Math.pow(clamp(v/vF,0,1),0.8)*hazeK,0,1);
+      ctx.fillStyle=rgb(mixColor([36,58,56],LAND_FAR,hz));
+      ctx.fill();
+      ctx.strokeStyle=`rgba(226,240,255,${0.30*(1-hz)})`;
+      ctx.lineWidth=Math.max(0.5,H*0.0015); ctx.stroke();
+      if(lightK>0.01&&rnd()<0.6){
+        ctx.fillStyle=`rgba(255,224,158,${lightK*0.55*(1-hz)})`;
+        ctx.beginPath();
+        ctx.arc(x0+(rnd()-0.5)*sAt(c,v)*0.06,yAt(c,v,0),Math.max(0.5,sAt(c,v)*0.0016),0,Math.PI*2);
+        ctx.fill();
+      }
+    }
+  });
+}
+
+/* 海 */
+function drawSea(horizonY,lightK){
+  const g=ctx.createLinearGradient(0,horizonY,0,H);
+  g.addColorStop(0,rgb(mixColor([122,166,204],[ 44, 70,110],lightK)));
+  g.addColorStop(0.42,rgb(mixColor([ 60,110,164],[ 22, 48, 92],lightK)));
+  g.addColorStop(1,rgb(mixColor([ 24, 58,114],[  8, 22, 60],lightK)));
+  ctx.fillStyle=g; ctx.fillRect(0,horizonY,W,H-horizonY);
+  const r=Math.max(W,H)*0.55;
+  const s=ctx.createRadialGradient(W*0.78,horizonY,0,W*0.78,horizonY,r);
+  s.addColorStop(0,`rgba(255,208,148,${0.38-lightK*0.14})`);
+  s.addColorStop(0.42,`rgba(255,188,126,${0.14-lightK*0.05})`);
+  s.addColorStop(1,'rgba(255,170,110,0)');
+  ctx.fillStyle=s; ctx.fillRect(0,horizonY,W,H-horizonY);
+}
+
+/* 海のうねり。何もないと海が単調な青一色になる。
+   遠近に沿って流れるので「動いている海」に見える */
+function drawSwell(c,travel,lightK){
+  eachCell(c,travel,(ci,base,vN,vF)=>{
+    const tb=coastTable(base);
+    reseed(ci*7919+503);
+    for(let k=0;k<12;k++){
+      const fr=rnd(), vw=base+fr*CELL, v=vw-travel;
+      if(v<vN*0.7||v>vF*0.88) continue;
+      const cu=coastLerp(tb,fr);
+      const halfU=(W*0.5)*v/(UK*c.f);
+      const uL=c.uc-halfU*1.15, uR=Math.min(cu,c.uc+halfU*1.15);
+      if(uR<=uL) continue;
+      const u=uL+rnd()*(uR-uL);
+      const x=xAt(c,u,v), y=yAt(c,v,0);
+      if(y<c.hy||y>H+40) continue;
+      const rx=(0.10+rnd()*0.26)*UK*sAt(c,v);
+      if(rx<1.2) continue;
+      ctx.fillStyle=`rgba(228,242,255,${(0.05+rnd()*0.08)*(1-lightK*0.45)})`;
+      ctx.beginPath(); ctx.ellipse(x,y,rx,Math.max(0.7,rx*0.09),0,0,Math.PI*2); ctx.fill();
+    }
+  });
+}
+
+/* 大気（地平線に近いほど白く濁る）。
+   画面の下まで効かせると、手前の陸まで白くなってのっぺりする（自己チェックで発覚） */
+function atmosphere(horizonY){
+  const g=ctx.createLinearGradient(0,horizonY,0,horizonY+(H-horizonY)*0.55);
+  g.addColorStop(0,'rgba(208,226,248,0.24)');
+  g.addColorStop(0.45,'rgba(196,216,242,0.08)');
+  g.addColorStop(1,'rgba(184,204,236,0)');
+  ctx.fillStyle=g; ctx.fillRect(0,horizonY,W,H-horizonY);
+}
+
+/* 仕上げのベール（地表と自分のあいだの極薄の雲）
+   準也さん指示「最終的に少し薄い雲を挟めば細かいところは気にならない」 */
+function thinVeil(scroll,yTop,yBot,strength,seed){
+  const step=W/34, band=(yBot-yTop)/3;
+  for(let row=0;row<3;row++){
+    const y=yTop+band*(row+0.5);
+    const off=scroll*W*(0.5+row*0.42);
+    for(let x=-W*0.25;x<W*1.25;x+=step){
+      const d=fbm((x+off)*0.0012+row*17+seed,seed*5+row+1,4);
+      const a=clamp((d+0.28)*0.85,0,1)*strength;
+      if(a<0.012) continue;
+      const rx=step*(2.4+d*1.5);
+      puff(x,y+d*band*0.45,rx,rx*0.15,a,'255,255,255');
+    }
+  }
+}
+
+/* 雲海。地表と自分のあいだに浮かぶ雲。
+   画面に水平に並べると横一直線の縞になる（前の版の失敗）。地表と同じ遠近に乗せると
+   奥ほど小さく密になり、切れ間から地表がのぞく＝空から見た雲の見え方になる */
+function drawCloudDeck(c,travel,hc,strength){
+  if(strength<=0.005) return;
+  eachCell(c,travel,(ci,base,vN,vF)=>{
+    reseed(ci*7919+307);
+    /* 1つの雲＝粒の集まり。粒をばらばらに置くと、雲ではなく水面のシミに見える */
+    for(let k=0;k<7;k++){
+      const vw=base+rnd()*CELL, v=vw-travel;
+      if(v<vN*0.45||v>vF*0.94) continue;
+      const halfU=(W*0.5)*v/(UK*c.f);
+      const u=c.uc+(rnd()*2-1)*halfU*1.25;
+      const y=yAt(c,v,hc);
+      if(y<c.hy||y>H+80) continue;
+      const x=xAt(c,u,v);
+      if(x<-W*0.4||x>W*1.4) continue;
+      const base_rx=(0.16+rnd()*0.34)*UK*sAt(c,v);
+      if(base_rx<1.0) continue;
+      for(let m=0;m<5;m++){
+        const rx=base_rx*(0.45+rnd()*0.75);
+        puff(x+(rnd()-0.5)*base_rx*2.6, y+(rnd()-0.5)*base_rx*0.30,
+             rx, rx*(0.14+rnd()*0.10), strength*(0.24+rnd()*0.40),'255,255,255');
+      }
+    }
+  });
+}
+
+/* =========================================================================
+   地表ぜんぶ（海 → 島 → 左の陸 → 右の陸＝日本列島 → 霞 → 雲海 → 大気 → 薄雲）
+   ========================================================================= */
+function drawGround(c,travel,o){
+  const hazeK=o.haze, lightK=o.light;
+  drawSea(c.hy,lightK);
+  drawSwell(c,travel,lightK);
+
+  // 左の陸（瀬戸内で見える対岸＝四国）。先に描く＝右の陸が手前に来たとき正しく隠れる
+  if(hasLeftLand(travel+vFarOf(c)*0.35)||hasLeftLand(travel+vFarOf(c)*0.08)){
+    const lp=coastPoints(c,travel,'L',96);
+    const path=landPath(c,lp,'L');
+    ctx.fillStyle=rgb(mixColor(mixColor(LAND_DAY,LAND_NIGHT,lightK),LAND_FAR,0.40*hazeK));
+    ctx.fill(path);
+    ctx.save(); ctx.clip(path);
+    ctx.strokeStyle='rgba(226,240,255,0.26)'; ctx.lineWidth=Math.max(0.8,H*0.002);
+    ctx.beginPath(); ctx.moveTo(lp[0][0],lp[0][1]);
+    for(let i=1;i<lp.length;i++) ctx.lineTo(lp[i][0],lp[i][1]);
+    ctx.stroke(); ctx.restore();
+  }
+
+  // 島（海の上）
+  drawIslands(c,travel,hazeK,lightK);
+
+  // 右の陸＝日本列島の本体
+  const rp=coastPoints(c,travel,'R',128);
+  const path=landPath(c,rp,'R');
+  const isCity=(regKind(travel+3)==='city');
+  const baseCol=isCity?mixColor(CITY_DAY,CITY_NIGHT,lightK):mixColor(LAND_DAY,LAND_NIGHT,lightK);
+  ctx.fillStyle=rgb(mixColor(baseCol,LAND_FAR,0.22*hazeK));
+  ctx.fill(path);
+
+  ctx.save();
+  ctx.clip(path);
+  /* 陸の中の濃淡。前の版はここを画面の上から下まで灰青で塗っていたため、
+     手前の陸まで灰色になってのっぺりした。遠く（地平線ぎわ）だけに効かせる */
+  const pl=ctx.createLinearGradient(0,c.hy,0,c.hy+(H-c.hy)*0.30);
+  pl.addColorStop(0,'rgba(150,178,196,0.22)');
+  pl.addColorStop(1,'rgba(112,136,110,0)');
+  ctx.fillStyle=pl; ctx.fillRect(0,c.hy,W,H-c.hy);
+
+  drawFields(c,travel,hazeK);
+  drawRidges(c,travel,hazeK);
+  drawRivers(c,travel);
+  drawCityGlow(c,travel,lightK);
+  drawLights(c,travel,lightK);
+
+  /* 夕日が地表を横から照らす。これが無いと画面全体が青灰色一色になって夕暮れに見えない */
+  const sun=ctx.createLinearGradient(W*0.22,0,W*1.06,0);
+  sun.addColorStop(0,'rgba(255,178,118,0)');
+  sun.addColorStop(0.55,'rgba(255,182,122,0.08)');
+  sun.addColorStop(1,'rgba(255,190,132,0.18)');
+  ctx.fillStyle=sun; ctx.fillRect(0,c.hy,W,H-c.hy);
+  ctx.restore();
+
+  // 波打ちぎわが白く光る
+  ctx.beginPath();
+  ctx.moveTo(rp[0][0],rp[0][1]);
+  for(let i=1;i<rp.length;i++) ctx.lineTo(rp[i][0],rp[i][1]);
+  ctx.strokeStyle='rgba(228,242,255,0.34)';
+  ctx.lineWidth=Math.max(0.8,H*0.0022); ctx.stroke();
+
+  // 遠くほど霞む（強すぎると陸が灰白色になってのっぺりする）
+  const span=H-c.hy;
+  const haze=ctx.createLinearGradient(0,c.hy-H*0.012,0,c.hy+span*0.30);
+  haze.addColorStop(0,`rgba(190,214,240,${0.22+hazeK*0.14})`);
+  haze.addColorStop(1,'rgba(190,214,240,0)');
+  ctx.fillStyle=haze; ctx.fillRect(0,c.hy-H*0.02,W,span*0.38);
+
+  if(o.deck>0) drawCloudDeck(c,travel,c.ch*0.52,o.deck);
+  atmosphere(c.hy);
+  if(o.veil>0) thinVeil(travel*0.012,c.hy,H,o.veil,3);
+}
+
+/* =========================================================================
+   音：全部その場で合成する（音声ファイルは1つも使わない）
+   新幹線シーン（kanjimon.html の tsTone/tsNoise）と同じ作り方。
+   飛行機の音はもともとノイズ系なので、録音を探すより合成のほうが素直に作れる。
+   ・psBus …… このシーン専用の音の出口。とばす／やり直しで一発ミュートできる
+   ・psNoise … 帯域を動かすノイズ（エンジン・風・雲のゴォー）
+   ・psTone …… 高さのある音（始動のキーン・シートベルトのチャイム）
+   ========================================================================= */
+let actx=null, psBus=null, psNodes=[];
+function audioInit(){
+  if(actx) return actx;
+  if(typeof ensureAudio==='function') ensureAudio();     // 本体の音の入口を通す（勝手に別のContextを作らない）
+  actx=(typeof audioCtx!=='undefined')?audioCtx:null;
+  return actx;
+}
+function psBusGet(){
+  if(typeof soundOn!=='undefined' && !soundOn) return null;   // 本体の音オフに連動
+  if(!audioInit()) return null;
+  if(!psBus){
+    psBus=actx.createGain(); psBus.gain.value=1;
+    /* 録音を大きく鳴らすので、重なったときに音が割れないよう最後に圧縮をかける */
+    const comp=actx.createDynamicsCompressor();
+    comp.threshold.value=-8; comp.knee.value=12; comp.ratio.value=4;
+    comp.attack.value=0.006; comp.release.value=0.22;
+    psBus.connect(comp); comp.connect(actx.destination);
+  }
+  return psBus;
+}
+function psKill(){
+  psNodes.forEach(n=>{ try{n.stop();}catch(e){} try{n.disconnect();}catch(e){} });
+  psNodes=[];
+  if(psBus){ try{psBus.disconnect();}catch(e){} psBus=null; }
+  if(typeof sfxStop==='function') sfxStop();     // 録音も止める
+}
+/* ノイズの層。freqPts/gainPts＝[秒, 値] の並び。始まりの秒から相対で動かす */
+function psNoise(startAt,dur,type,Q,freqPts,gainPts){
+  const bus=psBusGet(); if(!bus) return;
+  const len=Math.floor(actx.sampleRate*3);
+  const buf=actx.createBuffer(1,len,actx.sampleRate);
+  const ch=buf.getChannelData(0);
+  for(let i=0;i<len;i++) ch[i]=Math.random()*2-1;
+  const src=actx.createBufferSource(); src.buffer=buf; src.loop=true;
+  const f=actx.createBiquadFilter(); f.type=type; f.Q.value=Q;
+  const g=actx.createGain();
+  const t0=actx.currentTime+startAt;
+  f.frequency.setValueAtTime(freqPts[0][1],t0);
+  for(const p of freqPts) f.frequency.linearRampToValueAtTime(Math.max(30,p[1]),t0+p[0]);
+  g.gain.setValueAtTime(0.0001,t0);
+  for(const p of gainPts) g.gain.linearRampToValueAtTime(Math.max(0.0001,p[1]),t0+p[0]);
+  src.connect(f); f.connect(g); g.connect(bus);
+  src.start(t0); src.stop(t0+dur+0.1);
+  psNodes.push(src);
+}
+function psTone(freq,startAt,dur,type,vol,freq2){
+  const bus=psBusGet(); if(!bus) return;
+  const o=actx.createOscillator(), g=actx.createGain();
+  o.type=type||'sine'; o.frequency.value=freq;
+  const t0=actx.currentTime+startAt;
+  if(freq2) o.frequency.linearRampToValueAtTime(freq2,t0+dur);
+  g.gain.setValueAtTime(0.0001,t0);
+  g.gain.linearRampToValueAtTime(vol,t0+Math.min(0.25,dur*0.3));
+  g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+  o.connect(g); g.connect(bus);
+  o.start(t0); o.stop(t0+dur+0.05);
+  psNodes.push(o);
+}
+/* ---- 準也さんが用意した録音（GoCalmLab）----
+   計測値：上空通過1＝8.49秒・音量が[-33→-21→-37]dBの山型（近づいて遠ざかる形）
+           上空通過2＝17.15秒・[-25→-19→-24]dB／風が吹く1＝104.8秒・ほぼ平ら
+   割り当て：準也さん指示＝1を離陸、2を飛行（巡航）に。風は雲のカットに薄く重ねた（要否は判定待ち） */
+/* ★2026-08-02の失敗と対策（次に触る人へ）★
+   はじめは fetch + decodeAudioData（WebAudio）で読んでいたが、
+   **HTMLファイルをパソコンから直接ダブルクリックで開くと、ブラウザのセキュリティで
+   fetch がブロックされて録音が1本も鳴らない**（合成音だけが鳴る）。
+   Claudeのテストは --allow-file-access-from-files 付きで動かしていたため読めてしまい、
+   「録音3本OK」と誤って報告した。＝テスト環境と実際の環境が違っていた。
+   → **<audio>要素で鳴らす方式に変更**。これなら直接開いてもサーバー越しでも鳴る。
+   ただし音量の上限が1.0なので、録音ファイル側を大きく作ってある（-10 LUFS）。
+
+   使う部分だけ切り出した軽量版（元の3本は同じフォルダにそのまま残してある）。
+   4.0MB → 501KB。切り出しの都合で、どれも頭に0.5秒の余白がある＝offsetは0.5 */
+const SFX={
+  takeoff:{file:'audio/plane/se_takeoff.mp3', el:null},   // 元＝飛行機上空通過1（0.5秒〜7.0秒）
+  cruise :{file:'audio/plane/se_cruise.mp3',  el:null},   // 元＝飛行機上空通過2（3.5秒〜13.9秒）
+  wind   :{file:'audio/plane/se_wind.mp3',    el:null}    // 元＝風が吹く1（19.5秒〜34.5秒）
+};
+/* いつ・どこから・どんな音量で鳴らすか。時刻はシーンの経過秒 */
+const SFX_PLAN=[
+  {key:'takeoff', at:0.0, offset:0.5, dur:5.4,
+   vol:[[0,0.75],[1.4,1.00],[3.2,1.00],[4.4,0.80],[5.4,0.00]]},
+  {key:'cruise',  at:6.2, offset:0.5, dur:9.6,
+   vol:[[0,0.06],[1.0,1.00],[7.8,1.00],[9.6,0.00]]},
+  {key:'wind',    at:3.1, offset:0.5, dur:14.0,
+   vol:[[0,0.12],[1.0,0.45],[2.0,0.90],[3.3,0.55],[5.0,0.40],[12.3,0.40],[14.0,0.00]]}
+];
+let sfxReady=false;
+async function loadSfx(){
+  await Promise.all(Object.keys(SFX).map(k=>new Promise(done=>{
+    const s=SFX[k];
+    if(s.el){ done(); return; }
+    const el=new Audio();
+    el.preload='auto'; el.volume=0;
+    el.addEventListener('canplaythrough',()=>{ s.el=el; done(); },{once:true});
+    el.addEventListener('error',()=>{ s.el=null; done(); },{once:true});
+    setTimeout(()=>{ if(!s.el){ s.el=el; } done(); },4000);   // 遅くても待ちすぎない
+    el.src=encodeURI(s.file);
+  })));
+  sfxReady=true;
+}
+function volAt(pts,rt){
+  if(rt<=pts[0][0]) return pts[0][1];
+  for(let i=1;i<pts.length;i++){
+    if(rt<=pts[i][0]){
+      const a=pts[i-1], b=pts[i];
+      return lerp(a[1],b[1],(rt-a[0])/Math.max(0.0001,b[0]-a[0]));
+    }
+  }
+  return pts[pts.length-1][1];
+}
+/* 毎コマ呼ぶ。絵の時刻に合わせて鳴らす＝音と絵がずれない */
+function sfxUpdate(t){
+  if(typeof soundOn!=='undefined' && !soundOn){ sfxStop(); return; }   // 本体の音オフに連動
+  for(const p of SFX_PLAN){
+    const s=SFX[p.key]; const el=s&&s.el; if(!el) continue;
+    const rt=t-p.at;
+    if(rt>=0&&rt<p.dur){
+      if(el.paused){
+        try{ el.currentTime=p.offset+rt; }catch(e){}
+        const pr=el.play(); if(pr&&pr.catch) pr.catch(()=>{});
+      }
+      el.volume=clamp(volAt(p.vol,rt),0,1);
+    }else if(!el.paused){
+      el.pause();
+    }
+  }
+}
+function sfxStop(){
+  for(const k in SFX){
+    const el=SFX[k].el; if(!el) continue;
+    try{ el.pause(); el.currentTime=0; }catch(e){}
+  }
+}
+
+/* エンジンのうなり。少しだけ高さの違う音を重ねると「ウォンウォン」というゆらぎが出る */
+function psDrone(startAt,dur,f1,f2,gainPts){
+  const bus=psBusGet(); if(!bus) return;
+  const g=actx.createGain();
+  const t0=actx.currentTime+startAt;
+  g.gain.setValueAtTime(0.0001,t0);
+  for(const p of gainPts) g.gain.linearRampToValueAtTime(Math.max(0.0001,p[1]),t0+p[0]);
+  g.connect(bus);
+  for(const fr of [f1,f2]){
+    const o=actx.createOscillator();
+    o.type='triangle'; o.frequency.setValueAtTime(fr,t0);
+    o.frequency.linearRampToValueAtTime(fr*0.86,t0+dur);
+    o.connect(g); o.start(t0); o.stop(t0+dur+0.05);
+    psNodes.push(o);
+  }
+}
+
+/* シーン全体の音を、開始時にまとめて予約する（ずれない・途中で組み立てない）。
+   録音（準也さん用意）が主役。合成は「録音にない音」だけを担当する。 */
+function scheduleSound(){
+  if(!psBusGet()) return;
+  const t0=actx.currentTime;
+
+  /* ===== 録音（離陸・飛行・風）は SFX_PLAN + sfxUpdate() が毎コマ面倒を見る。
+     ここでは合成音だけを予約する ===== */
+
+  /* ===== 合成＝録音にない音だけ。録音を邪魔しないよう控えめに ===== */
+  /* --- S1 0.0-3.2 滑走路 --- */
+  psTone(320,0.0,1.6,'sine',0.020,980);                       // 始動のキーン（低→高）
+  psDrone(0.0,3.4,58,61,[[0,0.004],[0.6,0.010],[3.2,0.014]]);
+  psNoise(0.0,3.4,'bandpass',0.8,
+          [[0,90],[1.2,150],[3.2,260]],
+          [[0,0.005],[0.8,0.012],[3.2,0.018]]);
+  // タイヤが継ぎ目を叩く音。間隔が詰まる＝加速して聞こえる（録音にはない要素なので残す）
+  let tt=0.15;
+  for(let i=0;i<16;i++){
+    psTone(78,tt,0.055,'triangle',0.045);
+    tt+=Math.max(0.085,0.30-i*0.014);
+    if(tt>3.05) break;
+  }
+
+  /* --- 3.2 浮いた瞬間：タイヤの振動が消えて、ふっと軽くなる ---
+     ここを深く絞ると離陸の録音の山まで消えてしまう（指摘の原因のひとつ）。
+     「静けさ」＝地面の音が無くなることなので、絞りはごく浅くする */
+  psBus.gain.setValueAtTime(1.0,t0+3.16);
+  psBus.gain.linearRampToValueAtTime(0.90,t0+3.30);
+  psBus.gain.linearRampToValueAtTime(1.0,t0+3.70);
+
+  /* --- S2 3.2-4.6 上昇 --- */
+  psNoise(3.2,1.6,'bandpass',0.7,
+          [[0,240],[1.4,170]],
+          [[0,0.016],[0.5,0.020],[1.4,0.016]]);
+
+  /* --- S3 4.6-6.4 雲を突き抜ける：ゴォー。抜けると開ける --- */
+  psNoise(4.6,1.9,'lowpass',0.5,
+          [[0,500],[0.9,1500],[1.8,700]],
+          [[0,0.170],[0.9,0.560],[1.5,0.400],[1.9,0.170]]);
+  psNoise(4.7,1.7,'bandpass',0.6,
+          [[0,320],[1.6,220]],
+          [[0,0.190],[0.8,0.300],[1.7,0.165]]);
+  psTone(196,6.05,0.55,'sine',0.026,262);                     // 雲を抜けた合図（ふわっと上がる）
+
+  /* --- S4 6.4-15.4 巡航：録音が主役。合成はごく薄い下地だけ --- */
+  psNoise(6.3,9.3,'lowpass',0.4,
+          [[0,420],[1.0,330],[9.0,300]],
+          [[0,0.004],[1.2,0.009],[8.0,0.008],[9.2,0.006]]);
+  /* ※シートベルトのチャイム（ポーン）は準也さん判断で削除（2026-08-02） */
+
+  /* --- S5 15.4-17.0 降下：音が下がって静かに消える --- */
+  psNoise(15.4,1.7,'lowpass',0.4,
+          [[0,300],[1.6,180]],
+          [[0,0.160],[0.5,0.130],[1.6,0.0005]]);
+  psBus.gain.setValueAtTime(0.98,t0+15.4);
+  psBus.gain.linearRampToValueAtTime(0.0001,t0+16.95);
+}
+
+/* =========================================================================
+   飛行機（後ろ上から）。全カットこの向きに統一（視点の一貫性）
+   ========================================================================= */
+function planeBack(x,y,s,roll){
+  ctx.save();
+  ctx.translate(x,y); ctx.rotate(roll);
+  const g=ctx.createLinearGradient(-s,0,s,0);
+  g.addColorStop(0,'#aeb6c0'); g.addColorStop(0.5,'#f2f5f8'); g.addColorStop(1,'#aeb6c0');
+  ctx.fillStyle=g;
+  ctx.beginPath();
+  ctx.moveTo(-s*1.35,s*0.16); ctx.lineTo(-s*0.12,-s*0.05);
+  ctx.lineTo(s*0.12,-s*0.05); ctx.lineTo(s*1.35,s*0.16);
+  ctx.lineTo(s*1.20,s*0.24); ctx.lineTo(s*0.10,s*0.10);
+  ctx.lineTo(-s*0.10,s*0.10); ctx.lineTo(-s*1.20,s*0.24);
+  ctx.closePath(); ctx.fill();
+  const b=ctx.createLinearGradient(-s*0.14,0,s*0.14,0);
+  b.addColorStop(0,'#c2c9d2'); b.addColorStop(0.45,'#ffffff'); b.addColorStop(1,'#b3bac4');
+  ctx.fillStyle=b;
+  ctx.beginPath();
+  ctx.moveTo(-s*0.13,-s*0.42); ctx.quadraticCurveTo(0,-s*0.55,s*0.13,-s*0.42);
+  ctx.lineTo(s*0.115,s*0.30); ctx.quadraticCurveTo(0,s*0.36,-s*0.115,s*0.30);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle='#5a86c8';
+  ctx.beginPath(); ctx.moveTo(-s*0.035,s*0.24); ctx.lineTo(0,-s*0.10); ctx.lineTo(s*0.035,s*0.24); ctx.closePath(); ctx.fill();
+  ctx.fillStyle='#cdd4dc';
+  ctx.beginPath();
+  ctx.moveTo(-s*0.52,s*0.30); ctx.lineTo(-s*0.10,s*0.24);
+  ctx.lineTo(s*0.10,s*0.24); ctx.lineTo(s*0.52,s*0.30);
+  ctx.lineTo(s*0.46,s*0.345); ctx.lineTo(-s*0.46,s*0.345);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle='#8d949d';
+  ctx.beginPath(); ctx.ellipse(-s*0.55,s*0.15,s*0.10,s*0.06,0,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(s*0.55,s*0.15,s*0.10,s*0.06,0,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='rgba(255,110,110,0.95)';
+  ctx.beginPath(); ctx.arc(-s*1.28,s*0.20,s*0.035,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='rgba(140,255,170,0.95)';
+  ctx.beginPath(); ctx.arc(s*1.28,s*0.20,s*0.035,0,Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+function contrail(x,y,s,len,alpha){
+  if(len<=1) return;
+  const g=ctx.createLinearGradient(x-len,y,x,y);
+  g.addColorStop(0,'rgba(255,255,255,0)');
+  g.addColorStop(1,`rgba(255,255,255,${alpha})`);
+  ctx.fillStyle=g;
+  ctx.beginPath();
+  ctx.moveTo(x,y-s*0.05); ctx.lineTo(x-len,y-s*0.16);
+  ctx.lineTo(x-len,y+s*0.16); ctx.lineTo(x,y+s*0.05);
+  ctx.closePath(); ctx.fill();
+}
+
+/* =========================================================================
+   空港の建物（管制塔・ターミナル・格納庫）
+   準也さん指摘（2026-08-02）＝離陸のところが芝生だけ。端に建物を置いて、
+   それが近づいてくる／前後に動くと良い。
+   滑走路のわきにワールド距離 d で置き、走った距離 dist を引いて手前へ流す。
+   スマホの縦でも切れないよう、滑走路のふち（wEdge）を基準に置く。
+   ========================================================================= */
+/* 準也さん裁定（2026-08-02）＝建物をたくさん置くのはいまいち。
+   **管制塔を1本だけ・大きさ2倍・右側だけ・滑走路からもっと離す**（近いと危なく見える）。
+   最初から見えていて、走るにつれて画面の右端で見切れながら流れ去る形にする。
+   d＝滑走路上のどこに立っているか（走った距離がこれを超えると通り過ぎる）
+   off＝滑走路のふちの何倍の位置に離すか（大きいほど遠い＝画面の端に寄る） */
+const AIRPORT=[
+  {d:1000, side:1, kind:'tower', off:1.80, scale:2.0}
+];
+function drawProp(kind,x,y,s){
+  const lamp='rgba(255,224,150,0.95)';
+  ctx.fillStyle='rgba(0,0,0,0.16)';
+  ctx.beginPath(); ctx.ellipse(x,y,Math.max(1.5,s*0.30),Math.max(0.7,s*0.022),0,0,Math.PI*2); ctx.fill();
+
+  if(kind==='tower'){
+    const h=s*0.44, w=Math.max(1.2,s*0.055);
+    // 根元の建屋
+    const bw=w*3.4, bh=Math.max(1.2,h*0.15);
+    ctx.fillStyle='#767c84'; ctx.fillRect(x-bw/2,y-bh,bw,bh);
+    if(bh>3){ ctx.fillStyle=lamp; ctx.fillRect(x-bw*0.34,y-bh*0.62,bw*0.68,Math.max(0.7,bh*0.28)); }
+    // 柱（左側を明るくして丸みを出す）
+    ctx.fillStyle='#7e848c'; ctx.fillRect(x-w/2,y-h,w,h);
+    ctx.fillStyle='rgba(255,255,255,0.16)'; ctx.fillRect(x-w*0.50,y-h,w*0.30,h);
+    // 展望室（下すぼまりの台形）
+    const cw=Math.max(2.6,w*3.4), ch=Math.max(1.8,h*0.15);
+    ctx.fillStyle='#b4bbc3';
+    ctx.beginPath();
+    ctx.moveTo(x-cw*0.5,y-h); ctx.lineTo(x+cw*0.5,y-h);
+    ctx.lineTo(x+cw*0.36,y-h+ch); ctx.lineTo(x-cw*0.36,y-h+ch);
+    ctx.closePath(); ctx.fill();
+    if(ch>2.2){ ctx.fillStyle=lamp; ctx.fillRect(x-cw*0.40,y-h+ch*0.22,cw*0.80,ch*0.42); }
+    // 庇（ひさし）
+    ctx.fillStyle='#9aa1a9';
+    ctx.fillRect(x-cw*0.46,y-h+ch,cw*0.92,Math.max(0.8,ch*0.18));
+    // てっぺんの赤いランプ
+    ctx.fillStyle='rgba(255,96,84,0.95)';
+    ctx.beginPath(); ctx.arc(x,y-h-s*0.022,Math.max(0.8,s*0.012),0,Math.PI*2); ctx.fill();
+
+  }else if(kind==='terminal'){   // ※現在は使っていない（準也さん裁定＝管制塔1本だけ）
+    const w=s*0.78, h=s*0.15;
+    ctx.fillStyle='#8f959d'; ctx.fillRect(x-w/2,y-h,w,h);
+    ctx.fillStyle='#c2c8cf'; ctx.fillRect(x-w/2,y-h,w,Math.max(0.8,h*0.22));
+    const n=7;
+    for(let i=0;i<n;i++){
+      const ww=Math.max(0.7,w/n*0.55), xx=x-w/2+w*(i+0.22)/n;
+      ctx.fillStyle=lamp; ctx.fillRect(xx,y-h*0.60,ww,Math.max(0.7,h*0.28));
+    }
+    // 駐機している機体の尾翼（空港らしさ）
+    ctx.fillStyle='#dfe4ea';
+    ctx.beginPath();
+    ctx.moveTo(x-w*0.32,y); ctx.lineTo(x-w*0.26,y-h*0.80); ctx.lineTo(x-w*0.19,y);
+    ctx.closePath(); ctx.fill();
+
+  }else{ // hangar：かまぼこ型の格納庫
+    const w=s*0.50, h=s*0.20;
+    ctx.beginPath();
+    ctx.moveTo(x-w/2,y); ctx.lineTo(x-w/2,y-h*0.45);
+    ctx.quadraticCurveTo(x,y-h*1.60,x+w/2,y-h*0.45);
+    ctx.lineTo(x+w/2,y); ctx.closePath();
+    ctx.fillStyle='#868d95'; ctx.fill();
+    ctx.fillStyle='rgba(56,62,68,0.85)';
+    ctx.fillRect(x-w*0.30,y-h*0.55,w*0.60,h*0.55);
+  }
+}
+function drawAirport(horizonY,dist,rw,rwFar){
+  const RANGE=26*120;                        // 誘導灯と同じ見通し
+  const vis=[];
+  for(const a of AIRPORT){
+    const rd=a.d-dist;                       // 前方までの距離。減るほど近づく
+    if(rd<-260||rd>RANGE) continue;
+    const p=1-rd/RANGE;
+    if(p<=0.02) continue;
+    vis.push({a,p});
+  }
+  vis.sort((m,n)=>m.p-n.p);                  // 奥から手前の順に描く
+  for(const {a,p} of vis){
+    const pp=p*p;
+    const y=lerp(horizonY,H,pp);
+    const wEdge=lerp(rwFar,rw*3.2,pp);
+    const x=W*0.5+a.side*wEdge*a.off;
+    drawProp(a.kind,x,y,(H-horizonY)*pp*(a.scale||1));
+  }
+}
+
+/* =========================================================================
+   S1：滑走路（後ろ姿で加速→浮く）
+   ========================================================================= */
+function drawS1(t){
+  const horizonY=H*0.58;
+  drawSky(0);
+  drawSun(0,horizonY);
+
+  ctx.fillStyle='rgba(78,96,122,0.55)';
+  ctx.beginPath(); ctx.moveTo(0,horizonY);
+  reseed(4242);
+  for(let x=0;x<=W;x+=W/14) ctx.lineTo(x,horizonY-H*(0.02+rnd()*0.05));
+  ctx.lineTo(W,horizonY); ctx.closePath(); ctx.fill();
+
+  const g=ctx.createLinearGradient(0,horizonY,0,H);
+  g.addColorStop(0,'rgba(108,128,92,1)');
+  g.addColorStop(1,'rgba(78,98,68,1)');
+  ctx.fillStyle=g; ctx.fillRect(0,horizonY,W,H-horizonY);
+
+  const at=ctx.createLinearGradient(0,horizonY-H*0.11,0,horizonY+H*0.11);
+  at.addColorStop(0,'rgba(232,224,210,0)');
+  at.addColorStop(0.34,'rgba(232,224,210,0.30)');
+  at.addColorStop(0.50,'rgba(230,223,211,0.48)');
+  at.addColorStop(0.68,'rgba(228,222,212,0.20)');
+  at.addColorStop(1,'rgba(226,222,214,0)');
+  ctx.fillStyle=at; ctx.fillRect(0,horizonY-H*0.12,W,H*0.24);
+
+  const rw=W*0.10, rwFar=W*0.012;
+  ctx.fillStyle='#4b4f55';
+  ctx.beginPath();
+  ctx.moveTo(W*0.5-rwFar,horizonY); ctx.lineTo(W*0.5+rwFar,horizonY);
+  ctx.lineTo(W*0.5+rw*3.2,H);       ctx.lineTo(W*0.5-rw*3.2,H);
+  ctx.closePath(); ctx.fill();
+
+  const v=easeIn(t);
+  const dist=(t*t)*2400;
+  const gap=120;
+
+  ctx.fillStyle='rgba(240,238,220,0.9)';
+  for(let i=0;i<26;i++){
+    const d=(i*gap-(dist%gap));
+    if(d<0) continue;
+    const p=1-d/(26*gap);
+    if(p<=0.02) continue;
+    const y=lerp(horizonY,H,p*p);
+    const yy=lerp(horizonY,H,Math.min(1,(p+0.035))**2);
+    const w=lerp(rwFar*0.25,rw*0.30,p*p);
+    ctx.fillRect(W*0.5-w/2,y,w,Math.max(1.2,yy-y));
+  }
+
+  const lgap=gap*0.8;
+  for(let i=0;i<22;i++){
+    const d=(i*lgap-(dist%lgap));
+    if(d<0) continue;
+    const p=1-d/(22*lgap);
+    if(p<=0.03) continue;
+    const yy=lerp(horizonY,H,p*p);
+    const wEdge=lerp(rwFar,rw*3.2,p*p);
+    const r=Math.max(1,lerp(0.7,4.2,p*p));
+    ctx.fillStyle=`rgba(255,242,190,${0.45+v*0.5})`;
+    ctx.beginPath(); ctx.arc(W*0.5-wEdge,yy,r,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(W*0.5+wEdge,yy,r,0,Math.PI*2); ctx.fill();
+  }
+
+  // 滑走路のわきの建物（走るにつれて奥から手前へ流れる＝速さが伝わる）
+  drawAirport(horizonY,dist,rw,rwFar);
+
+  const adv=easeIn(t);
+  const lift=easeOut(seg(t,0.60,1.0));
+  // 縦画面は幅が狭く、翼が画面の外にはみ出すので小さめにする
+  const p0=PORT();
+  const s=Math.min(W,H)*lerp(p0?0.325:0.40, p0?0.215:0.255, adv);
+  const groundY=lerp(H*0.90,H*0.685,adv);
+  const y=groundY-lift*H*0.235;
+  const x=W*0.5+Math.sin(t*7.0)*W*0.004*(1-lift);
+
+  // 影（濃く大きいと地面のシミに見える）
+  ctx.save();
+  ctx.globalAlpha=(1-lift)*0.22;
+  ctx.fillStyle='#000';
+  ctx.beginPath(); ctx.ellipse(x,groundY+s*0.38,s*0.82,s*0.070,0,0,Math.PI*2); ctx.fill();
+  ctx.restore();
+
+  planeBack(x,y,s,Math.sin(t*5.5)*0.018+lift*0.02);
+
+  if(lift>0.05){
+    ctx.save(); ctx.globalAlpha=lift*0.32;
+    puff(x-s*1.30,y+s*0.30,s*0.34,s*0.15,0.5,'255,255,255');
+    puff(x+s*1.30,y+s*0.30,s*0.34,s*0.15,0.5,'255,255,255');
+    ctx.restore();
+  }
+}
+
+/* =========================================================================
+   S2：浮いた直後の上昇。機首を上げて空を向くので地表は下へ抜けていき、
+   すぐに雲が迫る。
+   ※準也さん指摘（2026-08-02）＝ここで景色（マップ）を見せると、
+     離陸→景色→雲、の順になって話の流れがおかしい。だから地表は一瞬だけ
+   ========================================================================= */
+function drawS2(t){
+  const alt=easeOut(t)*0.40;
+  /* 地表が見えている時間を短くする（easeOut＝最初にぐっと下がる）。
+     ゆっくり抜けると「離陸→景色→雲」の順に見えてしまう */
+  const horizonY=lerp(H*0.58,H*1.06,easeOut(t));
+  drawSky(alt);
+  drawSun(alt,Math.min(horizonY,H*0.90));
+
+  if(horizonY<H){
+    ctx.save();
+    ctx.beginPath(); ctx.rect(0,horizonY,W,H-horizonY); ctx.clip();
+    /* 低いところから見た空港のまわり。低空は横の視野が狭いので、カメラの真下を
+       陸の内側に置かないと畑も町も画面の外に出てしまう（uc＝カメラの東西位置） */
+    const c=makeCam(horizonY,lerp(0.10,0.26,ease(t)),1.0);
+    drawGround(c, lerp(2.0,4.2,t), {haze:0.5,light:0.22,veil:0.04,deck:0});
+    ctx.restore();
+  }
+
+  // 雲が下から一気に迫り上がって画面を覆う＝そのままS3の突入へ
+  const rise=easeOut(t);
+  cloudBand(-t*W*0.9, H*(1.14-rise*0.76), Math.min(W,H)*0.070, 0.55, 2.2, '244,248,255');
+  cloudBand(-t*W*1.6, H*(1.34-rise*0.98), Math.min(W,H)*0.105, 0.65, 1.9, '250,252,255');
+
+  const s=Math.min(W,H)*(PORT()?0.225:0.250);
+  const x=W*0.5, y=H*(0.50-ease(t)*0.06);
+  planeBack(x,y,s,Math.sin(t*4.2)*0.035);
+  contrail(x-s*1.30,y+s*0.20,s,W*0.09*ease(t),0.22*ease(t));
+  contrail(x+s*1.30,y+s*0.20,s,W*0.09*ease(t),0.22*ease(t));
+}
+
+/* =========================================================================
+   S3：雲を突き抜ける（離陸のすぐあと）
+   ========================================================================= */
+function drawS3(t){
+  const alt=lerp(0.45,0.92,ease(t));
+  const horizonY=H*0.62;
+  drawSky(alt);
+  drawSun(alt,horizonY);
+
+  const out=seg(t,0.55,1.0);
+  if(out>0){
+    ctx.save(); ctx.globalAlpha=ease(out);
+    const g=ctx.createLinearGradient(0,H*0.44,0,H);
+    g.addColorStop(0,'rgba(255,250,240,0.95)');
+    g.addColorStop(1,'rgba(214,224,242,0.75)');
+    ctx.fillStyle=g; ctx.fillRect(0,H*0.44,W,H*0.56);
+    cloudBand(0,H*0.62,Math.min(W,H)*0.10,0.55,2.4,'255,252,246');
+    cloudBand(0,H*0.86,Math.min(W,H)*0.18,0.55,2.1,'250,250,254');
+    ctx.restore();
+  }
+
+  const dense=Math.sin(clamp(t,0,1)*Math.PI);
+  ctx.save();
+  reseed(31337);
+  for(let i=0;i<46;i++){
+    const a=rnd()*Math.PI*2;
+    const spread=lerp(0.02,1.75,easeIn(t))*(0.22+rnd()*1.55);
+    const x=W*0.5+Math.cos(a)*W*spread*0.78;
+    const y=H*0.5+Math.sin(a)*H*spread*0.64;
+    const rx=Math.min(W,H)*(0.055+rnd()*0.30)*(0.45+ease(t)*1.6);
+    const ry=rx*(0.19+rnd()*0.30);
+    const tint=rnd()<0.38?'206,218,238':'255,255,255';
+    puff(x,y,rx,ry,dense*(0.26+rnd()*0.46),tint);
+  }
+  ctx.restore();
+
+  ctx.save();
+  ctx.globalAlpha=dense*0.40;
+  const lg=ctx.createLinearGradient(W*0.82,0,W*0.24,H);
+  lg.addColorStop(0,'rgba(255,246,224,0.60)');
+  lg.addColorStop(0.55,'rgba(255,240,214,0.18)');
+  lg.addColorStop(1,'rgba(255,238,210,0)');
+  ctx.fillStyle=lg; ctx.fillRect(0,0,W,H);
+  ctx.restore();
+
+  ctx.fillStyle=`rgba(255,255,255,${dense*0.38})`;
+  ctx.fillRect(0,0,W,H);
+
+  const s=Math.min(W,H)*(PORT()?0.210:0.230);
+  ctx.save(); ctx.globalAlpha=1-dense*0.30;
+  planeBack(W*0.5,H*0.46,s,Math.sin(t*3.0)*0.05);
+  ctx.restore();
+}
+
+/* =========================================================================
+   S4：巡航。右に日本列島、左に海。北海道→九州を流す
+   travel 12 → 190（1地方30・7地方＝210）
+   ========================================================================= */
+/* 巡航中の割り当て（合計208）：北海道0-34／海峡34-49／東北49-76／関東76-116／
+   中部116-140／瀬戸内140-176／九州176-208。関東は約10.0〜11.2秒、瀬戸内は約12.3秒〜 */
+/* 巡航は9秒。準也さん指摘（2026-08-02）＝速すぎるのでゆっくりに。
+   尺を伸ばすだけでなく、流れる速さ自体も 23.1 → 18.0 に落としている */
+const S4_TRAVEL0=8, S4_SPEED=18.0, S4_LEN=9.0;
+/* 機内カットの濃さ（0=ふつう／1=機内）。render()が毎コマ入れる。
+   ★これが1より小さいときだけ機体を描く＝機内から窓の外を見ているのに
+     「自分が乗っている飛行機」が窓の外に飛んでいる、という矛盾を防ぐ（自己チェック1回目で発見） */
+let cabinK=0;
+function drawS4(t){
+  /* 縦画面は空が広くなりすぎて地表が下半分に押し込まれるので、地平線を上げ、
+     カメラを陸側へ寄せ（見どころが右端で切れるのを防ぐ）、少し引く */
+  const p=PORT();
+  const horizonY=H*(p?0.27:0.34);
+  drawSky(0.92);
+  drawSun(0.92,horizonY);
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(-W*0.2,horizonY+H*0.035);
+  ctx.quadraticCurveTo(W*0.5,horizonY-H*0.055,W*1.2,horizonY+H*0.035);
+  ctx.lineTo(W*1.2,H); ctx.lineTo(-W*0.2,H); ctx.closePath();
+  ctx.clip();
+
+  const c=makeCam(horizonY,p?1.15:1.0,p?1.15:0);
+  // 雲海（deck）は地表と同じ遠近に乗せる＝drawGroundの中で描かれる
+  drawGround(c, S4_TRAVEL0+t*S4_LEN*S4_SPEED, {haze:1.0,light:lerp(0.55,1.0,t),veil:0.16,deck:0.52});
+  ctx.restore();
+
+  cloudBand(-t*W*3.0,H*1.06,Math.min(W,H)*0.20,0.45,2.8,'250,252,255');
+
+  const s=Math.min(W,H)*(p?0.205:0.235);
+  const roll=Math.sin(t*Math.PI*1.3)*0.09;
+  const x=W*0.5+Math.sin(t*Math.PI*1.3)*W*0.035;
+  const y=H*(p?0.265:0.335)+Math.sin(t*5.0)*H*0.006;
+  if(cabinK<0.999){
+    ctx.save(); ctx.globalAlpha=1-cabinK;
+    contrail(x-s*1.30,y+s*0.20,s,W*0.22,0.30);
+    contrail(x+s*1.30,y+s*0.20,s,W*0.22,0.30);
+    planeBack(x,y,s,roll);
+    ctx.restore();
+  }
+}
+
+/* =========================================================================
+   S5：降下・フェード（九州が近づく）
+   ========================================================================= */
+function drawS5(t){
+  const p=PORT();
+  const horizonY=lerp(H*(p?0.27:0.34),H*(p?0.22:0.28),ease(t));
+  drawSky(lerp(0.92,0.70,ease(t)));
+  drawSun(lerp(0.92,0.70,ease(t)),horizonY);
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(-W*0.2,horizonY+H*0.03);
+  ctx.quadraticCurveTo(W*0.5,horizonY-H*0.03,W*1.2,horizonY+H*0.03);
+  ctx.lineTo(W*1.2,H); ctx.lineTo(-W*0.2,H); ctx.closePath();
+  ctx.clip();
+
+  const c=makeCam(horizonY,lerp(p?1.15:1.0,p?0.62:0.55,ease(t)),p?1.15:0);   // 高度が下がる＝地面が近づく
+  drawGround(c, S4_TRAVEL0+S4_LEN*S4_SPEED+t*10.0,
+             {haze:lerp(1.0,0.75,ease(t)),light:1.0,veil:lerp(0.16,0.10,ease(t)),deck:lerp(0.52,0.30,ease(t))});
+  ctx.restore();
+
+  cloudBand(-t*W*2.0,H*0.90,Math.min(W,H)*0.16,0.45,2.6,'252,252,255');
+
+  const s=Math.min(W,H)*lerp(p?0.205:0.235,p?0.275:0.315,ease(t));
+  planeBack(W*0.5,H*lerp(p?0.265:0.335,p?0.235:0.30,ease(t)),s,-0.05+ease(t)*0.03);
+
+  const f=seg(t,0.72,1.0);
+  ctx.fillStyle=`rgba(255,255,255,${ease(f)*0.95})`;
+  ctx.fillRect(0,0,W,H);
+}
+
+/* =========================================================================
+   タイムライン（雲の突入を離陸直後へ移した）
+   ========================================================================= */
+const CUTS=[
+  {name:'S1 滑走路',     a:0.0,  b:3.2,  fn:drawS1},
+  {name:'S2 浮いた直後', a:3.2,  b:4.6,  fn:drawS2},
+  {name:'S3 雲を抜ける', a:4.6,  b:6.4,  fn:drawS3},
+  {name:'S4 巡航',       a:6.4,  b:15.4, fn:drawS4},
+  {name:'S5 降下',       a:15.4, b:17.0, fn:drawS5}
+];
+const TOTAL=17.0;
+
+/* =========================================================================
+   v3.6：キャラ・会話・とばす（2026-08-04）
+   ★飛行機は「景色が流れ続ける」映像なので、会話で時間を止めない。
+     船・新幹線は会話の終わりで次のカットへ進めているが、同じことをすると
+     空撮がぴたりと静止して不自然になる。＝カードは映像と並行して出し、
+     時間で自動的に消える（タップで早く消せる）。
+   ★声は<audio>要素で鳴らす（v3.5の失敗＝fetchはfile://でブロックされる、の教訓）。
+   ========================================================================= */
+const MANA_FACE='images/sprites/hakase-face.webp';
+
+/* 声＝VOICEVOX四国めたん（マナ）。実測の長さ pl01=3.22秒 / pl02=4.74秒 に余韻を足した尺 */
+const TALKS=[
+  {at:0.4, dur:3.9, pos:'top', voice:'audio/battle/pl01.mp3',
+   msg:'シートベルト しめた？<br>ここからは そらの たびよ！'},
+  {at:10.1, dur:3.5, pos:'top', voice:'audio/battle/pl02.mp3',
+   msg:'まどの したを みて！<br>あれが ニホンレットウよ！'}
+];
+/* 機内カット。★自己チェック2回目で時刻を動かした：
+   はじめは巡航の頭（6.4秒＝津軽海峡のあたり）に置いていたが、窓の外が海だけで見どころがなかった。
+   このシーンでいちばんきれいなのは関東の夜景（10.2〜12.4秒）なので、そこをまたぐ位置へ移した。
+   会話②「まどの したを みて！」も同時にする＝言葉と絵が合う（別々に出すより意味が通る）。 */
+const CABIN={a:9.8, b:13.6};
+/* ★自己チェック3回目：機内カットが14.8秒まで延びていて、後半（中部の山＝真っ暗）は窓の外に
+   何も見えなかった。窓の外が見どころなのは関東の夜景（10.2〜12.4秒）だけなので、
+   そこに合わせて機内カットを3.8秒に縮め、会話②も声を短く作り直して収めた。 */
+
+let talkEls=[], talkShown=-1, talkClosed={};
+function talkInit(){
+  TALKS.forEach((tk,i)=>{
+    if(!talkEls[i]){ const a=new Audio(); a.preload='auto'; a.src=encodeURI(tk.voice); talkEls[i]=a; }
+  });
+  const h=document.getElementById('psHero');
+  h.style.backgroundImage="url('"+heroSheetUrl()+"')";   // 衣装・性別の選択がそのまま反映される
+  h.style.backgroundSize='300% 200%';
+  h.style.backgroundPosition='50% 0%';        // 3列2段のシートの中央列＝後ろ姿
+}
+function talkStopVoices(){ talkEls.forEach(a=>{ if(a){ try{ a.pause(); a.currentTime=0; }catch(e){} } }); }
+function talkReset(){
+  talkShown=-1; talkClosed={};
+  document.getElementById('psTalk').className='ps-talk';
+  document.getElementById('psCabin').classList.remove('show');
+}
+/* 毎コマ呼ぶ。時刻でカードの出し入れを決める＝絵と会話がずれない（音と同じ考え方） */
+function talkUpdate(t,withVoice){
+  const el=document.getElementById('psTalk');
+  let want=-1;
+  for(let i=0;i<TALKS.length;i++){
+    const tk=TALKS[i];
+    if(t>=tk.at && t<tk.at+tk.dur && !talkClosed[i]) want=i;
+  }
+  if(want===talkShown) return;
+  talkShown=want;
+  if(want<0){ el.className='ps-talk'; el.onclick=null; return; }
+  const tk=TALKS[want];
+  el.innerHTML='<div class="ps-talk-face" style="background-image:url(\''+MANA_FACE+'\')"></div>'+
+    '<div class="ps-talk-text">'+tk.msg+'</div><div class="ps-talk-next">▼ タップ</div>';
+  el.className='ps-talk '+tk.pos+' show';
+  el.onclick=e=>{                                    // タップで先送り（映像は止めない）
+    e.stopPropagation();
+    talkClosed[want]=true;
+    if(talkEls[want]){ try{ talkEls[want].pause(); }catch(e2){} }
+    el.className='ps-talk'; el.onclick=null; talkShown=-1;
+  };
+  if(withVoice && talkEls[want] && !(typeof soundOn!=='undefined' && !soundOn)){
+    const a=talkEls[want];
+    try{ a.currentTime=0; const p=a.play(); if(p&&p.catch) p.catch(()=>{}); }catch(e){}
+  }
+}
+/* 機内カットの出入り。CSSのtransitionでなくJSで濃さを決める＝?t=秒 の静止描画でも同じ見た目になる */
+const CABIN_FADE=0.5;
+function cabinFadeAt(t){
+  if(t<CABIN.a-CABIN_FADE || t>CABIN.b) return 0;
+  if(t<CABIN.a) return (t-(CABIN.a-CABIN_FADE))/CABIN_FADE;      // 入り
+  if(t>CABIN.b-CABIN_FADE) return (CABIN.b-t)/CABIN_FADE;        // 出
+  return 1;
+}
+function cabinUpdate(t){
+  const f=cabinFadeAt(t);
+  const box=document.getElementById('psCabin');
+  box.style.opacity=f.toFixed(3);
+  box.style.display=(f>0.001)?'block':'none';
+}
+
+/* 再生。世代番号で古いループを止める（本体に入れるときも同じ作法にする） */
+let seq=0;
+async function startScene(){
+  seq++;
+  const my=seq;
+  psKill(); talkStopVoices(); talkReset(); talkInit();
+  if(audioInit() && actx.state==='suspended'){ try{ await actx.resume(); }catch(e){} }
+  if(!sfxReady) await loadSfx();          // 録音を読み終えてから始める（音と絵をずらさない）
+  if(my!==seq) return;
+  scheduleSound();
+  let start=null;
+  const step=(now)=>{
+    if(my!==seq) return;                 // 新しい再生が始まったら古いループは黙って終わる
+    if(start===null) start=now;
+    const t=(now-start)/1000;
+    render(Math.min(t,TOTAL));
+    sfxUpdate(t);                        // 録音は絵と同じ時計で鳴らす
+    talkUpdate(t,true); cabinUpdate(t);  // 会話・機内カットも同じ時計で動かす
+    if(t<TOTAL+0.4) requestAnimationFrame(step);
+    else { sfxStop(); talkReset(); planeSceneFinish(); }   // 完走＝ここで本体に戻る
+  };
+  requestAnimationFrame(step);
+}
+function render(t){
+  cabinK=cabinFadeAt(t);          // 機内カットの間は外から見た機体を描かない（上の cabinK の説明を参照）
+  ctx.clearRect(0,0,W,H);
+  const cut=CUTS.find(c=>t>=c.a&&t<c.b)||CUTS[CUTS.length-1];
+  cut.fn(clamp((t-cut.a)/(cut.b-cut.a),0,1));
+  for(const c of CUTS){
+    const d=Math.abs(t-c.a);
+    if(d<0.09&&c.a>0){
+      ctx.fillStyle=`rgba(255,255,255,${(1-d/0.09)*0.35})`;
+      ctx.fillRect(0,0,W,H);
+    }
+  }
+}
+
+/* ---------------- 本体との接続（外に出すのはこの2つだけ） ----------------
+   船シーン（startShipSceneEvent / shipSceneSkip / shipSceneFinish）と同じ流儀。
+   ★世代番号 seq ＝とばす・完走で++し、残っている古いループを黙らせる */
+function startPlaneSceneEvent(onDone){
+  if(planeSceneActive) return;
+  planeSceneActive=true;
+  planeSceneOnDone=(typeof onDone==='function')?onDone:null;
+  document.getElementById('planeSceneOverlay').classList.add('show');
+  resize();                          // 表示してから測る（閉じている間は幅0で測れない）
+  talkInit();
+  startScene();
+}
+function planeSceneSkip(){ if(planeSceneActive) planeSceneFinish(); }
+function planeSceneFinish(){
+  if(!planeSceneActive) return;      // とばすと完走が重なっても onDone は1回だけ
+  seq++;
+  planeSceneActive=false;
+  sfxStop(); psKill(); talkStopVoices(); talkReset();
+  document.getElementById('planeSceneOverlay').classList.remove('show');
+  const cb=planeSceneOnDone; planeSceneOnDone=null;
+  if(cb) cb();
+}
+document.getElementById('psSkip').onclick=e=>{ e.stopPropagation(); planeSceneSkip(); };
+
+return { start:startPlaneSceneEvent, skip:planeSceneSkip, isActive:()=>planeSceneActive };
+})();
 </script>
 </body>
 </html>
