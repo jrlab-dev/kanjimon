@@ -2416,9 +2416,13 @@
     text-shadow:0 2px 8px rgba(0,0,0,.75);opacity:0;transition:opacity .6s ease;z-index:10}
   .train-scene-voice.show{opacity:1}
 
+
+
 /* ===========================================================
    弾6-1：飛行機シーン（北海道 → トットリ）
-   絵は1枚も使わず、すべてCanvasに計算で描く。試作＝_一時\_飛行機シーン試作\
+   前半＝搭乗口（2D・背景1枚＋歩行スプライト＋会話カード＝船シーンと同じ流儀）
+   後半＝飛行（3D・すべてCanvasに計算で描き、地表には画像を貼る）
+   試作＝_一時\_飛行機シーン試作\
 =========================================================== */
   /* ---- オーバーレイ（#appと同じ幅・中央。船シーンと同じ作り） ---- */
   .plane-scene-overlay{position:fixed;top:0;bottom:0;left:50%;transform:translateX(-50%);
@@ -2446,34 +2450,20 @@
     animation:psTalkNext 1s ease-in-out infinite}
   @keyframes psTalkNext{0%,100%{transform:translateY(0)}50%{transform:translateY(3px)}}
 
-  /* 機内カット＝「座席から窓の外を見ている主人公の後ろ姿」。
-     ★1回目の自己チェックで直した点：はじめは主人公とマナの2人を並べたが、
-       スマホ縦だと2人＋窓で画面が窮屈になり、どちらも小さくなって誰だか分からなかった。
-       マナは会話カードに顔が出るので、機内は主人公ひとりにして構図を締める。
-     窓の外側だけを暗くするのに box-shadow の広がりを使う（＝窓の形に穴があいて見える）。
-     キャラは逆光のシルエット（brightnessを落とす）＝機内は暗い、という当たり前の見え方。
-     ただし落としすぎると真っ黒で誰か分からないので、輪郭が残る明るさにしてある。 */
-  #psCabin{position:absolute;inset:0;z-index:30;pointer-events:none;opacity:0;display:none;}
-  #psWindow{position:absolute;right:5%;top:36%;width:44%;height:30%;border-radius:26%/34%;
-    box-shadow:0 0 0 200vmax rgba(5,9,20,.94), inset 0 0 26px rgba(120,170,220,.30);}
-  #psWindow::after{content:'';position:absolute;inset:0;border-radius:26%/34%;
-    border:4px solid rgba(160,178,198,.5);}
-  /* 座席の背もたれ＝機内であることが一目で分かる手がかり（窓だけだと船にも列車にも見える） */
-  /* 背もたれは主人公の肩から下を隠す高さにする＝「立っている」ではなく「座っている」に見せるため */
-  #psSeat{position:absolute;left:-6%;bottom:0;width:72%;height:22%;
-    background:rgba(11,17,30,.96);border-radius:26px 26px 0 0;
-    box-shadow:inset 0 3px 0 rgba(255,255,255,.12);}
-  /* saturate を落とすのは、逆光で色が飛ぶのが自然だから。
-     落とさないと帽子の黄色だけが暗い機内で浮いて見える（自己チェック2回目で発見） */
-  #psHero{position:absolute;left:5%;bottom:12%;width:62%;aspect-ratio:1;
-    background-repeat:no-repeat;filter:brightness(.32) saturate(.35) contrast(1.2);}
-  /* 横長の画面では窓と主人公が離れすぎるので、横だけ配置を寄せる（スマホ縦は1pxも変えない） */
-  @media (min-aspect-ratio: 1/1){
-    /* 横画面は会話カードの背が高くなる（幅96%でも文字が大きい）ので、窓を下げて重ならないようにする */
-    #psWindow{right:12%;top:34%;width:30%;height:40%;}
-    #psHero{left:18%;width:22%;bottom:6%;}
-    #psSeat{left:10%;width:32%;height:18%;}
-  }
+
+  /* ★搭乗口シーン（2D）＝準也さん指示「離陸前に搭乗口のシーンを追加。ここは2D、今までの流れで」。
+     船シーンのS0（青森ターミナル）とまったく同じ見せ方＝背景1枚＋歩行スプライト＋顔つき会話カード。 */
+  #plGate{position:absolute;inset:0;z-index:20;background:#0a1018;display:none;opacity:0;
+          transition:opacity .5s ease;}
+  #plGate.show{display:block;opacity:1;}
+  #plGateBg{position:absolute;inset:0;background-size:cover;background-position:center;
+            transform:scale(1.06);transition:transform 9s linear;}
+  #plGate.run #plGateBg{transform:scale(1.14);}          /* ゆっくり寄る＝止まった絵に見せない */
+  .pl-fig{position:absolute;background-repeat:no-repeat;background-size:300% 200%;
+          transition:left 3.4s linear, top 3.4s linear, width 3.4s linear;}
+  #plGateFlash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;
+               transition:opacity .55s ease;}
+  #plGateFlash.on{opacity:1;}
 
   #psSkip{position:absolute;right:12px;top:12px;z-index:50;padding:8px 16px;border:0;border-radius:20px;
     background:rgba(0,0,0,.55);color:#fff;font-size:14px;font-family:system-ui,sans-serif;cursor:pointer;
@@ -3050,11 +3040,13 @@
 <!-- 弾6-1：飛行機シーン（北海道 → トットリ）。中身は1つの箱に閉じてあり本体の名前とぶつからない -->
 <div class="plane-scene-overlay" id="planeSceneOverlay">
   <canvas id="plCanvas"></canvas>
-  <div id="psCabin">
-    <div id="psWindow"></div>
-    <div id="psHero"></div>
-    <div id="psSeat"></div>
-  </div>
+<!-- 搭乗口シーン（2D）。飛行の3Dパートの前に流れる -->
+<div id="plGate">
+  <div id="plGateBg"></div>
+  <div class="pl-fig" id="plGateMana"></div>
+  <div class="pl-fig" id="plGateHero"></div>
+  <div id="plGateFlash"></div>
+</div>
   <div class="ps-talk" id="psTalk"></div>
   <button id="psSkip">とばす ▶</button>
 </div>
@@ -19102,8 +19094,12 @@ window.addEventListener('resize', ()=>{
 });
 
 
+
+
+
 /* ===========================================================
    弾6-1：飛行機シーン（北海道 → トットリ）＝ゾーン83クリア→84の突入演出
+   前半＝搭乗口（2D）／後半＝飛行（3D・地表に画像を貼る）
    ★中身はまるごとこの箱の中で完結させている（IIFE）。
      外へ出るのは PlaneScene.start(onDone) と PlaneScene.skip() だけなので、
      箱の中の名前（W・H・render・clamp・lerp など）は本体と1つもぶつからない。
@@ -19277,7 +19273,9 @@ const REGION=[
   {n:'関東',     k:'city',     len:40, cb:-1.20, ca:1.15, lb:null},
   {n:'中部',     k:'mountain', len:24, cb: 0.40, ca:1.25, lb:null},
   {n:'瀬戸内',   k:'islands',  len:36, cb: 1.70, ca:0.85, lb:-2.90},
-  {n:'九州',     k:'plain',    len:32, cb:-0.60, ca:1.20, lb:null}
+  /* ★2026-08-04 準也さん指示「砂丘は入れましょう」。行き先はトットリなので、
+     最後の区間を砂丘にした。瀬戸内の島々を越えて砂の海岸に降りていく流れになる */
+  {n:'トットリのさきゅう', k:'sand', len:32, cb:-0.60, ca:1.20, lb:null}
 ];
 const REG_ACC=[]; { let a=0; for(const r of REGION){ REG_ACC.push(a); a+=r.len; } }
 const REG_TOTAL=REG_ACC[REGION.length-1]+REGION[REGION.length-1].len;
@@ -19362,6 +19360,8 @@ const LAND_NIGHT=[ 22, 36, 36];
 const CITY_DAY  =[ 84, 98, 84];
 const CITY_NIGHT=[ 24, 32, 40];
 const LAND_FAR  =[150,176,204];
+const SAND_DAY  =[198,180,138];   // 砂丘の昼
+const SAND_NIGHT=[ 74, 68, 56];   // 同・夜
 
 /* セルの中の海岸線は5点だけ計算して間を埋める（地物1つずつ計算すると重い） */
 function coastTable(base){
@@ -19641,11 +19641,113 @@ function drawCloudDeck(c,travel,hc,strength){
 }
 
 /* =========================================================================
+   ★v3.7（2026-08-04）＝3Dのまま、表面に画像を載せる
+   準也さんの方針＝「3Dのシーンも欲しかったので現状維持。3Dのままクオリティが上がるのは
+   大歓迎だが2Dにはしない。3Dのものの表面に画像を載せるとかは大歓迎」。
+
+   しくみ：カメラは左右に回らないので、**画面の横1行＝地表の一定距離の線**になる。
+   だから「1行ずつ、その距離に合った倍率でテクスチャを塗る」だけで遠近が付く（Mode 7）。
+   ★既存の描き分け（畑・尾根・川・夜景）は消さない。これはその**下に敷く下地**。
+   ★画像が読めなければ何も描かない＝今までどおりの見た目に戻る（フォールバック）。
+   ========================================================================= */
+const TEX_VMAX=34;      // これより遠い行には貼らない（霞んで見えないので描くだけ無駄）
+const TEX_STEP=2;       // 何ピクセルおきに1行描くか（大きいほど軽いが粗い）
+const TEXS={
+  land :{src:'images/plane-tex/land.webp',  world:10, img:null, pat:null},   // 昼の地表（畑と森）
+  city :{src:'images/plane-tex/city.webp',  world:12, img:null, pat:null},   // 町・夜景
+  sea  :{src:'images/plane-tex/sea.webp',   world:16, img:null, pat:null},   // 海面
+  sand :{src:'images/plane-tex/sand.webp',  world:11, img:null, pat:null},   // 鳥取の砂丘（いちばん最後）
+  forest:{src:'images/plane-tex/forest.webp',world:13, img:null, pat:null}   // 山地（東北・中部）の森
+};
+function texLoad(){
+  for(const k in TEXS){
+    const t=TEXS[k];
+    if(t.img||t.tried) continue;
+    t.tried=true;
+    const im=new Image();
+    im.onload=()=>{
+      t.img=im;
+      try{ t.pat=ctx.createPattern(im,'repeat'); }catch(e){ t.pat=null; }
+      /* ★?t=秒 の静止確認は「1回描いて終わり」なので、あとから画像が届いても反映されない。
+         これに気づかず「テクスチャが効いていない」と読み違えた。届いたら描き直す。 */
+      if(STILL_T!==null){ render(STILL_T); talkUpdate(STILL_T,false); }
+    };
+    im.onerror=()=>{ t.img=null; t.pat=null; };     // 無ければ貼らないだけ（今までどおりの絵）
+    im.src=encodeURI(t.src);
+  }
+}
+/* ★軽くするしくみ：半分の大きさの下書き用キャンバスに描いてから、本番へ引き伸ばす。
+   塗る面積が1/4になるぶん速い。地表のテクスチャはもともとぼんやりした模様なので、
+   半分の細かさで描いても見た目はほとんど変わらない。
+   （行を間引くだけでは速くならなかった＝重いのは行数ではなく塗る面積、と実測で分かった） */
+const TEX_SCALE=0.5;
+let texCv=null, texCtx=null;
+function texOffscreen(){
+  if(!texCv){ texCv=document.createElement('canvas'); texCtx=texCv.getContext('2d'); }
+  const w=Math.max(1,Math.ceil(W*TEX_SCALE)), h=Math.max(1,Math.ceil(H*TEX_SCALE));
+  if(texCv.width!==w||texCv.height!==h){
+    texCv.width=w; texCv.height=h;
+    for(const k in TEXS) TEXS[k].patOff=null;      // 大きさが変わったらパターンを作り直す
+  }
+  return texCtx;
+}
+
+/* 1行ずつテクスチャを塗る。alpha＝どれくらい効かせるか（0で今までどおり） */
+/* ?tex=0 を付けるとテクスチャを描かない＝「入れる前」と撮り比べて効果を画素で確かめられる */
+const TEX_ON=true;                 // 本体では常に貼る（試作では ?tex=0 で切って比べられた）
+let STILL_T=null;      // ?t=秒 の静止確認のときだけ、その秒が入る
+/* 実験用：?deck=0.3&veil=0.1&haze=0.7 のように書くと、雲海・薄雲・霞の量を変えて撮り比べられる */
+const _Q=new URLSearchParams(location.search);
+const QN=(k,d)=>d;                 // 本体では実験用のURL指定は使わない
+function drawTexRows(c,travel,key,alpha,yFrom){
+  if(!TEX_ON) return;
+  const t=TEXS[key];
+  if(!t||!t.img||alpha<=0.01) return;
+  const tc=texOffscreen();
+  if(!t.patOff){ try{ t.patOff=tc.createPattern(t.img,'repeat'); }catch(e){ t.patOff=null; } }
+  if(!t.patOff) return;
+  const S=TEX_SCALE;
+  const K=t.img.width/t.world;
+  const y0=Math.max(Math.floor(yFrom!==undefined?yFrom:c.hy)+1,0);
+  tc.setTransform(1,0,0,1,0,0);
+  tc.clearRect(0,0,texCv.width,texCv.height);
+  tc.fillStyle=t.patOff;
+  for(let y=y0; y<H; y+=TEX_STEP){
+    const v=vAtY(c,y);
+    if(!(v>0.4)||v>TEX_VMAX) continue;
+    const a=K*v/(UK*c.f);                       // 画面x → テクスチャx の傾き
+    if(!isFinite(a)||a<=0.000001) continue;
+    const b=K*(c.uc-(W*0.5)*v/(UK*c.f));        // 同・切片
+    const ty=(v+travel)*K;                      // 進んだぶんテクスチャを送る＝流れて見える
+    /* ★縦も遠近で縮める。1回目はここを1倍のままにしていて、地表が縦に間延びした
+       「ぐにゃぐにゃの帯」になった。この1行（高さTEX_STEP）が受け持つ奥行きは、
+       すぐ下の行との距離の差＝dty。それをTEX_STEPに押し込むぶんだけ縦に縮める。 */
+    /* ★向きに注意：画面は下へ行くほど「手前」＝距離vは小さくなる。
+       だからテクスチャのy座標も下へ行くほど小さくなる＝**上下反転して貼る**（縦倍率が負）。
+       ここを正の向きで書いていたため、1回目は全部の行が捨てられて1行も描けなかった。 */
+    const v2=vAtY(c,y+TEX_STEP);                // 1行下＝より手前（v2 < v）
+    const dty=(v-v2)*K;                         // この行が受け持つテクスチャの高さ（正）
+    if(!(dty>0.00001)) continue;
+    const sy=TEX_STEP/dty;                      // 縦の倍率
+    /* 下書きキャンバスは本番の半分の大きさなので、すべての座標に S を掛ける */
+    tc.setTransform(S/a,0,0,-S*sy,S*(-b/a),S*(y+ty*sy));
+    tc.fillRect(b,ty-dty,a*W,dty);
+  }
+  /* 下書きを本番へ引き伸ばして重ねる。陸の形での切り抜きは本番側に効いているので、
+     はみ出さずに陸の中だけに乗る */
+  ctx.save();
+  ctx.globalAlpha=alpha;
+  ctx.drawImage(texCv,0,0,texCv.width,texCv.height,0,0,W,H);
+  ctx.restore();
+}
+
+/* =========================================================================
    地表ぜんぶ（海 → 島 → 左の陸 → 右の陸＝日本列島 → 霞 → 雲海 → 大気 → 薄雲）
    ========================================================================= */
 function drawGround(c,travel,o){
   const hazeK=o.haze, lightK=o.light;
   drawSea(c.hy,lightK);
+  drawTexRows(c,travel,'sea',0.62*(1-lightK*0.5));      // ★v3.7：海面の下地テクスチャ（夜は弱める）
   drawSwell(c,travel,lightK);
 
   // 左の陸（瀬戸内で見える対岸＝四国）。先に描く＝右の陸が手前に来たとき正しく隠れる
@@ -19667,13 +19769,22 @@ function drawGround(c,travel,o){
   // 右の陸＝日本列島の本体
   const rp=coastPoints(c,travel,'R',128);
   const path=landPath(c,rp,'R');
-  const isCity=(regKind(travel+3)==='city');
-  const baseCol=isCity?mixColor(CITY_DAY,CITY_NIGHT,lightK):mixColor(LAND_DAY,LAND_NIGHT,lightK);
+  const kind=regKind(travel+3);
+  const isCity=(kind==='city'), isSand=(kind==='sand'), isMt=(kind==='mountain');
+  const baseCol=isCity?mixColor(CITY_DAY,CITY_NIGHT,lightK)
+               :isSand?mixColor(SAND_DAY,SAND_NIGHT,lightK)
+                      :mixColor(LAND_DAY,LAND_NIGHT,lightK);
   ctx.fillStyle=rgb(mixColor(baseCol,LAND_FAR,0.22*hazeK));
   ctx.fill(path);
 
   ctx.save();
   ctx.clip(path);
+  /* ★v3.7：ここが「3Dの表面に画像を載せる」場所。陸の形で切り抜いた中に下地を敷き、
+     この下に既存の畑・尾根・川・夜景がそのまま乗る（描き分けは1つも消していない）。
+     昼は緑の地表、町は夜景のテクスチャ。夜は緑を弱めて暗さを保つ */
+  /* 地方ごとに貼る絵を変える。山地に田んぼの絵が貼られていると不自然なので森にする */
+  drawTexRows(c,travel, isCity?'city':(isSand?'sand':(isMt?'forest':'land')),
+              isCity?0.72:0.88*(1-lightK*0.55));
   /* 陸の中の濃淡。前の版はここを画面の上から下まで灰青で塗っていたため、
      手前の陸まで灰色になってのっぺりした。遠く（地平線ぎわ）だけに効かせる */
   const pl=ctx.createLinearGradient(0,c.hy,0,c.hy+(H-c.hy)*0.30);
@@ -19725,7 +19836,7 @@ function drawGround(c,travel,o){
 let actx=null, psBus=null, psNodes=[];
 function audioInit(){
   if(actx) return actx;
-  if(typeof ensureAudio==='function') ensureAudio();     // 本体の音の入口を通す（勝手に別のContextを作らない）
+  if(typeof ensureAudio==='function') ensureAudio();     // 本体の音の入口を通す
   actx=(typeof audioCtx!=='undefined')?audioCtx:null;
   return actx;
 }
@@ -20266,10 +20377,6 @@ function drawS3(t){
 /* 巡航は9秒。準也さん指摘（2026-08-02）＝速すぎるのでゆっくりに。
    尺を伸ばすだけでなく、流れる速さ自体も 23.1 → 18.0 に落としている */
 const S4_TRAVEL0=8, S4_SPEED=18.0, S4_LEN=9.0;
-/* 機内カットの濃さ（0=ふつう／1=機内）。render()が毎コマ入れる。
-   ★これが1より小さいときだけ機体を描く＝機内から窓の外を見ているのに
-     「自分が乗っている飛行機」が窓の外に飛んでいる、という矛盾を防ぐ（自己チェック1回目で発見） */
-let cabinK=0;
 function drawS4(t){
   /* 縦画面は空が広くなりすぎて地表が下半分に押し込まれるので、地平線を上げ、
      カメラを陸側へ寄せ（見どころが右端で切れるのを防ぐ）、少し引く */
@@ -20287,7 +20394,7 @@ function drawS4(t){
 
   const c=makeCam(horizonY,p?1.15:1.0,p?1.15:0);
   // 雲海（deck）は地表と同じ遠近に乗せる＝drawGroundの中で描かれる
-  drawGround(c, S4_TRAVEL0+t*S4_LEN*S4_SPEED, {haze:1.0,light:lerp(0.55,1.0,t),veil:0.16,deck:0.52});
+  drawGround(c, S4_TRAVEL0+t*S4_LEN*S4_SPEED, {haze:QN('haze',1.0),light:lerp(0.55,1.0,t),veil:QN('veil',0.16),deck:QN('deck',0.52)});
   ctx.restore();
 
   cloudBand(-t*W*3.0,H*1.06,Math.min(W,H)*0.20,0.45,2.8,'250,252,255');
@@ -20296,13 +20403,9 @@ function drawS4(t){
   const roll=Math.sin(t*Math.PI*1.3)*0.09;
   const x=W*0.5+Math.sin(t*Math.PI*1.3)*W*0.035;
   const y=H*(p?0.265:0.335)+Math.sin(t*5.0)*H*0.006;
-  if(cabinK<0.999){
-    ctx.save(); ctx.globalAlpha=1-cabinK;
-    contrail(x-s*1.30,y+s*0.20,s,W*0.22,0.30);
-    contrail(x+s*1.30,y+s*0.20,s,W*0.22,0.30);
-    planeBack(x,y,s,roll);
-    ctx.restore();
-  }
+  contrail(x-s*1.30,y+s*0.20,s,W*0.22,0.30);
+  contrail(x+s*1.30,y+s*0.20,s,W*0.22,0.30);
+  planeBack(x,y,s,roll);
 }
 
 /* =========================================================================
@@ -20359,36 +20462,110 @@ const TOTAL=17.0;
 const MANA_FACE='images/sprites/hakase-face.webp';
 
 /* 声＝VOICEVOX四国めたん（マナ）。実測の長さ pl01=3.22秒 / pl02=4.74秒 に余韻を足した尺 */
-const TALKS=[
-  {at:0.4, dur:3.9, pos:'top', voice:'audio/battle/pl01.mp3',
-   msg:'シートベルト しめた？<br>ここからは そらの たびよ！'},
-  {at:10.1, dur:3.5, pos:'top', voice:'audio/battle/pl02.mp3',
-   msg:'まどの したを みて！<br>あれが ニホンレットウよ！'}
+/* ★2026-08-04 準也さん指示で組み替え：
+     ・飛行中に「窓から主人公が外を見る」機内カットは**おかしいのでやめる**
+     ・離陸の会話もやめる
+     ・かわりに**離陸前の「搭乗口」シーン（2D＝船・新幹線と同じ見せ方）**を足し、会話はそこへ移す
+   ＝この3Dパートは会話なし・キャラなしの純粋な飛行映像になった。 */
+const TALKS=[];            // 飛行中の会話は無し（搭乗口へ移した）
+
+/* ==========================================================================
+   搭乗口シーン（2D・約9.6秒）。船シーンのS0と同じ流儀＝
+   背景1枚＋歩行スプライト2人＋顔つき会話カード。終わったら飛行の3Dパートへ渡す。
+   ========================================================================== */
+const GATE_BG='images/plane-tex/gate.webp';
+const GATE_MANA='images/mana-back-a.webp';
+const GATE_DUR=9.6;
+const GATE_TALKS=[
+  {at:1.0, dur:4.8, pos:'mid', voice:'audio/battle/pl01.mp3',
+   msg:'ここが くうこう。<br>あの ひこうきで、とおい みなみへ とぶのよ！'},
+  {at:6.0, dur:3.4, pos:'mid', voice:'audio/battle/pl02.mp3',
+   msg:'シートベルト しめた？<br>いってらっしゃい！'}
 ];
-/* 機内カット。★自己チェック2回目で時刻を動かした：
-   はじめは巡航の頭（6.4秒＝津軽海峡のあたり）に置いていたが、窓の外が海だけで見どころがなかった。
-   このシーンでいちばんきれいなのは関東の夜景（10.2〜12.4秒）なので、そこをまたぐ位置へ移した。
-   会話②「まどの したを みて！」も同時にする＝言葉と絵が合う（別々に出すより意味が通る）。 */
-const CABIN={a:9.8, b:13.6};
-/* ★自己チェック3回目：機内カットが14.8秒まで延びていて、後半（中部の山＝真っ暗）は窓の外に
-   何も見えなかった。窓の外が見どころなのは関東の夜景（10.2〜12.4秒）だけなので、
-   そこに合わせて機内カットを3.8秒に縮め、会話②も声を短く作り直して収めた。 */
+let gateVoices=[], gateTimers=[], gateWalk=null;
+function gateClear(){
+  gateTimers.forEach(t=>clearTimeout(t)); gateTimers=[];
+  if(gateWalk){ clearInterval(gateWalk); gateWalk=null; }
+  gateVoices.forEach(a=>{ if(a){ try{ a.pause(); a.currentTime=0; }catch(e){} } });
+  const g=document.getElementById('plGate');
+  g.classList.remove('show','run');
+  document.getElementById('plGateFlash').classList.remove('on');
+  const el=document.getElementById('psTalk'); el.className='ps-talk'; el.onclick=null;
+}
+/* 歩くコマ送り。★本体の setHeroSpriteFrame と同じ作法＝Bコマは少し浮かせ、
+   正面と後ろ姿は左右反転する（歩行シートは上段と下段がまったく同じ絵なので、
+   反転しないと同じ絵が交互に出るだけ＝歩かずに滑って見える。2026-08-03の修正と同じ話）。 */
+function gateWalkFrame(el,useB,col){
+  const ud=(col==='0%'||col==='50%');
+  el.style.backgroundPosition=col+' '+(useB?'100%':'0%');
+  el.style.transformOrigin='center bottom';
+  el.style.transform='translateY('+(useB?'-3%':'0')+') scaleX('+((useB&&ud)?-1:1)+')';
+}
+function gateTalkShow(tk,seqAtStart){
+  const el=document.getElementById('psTalk');
+  el.innerHTML='<div class="ps-talk-face" style="background-image:url(\''+MANA_FACE+'\')"></div>'+
+    '<div class="ps-talk-text">'+tk.msg+'</div><div class="ps-talk-next">▼ タップ</div>';
+  el.className='ps-talk '+tk.pos+' show';
+  el.onclick=e=>{ e.stopPropagation(); el.className='ps-talk'; el.onclick=null; };
+}
+function gatePlay(onDone){
+  const my=seq;                                    // 世代番号ガード（とばす・作り直しで無効になる）
+  gateClear();
+  const g=document.getElementById('plGate');
+  const bg=document.getElementById('plGateBg');
+  const hero=document.getElementById('plGateHero');
+  const mana=document.getElementById('plGateMana');
+  bg.style.backgroundImage="url('"+GATE_BG+"')";
+  hero.style.backgroundImage="url('"+heroSheetUrl()+"')";   // 同上（搭乗口シーン）
+  mana.style.backgroundImage="url('"+GATE_MANA+"')";
+  mana.style.backgroundSize='100% 100%';           // マナは1枚絵（コマ割りではない）
+  /* 手前中央から、奥の搭乗ゲートへ歩く。遠近で小さくなる */
+  const put=(el,x,y,w)=>{ el.style.left=x+'%'; el.style.top=y+'%'; el.style.width=w+'%'; el.style.height='auto'; el.style.aspectRatio='1'; };
+  put(hero,30,58,30); put(mana,52,54,26);
+  gateWalkFrame(hero,false,'50%');                 // 50%=後ろ姿の列
+  g.classList.add('show');
+  requestAnimationFrame(()=>{ g.classList.add('run'); });
+  /* 歩き出し（transitionで移動） */
+  gateTimers.push(setTimeout(()=>{ if(my!==seq) return; put(hero,40,44,17); put(mana,54,42,15); },600));
+  let useB=false;
+  gateWalk=setInterval(()=>{ useB=!useB; gateWalkFrame(hero,useB,'50%'); },260);
+  gateTimers.push(setTimeout(()=>{ if(gateWalk){ clearInterval(gateWalk); gateWalk=null; } },4200));
+  /* 会話 */
+  GATE_TALKS.forEach((tk,i)=>{
+    gateTimers.push(setTimeout(()=>{
+      if(my!==seq) return;
+      gateTalkShow(tk,my);
+      if(!gateVoices[i]){ const a=new Audio(); a.preload='auto'; a.src=encodeURI(tk.voice); gateVoices[i]=a; }
+      if(!(typeof soundOn!=='undefined' && !soundOn)){
+        try{ gateVoices[i].currentTime=0; const pr=gateVoices[i].play(); if(pr&&pr.catch) pr.catch(()=>{}); }catch(e){}
+      }
+    },tk.at*1000));
+    gateTimers.push(setTimeout(()=>{
+      if(my!==seq) return;
+      const el=document.getElementById('psTalk'); el.className='ps-talk'; el.onclick=null;
+    },(tk.at+tk.dur)*1000));
+  });
+  /* 白フラッシュで飛行の3Dパートへ渡す */
+  gateTimers.push(setTimeout(()=>{ if(my!==seq) return; document.getElementById('plGateFlash').classList.add('on'); },(GATE_DUR-0.6)*1000));
+  gateTimers.push(setTimeout(()=>{ if(my!==seq) return; gateClear(); if(onDone) onDone(); },GATE_DUR*1000));
+}
+/* 搭乗口の音＝空港のざわめきと出発案内のチャイム（すべて合成・専用バス経由） */
+function gateSound(){
+  if(!psBusGet()) return;
+  psNoise(0,GATE_DUR,'lowpass',0.7,[[0,430],[GATE_DUR,380]],[[0,0.010],[1.2,0.030],[GATE_DUR,0.018]]);
+  [[784,0.35],[988,0.56],[659,0.77],[784,0.98]].forEach(pp=>psTone(pp[0],pp[1],0.19,'sine',0.085));
+}
 
 let talkEls=[], talkShown=-1, talkClosed={};
 function talkInit(){
   TALKS.forEach((tk,i)=>{
     if(!talkEls[i]){ const a=new Audio(); a.preload='auto'; a.src=encodeURI(tk.voice); talkEls[i]=a; }
   });
-  const h=document.getElementById('psHero');
-  h.style.backgroundImage="url('"+heroSheetUrl()+"')";   // 衣装・性別の選択がそのまま反映される
-  h.style.backgroundSize='300% 200%';
-  h.style.backgroundPosition='50% 0%';        // 3列2段のシートの中央列＝後ろ姿
 }
 function talkStopVoices(){ talkEls.forEach(a=>{ if(a){ try{ a.pause(); a.currentTime=0; }catch(e){} } }); }
 function talkReset(){
   talkShown=-1; talkClosed={};
   document.getElementById('psTalk').className='ps-talk';
-  document.getElementById('psCabin').classList.remove('show');
 }
 /* 毎コマ呼ぶ。時刻でカードの出し入れを決める＝絵と会話がずれない（音と同じ考え方） */
 function talkUpdate(t,withVoice){
@@ -20411,24 +20588,10 @@ function talkUpdate(t,withVoice){
     if(talkEls[want]){ try{ talkEls[want].pause(); }catch(e2){} }
     el.className='ps-talk'; el.onclick=null; talkShown=-1;
   };
-  if(withVoice && talkEls[want] && !(typeof soundOn!=='undefined' && !soundOn)){
+  if(withVoice && talkEls[want]){
     const a=talkEls[want];
     try{ a.currentTime=0; const p=a.play(); if(p&&p.catch) p.catch(()=>{}); }catch(e){}
   }
-}
-/* 機内カットの出入り。CSSのtransitionでなくJSで濃さを決める＝?t=秒 の静止描画でも同じ見た目になる */
-const CABIN_FADE=0.5;
-function cabinFadeAt(t){
-  if(t<CABIN.a-CABIN_FADE || t>CABIN.b) return 0;
-  if(t<CABIN.a) return (t-(CABIN.a-CABIN_FADE))/CABIN_FADE;      // 入り
-  if(t>CABIN.b-CABIN_FADE) return (CABIN.b-t)/CABIN_FADE;        // 出
-  return 1;
-}
-function cabinUpdate(t){
-  const f=cabinFadeAt(t);
-  const box=document.getElementById('psCabin');
-  box.style.opacity=f.toFixed(3);
-  box.style.display=(f>0.001)?'block':'none';
 }
 
 /* 再生。世代番号で古いループを止める（本体に入れるときも同じ作法にする） */
@@ -20440,22 +20603,28 @@ async function startScene(){
   if(audioInit() && actx.state==='suspended'){ try{ await actx.resume(); }catch(e){} }
   if(!sfxReady) await loadSfx();          // 録音を読み終えてから始める（音と絵をずらさない）
   if(my!==seq) return;
+  texLoad();
+  /* ★まず搭乗口（2D）を見せ、終わってから飛行（3D）に渡す */
+  gateSound();
+  gatePlay(()=>{ if(my!==seq) return; startFlight(my); });
+}
+function startFlight(my){
   scheduleSound();
   let start=null;
   const step=(now)=>{
     if(my!==seq) return;                 // 新しい再生が始まったら古いループは黙って終わる
     if(start===null) start=now;
     const t=(now-start)/1000;
+    window.__sceneT=t;                   // 検証スクリプトから経過秒を見るための窓口（試作だけの飾り）
     render(Math.min(t,TOTAL));
     sfxUpdate(t);                        // 録音は絵と同じ時計で鳴らす
-    talkUpdate(t,true); cabinUpdate(t);  // 会話・機内カットも同じ時計で動かす
+    talkUpdate(t,true);   // 会話は絵と同じ時計で動かす
     if(t<TOTAL+0.4) requestAnimationFrame(step);
     else { sfxStop(); talkReset(); planeSceneFinish(); }   // 完走＝ここで本体に戻る
   };
   requestAnimationFrame(step);
 }
 function render(t){
-  cabinK=cabinFadeAt(t);          // 機内カットの間は外から見た機体を描かない（上の cabinK の説明を参照）
   ctx.clearRect(0,0,W,H);
   const cut=CUTS.find(c=>t>=c.a&&t<c.b)||CUTS[CUTS.length-1];
   cut.fn(clamp((t-cut.a)/(cut.b-cut.a),0,1));
@@ -20478,14 +20647,14 @@ function startPlaneSceneEvent(onDone){
   document.getElementById('planeSceneOverlay').classList.add('show');
   resize();                          // 表示してから測る（閉じている間は幅0で測れない）
   talkInit();
-  startScene();
+  startScene();                      // 中で「搭乗口（2D）→ 飛行（3D）」の順に進む
 }
 function planeSceneSkip(){ if(planeSceneActive) planeSceneFinish(); }
 function planeSceneFinish(){
   if(!planeSceneActive) return;      // とばすと完走が重なっても onDone は1回だけ
   seq++;
   planeSceneActive=false;
-  sfxStop(); psKill(); talkStopVoices(); talkReset();
+  sfxStop(); psKill(); talkStopVoices(); talkReset(); gateClear();
   document.getElementById('planeSceneOverlay').classList.remove('show');
   const cb=planeSceneOnDone; planeSceneOnDone=null;
   if(cb) cb();
