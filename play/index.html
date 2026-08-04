@@ -2418,6 +2418,7 @@
 
 
 
+
 /* ===========================================================
    弾6-1：飛行機シーン（北海道 → トットリ）
    前半＝搭乗口（2D・背景1枚＋歩行スプライト＋会話カード＝船シーンと同じ流儀）
@@ -19097,6 +19098,7 @@ window.addEventListener('resize', ()=>{
 
 
 
+
 /* ===========================================================
    弾6-1：飛行機シーン（北海道 → トットリ）＝ゾーン83クリア→84の突入演出
    前半＝搭乗口（2D）／後半＝飛行（3D・地表に画像を貼る）
@@ -19650,14 +19652,17 @@ function drawCloudDeck(c,travel,hc,strength){
    ★既存の描き分け（畑・尾根・川・夜景）は消さない。これはその**下に敷く下地**。
    ★画像が読めなければ何も描かない＝今までどおりの見た目に戻る（フォールバック）。
    ========================================================================= */
+/* ★world＝その絵1枚が地面のどれくらいの広さを受け持つか。大きいほど家や木が小さく見える。
+   2026-08-04 準也さん指摘「上空からの景色にしては木が大きい・家が大きい」→ 全部4倍にして裁定。
+   （「絵をつないで巨大にしてから縮小」しなくても、この数字だけで同じ効果になる） */
 const TEX_VMAX=34;      // これより遠い行には貼らない（霞んで見えないので描くだけ無駄）
 const TEX_STEP=2;       // 何ピクセルおきに1行描くか（大きいほど軽いが粗い）
 const TEXS={
-  land :{src:'images/plane-tex/land.webp',  world:10, img:null, pat:null},   // 昼の地表（畑と森）
-  city :{src:'images/plane-tex/city.webp',  world:12, img:null, pat:null},   // 町・夜景
-  sea  :{src:'images/plane-tex/sea.webp',   world:16, img:null, pat:null},   // 海面
-  sand :{src:'images/plane-tex/sand.webp',  world:11, img:null, pat:null},   // 鳥取の砂丘（いちばん最後）
-  forest:{src:'images/plane-tex/forest.webp',world:13, img:null, pat:null}   // 山地（東北・中部）の森
+  land :{src:'images/plane-tex/land.webp',  world:40, img:null, pat:null},   // 昼の地表（畑と森）
+  city :{src:'images/plane-tex/city.webp',  world:48, img:null, pat:null},   // 町・夜景
+  sea  :{src:'images/plane-tex/sea.webp',   world:64, img:null, pat:null},   // 海面
+  sand :{src:'images/plane-tex/sand.webp',  world:44, img:null, pat:null},   // 鳥取の砂丘（いちばん最後）
+  forest:{src:'images/plane-tex/forest.webp',world:52, img:null, pat:null}   // 山地（東北・中部）の森
 };
 function texLoad(){
   for(const k in TEXS){
