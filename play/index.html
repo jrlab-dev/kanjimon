@@ -2884,6 +2884,16 @@
         <button class="btn btn-ghost" style="font-size:.85rem;padding:8px 14px" onclick="startFromGrade(2)">2ねんせいから</button>
         <button class="btn btn-ghost" style="font-size:.85rem;padding:8px 14px" onclick="startFromGrade(3)">3ねんせいから</button>
         <button class="btn btn-ghost" style="font-size:.85rem;padding:8px 14px" onclick="startFromGrade(4)">4ねんせいから</button>
+        <button class="btn btn-ghost" style="font-size:.85rem;padding:8px 14px" onclick="startFromGrade(5)">5ねんせいから</button>
+        <button class="btn btn-ghost" style="font-size:.85rem;padding:8px 14px" onclick="startFromGrade(6)">6ねんせいから</button>
+      </div>
+    </div>
+    <!-- イベントシーン確認よう（弾6-1d）：船=76→77／飛行機=83→84 -->
+    <div style="margin-top:10px;border-top:1px solid #eee;padding-top:12px">
+      <div style="font-size:.72rem;color:#888;font-weight:900;margin-bottom:8px">イベントかくにん：とちゅうから</div>
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+        <button class="btn btn-ghost" style="font-size:.85rem;padding:8px 14px" onclick="startFromZone(76)">ふね（76→77）</button>
+        <button class="btn btn-ghost" style="font-size:.85rem;padding:8px 14px" onclick="startFromZone(83)">ひこうき（83→84）</button>
       </div>
     </div>
   </div>
@@ -14535,13 +14545,12 @@ function enterNextZone(){
           hakaseTalkOnce('つぎは とおい みなみの くに。ひこうきで いっきに とぶわよ！',()=>{
             if(enterSeq!==fieldSeq) return;   // ワープ等で離脱済みなら飛行機シーンへは進まない
             PlaneScene.start(()=>{
-              if(enterSeq!==fieldSeq) return;   // 飛行機シーン再生中に離脱済みなら以降は進めない
+              if(enterSeq!==fieldSeq) return;   // 飛行(3D)のあと到着ロビー(降機・gatePlayArrival)が自動で挟まる（弾6-1d）
               ensureFieldIntro();   // ゾーン84の紹介バナー
               setTimeout(()=>{
                 if(enterSeq!==fieldSeq) return;
                 planeSceneSeen=true; save();
-                hakaseTalkOnce('ようこそ トットリへ！ にほんいち おおきな すなの おか、さきゅうが あるところよ！',null,'bh84');
-              },2300);   // 紹介バナーが消えてから、はかせの一言（初回のみ）
+              },2300);   // 「ようこそトットリへ！」は到着ロビー会話へ統合済（bh84・二重発言回避）
             });
           },'bh83');
         }else{
@@ -17366,9 +17375,7 @@ function doFullReset(){
    独自セーブ形式は発明しない＝save()と同じキー名で書き出し、load()の通常経路
    （旧セーブ移行ロジック含む）でそのまま読み込ませる。指定しなかったキーは
    load()側の「キー無し＝旧セーブの初期値」処理にまかせる。 */
-function makeGradeStartSave(n){
-  const gz=GRADE_ZONES.find(g=>g.grade===n);
-  const startZone=gz.from;                 // 2年=9・3年=25・4年=45
+function makeZoneStartSave(startZone){                 // 任意ゾーンから開始（学年スタート・イベント確認で共用・弾6-1d）
   const clearedArr=[]; for(let z=1;z<startZone;z++) clearedArr.push(z);
   const clearedSet=new Set(clearedArr);
   // caught：前学年までの全字（たましい覚醒済み扱い・bodiesは空）
@@ -17409,11 +17416,18 @@ function makeGradeStartSave(n){
     /* 手直し_お金(7/25・準也さんの指示)：お金の単位が「円」になったので、テスト用の学年スタートの
        所持金も実額にする。3年生以降＝20,000円（わふく2,000＋せいふく8,000＋αが買えて着替えを試せる）／
        2年生＝10,000円。旧値の30は「コイン時代」の名残で、円では何も買えないため差し替え */
-    coins:(n>=3?20000:10000), items:{genkidama:0,fue:0}
+    coins:(startZone>=25?20000:10000), items:{genkidama:0,fue:0}   // 3年開始(25)以降=20000
   };
 }
+function makeGradeStartSave(n){ return makeZoneStartSave(GRADE_ZONES.find(g=>g.grade===n).from); }
 function startFromGrade(n){
   try{ localStorage.setItem(SAVE_KEY, JSON.stringify(makeGradeStartSave(n))); }catch(e){}
+  location.reload();
+}
+/* イベントシーン確認よう（弾6-1d）：指定ゾーンのSから開始 → そのゾーンをクリア → 次ゾーンのゲートで演出発動
+   76=船(津軽海峡)・83=飛行機(チュウゴク)。各 seen フラグは startZone>77 / >84 で自動判定（初回発動する） */
+function startFromZone(z){
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify(makeZoneStartSave(z))); }catch(e){}
   location.reload();
 }
 
@@ -19401,6 +19415,30 @@ function drawFields(c,travel,hazeK){
 /* 山なみ。尾根は進行方向に沿って走る（日本の背骨と同じ向き）ので、
    奥から手前へ伸びてくる。帯を並べたときのような横縞にはならない */
 function drawRidges(c,travel,hazeK){
+  if(SPRITES.ridge.img){
+    /* 尾根シルエット画像（実効1188x176・縦横比0.148）を地平線近くの帯として3列に。
+       mtAmpで山地方のみ出す・travelで横スクロール・hazeKで奥を薄く。
+       ★vAtY(c,c.hy)は地平線(無限遠)でMath.max(1,..)により巨大値(819)になり
+         最終地方を指してしまう→使わない。手前vN〜遠方vFの範囲で判定（フォールバックと同じ）*/
+    const vN=Math.max(0.16,vAtY(c,H+60)), vF=vFarOf(c);
+    const amp=Math.max(mtAmp(travel+vN),mtAmp(travel+vF));
+    if(amp>0.30){
+      const rh=Math.min(W,H)*0.10*Math.max(0.5,amp);
+      const rw=rh/0.148;
+      for(let k=0;k<3;k++){
+        const yband=c.hy + rh*(k*0.55+0.05);
+        const slide=((travel*0.6)%rw);
+        ctx.save();
+        ctx.globalAlpha=0.82*(1-0.35*hazeK)*(1-k*0.18);
+        for(let xi=-1;xi<=Math.ceil(W/rw)+1;xi++){
+          const x=xi*rw - slide + W*0.5;
+          ctx.drawImage(SPRITES.ridge.img, 33,535,1188,176, x-rw/2, yband-rh, rw, rh);
+        }
+        ctx.restore();
+      }
+    }
+    return;
+  }
   const vN=Math.max(0.16,vAtY(c,H+60)), vF=vFarOf(c);
   const N=64;
   for(let k=0;k<3;k++){
@@ -19633,10 +19671,18 @@ function drawCloudDeck(c,travel,hc,strength){
       if(x<-W*0.4||x>W*1.4) continue;
       const base_rx=(0.16+rnd()*0.34)*UK*sAt(c,v);
       if(base_rx<1.0) continue;
-      for(let m=0;m<5;m++){
-        const rx=base_rx*(0.45+rnd()*0.75);
-        puff(x+(rnd()-0.5)*base_rx*2.6, y+(rnd()-0.5)*base_rx*0.30,
-             rx, rx*(0.14+rnd()*0.10), strength*(0.24+rnd()*0.40),'255,255,255');
+      if(SPRITES.cloud.img){
+        /* 雲画像（実効1089x797・縦横比0.732）。base_rxを半径として貼る。strengthをglobalAlphaで */
+        ctx.save(); ctx.globalAlpha=strength;
+        const cw=base_rx*2, ch=cw*0.732;
+        ctx.drawImage(SPRITES.cloud.img, 92,214,1089,797, x-cw/2,y-ch/2, cw,ch);
+        ctx.restore();
+      }else{
+        for(let m=0;m<5;m++){
+          const rx=base_rx*(0.45+rnd()*0.75);
+          puff(x+(rnd()-0.5)*base_rx*2.6, y+(rnd()-0.5)*base_rx*0.30,
+               rx, rx*(0.14+rnd()*0.10), strength*(0.24+rnd()*0.40),'255,255,255');
+        }
       }
     }
   });
@@ -19664,6 +19710,15 @@ const TEXS={
   sand :{src:'images/plane-tex/sand.webp',  world:44, img:null, pat:null},   // 鳥取の砂丘（いちばん最後）
   forest:{src:'images/plane-tex/forest.webp',world:52, img:null, pat:null}   // 山地（東北・中部）の森
 };
+/* ★v3.10（2026-08-04）＝機体・塔・雲・山を透明背景スプライトで載せる（3Dのまま）。
+   地表テクスチャ(TEXS)と違い、タイル化不要・1枚のスプライトをdrawImageで貼る。
+   画像が無ければフォールバック（従来のコード描画）。Codexは緑背景で生成→remove_chroma_key.pyで透過。 */
+const SPRITES={
+  plane :{src:'images/plane-tex/plane.webp', img:null, tried:false},
+  tower :{src:'images/plane-tex/tower.webp', img:null, tried:false},
+  cloud :{src:'images/plane-tex/cloud.webp', img:null, tried:false},
+  ridge :{src:'images/plane-tex/ridge.webp', img:null, tried:false}
+};
 function texLoad(){
   for(const k in TEXS){
     const t=TEXS[k];
@@ -19678,6 +19733,16 @@ function texLoad(){
       if(STILL_T!==null){ render(STILL_T); talkUpdate(STILL_T,false); }
     };
     im.onerror=()=>{ t.img=null; t.pat=null; };     // 無ければ貼らないだけ（今までどおりの絵）
+    im.src=encodeURI(t.src);
+  }
+  /* スプライト（機体・塔・雲・山）。タイルパターン不要・imgだけ使う */
+  for(const k in SPRITES){
+    const t=SPRITES[k];
+    if(t.img||t.tried) continue;
+    t.tried=true;
+    const im=new Image();
+    im.onload=()=>{ t.img=im; if(STILL_T!==null){ render(STILL_T); talkUpdate(STILL_T,false); } };
+    im.onerror=()=>{ t.img=null; };
     im.src=encodeURI(t.src);
   }
 }
@@ -20053,6 +20118,14 @@ function scheduleSound(){
    飛行機（後ろ上から）。全カットこの向きに統一（視点の一貫性）
    ========================================================================= */
 function planeBack(x,y,s,roll){
+  if(SPRITES.plane.img){
+    /* 機体画像（実効1040x457・中心626,602）。横2.7s基準で貼る（現状の主翼端の広がりを維持） */
+    ctx.save();
+    ctx.translate(x,y); ctx.rotate(roll);
+    ctx.drawImage(SPRITES.plane.img, 106,373,1040,457, -s*1.35,-s*0.5925, s*2.7, s*1.185);
+    ctx.restore();
+    return;
+  }
   ctx.save();
   ctx.translate(x,y); ctx.rotate(roll);
   const g=ctx.createLinearGradient(-s,0,s,0);
@@ -20121,6 +20194,12 @@ function drawProp(kind,x,y,s){
   ctx.beginPath(); ctx.ellipse(x,y,Math.max(1.5,s*0.30),Math.max(0.7,s*0.022),0,0,Math.PI*2); ctx.fill();
 
   if(kind==='tower'){
+    if(SPRITES.tower.img){
+      /* 塔画像（実効379x1119・縦横比2.953）。足元を(x,y)・高さs*0.44に（影は直前の共通処理で描か済み） */
+      const th=s*0.44, tw=th/2.953;
+      ctx.drawImage(SPRITES.tower.img, 443,62,379,1119, x-tw/2, y-th, tw, th);
+      return;
+    }
     const h=s*0.44, w=Math.max(1.2,s*0.055);
     // 根元の建屋
     const bw=w*3.4, bh=Math.max(1.2,h*0.15);
@@ -20485,7 +20564,7 @@ const GATE_TALKS=[
   {at:1.0, dur:4.8, pos:'mid', voice:'audio/battle/pl01.mp3',
    msg:'ここが くうこう。<br>あの ひこうきで、とおい みなみへ とぶのよ！'},
   {at:6.0, dur:3.4, pos:'mid', voice:'audio/battle/pl02.mp3',
-   msg:'シートベルト しめた？<br>いってらっしゃい！'}
+   msg:'いってらっしゃい！<br>たのしい たびに なあれ！'}   // ★弾6-1d: シートベルトは機内の話→言葉を外した（pl02音声は要再録・それまで仮）
 ];
 let gateVoices=[], gateTimers=[], gateWalk=null;
 function gateClear(){
@@ -20553,6 +20632,62 @@ function gatePlay(onDone){
   /* 白フラッシュで飛行の3Dパートへ渡す */
   gateTimers.push(setTimeout(()=>{ if(my!==seq) return; document.getElementById('plGateFlash').classList.add('on'); },(GATE_DUR-0.6)*1000));
   gateTimers.push(setTimeout(()=>{ if(my!==seq) return; gateClear(); if(onDone) onDone(); },GATE_DUR*1000));
+}
+
+/* ==========================================================================
+   到着ロビー（降機）シーン（弾6-1d・2026-08-05）＝ gatePlay の逆バージョン。
+   飛行の3Dパートが終わった直後に呼ぶ。白フラッシュINでロビーに切り替え、
+   ゲート（奥・小）から手前（大）へ歩いて近づく＝搭乗口（手前→奥へ遠ざかる）の逆。
+   ★主人公もマナも後ろ姿のまま（マナが案内してロビーへ向かう構図＝背中が見えるのは自然）。
+     正面画像が無くても画像追加なしで済む。背景は当面 gate.webp 流用。
+   ★会話は bh84「ようこそトットリへ！」を統合（onDone側での二重発言を避ける）。
+   ========================================================================== */
+const GATE_ARRIVAL_DUR=9.0;
+const ARRIVAL_TALK={at:2.6, dur:5.4, voice:'audio/battle/bh84.mp3',
+  msg:'ついたわね！<br>ようこそ トットリへ！ にほんいち おおきな すなの おか、さきゅうが あるところよ！'};
+function gatePlayArrival(onDone){
+  const my=seq;                                    // 世代ガード（gatePlay と同じ）
+  gateClear();
+  const g=document.getElementById('plGate');
+  const bg=document.getElementById('plGateBg');
+  const hero=document.getElementById('plGateHero');
+  const mana=document.getElementById('plGateMana');
+  bg.style.backgroundImage="url('"+GATE_BG+"')";   // 当面 gate.webp 流用
+  hero.style.backgroundImage="url('"+heroSheetUrl()+"')";
+  mana.style.backgroundImage="url('"+GATE_MANA+"')";   // マナも後ろ姿（案内してロビーへ）
+  mana.style.backgroundSize='100% 100%';
+  const put=(el,x,y,w)=>{ el.style.left=x+'%'; el.style.top=y+'%'; el.style.width=w+'%'; el.style.height='auto'; el.style.aspectRatio='1'; };
+  /* ★搭乗口の逆: 奥(小)からスタート → 手前(大)へ近づく */
+  put(hero,40,44,17); put(mana,54,42,15);
+  gateWalkFrame(hero,false,'50%');                 // 後ろ姿（搭乗口と同じ列）
+  /* 白フラッシュIN（飛行から受継ぐ）→ ロビー表示 → フラッシュ解除で見える化 */
+  document.getElementById('plGateFlash').classList.add('on');
+  g.classList.add('show');
+  requestAnimationFrame(()=>{
+    g.classList.add('run');
+    requestAnimationFrame(()=>{ if(my===seq) document.getElementById('plGateFlash').classList.remove('on'); });
+  });
+  /* 歩き出し（奥→手前・近づく＝搭乗口と逆方向） */
+  gateTimers.push(setTimeout(()=>{ if(my!==seq) return; put(hero,30,58,30); put(mana,52,54,26); },600));
+  let useB=false;
+  gateWalk=setInterval(()=>{ useB=!useB; gateWalkFrame(hero,useB,'50%'); },260);
+  gateTimers.push(setTimeout(()=>{ if(gateWalk){ clearInterval(gateWalk); gateWalk=null; } },4200));
+  /* 会話: bh84「ついたわね！ようこそトットリへ！」 */
+  gateTimers.push(setTimeout(()=>{
+    if(my!==seq) return;
+    gateTalkShow(ARRIVAL_TALK,my);
+    if(!gateVoices[10]){ const a=new Audio(); a.preload='auto'; a.src=encodeURI(ARRIVAL_TALK.voice); gateVoices[10]=a; }
+    if(!(typeof soundOn!=='undefined' && !soundOn)){
+      try{ gateVoices[10].currentTime=0; const pr=gateVoices[10].play(); if(pr&&pr.catch) pr.catch(()=>{}); }catch(e){}
+    }
+  },ARRIVAL_TALK.at*1000));
+  gateTimers.push(setTimeout(()=>{
+    if(my!==seq) return;
+    const el=document.getElementById('psTalk'); el.className='ps-talk'; el.onclick=null;
+  },(ARRIVAL_TALK.at+ARRIVAL_TALK.dur)*1000));
+  /* フェードアウト（白フラッシュ）→ onDone */
+  gateTimers.push(setTimeout(()=>{ if(my!==seq) return; document.getElementById('plGateFlash').classList.add('on'); },(GATE_ARRIVAL_DUR-0.6)*1000));
+  gateTimers.push(setTimeout(()=>{ if(my!==seq) return; gateClear(); if(onDone) onDone(); },GATE_ARRIVAL_DUR*1000));
 }
 /* 搭乗口の音＝空港のざわめきと出発案内のチャイム（すべて合成・専用バス経由） */
 function gateSound(){
@@ -20625,7 +20760,7 @@ function startFlight(my){
     sfxUpdate(t);                        // 録音は絵と同じ時計で鳴らす
     talkUpdate(t,true);   // 会話は絵と同じ時計で動かす
     if(t<TOTAL+0.4) requestAnimationFrame(step);
-    else { sfxStop(); talkReset(); planeSceneFinish(); }   // 完走＝ここで本体に戻る
+    else { sfxStop(); talkReset(); gatePlayArrival(()=>{ if(my!==seq) return; planeSceneFinish(); }); }   // 完走＝到着ロビー(降機)→本体へ（弾6-1d）
   };
   requestAnimationFrame(step);
 }
