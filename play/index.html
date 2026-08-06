@@ -1963,6 +1963,8 @@
   .wm-map.has-bg-chubu{background-image:url('images/worldmap-chubu.webp');background-size:cover;background-position:center}
   /* 弾5-6§8：トウホク・ホッカイドウ地方のちず背景（worldmap-tohoku.webp・画像未制作ならクリームフォールバック） */
   .wm-map.has-bg-tohoku{background-image:url('images/worldmap-tohoku.webp');background-size:cover;background-position:center}
+  /* 弾6-7§1：チュウゴク・キュウシュウ・オキナワ地方のちず背景（worldmap-kyushu.webp・画像未制作ならクリームフォールバック） */
+  .wm-map.has-bg-kyushu{background-image:url('images/worldmap-kyushu.webp');background-size:cover;background-position:center}
   .wm-map.has-bg-nippon{background-image:url('images/worldmap-nippon.webp');background-size:cover;background-position:center}
   .wm-node.wm-cloud{background:rgba(255,255,255,.55);filter:blur(1px);cursor:default;box-shadow:0 0 12px 6px rgba(255,255,255,.5)}
   .wm-node.wm-cloud:active{transform:none}
@@ -13018,6 +13020,7 @@ let worldmapKantoImgOK=false;   // 第18弾§6: images/worldmap-kanto.webp（ち
 let worldmapKansaiImgOK=false;  // 弾3-6§7: images/worldmap-kansai.webp（ちず背景・カンサイ・シコク。弾3-4で未制作＝常にfalseのまま）
 let worldmapChubuImgOK=false;   // 弾4-6§7: images/worldmap-chubu.webp（ちず背景・チュウブ。弾4-4で未制作＝常にfalseのまま）
 let worldmapTohokuImgOK=false;  // 弾5-6§8: images/worldmap-tohoku.webp（ちず背景・トウホク。弾5-4未制作＝常にfalseのまま＝クリームフォールバック）
+let worldmapKyushuImgOK=false;  // 弾6-7§1: images/worldmap-kyushu.webp（ちず背景・チュウゴク/キュウシュウ/オキナワ。弾6-4未制作＝クリームフォールバック）
 let worldmapNipponImgOK=false;  // 弾3-4: images/worldmap-nippon.webp（にほんぜんたい図の背景）
 (function(){
   const h=new Image(); h.onload=()=>{heroImgOK=true;}; h.onerror=()=>{}; h.src='images/sprites/hero.webp';
@@ -13028,6 +13031,7 @@ let worldmapNipponImgOK=false;  // 弾3-4: images/worldmap-nippon.webp（にほ�
   const wks=new Image(); wks.onload=()=>{worldmapKansaiImgOK=true;}; wks.onerror=()=>{}; wks.src='images/worldmap-kansai.webp';
   const wkc=new Image(); wkc.onload=()=>{worldmapChubuImgOK=true;}; wkc.onerror=()=>{}; wkc.src='images/worldmap-chubu.webp';
   const wt=new Image(); wt.onload=()=>{worldmapTohokuImgOK=true;}; wt.onerror=()=>{}; wt.src='images/worldmap-tohoku.webp';   // 弾5-6§8（無ければクリームフォールバック）
+  const wky=new Image(); wky.onload=()=>{worldmapKyushuImgOK=true;}; wky.onerror=()=>{}; wky.src='images/worldmap-kyushu.webp'; // 弾6-7§1（無ければクリームフォールバック）
   const wn=new Image(); wn.onload=()=>{worldmapNipponImgOK=true;}; wn.onerror=()=>{}; wn.src='images/worldmap-nippon.webp';
 })();
 /* 第5.5弾：現在の主人公のシートURL・存在フラグ（heroCharで切替） */
@@ -14820,7 +14824,8 @@ function openWorldMap(regionOverride){
   if(typeof abortSchoolTest==='function') abortSchoolTest();   // 弾3-16：テスト中の地図離脱は途中終了（報酬なし）
   // 弾3-12§5-3：町から「ちず」で出るとき＝町に入る前にいた地方を表示（fieldZone=0で地方判定がundefinedにならないようregionOverrideの既存仕組みで解決）
   if(isTownLike(fieldZone) && !regionOverride){
-    regionOverride = townPrevZone>STAGE2_COUNT ? 'kansai' : (townPrevZone>STAGE1_COUNT ? 'kanto' : 'tokyo');
+    // 弾6-7§5：チュウブ以降(45〜)が抜けていて、町から ちずを開くとカンサイ図が出ていた。renderWorldMapと同じ並びに揃える
+    regionOverride = townPrevZone>STAGE5_COUNT ? 'kyushu' : (townPrevZone>STAGE4_COUNT ? 'tohoku' : (townPrevZone>STAGE3_COUNT ? 'chubu' : (townPrevZone>STAGE2_COUNT ? 'kansai' : (townPrevZone>STAGE1_COUNT ? 'kanto' : 'tokyo'))));
   }
   // 手直し ちず拡大とパン：先にshowしてからrenderWorldMap()を呼ぶ（renderWorldMap内のwmSetupZoomが
   // #wmViewportのclientWidth/Heightを実測するため。display:noneのままだと0になってしまう）
@@ -14932,6 +14937,30 @@ const WM_COORDS_TOHOKU=[
   {x:70,y:10}, // 82 北海道⑥くしろしつげん
   {x:35,y:8}   // 83 北海道⑦りゅうひょう
 ];
+/* 弾6-7§2：チュウゴク・キュウシュウ・オキナワ19ノードの%座標（弾6-4の地方図が未制作のため暫定配置・クリームフォールバック）。
+   実際の地理に沿った配置＝中国地方を東→西へ横断し、関門海峡から九州へ入り北→南へ縦断、最後に沖縄（右下の窓）。
+   地方図の画像を作ったら、東北と同じく実測値へ差し替える（弾6-4§4の手順） */
+const WM_COORDS_KYUSHU=[
+  {x:78,y:20}, // 84 鳥取①さきゅうと らくだの せなか
+  {x:66,y:25}, // 85 島根①いずもの おおやしろ
+  {x:80,y:33}, // 86 岡山①ももたろうの さと
+  {x:74,y:38}, // 87 岡山②くらしきの くらと せんい
+  {x:63,y:38}, // 88 広島①みやじまの おおとりい
+  {x:59,y:32}, // 89 広島②へいわこうえんの おりづる
+  {x:48,y:40}, // 90 山口①しょうにゅうどうの たんけん
+  {x:40,y:47}, // 91 福岡①はかたの やたいどおり
+  {x:43,y:53}, // 92 福岡②だざいふの がくもんどころ
+  {x:32,y:55}, // 93 佐賀①よしのがりの いせき
+  {x:22,y:58}, // 94 長崎①らんがくの しんりょうじょ
+  {x:17,y:64}, // 95 長崎②でじまの ぼうえきみなと
+  {x:33,y:64}, // 96 熊本①くまもとじょうの てんしゅかく
+  {x:43,y:67}, // 97 熊本②あその おおくさはらと うし
+  {x:52,y:58}, // 98 大分①べっぷの じごくむし おんせん
+  {x:47,y:74}, // 99 宮崎①たかちほ かみさまの さと
+  {x:36,y:80}, // 100 鹿児島①さくらじまの かざんばい
+  {x:44,y:87}, // 101 鹿児島②たねがしまの うちゅうセンター
+  {x:78,y:84}  // 102 沖縄①しゅりじょうと さとうきびばたけ（卒業ゴール・地図の右下の窓の中）
+];
 /* 弾3-4：日本ぜんたい図の6地方ノード%座標(目視の概算配置。実際の日本地図の位置関係に準拠)。
    region: 対応する地方図のregion識別子('tokyo'/'kanto'/'kansai'は既存のrenderWorldMapに渡す)。
    unlockedFrom: この値以上unlockedならタップ可能(開放)。nullは常に雲(未実装地方)。 */
@@ -14941,7 +14970,7 @@ const WM_COORDS_NIPPON=[
   {name:'カントウ',          region:'kanto',  x:54,y:42, unlockedFrom:STAGE1_COUNT+1},
   {name:'チュウブ',          region:'chubu',  x:44,y:40, unlockedFrom:STAGE3_COUNT+1},   // 弾4-6§7：unlocked45以上で雲がはがれる
   {name:'カンサイ・シコク',   region:'kansai', x:38,y:55, unlockedFrom:STAGE2_COUNT+1},
-  {name:'チュウゴク・キュウシュウ・オキナワ', region:null, x:22,y:68, unlockedFrom:null}
+  {name:'チュウゴク・キュウシュウ・オキナワ', region:'kyushu', x:22,y:68, unlockedFrom:STAGE5_COUNT+1}   // 弾6-7§3：84以上で雲がはがれる（6年で全地方が開放される）
 ];
 /* トウキョウは常時開放・出発地なので専用ノード(tokyo自体はfrom=1で常に条件を満たす)として別途固定表示する。
    下記renderNipponMapのコードでWM_COORDS_TOKYO代表点は使わず、固定座標{x:50,y:46}をトウキョウ表示に使う(カントウの近く)。 */
@@ -14982,7 +15011,7 @@ function renderNipponMap(){
 }
 /* 手直し ちず拡大とパン§1-2：地方ごとの固定倍率（発注書「調整用に1か所へまとめる」指定の定数。
    トウキョウ=1.0のまま／カントウ=1.5／カンサイ=1.8／チュウブ=2.0。ノード%座標・SVGパスの値は変更しない） */
-const WM_ZOOM={ tokyo:1.0, kanto:1.5, kansai:1.8, chubu:2.0, tohoku:1.6 };
+const WM_ZOOM={ tokyo:1.0, kanto:1.5, kansai:1.8, chubu:2.0, tohoku:1.6, kyushu:1.6 };
 /* 手直しラウンド2§1-2b：最寄りノード方式のタップ判定用の最大半径（定数化）。
    目安＝バッジ直径(34px)相当〜40px。タップ点からこの距離を超えるノードは候補から外す（誤爆防止）。 */
 const WM_TAP_MAX_RADIUS=37;
@@ -15159,17 +15188,20 @@ function bindWorldMapDrag(){
 }
 function renderWorldMap(regionOverride){
   const map=$('wmMap');
-  // 弾5-6§8：今どの地方か＝トウホク(65〜83)／チュウブ(45〜64)／カンサイ・シコク(25〜44)／カントウ(9〜24)／トウキョウ(1〜8)
-  const region = regionOverride || (fieldZone>STAGE4_COUNT ? 'tohoku' : (fieldZone>STAGE3_COUNT ? 'chubu' : (fieldZone>STAGE2_COUNT ? 'kansai' : (fieldZone>STAGE1_COUNT ? 'kanto' : 'tokyo'))));
-  const coords = region==='tohoku' ? WM_COORDS_TOHOKU : (region==='chubu' ? WM_COORDS_CHUBU : (region==='kansai' ? WM_COORDS_KANSAI : (region==='kanto' ? WM_COORDS_KANTO : WM_COORDS_TOKYO)));
-  const zFrom = region==='tohoku' ? STAGE4_COUNT+1 : (region==='chubu' ? STAGE3_COUNT+1 : (region==='kansai' ? STAGE2_COUNT+1 : (region==='kanto' ? STAGE1_COUNT+1 : 1)));   // このちず画面が担当するゾーン範囲の開始
-  const zTo   = region==='tohoku' ? STAGE_COUNT : (region==='chubu' ? STAGE4_COUNT : (region==='kansai' ? STAGE3_COUNT : (region==='kanto' ? STAGE2_COUNT : STAGE1_COUNT))); // 終わり（両端含む）
+  // 弾6-7§4：今どの地方か＝キュウシュウ(84〜102)／トウホク(65〜83)／チュウブ(45〜64)／カンサイ・シコク(25〜44)／カントウ(9〜24)／トウキョウ(1〜8)
+  const region = regionOverride || (fieldZone>STAGE5_COUNT ? 'kyushu' : (fieldZone>STAGE4_COUNT ? 'tohoku' : (fieldZone>STAGE3_COUNT ? 'chubu' : (fieldZone>STAGE2_COUNT ? 'kansai' : (fieldZone>STAGE1_COUNT ? 'kanto' : 'tokyo')))));
+  const coords = region==='kyushu' ? WM_COORDS_KYUSHU : (region==='tohoku' ? WM_COORDS_TOHOKU : (region==='chubu' ? WM_COORDS_CHUBU : (region==='kansai' ? WM_COORDS_KANSAI : (region==='kanto' ? WM_COORDS_KANTO : WM_COORDS_TOKYO))));
+  const zFrom = region==='kyushu' ? STAGE5_COUNT+1 : (region==='tohoku' ? STAGE4_COUNT+1 : (region==='chubu' ? STAGE3_COUNT+1 : (region==='kansai' ? STAGE2_COUNT+1 : (region==='kanto' ? STAGE1_COUNT+1 : 1))));   // このちず画面が担当するゾーン範囲の開始
+  // 弾6-7§4：トウホクの終わりはSTAGE5_COUNT(83)。ここがSTAGE_COUNT(102)だったため、19個しかない座標表の外(84〜102)を
+  //   読みに行って ちず画面が丸ごと描けなくなっていた（＝5年・6年でちずが真っ白になる不具合。弾6-6の実装漏れ）
+  const zTo   = region==='kyushu' ? STAGE_COUNT : (region==='tohoku' ? STAGE5_COUNT : (region==='chubu' ? STAGE4_COUNT : (region==='kansai' ? STAGE3_COUNT : (region==='kanto' ? STAGE2_COUNT : STAGE1_COUNT)))); // 終わり（両端含む）
   // 背景：地方ごとの画像があればcover、無ければクリーム色（フォールバック）。チュウブは弾4-4まで画像なし＝常にクリーム色。トウホクも弾5-4未制作＝クリーム色
   map.classList.toggle('has-bg', region==='tokyo' && worldmapImgOK);
   map.classList.toggle('has-bg-kanto', region==='kanto' && worldmapKantoImgOK);
   map.classList.toggle('has-bg-kansai', region==='kansai' && worldmapKansaiImgOK);
   map.classList.toggle('has-bg-chubu', region==='chubu' && worldmapChubuImgOK);
   map.classList.toggle('has-bg-tohoku', region==='tohoku' && worldmapTohokuImgOK);   // 弾5-6§8：トウホク（画像未制作ならフォールバック）
+  map.classList.toggle('has-bg-kyushu', region==='kyushu' && worldmapKyushuImgOK);   // 弾6-7§1：チュウゴク・キュウシュウ・オキナワ（画像未制作ならフォールバック）
   // 古いノードを消去（SVGパスは id=wmPaths 内に再構築）
   [...map.querySelectorAll('.wm-node')].forEach(n=>n.remove());
   const svg=$('wmPaths'); svg.innerHTML='';
