@@ -6876,9 +6876,9 @@ const ZONES=[
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
     ",....................A...................C.................E..................G...................I....................>",
     "S......................................................................................................................>",
-    ".......................................................................................................................>",
     "...............................B...................D.................F..................H....................J.........>",
-    ".............................,................,...,...................,...............,......................,.........>",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
     "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
@@ -13233,7 +13233,14 @@ const BRIDGE_TOWER_COLS={41:[34,80]};   // 主塔を立てる列（120マスに2
 const BRIDGE_CABLE={41:{dcol:3.55, top:4.55, h:9.6, sag:0.7, hangers:16, mainW:5, hangerW:2, color:'#c0c2c4', z:-9}};
 /* 道路（部品）。数字は橋の配置ツールの「道路の大きさ・上下」から作られる：
    w＝絵の横幅（マス）／h＝絵の高さ（マス）／top＝置く高さ（マス） */
-const BRIDGE_ROAD={41:{img:'zone41-road.webp', w:9.49, h:10.45, top:8.71}};
+/* ★2026-08-08：topを 8.71→3.9 に直した（準也さんの実機指摘「橋の位置がずれて めちゃくちゃ」）。
+   原因＝この絵は上下に大きな透明部分があり、**アスファルトの路面は絵の高さの39.6%〜66.5%の帯だけ**。
+   top=8.71 のときの路面は 12.85〜15.66マス目にあり、歩ける判定（行8〜12）とまるで重なっていなかった
+   （＝歩ける場所は絵では透明＝海が見え、本物の路面は通行不可になっていた）。
+   top=3.9 にすると路面は **8.05〜10.86マス目**＝歩ける行8・9・10 とそろう。
+   ⚠️この絵の路面は2.81マス分しかない。歩ける行を4行以上にすると必ずはみ出す（当初の設計も「通れるのは3マス」）。
+   ⚠️数字を変えたら必ず実機で撮って確かめること。図＝_一時\_しまなみ_ズレの図.png（作り方＝同フォルダの.py） */
+const BRIDGE_ROAD={41:{img:'zone41-road.webp', w:9.49, h:10.45, top:3.9}};
 /* ゾーン41だけカメラを下げて、橋を画面の下の方に置く（上に空と島を広く見せる）。
    値＝主人公（＝道路）を画面の高さの何割の位置に置くか。0.5=まん中／大きいほど下。 */
 const ZONE_CAM_Y={41:0.78};
