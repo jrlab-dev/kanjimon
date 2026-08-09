@@ -54,6 +54,15 @@
          ・上の層(::after)  … 本物の絵。大きさ auto 145%・たて32% は そのまま。
            よこ位置だけ「絵の右はしが #app の右はしに ぴったり重なる」px を計算して置く。
            #app の右はし＝(100vw+480px)/2 ／ 絵のはば＝100vh×1.45×(1024/1536)＝96.667vh */
+    /* ★★2026-08-09・準也さんの実物指摘＝
+         「タブレットまで表示されるように横幅をちょっと持たせたんですけど、持たせすぎちゃって
+           パソコンでやるときにかなり変な画角になってます。……こんなに広いタブレットはないと思います。
+           ちょっとスマートフォンよりやや広いぐらいに横幅を抑えてもらった方がいい」
+       絵の大きさは「画面の高さの145%」で決まるので、画面が横長になるほど
+       路面ばかりが大きく写り、UIだけが小さく中央に浮いた妙な画になっていた。
+       → 絵を敷く幅に上限（IC=640px＝スマホの480pxより やや広い）を設け、中央に置く。
+         それより外は何も敷かない（＝画面の地の色）。
+       ★フィールドは準也さんが「いいと思う」と言われたので、そのまま（触らない）。 */
     body.wide-battle #battleWideBg{display:block;position:fixed;inset:0;z-index:0;
       background-repeat:no-repeat;background-size:0 0}
     /* ぼかし層＝よこ向きなど「絵が画面のはばに とどかない」ときの すき間うめ。
@@ -63,9 +72,20 @@
     body.wide-battle #battleWideBg::before{content:'';position:absolute;inset:0;
       background-image:inherit;background-size:cover;background-position:right center;
       filter:blur(34px);transform:scale(1.15)}
-    body.wide-battle #battleWideBg::after{content:'';position:absolute;inset:0;
+    /* ★よこ位置の計算（2026-08-09に上限を入れたので作り直した）
+       ねらいは前と同じ＝「絵の右はしが #app の右はしに ぴったり重なる」。
+       いまは #battleWideBg 自体が 640px（画面が狭ければ100vw）で中央にあるので、
+       その中での座標で考える：
+         #battleWideBg の左はし … (画面はば − 640)/2
+         #app の右はし          … (画面はば + 480)/2
+         → 差 ＝ (480 + 640)/2 ＝ 560px（画面はばに関係なく一定になる）
+       絵のはば ＝ 100vh×1.45×(1024/1536) ＝ 96.667vh なので、絵の左はしは 560px − 96.667vh。
+       ※画面が640pxより狭いときは #battleWideBg＝100vw なので、
+         差は (480 + 100vw)/2 ＝ 前と同じ式になる。min() を使えば両方に対応できる。 */
+    body.wide-battle #battleWideBg::after{content:'';position:absolute;top:0;bottom:0;
+      width:min(100vw,640px);left:50%;transform:translateX(-50%);
       background-image:inherit;background-repeat:no-repeat;background-size:auto 145%;
-      background-position:calc((100vw + 480px)/2 - 96.667vh) 32%}
+      background-position:calc((min(100vw,640px) + 480px)/2 - 96.667vh) 32%}
     /* box-shadow も消す。透明にしただけだと #app のふちの影が絵の上に
        うすい縦線として残る（タブレットで実際に見えた） */
     /* 準也さん裁定（2026-08-02）＝案②「480pxの枠は 画面の中央のまま」。
@@ -742,6 +762,11 @@
     font-size:.58rem;font-weight:900;color:#495057;white-space:nowrap}
   .pbtn.soul-leave{animation:soulLeave .9s ease-in forwards;pointer-events:none}
   @keyframes soulLeave{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-28px)}}
+  /* ★2026-08-09：てもち編成のいちばん上に並ぶ4体を「押せる」ようにした。
+     押すと はずせる＝下の一覧から同じ子をさがす手間が要らない（準也さんの指摘）。
+     押せることが見た目で分かるよう、指の形と、押したときの沈みこみを付ける。 */
+  .pbtn.pe-tapable{cursor:pointer;transition:transform .08s ease}
+  .pbtn.pe-tapable:active{transform:scale(.94)}
 
   /* ===== 弾R-1§1-3：てもちの枠外化（.pbtn.pfield＝renderParty()のバトル画面専用。
      .pbtn自体・.plv/.pt/.pe-genki/.genki-barの共有ルールはそのまま＝ずかん/けんきゅうじょ/
@@ -2471,6 +2496,205 @@
   #psSkip{position:absolute;right:12px;top:12px;z-index:50;padding:8px 16px;border:0;border-radius:20px;
     background:rgba(0,0,0,.55);color:#fff;font-size:14px;font-family:system-ui,sans-serif;cursor:pointer;
     border:1px solid rgba(255,255,255,.5);}
+
+
+
+
+/* IC1:CSS:BEGIN */
+/* ===== 弾IC-1：氷の城シーン「りゅうひょうの うみの はて」＝ゾーン83クリア後に1回だけ ===== */
+/* ===== 氷の城シーン（本体へはこのCSSごと移す。接頭辞は ic ） ===== */
+  /* ★本体の既存4シーン（.ship/.train/.plane/.op1-overlay）とまったく同じ形にすること。
+     ① position:fixed ＝ 本体の #app は min-height:100vh で「中身の分だけ高さが伸びる」。
+        absolute + height:100% にすると、伸びた #app の高さを拾って #icStage も伸び、
+        icPanToBottom() の「動かせる距離」が縮む（条件しだいで0＝7秒のパンが1pxも動かない）。
+        エラーは出ないので気づけない。試作の #app は height:100vh なので試作では絶対に起きない。
+     ② z-index:9999 ＝ 本体のシーン用オーバーレイと同じ。900だと本体のUIに上から被られる。
+     ③ display:none ↔ block ＝ opacity:0 で消すと、雪42枚・星34個の無限アニメと
+        全画面レイヤーがゲーム中ずっと残り続ける（とばすボタンもTabで拾える）。 */
+  /* ★display の切り替えは JS（start / finish）で行う＝フェードを効かせるため。
+     .show に display:block を書くと、表示と同時に opacity:1 になってフェードが飛ぶ。 */
+  #iceOverlay{position:fixed;left:50%;transform:translateX(-50%);width:min(100vw,480px);height:100%;
+    top:0;bottom:0;overflow:hidden;background:#04060e;display:none;opacity:0;pointer-events:none;
+    transition:opacity .8s ease;z-index:9999}
+  #iceOverlay.show{opacity:1;pointer-events:auto}
+  #icStage{position:absolute;inset:0;overflow:hidden}
+
+  /* ===== 夜空と月＝城の絵とは別のレイヤー（準也さんの裁定・2026-08-08） =====
+     ★なぜ分けるか：月は遠すぎるので、見かけの大きさは「カメラの画角」だけで決まる。
+       ＝引きのカットほど小さく、拡大のカットほど大きい。絵の中に描くとこの関係が守れず、
+       実際に 全景40%／見上げ13% と逆になっていた。
+     ★月だけ透過にしても成立しない（城の絵が不透明なので後ろに置けない）。
+       城の絵の側を「空だけ純緑」で作り、ここで抜いて透明にしてある。
+     ★重ねる順＝夜空(2) → 星(4) → 月(6) → 城の絵(10) → 見上げの帯(15) */
+  #icSky{position:absolute;inset:0;z-index:2;opacity:0;transition:opacity .55s ease;
+    background:linear-gradient(180deg,#061029 0%,#08152e 40%,#0b1c3c 72%,#0f2448 100%)}
+  #icSky.show{opacity:1}
+  /* ★I0（雪原）だけは地平線が画面の48%にあり、そこまで空が下りてくる。
+     絵に描かれていた「地平線の明るいかすみ」は空を透明にしたときに消えたので、
+     ここで足す。これが無いと、雪原と夜空の境目がカッターで切ったように硬く見える */
+  #icSky.horizon{background:
+    radial-gradient(ellipse 130% 22% at 50% 49%,rgba(126,182,255,.34) 0%,rgba(74,120,205,.13) 46%,rgba(0,0,0,0) 74%),
+    linear-gradient(180deg,#061029 0%,#08152e 40%,#0b1c3c 72%,#0f2448 100%)}
+  /* 月＝正方形の透過PNG。width は「画面の幅」に対する%（高さも同じピクセル数になる）。
+     ★置きたい中心から逆算する：top = 中心の% − width% × (画面の幅 ÷ 画面の高さ) ÷ 2
+       390×780のスマホなら → top = 中心の% − width% × 0.25 */
+  /* ★月あかり（かさ）は必ず入れる。絵に描かれていた月には月のまわりの光があり、
+     月をレイヤーに分けたときにそれが消えて、月のまわりだけ夜空の黒が輪になって見えた
+     （2026-08-09に「黒い輪」として実物で確認。空を赤にする実験で夜空だと確かめた）。
+     月の直径の2〜3倍まで淡く広げると、絵に描かれていたときの見え方に戻る */
+  #icMoon{position:absolute;z-index:6;opacity:0;border-radius:50%;pointer-events:none;
+    transition:opacity .55s ease;
+    box-shadow:0 0 26px 5px rgba(198,224,255,.42),
+               0 0 80px 26px rgba(140,182,250,.28),
+               0 0 200px 84px rgba(86,134,220,.18)}
+  #icMoon.show{opacity:1}
+
+  /* ★z-index:10 が必須。夜空・星・月より前、見上げの帯(15)より後ろ。
+     これが無いと、透過にした城の絵の後ろに月を回り込ませられない */
+  .ic-layer{position:absolute;inset:0;z-index:10;opacity:0;transition:opacity .55s ease;background-size:cover;background-position:center center;background-repeat:no-repeat}
+  .ic-layer.show{opacity:1}
+
+  /* 見上げパン用：2枚を縦に並べた1本の帯。幅は画面より広くして「収まらない大きさ」を出す */
+  /* 幅を画面より広くして「収まらない大きさ」を出す。135%＝左右が17.5%ずつ切れる。
+     広げるほど帯が高くなり、見上げパンで動かせる距離も増える（実測544px・_つなぎ目を切り詰める.py） */
+  /* ★z-index:15＝背景の絵(.ic-layer は10)より前、手前の演出（氷の光18・雲19・流氷20）より後ろ。
+     星は4へ下げたので「星が城を素通しする」問題は根本から消えている（下の#icStarsのコメント参照）。 */
+  /* ★幅170%＝左右が各35%ずつ画面の外に切れる。広げるほど帯が縦に伸び、見上げで動かせる距離が増える。
+     135%では動かせる距離が351pxしかなく（＝画面の45%）、しかも開始時に下の絵が画面の61%までしか
+     届かなかった（批判3回目の×2）。170%で 下の絵が画面の77%・動かせる距離は643pxになる。
+     設計書§0「パン中は城の輪郭が常に画面の外にはみ出していること」にも合う */
+  #icPanBox{position:absolute;left:-35%;width:170%;bottom:0;z-index:15;opacity:0;transition:opacity .55s ease;will-change:transform}
+  #icPanBox.show{opacity:1}
+  #icPanBox img{display:block;width:100%;height:auto}
+  /* ★氷のたてすじ。帯といっしょに動くので、壁の質感として自然に見える。
+     upperの絵の下25%が「模様のない空色」で、見上げパンの大半で穴のように見えていた
+     （批判2回目の指摘）。絵を作り直さずに質感を足すための層。 */
+  /* ★screenで重ねると夜空にまで白い線が乗り、カーテンのように見えた（実物で確認）。
+     overlay なら暗いところ（夜空）にはほとんど効かず、明るい氷のかべにだけ質感が出る。 */
+  /* ★2026-08-09：上の絵を透過版にしたら、空になった部分にも縦すじが乗って
+     「夜空にカーテンがかかった」ように見えたので .8 → .5 に落とした。
+     氷のかべ（明るい）にはまだ効き、夜空（暗い）にはほとんど効かない */
+  #icPanTexture{position:absolute;inset:0;pointer-events:none;mix-blend-mode:overlay;opacity:.5;
+    background-image:
+      repeating-linear-gradient(91deg,rgba(255,255,255,.10) 0 1px,rgba(255,255,255,0) 1px 9px),
+      repeating-linear-gradient(89.5deg,rgba(190,230,255,.08) 0 2px,rgba(190,230,255,0) 2px 27px),
+      repeating-linear-gradient(90.5deg,rgba(255,255,255,.05) 0 1px,rgba(255,255,255,0) 1px 53px)}
+  /* つなぎ目＝2枚の境目に薄い霧を重ねて溶かす。位置はJSで実際の画像の高さから決める。
+     ★濃くすると白い帯として目立ってしまう（2026-08-08に実物で確認）。絵の側で明るさを
+     そろえてある（_つなぎ目を切り詰める.py で差66→1.6）ので、ここは薄くてよい。 */
+  /* ★つなぎ目の霧（#icPanSeam）は廃止した（2026-08-09）。
+     CSSの半透明の帯で隠す方式では、どれだけ濃くしても横線が消えなかった
+     （実測で境目の段差が周囲の4〜5倍）。絵の側で260行を混ぜて焼き込む方式に変えたので、
+     隠すものが無くなった。「ぼかしが広い」という準也さんの指摘への本当の答えはこちら。 */
+  /* 氷の中を光がゆっくり走る（模様の少ない壁の区間が退屈にならないように） */
+  #icIceGlow{position:absolute;inset:0;z-index:18;opacity:0;pointer-events:none;transition:opacity .6s ease;
+    background:linear-gradient(100deg,transparent 0%,rgba(255,255,255,.10) 16%,transparent 30%,
+      transparent 56%,rgba(198,240,255,.13) 70%,transparent 86%)}
+  #icIceGlow.run{opacity:1;animation:icGlowSlide 4.2s ease-in-out infinite alternate}
+  @keyframes icGlowSlide{from{transform:translateY(-9%)}to{transform:translateY(9%)}}
+  /* 見上げる途中で雲が横切る＝「雲を突きぬける高さ」を出す。壁だけの区間の間のびも消える */
+  /* ★濃さは --mist で変えられる（2026-08-09・準也さんの案）。
+     見上げの途中を横切る雲（濃いめ）と、カットの切り替わりに流す薄いモヤの両方に使う。
+     絵と絵の差（色みのちがい・門が開くときのゆらぎ）は、動いているモヤをかぶせると目立たなくなる。 */
+  .ic-mist{--mist:.62;position:absolute;left:-22%;width:144%;height:96px;z-index:19;opacity:0;pointer-events:none;
+    background:radial-gradient(ellipse at 50% 50%,
+      rgba(255,255,255,var(--mist)) 0%,
+      rgba(255,255,255,calc(var(--mist) * .55)) 42%,
+      rgba(255,255,255,0) 74%)}
+  .ic-mist.run{animation:icMistPass ease-in-out 1 forwards}
+  @keyframes icMistPass{
+    0%{opacity:0;transform:translateX(-7%) scaleY(.8)}
+    22%{opacity:.9}
+    72%{opacity:.9}
+    100%{opacity:0;transform:translateX(7%) scaleY(1.15)}
+  }
+
+  /* 手前の流氷帯 */
+  #icFloes{position:absolute;left:-6%;bottom:-2%;width:112%;opacity:0;transition:opacity .6s ease;z-index:20;pointer-events:none}
+  #icFloes.show{opacity:.95}
+  #icFloes img{display:block;width:100%;height:auto}
+  #icFloes.drift{animation:icDrift 14s linear infinite alternate}
+  @keyframes icDrift{from{transform:translateX(0)}to{transform:translateX(-3%)}}
+
+  /* 雪（全カット共通で必ず動く） */
+  #icSnow{position:absolute;inset:0;z-index:40;pointer-events:none;opacity:0;transition:opacity .8s ease;overflow:hidden}
+  #icSnow.show{opacity:1}
+  #icSnow.thick{opacity:1}
+  #icSnow.thick .ic-flake{opacity:.95}
+  .ic-flake{position:absolute;top:-8%;border-radius:50%;background:#fff;animation:icFall linear infinite}
+  @keyframes icFall{
+    0%{transform:translate3d(0,-10vh,0)}
+    100%{transform:translate3d(var(--dx),110vh,0)}
+  }
+
+  /* 星のまたたき＝「空」の一部なので、城の絵より後ろに置く（z-index:4）。
+     ★以前は12（城の前）だった＝城の氷の上にまで星が乗り、城が半透明の夜空に見えていた
+       （批判1回目「星が素通し」の正体）。城の絵を透過にしたので、星は正しく空にだけ見える */
+  #icStars{position:absolute;inset:0;z-index:4;pointer-events:none;opacity:0;transition:opacity .8s ease}
+  #icStars.show{opacity:1}
+  .ic-star{position:absolute;width:2px;height:2px;border-radius:50%;background:#fff;animation:icTwinkle ease-in-out infinite}
+  @keyframes icTwinkle{0%,100%{opacity:.25}50%{opacity:1}}
+
+  /* キャラクター */
+  #icHero{position:absolute;background-repeat:no-repeat;background-size:300% 200%;background-position:50% 0%;
+    aspect-ratio:1/1;z-index:30;opacity:0;transition:left .9s linear,top .9s linear,width .9s linear,opacity .35s ease}
+  #icHero.show{opacity:1}
+  #icMana{position:absolute;z-index:29;opacity:0;transition:left .9s linear,top .9s linear,width .9s linear,opacity .4s ease}
+  #icMana.show{opacity:1}
+
+  /* 会話カード（新幹線・船と同型） */
+  #icTalk{position:absolute;left:4%;width:92%;box-sizing:border-box;z-index:60;
+    background:rgba(8,16,34,.93);border:2px solid #7dd3fc;border-radius:14px;padding:10px 12px;
+    display:flex;gap:10px;align-items:center;opacity:0;pointer-events:none;transition:opacity .3s ease}
+  #icTalk.show{opacity:1;pointer-events:auto;cursor:pointer}
+  #icTalk.mid{top:50%;transform:translateY(-50%)}
+  /* ★top:8% だと、いちばん大きい月（I4＝画面の縦 −4〜22%）の6割をカードが隠していた。
+     月をレイヤーに分けた成果がいちばん出るカットで、それが見えないのは本末転倒。
+     26% に下げると月の下端（I4で22%・I6で30%）のすぐ下に来て、キャラ（top70〜82%）とも被らない */
+  #icTalk.top{top:26%}
+  #icTalk.bottom{bottom:9%}
+  .ic-talk-face{width:74px;height:74px;flex:none;border-radius:10px;background-size:cover;background-position:center top;box-shadow:0 0 0 2px rgba(125,211,252,.5)}
+  .ic-talk-msg{font-size:15px;line-height:1.55;font-weight:700;color:#eaf6ff;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+
+  /* I4＝見上げている主人公の背後で、城が大きくぼやけて写る（設計書§3のI4）。
+     ★これが無いと I1（麓）とまったく同じ絵の使い回しになり「戻ってきた」感じが出ない
+     （批判1回目の指摘）。I5でこれを外すと、カメラが引いていく動きになる。 */
+  #icBgGate{transition:opacity .55s ease,transform 1.2s ease,filter 1.2s ease}
+  #icBgGate.ic-loom{transform:scale(1.18);filter:blur(2.4px) brightness(1.05);transform-origin:center 76%}
+
+  /* 背後で門が閉じる＝左右から氷の扉が閉じてくる（I5で開くのに閉じるのを見せていなかった） */
+  #icGateShut{position:absolute;inset:0;z-index:64;pointer-events:none}
+  #icGateShut i{position:absolute;top:0;height:100%;width:52%;opacity:0;
+    background:linear-gradient(90deg,#0b1a34 0%,#17427a 55%,#8fd4ff 100%);
+    box-shadow:0 0 34px rgba(0,0,0,.65)}
+  #icGateShut i:first-child{left:-52%}
+  #icGateShut i:last-child{right:-52%;background:linear-gradient(270deg,#0b1a34 0%,#17427a 55%,#8fd4ff 100%)}
+  #icGateShut.run i{opacity:1;animation:icShutL 1.5s ease-in 1 forwards}
+  #icGateShut.run i:last-child{animation-name:icShutR}
+  @keyframes icShutL{from{transform:translateX(0)}to{transform:translateX(100%)}}
+  @keyframes icShutR{from{transform:translateX(0)}to{transform:translateX(-100%)}}
+
+  /* 門の光の筋・冷気・暗転 */
+  #icGleam{position:absolute;inset:0;z-index:22;opacity:0;pointer-events:none;
+    background:linear-gradient(90deg,rgba(125,211,252,0) 44%,rgba(190,240,255,.85) 50%,rgba(125,211,252,0) 56%)}
+  #icGleam.run{animation:icGleamRun 1.1s ease-out 1 forwards}
+  @keyframes icGleamRun{0%{opacity:0;transform:translateY(30%)}35%{opacity:1}100%{opacity:0;transform:translateY(-30%)}}
+  #icChill{position:absolute;left:0;bottom:0;width:100%;height:60%;z-index:23;opacity:0;pointer-events:none;
+    background:radial-gradient(ellipse at 50% 100%,rgba(224,246,255,.85) 0%,rgba(224,246,255,0) 70%)}
+  #icChill.run{animation:icChillRun 2.6s ease-out 1 forwards}
+  @keyframes icChillRun{0%{opacity:0;transform:scale(.6)}45%{opacity:.9}100%{opacity:0;transform:scale(1.35)}}
+  #icFade{position:absolute;inset:0;z-index:70;background:#000;opacity:0;pointer-events:none;transition:opacity .9s ease}
+  #icFade.show{opacity:1}
+
+  /* とばす */
+  #icSkip{position:absolute;right:10px;top:10px;z-index:80;background:rgba(2,6,23,.72);color:#e0f2fe;
+    border:1px solid rgba(125,211,252,.7);border-radius:999px;padding:7px 15px;font-size:13px;font-weight:700;cursor:pointer}
+
+  /* ゆっくりズームアウト（I3） */
+  .ic-zoomout{animation:icZoomOut 4.6s ease-out 1 forwards}
+  @keyframes icZoomOut{from{transform:scale(1.09)}to{transform:scale(1)}}
+/* IC1:CSS:END */
+
 </style>
 </head>
 <body>
@@ -2742,8 +2966,11 @@
       <div id="spBgTerminalH"><img src="images/fullart/ship-terminal-hakodate.webp" alt=""></div>
       <!-- キャラ -->
       <div id="spBoardHero"></div>
-      <img id="spManaWalk" src="../../ゲーム/images/mana-back-a.webp" alt="">
-      <img id="spManaBack" src="../../ゲーム/images/mana-back-a.webp" alt="">
+      <!-- ★2026-08-09に修正：試作フォルダのときの相対パス（../../ゲーム/images/）が残っていて、
+           本体では読めていなかった（404）。spManaWalk はJS側で src を入れ直すので実害は無かったが、
+           spManaBack は入れ直していないため、甲板のカットでマナが表示されていなかった。 -->
+      <img id="spManaWalk" src="images/mana-back-a.webp" alt="">
+      <img id="spManaBack" src="images/mana-back-a.webp" alt="">
       <!-- 効果 -->
       <div class="sp-speedlines" id="spSpeedLines"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
       <div id="spFogDrift"></div>
@@ -3125,6 +3352,54 @@
   <button id="psSkip">とばす ▶</button>
 </div>
 <script src="data/kakitori-strokes.js" defer></script>
+
+
+
+
+<!-- IC1:HTML:BEGIN -->
+<!-- 弾IC-1：氷の城シーン（弾IC-1）＝ゾーン83クリア後に1回だけ流す -->
+<!-- ============ ここから本体へ移すHTML ============ -->
+  <div id="iceOverlay">
+    <div id="icStage">
+      <!-- ★夜空と月は城の絵より後ろ（z-index 2 と 6）。城の絵は「空だけ純緑」で発注して抜いてある -->
+      <div id="icSky"></div>
+      <img id="icMoon" alt="">
+      <!-- ★IF（遠景）＝いま遊んでいた流氷の海から、これから向かう城が遠くに見えるカット。
+           2026-08-09・準也さんの裁定「Cで」＝フィールドと城のあいだをつなぐ1カットを頭に足す。
+           絵は初代の到着カット（遠くに城のシルエットが見える）を作り直さずに使っている -->
+      <div class="ic-layer" id="icBgFar"></div>
+      <div class="ic-layer" id="icBgApproach"></div>
+      <div class="ic-layer" id="icBgHero"></div>
+      <div class="ic-layer" id="icBgGate"></div>
+      <div class="ic-layer" id="icBgGateOpen"></div>
+      <div class="ic-layer" id="icBgHall"></div>
+      <!-- ★上下の順番に注意：画面の上に来るのが upper（尖塔）・下に来るのが lower（門と階段） -->
+      <!-- ★見上げパンの帯は「1枚の絵」。以前は上下2枚を並べてCSSの霧で境目を隠していたが、
+           実物では定規で引いたような横線が出た（周囲の4〜5倍の段差）。
+           _つなぎ目を焼きこむ.py で、境目の260行を混ぜて1枚に焼き込んである -->
+      <div id="icPanBox">
+        <img id="icPanImg" alt="">
+        <div id="icPanTexture"></div>
+      </div>
+      <div id="icStars"></div>
+      <div id="icIceGlow"></div>
+      <div id="icFloes"><img id="icFloesImg" alt=""></div>
+      <div id="icGleam"></div>
+      <div id="icChill"></div>
+      <div id="icHero"></div>
+      <img id="icMana" alt="">
+      <div id="icSnow"></div>
+      <div id="icTalk"></div>
+      <div id="icGateShut"><i></i><i></i></div>
+      <div id="icFade"></div>
+      <!-- ★onclick を直書きする（船・新幹線と同じ）。JSから結線すると、本体に貼るとき
+           HTMLとJSの前後関係しだいで null になり、とばすが黙って効かなくなる。
+           stopPropagation は、本体の祖先要素にクリック処理が足されたときの巻きぞえ防止 -->
+      <button id="icSkip" type="button" onclick="event.stopPropagation();IceScene.skip()">とばす</button>
+    </div>
+  </div>
+<!-- IC1:HTML:END -->
+
 <script>
 /* ==============================
    かんじもんデータ（素材 K 配列をそのままコピー・読み取り専用）
@@ -8496,6 +8771,8 @@ let kansaiHakaseSeen=false;
 let stationSceneSeen=false;   // 手直し_駅構内(7/25)：初回入駅で新幹線シーンを自動再生したか
 let shipSceneSeen=false;      // 弾S-1：ゾーン76→77で船シーン（つがるかいきょう）を見たか
 let planeSceneSeen=false;     // 弾6-1：ゾーン83→84で飛行機シーン（北海道→トットリ）を見たか
+const IC_ZONE=83;             // 弾IC-1：氷の城シーンが流れるゾーン（りゅうひょうの うみ）
+let iceCastleSeen=false;      // 弾IC-1：ゾーン83クリア後の氷の城シーンを見たか
 // 弾3-6§6-3：「たびの つづき」通知（旧セーブ移行）を見たか（旧セーブは未見あつかい）
 let travelContinueSeen=false;
 let pendingTravelContinueBanner=false;   // セッション値：load()で判定し、次のrenderField()で1回だけ消費
@@ -8587,6 +8864,7 @@ function save(){
       stationSceneSeen:stationSceneSeen,       // 手直し_駅構内(7/25)：初回入駅の自動シーンを見たか
       shipSceneSeen:shipSceneSeen,             // 弾S-1：船シーンを見たか
       planeSceneSeen:planeSceneSeen,           // 弾6-1：飛行機シーンを見たか
+      iceCastleSeen:iceCastleSeen,             // 弾IC-1：氷の城シーンを見たか
       travelContinueSeen:travelContinueSeen,   // 弾3-6§6-3
       chubuHakaseSeen:chubuHakaseSeen,         // 弾4-6§6-1
       travelContinueSeen2:travelContinueSeen2, // 弾4-6§6-3
@@ -8733,6 +9011,7 @@ function load(){
     stationSceneSeen = (d.stationSceneSeen===true);   // 手直し_駅構内(7/25)：旧セーブは未見あつかい
     shipSceneSeen = (d.shipSceneSeen===true);         // 弾S-1：旧セーブは未見あつかい
     planeSceneSeen = (d.planeSceneSeen===true);       // 弾6-1：旧セーブは未見あつかい
+    iceCastleSeen = (d.iceCastleSeen===true);         // 弾IC-1：旧セーブは未見あつかい
     travelContinueSeen = (d.travelContinueSeen===true);
     // 弾4-6§6-1／§6-3：新規セーブ項目（旧セーブは未見あつかい）
     chubuHakaseSeen = (d.chubuHakaseSeen===true);
@@ -12054,6 +12333,25 @@ function closeFree(){
     hakaseTalkOnce('みごとよ！ じゆうに あるける ように なったわ。つぎへ いそがなくても だいじょうぶ。この フィールドには たおした かんじの たましいが さまよって いるの。つかまえて めを さまさせて あげてね！', ()=>{ openWorldMap(); }, 'bh23');   // 手直し_はかせの声(7/25)：老人口調→マナ（女性）の口調に直し、四国めたんの録音を割り当て
     return;
   }
+  // 弾IC-1：ゾーン83「りゅうひょうの うみ」をクリアした直後だけ、氷の城のシーンを1回流す
+  //         （5年＝北海道編の締めくくり。シーンが終わったら いつもどおり ちずへ）
+  if(fieldZone===IC_ZONE && cleared.has(IC_ZONE)){
+    const seq = fieldSeq;                    // ワープ等で離れたら進めない
+    if(!iceCastleSeen){
+      iceCastleSeen = true; save();
+      // ★2026-08-09・準也さんの指摘＝「フィールド画面を残したまま、音楽も流氷の海の場面を
+      //   残したまま、氷の城のイベントに入ってしまっているため、イベントが台無しになっています」
+      //   → 場面の音楽はここで断つ。画面は IceScene 側が黒く落としてから始める。
+      bgmStop();
+      IceScene.start(()=>{
+        if(seq !== fieldSeq) return;
+        openWorldMap();
+      });
+      return;
+    }
+    // 2回目以降は流さない（船・飛行機と同じ流儀）。ひとことだけ出して ちずへ
+    showFieldBanner('こおりの しろは、しずかに とじている…');
+  }
   // 第15弾§8：クリア後はちずが自動で開く（ゲートへのオート歩行は廃止）
   openWorldMap();
 }
@@ -12579,6 +12877,13 @@ function renderPartyEdit(){
         '<span class="face cool"><span class="eyes"><span class="eye"></span><span class="eye"></span></span><span class="mouth"></span></span></span>'+
         '<span class="plv">Lv'+levelOf(idx)+'</span><span class="pt">'+TYPE_EMOJI[t]+'</span>'+
         '<span class="pe-genki">'+genkiOf(idx)+'／'+genkiMaxOf(idx)+'</span>';   // 弾3-11§5(弾3-13前置きで⚡→数字)
+      // ★2026-08-09：ここを押しても はずせるようにした（準也さんの指摘＝
+      //   「いま表示されている手持ちをクリックするのではなくて、全体の中から探して
+      //     クリックしなきゃいけないのが大変」）。
+      //   下の一覧から同じ子をさがす手間が要らなくなる。処理は peTap をそのまま使うので、
+      //   「さいごの1たいは はずせない」などの決まりも同じように働く。
+      b.classList.add('pe-tapable');
+      b.onclick=()=>peTap(idx,b);
     }else{
       b.innerHTML='<span class="pc" style="color:var(--line)">？</span>';
     }
@@ -12600,7 +12905,7 @@ function renderPartyEdit(){
   if(!any) g.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--sub);font-size:.9rem;padding:14px">まだ かんじもんを ゲットしていないよ！<br>バトルで つかまえよう</div>';
   $('peHint').textContent=peHintDefaultText();
 }
-function peHintDefaultText(){ return 'てもち '+partyEditSel.size+'／4　（タップで いれかえ。さいごの 1たいは はずせないよ）'; }   // 手直し みがき§2：漢字残留をひらがな化（意味は変えない）／手直し 軽-2：通常ヒント文言を関数化（拒否表示からの復帰と共用）
+function peHintDefaultText(){ return 'てもち '+partyEditSel.size+'／4　（うえを おすと はずせる／したから えらぶと ふえる）'; }   // 手直し みがき§2：漢字残留をひらがな化（意味は変えない）／手直し 軽-2：通常ヒント文言を関数化（拒否表示からの復帰と共用）
 let peHintTimer=null;   // 手直し 軽-2：拒否ヒントの一時表示タイマー（連打対策で古いタイマーは必ずclearしてから新表示）
 function peReject(cellEl,msg){
   if(cellEl){ cellEl.classList.remove('reject'); void cellEl.offsetWidth; cellEl.classList.add('reject'); }   // 揺れを毎回再生させる（reflow強制）
@@ -14180,7 +14485,26 @@ function startAutoExplore(){
   autoPaused=false;
   autoTimer=setTimeout(autoTick,900);   // はじめの1歩／バトル直後の「1秒の間」
 }
-function stopAutoExplore(){ if(autoTimer){ clearTimeout(autoTimer); autoTimer=null; } stopStepSe(); }   // 手直し(2026-07-04)：オート停止で足音も即止める
+/* 手直し(2026-07-04)：オート停止で足音も即止める
+   ★2026-08-09：フリーズの修正（準也さんの報告＝「オート探検中に手持ちボタンを押しちゃうと、
+     戻った時にフリーズしちゃいますね」）。
+     doAutoMove() は1歩あるくとき heroLock=true にして、**その解除を autoTimer に任せている**：
+        autoTimer=setTimeout(()=>{ … heroLock=false; autoTick(); }, AUTO_STEP_MS)
+     ここでタイマーを消すと、**解除役ごと消えて heroLock=true が残る**。
+     残ったロックは autoTick も tryStep も見ているので、オートも手で動かすこともできなくなる
+     （autoTick は「heroLock なら250ms後にもう一度」を延々と繰り返すだけ）。
+     ＝1歩あるいている0.35秒のあいだに手持ち・ずかん・おてつだい等を開くと必ず起きる。
+     だから止めるときは、歩きかけの後始末（moving解除・足のコマ戻し・ロック解除）を必ずする。 */
+function stopAutoExplore(){
+  if(autoTimer){ clearTimeout(autoTimer); autoTimer=null; }
+  stopStepSe();
+  const grid=$('fieldGrid');
+  if(grid && grid.classList.contains('moving')){   // ＝1歩あるいている最中だった
+    grid.classList.remove('moving');
+    setHeroSpriteFrame(false);
+    heroLock=false;                                // ★消えた解除役のかわりに、ここで必ず外す
+  }
+}
 /* オート1ステップ：次のすみかへBFSで1歩進む／到着でバトル */
 function autoTick(){
   autoTimer=null;
@@ -17542,6 +17866,7 @@ function makeZoneStartSave(startZone){                 // 任意ゾーンから�
     travelContinueSeen2:(startZone>STAGE3_COUNT+1), chubuHakaseSeen:(startZone>STAGE3_COUNT+1),
     shipSceneSeen:(startZone>77),   // 弾S-1：77より先から始めたら船シーンは見たことにする
     planeSceneSeen:(startZone>84),  // 弾6-1：84より先から始めたら飛行機シーンは見たことにする
+    iceCastleSeen:(startZone>83),   // 弾IC-1：83より先から始めたら氷の城シーンは見たことにする
     travelContinueSeen3:(startZone>STAGE4_COUNT+1),   // 弾5-6§7：トウホク突入の「たびのつづき」は学年5未満なら未見あつかい
     /* 手直し_お金(7/25・準也さんの指示)：お金の単位が「円」になったので、テスト用の学年スタートの
        所持金も実額にする。3年生以降＝20,000円（わふく2,000＋せいふく8,000＋αが買えて着替えを試せる）／
@@ -20988,6 +21313,1048 @@ document.getElementById('psSkip').onclick=e=>{ e.stopPropagation(); planeSceneSk
 
 return { start:startPlaneSceneEvent, skip:planeSceneSkip, isActive:()=>planeSceneActive };
 })();
+
+
+
+
+/* IC1:JS:BEGIN */
+/* ============================================================
+   弾IC-1：氷の城シーン「りゅうひょうの うみの はて」
+   ・外へ出るのは IceScene.start(onDone) / .skip() / .isActive() / ._jump(cut)
+   ・詳しくは 設計書\弾IC-1_氷の城シーン_りゅうひょうのうみのはて.md
+   ★この塊は _一時\_氷の城試作\_本体へ組みこむ.py が入れています。
+     直すときは試作HTMLを直して、そのスクリプトを流し直してください（手で直さない）。
+   ============================================================ */
+var IceScene = (function(){
+  'use strict';
+
+  /* ★$ ・ soundOn ・ audioCtx ・ ensureAudio() は、ここでは定義しない。
+     本体にあるものを「そのとき読む」。IIFEの中で var 宣言すると本体のものを隠してしまい、
+     🔇が効かない／音の土台が別になる、という事故になる（§8-3の実装1と同じ型）。
+     試作で足りないぶんは、このIIFEの外の「試作専用の下じき」で用意している。 */
+  function icSoundOn(){ return (typeof soundOn==='undefined') ? true : !!soundOn; }
+
+  /* --- 画像・音のありか（本体へ移すときはここだけ差し替える） --- */
+  var IMG = 'images/fullart/';
+  var CHR = 'images/';
+  var VOICE = 'audio/battle/';
+  var SFX   = 'audio/battle/';
+  var MANA_FACE  = CHR+'sprites/hakase-face.webp';
+  var MANA_FRONT = CHR+'sprites/hakase.webp';
+  var MANA_BACK_A= CHR+'mana-back-a.webp';
+  var MANA_BACK_B= CHR+'mana-back-b.webp';
+  /* ★本体の heroSheetUrl()（着替え・男女に対応）があればそれを使う。
+     ここで同名関数を定義すると、本体に移したとき女の子で遊んでいる子も男の子の絵になる */
+  function icHeroSheet(){
+    return (typeof heroSheetUrl==='function') ? heroSheetUrl() : (CHR+'sprites/hero.webp');
+  }
+
+  var icActive=false, icSeq=0, icOnDone=null, icWalkHandles=[];
+
+  /* カットの長さ（ミリ秒）。会話のあるカットは会話の終わりで次へ進む */
+  /* ★ここに書いた数字は「実際に使われているものだけ」にする。
+     以前は i2（見上げの長さ）と i6 が入っていたが、実際は PAN_MS とベタ書きの値が使われていて、
+     この表を書き換えても何も変わらなかった。いちばん触りそうなつまみが効かないのは危ない。 */
+  var IC_MS = { i0:5000, i3:4500, i5:3500 };
+  var PAN_MS = 7000;     /* ★見上げパン＝このシーンの心臓。短くしない（設計書§3-2） */
+  /* ★フィールドから入るとき、画面を黒く落としてから始めるまでの時間
+     （オーバーレイのフェード0.8秒＋真っ暗な間0.5秒）。前の場面と切り離すための「間」 */
+  var IC_BLACK_MS = 1300;
+
+  /* ---------------- 月の大きさ（準也さんの指摘・2026-08-08） ----------------
+     月は遠すぎるので、見かけの大きさは「カメラの画角」だけで決まる。
+     ＝引きのカット（全景）ほど小さく、寄りのカット（見上げ・門）ほど大きい。
+     絵の中に描くとこの関係が守れず、実際は 全景40%／見上げ13% と逆になっていた。
+     w  ＝ 画面の幅に対する月の直径（%）
+     cx ＝ 月の中心の横位置（画面の幅の%）／cy ＝ 中心の縦位置（画面の高さの%） */
+  var IC_FAR_MS = 3200;  /* IF（遠景）＝「あそこへ行くのか」と分かるだけの間。長くしない */
+  var IC_MOON = {
+    /* ★★月は「城の真後ろ（画面の中央 cx=50）」に置く。全カットで同じ。
+       ① 位置を全カットでそろえる理由（準也さんの指摘）＝月は無限に遠いので、
+          カメラが寄っても引いても**方角は変わらない**。前は i2=52・i3=27 と、
+          絵の都合で左右に飛ばしていた＝物理的にありえない動きだった。
+       ② **中央にする理由（2026-08-09・準也さんの指摘）＝この型のお手本である
+          クロノトリガーの魔王城は「城のシルエットが月に重なって逆光になる」構図だから。**
+          月を横にどけると、その型そのものが成立しない。
+          Claudeは一度 cx=30（左）にしたが、それは「I3の元の絵で月が左に描かれていたから」
+          という理由で、演出としての判断ではなかった＝**絵に引きずられていた**。
+          月はレイヤーなのだから、絵に合わせるのではなく、狙う構図に合わせて置く。
+       cy（縦）はカメラが上を向くと変わるので、カットごとにちがってよい。 */
+    /* IF（遠景）＝いちばん引いた画。城が水平線の先に小さく見えるだけなので、月も小さい */
+    iF:{w:15, cx:50, cy:17},
+    i0:{w:26, cx:50, cy:15},   /* 到着＝城の全体が入る画（I3と同程度）＝月も同程度 */
+    i2:{w:44, cx:50, cy:14},   /* 見上げ＝城の一部を大きく写す寄りの画＝月も大きい */
+    i3:{w:26, cx:50, cy:23},   /* 全景＝城の全体が入る引き＝月は小さめ */
+    /* ★i4とi5は「門の絵で月が塔の上に出る位置」から決めている。
+       まず i5（等倍）＝塔の上に月が乗る cy=19。
+       i4 は背景に ic-loom（1.18倍・origin center 76%）がかかるので、それに合わせて
+       w=44×1.18＝52、cy=76+(19−76)×1.18＝8.7。ここを合わせないと、
+       カメラが引いたときに背景だけ動いて月が取り残される */
+    /* ★i4も cx=50。ic-loom（1.18倍・origin center 76%）の拡大の中心がちょうど x50% なので、
+       中央に置いたものは拡大しても中央のまま＝計算が要らない
+       （月を横にずらしていたときは 50+(30−50)×1.18＝26.4 という補正が必要だった） */
+    i4:{w:52, cx:50, cy:8.7},  /* 主人公のアップ＝いちばん寄っている＝月も最大（上は画面外） */
+    i5:{w:44, cx:50, cy:19}    /* 門＝等倍にもどった画。塔の上に月が出る */
+  };
+
+  /* ---------------- 音（すべて合成・専用バス icBus） ---------------- */
+  var icBus=null, icLoopNodes=[], icLoopGains={wind:null,drone:null};
+  function icBusGet(){
+    if(!icSoundOn()) return null;
+    ensureAudio(); if(!audioCtx) return null;
+    if(!icBus){
+      icBus=audioCtx.createGain(); icBus.gain.value=1;
+      var comp=audioCtx.createDynamicsCompressor();
+      icBus.connect(comp); comp.connect(audioCtx.destination);
+    }
+    return icBus;
+  }
+  function icBusKill(){
+    icLoopNodes.forEach(function(n){ try{n.stop();}catch(e){} try{n.disconnect();}catch(e){} });
+    icLoopNodes=[]; icLoopGains={wind:null,drone:null};
+    if(icBus){ try{ icBus.disconnect(); }catch(e){} icBus=null; }
+  }
+  /* ★シーンの途中で🔇を押したとき、風と低い唸り（30秒以上鳴りっぱなしのループ）を止める。
+     icBusGet() は「新しい音を作るとき」しか soundOn を見ないので、すでに鳴っているループは
+     そのまま最後まで鳴ってしまう（設計書§8-2の#6「🔇で完全に無音」を満たさない）。
+     本体の toggleSound() は音量をしぼる仕組みを持たないので、こちらから見に行く。 */
+  var icSoundWatch=null;
+  function icSoundWatchStart(){
+    if(icSoundWatch) return;
+    icSoundWatch=setInterval(function(){
+      if(!icActive){ icSoundWatchStop(); return; }
+      if(icBus){ try{ icBus.gain.value = icSoundOn()?1:0; }catch(e){} }
+      if(!icSoundOn()) icSfxStop();   /* 録音した効果音も止める（<audio>はバスを通らないため別に止める） */
+    },200);
+  }
+  function icSoundWatchStop(){ if(icSoundWatch){ clearInterval(icSoundWatch); icSoundWatch=null; } }
+  /* ★ループ音の音量を「変える」（消さない）。2026-08-09・準也さんの指摘＝
+     「最初のシーンで波の音みたいなのが聞こえるんですけど、次のシーンでマナ博士が喋り出すと
+       波の音が消えちゃうんですね。ここは波の音は後ろで音量を小さくして流しとくべきだと思います」。
+     前は I1 で風を消し、I2 で作り直していた（＝音がぶつ切りになるうえ、古いノードが残って二重になる）。
+     風は I0 で1回だけ作り、あとはカットごとに音量を上げ下げするだけにする。 */
+  function icFadeLoopTo(key,vol,sec){
+    var g=icLoopGains[key]; if(!g||!audioCtx) return false;
+    try{
+      var t=audioCtx.currentTime;
+      g.gain.cancelScheduledValues(t);
+      g.gain.setValueAtTime(g.gain.value,t);
+      g.gain.linearRampToValueAtTime(Math.max(0.0001,vol),t+(sec||1.0));
+    }catch(e){}
+    return true;
+  }
+  /* 風＝まだ鳴っていなければ始める／鳴っていれば音量を変えるだけ */
+  function icWindSet(vol,sec){
+    if(!icFadeLoopTo('wind',vol,sec)) icWindStart(vol);
+  }
+  function icFadeOutLoop(key,sec){
+    var g=icLoopGains[key]; if(!g||!audioCtx) return;
+    try{
+      var t=audioCtx.currentTime;
+      g.gain.cancelScheduledValues(t);
+      g.gain.setValueAtTime(g.gain.value,t);
+      g.gain.linearRampToValueAtTime(0.0001,t+(sec||.8));
+    }catch(e){}
+    icLoopGains[key]=null;
+  }
+  function icTone(freq,start,dur,type,vol){
+    var bus=icBusGet(); if(!bus) return;
+    var o=audioCtx.createOscillator(), g=audioCtx.createGain();
+    o.type=type||'sine'; o.frequency.value=freq;
+    o.connect(g); g.connect(bus);
+    var t=audioCtx.currentTime+start;
+    g.gain.setValueAtTime(0.0001,t);
+    g.gain.linearRampToValueAtTime(vol||.1,t+.012);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    o.start(t); o.stop(t+dur+.03);
+  }
+  function icNoise(start,dur,f0,f1,vol,q){
+    var bus=icBusGet(); if(!bus) return;
+    var len=Math.max(1,Math.floor(audioCtx.sampleRate*dur));
+    var buf=audioCtx.createBuffer(1,len,audioCtx.sampleRate);
+    var ch=buf.getChannelData(0);
+    for(var i=0;i<len;i++) ch[i]=Math.random()*2-1;
+    var src=audioCtx.createBufferSource(); src.buffer=buf;
+    var f=audioCtx.createBiquadFilter(); f.type='bandpass'; f.Q.value=q||.9;
+    var g=audioCtx.createGain();
+    var t=audioCtx.currentTime+start;
+    f.frequency.setValueAtTime(Math.max(40,f0),t);
+    f.frequency.linearRampToValueAtTime(Math.max(40,f1),t+dur);
+    g.gain.setValueAtTime(0.0001,t);
+    g.gain.linearRampToValueAtTime(vol,t+dur*.3);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    src.connect(f); f.connect(g); g.connect(bus);
+    src.start(t); src.stop(t+dur+.05);
+  }
+  /* 雪原の風＝ノイズをループし、帯域をゆっくり往復させる */
+  function icWindStart(vol){
+    var bus=icBusGet(); if(!bus) return;
+    var len=Math.floor(audioCtx.sampleRate*4);
+    var buf=audioCtx.createBuffer(1,len,audioCtx.sampleRate);
+    var ch=buf.getChannelData(0);
+    for(var i=0;i<len;i++) ch[i]=Math.random()*2-1;
+    var src=audioCtx.createBufferSource(); src.buffer=buf; src.loop=true;
+    var f=audioCtx.createBiquadFilter(); f.type='bandpass'; f.Q.value=.6; f.frequency.value=700;
+    var lfo=audioCtx.createOscillator(); lfo.frequency.value=.13;
+    var lg=audioCtx.createGain(); lg.gain.value=420;
+    lfo.connect(lg); lg.connect(f.frequency);
+    var g=audioCtx.createGain();
+    var t=audioCtx.currentTime;
+    g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(vol,t+1.0);
+    src.connect(f); f.connect(g); g.connect(bus);
+    src.start(); lfo.start();
+    icLoopNodes.push(src,lfo); icLoopGains.wind=g;
+    return g;
+  }
+  /* 城の低い唸り＝42Hzの三角波にわずかなうねり */
+  function icDroneStart(vol){
+    var bus=icBusGet(); if(!bus) return;
+    var o=audioCtx.createOscillator(); o.type='triangle'; o.frequency.value=42;
+    var o2=audioCtx.createOscillator(); o2.type='sine'; o2.frequency.value=21;
+    var g=audioCtx.createGain(), g2=audioCtx.createGain();
+    g2.gain.value=.35; o2.connect(g2); g2.connect(g);
+    var lfo=audioCtx.createOscillator(); lfo.frequency.value=.6;
+    var lg=audioCtx.createGain(); lg.gain.value=3;
+    lfo.connect(lg); lg.connect(o.frequency);
+    var t=audioCtx.currentTime;
+    g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(vol,t+1.4);
+    o.connect(g); g.connect(bus);
+    o.start(); o2.start(); lfo.start();
+    icLoopNodes.push(o,o2,lfo); icLoopGains.drone=g;
+    return g;
+  }
+  /* ゆっくり立ち上がって、音の高さも下へすべる音（軋み用）。
+     icTone は12msで立ち上がるので「ポン」と鳴ってしまう＝軋みには使えない */
+  function icToneSlide(f0,f1,start,dur,type,vol){
+    var bus=icBusGet(); if(!bus) return;
+    var o=audioCtx.createOscillator(), g=audioCtx.createGain();
+    o.type=type||'triangle';
+    o.connect(g); g.connect(bus);
+    var t=audioCtx.currentTime+start;
+    o.frequency.setValueAtTime(f0,t);
+    o.frequency.linearRampToValueAtTime(f1,t+dur);
+    g.gain.setValueAtTime(0.0001,t);
+    g.gain.linearRampToValueAtTime(vol||.05,t+dur*.45);   /* ★ゆっくり立ち上げる＝打楽器にしない */
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    o.start(t); o.stop(t+dur+.03);
+  }
+  /* 氷の軋み＝「ミシ…」と擦れる音。
+     ★2026-08-09・準也さんの指摘＝「見上げるシーンにポン。ポンポンって音がするんですけど、
+       これは何を表してますか？ちょっと違和感があるんですけど」。
+       前は矩形波（square）を0.42秒だけ鳴らしていた＝立ち上がりが速く、音の高さも変わらないので、
+       軋みではなく**打楽器の「ポン」**になっていた。
+     ★軋みは「長く・ゆっくり立ち上がり・高さがすべる・ノイズが主体」。
+       狭い帯域（Q=6）のノイズを1.4秒かけて下へすべらせ、かすかな倍音を重ねる。 */
+  /* ★2026-08-09・準也さんの2度目の指摘＝「岸見（軋み）の音は聞こえなくなったので違和感はないん
+     ですけど、聞こえないんでいいんですかね」。
+     ＝「ポン」は消えたが、今度は聞こえない＝入れる意味がない状態になっていた。
+     原因＝軋みの主体がノイズで、同じくノイズの風（.055）と帯域が近く埋もれていた。
+     直し方＝**ピッチのある音（三角波）を主体にする**。高さのある音はノイズに埋もれにくい。
+     ノイズは「擦れ」を足す脇役に回す。全体の音量も約1.8倍に上げた。 */
+  function icCreak(start,vol){
+    var v=vol||.045;
+    icToneSlide(104,78,start+.05,1.25,'triangle',v*.95);   /* 主役＝ゆっくり下へすべる低い音 */
+    icToneSlide(157,118,start+.12,1.05,'triangle',v*.34);  /* 5度上に重ねて「きしみ」を出す */
+    icNoise(start,1.3,240,105,v*.85,7.0);                  /* 脇役＝擦れるざらつき */
+  }
+  /* 心音＝低いパルス2連 */
+  function icHeart(start,times,vol){
+    for(var i=0;i<(times||1);i++){
+      var t0=start+i*1.1;
+      icTone(58,t0,.20,'sine',vol||.10);
+      icTone(52,t0+.26,.24,'sine',(vol||.10)*.8);
+    }
+  }
+  /* 門の軋み＝低い唸り＋高いきしみ */
+  function icGateRumble(start){
+    icTone(46,start,2.2,'square',.075);
+    icTone(69,start+.15,1.9,'sawtooth',.035);
+    icNoise(start+.1,2.0,320,120,.06,1.6);
+  }
+  /* 冷気＝高い音から低い音へ流れ落ちる */
+  function icChillSound(start){ icNoise(start,2.2,4200,700,.075,.8); }
+  /* 足音（雪を踏む） */
+  function icStep(start){ icNoise(start,.14,900,300,.05,1.2); }
+
+  /* ---------------- 録音した効果音（準也さん提供・2026-08-09） ----------------
+     ★`fetch()`＋`decodeAudioData` は使わない。file:// でブロックされる（飛行機シーンv3.5の失敗）。
+       `<audio>` 要素で鳴らす。検証も `--allow-file-access-from-files` を付けない素の状態で、
+       `paused===false` と `currentTime` が進むことを見る（設計書§5）。
+     ★合成音の icGateRumble より、録音のほうが「重い扉」の質感が出るので置き換えた。 */
+  var icSfxNodes=[];
+  function icSfx(file,vol,delayMs){
+    if(!icSoundOn()) return;
+    var seq=icSeq;
+    setTimeout(function(){
+      if(seq!==icSeq || !icSoundOn()) return;
+      try{
+        var a=new Audio(SFX+file+'.mp3');
+        a.volume=(vol==null?1:vol);
+        a.onerror=function(){};        /* ファイルが無いときにコンソールを汚さない */
+        a.play().catch(function(){});
+        icSfxNodes.push(a);
+      }catch(e){}
+    },delayMs||0);
+  }
+  function icSfxStop(){
+    icSfxNodes.forEach(function(a){ try{ a.pause(); a.currentTime=0; }catch(e){} });
+    icSfxNodes=[];
+  }
+
+  /* ---------------- 雪と星（画面をいつも動かしておく） ---------------- */
+  function icSnowBuild(){
+    var box=$('icSnow');
+    if(box.childElementCount) return;
+    for(var i=0;i<42;i++){
+      var f=document.createElement('div');
+      f.className='ic-flake';
+      var size=1.5+Math.random()*3.2;
+      f.style.width=size+'px'; f.style.height=size+'px';
+      f.style.left=(Math.random()*100)+'%';
+      f.style.setProperty('--dx',(Math.random()*70-35)+'px');
+      f.style.animationDuration=(5+Math.random()*6)+'s';
+      f.style.animationDelay=(-Math.random()*9)+'s';
+      f.style.opacity=(.3+Math.random()*.5).toFixed(2);
+      box.appendChild(f);
+    }
+  }
+  /* 雲を1枚、画面の高さ topPct の位置に delay ミリ秒後から dur かけて横切らせる。
+     alpha＝濃さ（省略すると .62）／hPct＝高さを画面の%で指定（省略すると96px） */
+  function icMistPass(delay,topPct,dur,alpha,hPct){
+    var seq=icSeq;
+    setTimeout(function(){
+      if(seq!==icSeq) return;
+      var m=document.createElement('div');
+      m.className='ic-mist';
+      m.style.top=topPct+'%';
+      m.style.animationDuration=(dur/1000)+'s';
+      if(alpha) m.style.setProperty('--mist',alpha);
+      if(hPct) m.style.height=hPct+'%';
+      $('icStage').appendChild(m);
+      requestAnimationFrame(function(){ m.classList.add('run'); });
+      setTimeout(function(){ if(m.parentNode) m.parentNode.removeChild(m); },dur+300);
+    },delay);
+  }
+  function icStarsBuild(){
+    var box=$('icStars');
+    if(box.childElementCount) return;
+    for(var i=0;i<34;i++){
+      var s=document.createElement('div');
+      s.className='ic-star';
+      s.style.left=(Math.random()*100)+'%';
+      s.style.top=(Math.random()*52)+'%';
+      s.style.animationDuration=(1.8+Math.random()*3.4)+'s';
+      s.style.animationDelay=(-Math.random()*4)+'s';
+      var sz=(1+Math.random()*1.8).toFixed(1);
+      s.style.width=sz+'px'; s.style.height=sz+'px';
+      box.appendChild(s);
+    }
+  }
+
+  /* ---------------- 夜空と月（城の絵の後ろ） ---------------- */
+  /* 月を置く。m＝IC_MOONの1行。
+     ★#icMoon は正方形の絵なので、width%（画面の幅に対する%）を指定すると
+       高さのピクセル数も同じになる。縦の%に直すには「画面の幅÷高さ」を掛ける
+       （390×780なら0.5）。だから top = 中心の% − w% × 比 ÷ 2。
+       設計書§7のキャラの式と同じ考え方＝単位をそろえないと月が上下にずれる */
+  function icStageRatio(){
+    var st=$('icStage');
+    if(st && st.offsetHeight) return st.offsetWidth/st.offsetHeight;
+    return 0.5;
+  }
+  /* dur（秒）を渡すと、大きさと位置がその時間をかけて変わる＝カメラが寄る／引く動きに合わせられる */
+  function icMoonSet(m,dur){
+    var el=$('icMoon'); if(!el||!m) return;
+    var r=icStageRatio();
+    /* ★月の絵は正方形とはかぎらない（余白を切ったので 1062×1075 になっている）。
+       高さは絵の縦横比から出す。決め打ちで正方形にすると、いちばん大きいカットで
+       上下に数pxずれる（設計書§8-5の逆算も、この比で計算している） */
+    var ar=(el.naturalWidth&&el.naturalHeight)?(el.naturalHeight/el.naturalWidth):1;
+    el.style.transition = dur
+      ? ('opacity .55s ease,width '+dur+'s ease,left '+dur+'s ease,top '+dur+'s ease')
+      : 'opacity .55s ease';
+    el.style.transform='translateY(0)';
+    el.style.width=m.w+'%';
+    el.style.left=(m.cx-m.w/2).toFixed(2)+'%';
+    el.style.top=(m.cy-m.w*r*ar/2).toFixed(2)+'%';
+    el.classList.add('show');
+    $('icSky').classList.add('show');
+  }
+  function icMoonHide(){ var el=$('icMoon'); if(el) el.classList.remove('show'); }
+
+  /* ---------------- キャラの歩き ---------------- */
+  /* 歩行シートの正面・後ろ姿は上段と下段が同じ絵なので、反転しないと歩いて見えない
+     （本体 setHeroSpriteFrame と同じ扱い・2026-08-03に船シーンで直した件） */
+  function icWalkFrame(el,useB,col){
+    var ud=(col==='0%'||col==='50%');
+    el.style.transformOrigin='center bottom';
+    el.style.transform='translateY('+(useB?'-3%':'0')+') scaleX('+((useB&&ud)?-1:1)+')';
+  }
+  function icStopWalk(){
+    icWalkHandles.forEach(function(h){ if(h&&h.stop) h.stop(); });
+    icWalkHandles=[];
+    var h=$('icHero'); if(h) h.style.transform='none';
+  }
+  function icWalkTick(ms){
+    var hero=$('icHero'), mana=$('icMana'), row=false;
+    hero.style.backgroundPosition='50% 0%';
+    var tick=setInterval(function(){
+      row=!row;
+      hero.style.backgroundPosition='50% '+(row?'100%':'0%');
+      icWalkFrame(hero,row,'50%');
+      mana.src = row?MANA_BACK_B:MANA_BACK_A;
+    }, ms||170);
+    icWalkHandles.push({stop:function(){ clearInterval(tick); }});
+  }
+  /* ⚠️ transitionDuration を4つまとめて指定するので、呼び出す前に style.transition で
+     opacity の秒数を書いても、ここで .35s / .4s に上書きされる（批判2回目の指摘）。
+     opacity の速さを変えたいときは、この関数の中の数字を変えること。 */
+  function icPutHero(x,y,w,dur){
+    var h=$('icHero');
+    h.style.transitionDuration=dur+'s,'+dur+'s,'+dur+'s,.35s';
+    h.style.left=x+'%'; h.style.top=y+'%'; h.style.width=w+'%';
+  }
+  function icPutMana(x,y,w,dur){
+    var m=$('icMana');
+    m.style.transitionDuration=dur+'s,'+dur+'s,'+dur+'s,.4s';
+    m.style.left=x+'%'; m.style.top=y+'%'; m.style.width=w+'%';
+  }
+
+  /* ---------------- 会話カード ---------------- */
+  var icTalkTimer=null, icTalkAudio=null;
+  function icTalkStopAudio(){ if(icTalkAudio){ try{ icTalkAudio.pause(); }catch(e){} icTalkAudio=null; } }
+  function icTalkHide(){
+    if(icTalkTimer){ clearTimeout(icTalkTimer); icTalkTimer=null; }
+    icTalkStopAudio();
+    var el=$('icTalk'); if(el){ el.classList.remove('show','mid','top','bottom'); el.onclick=null; }
+  }
+  function icTalkShow(msg,pos,voiceFile,autoMs,onDone){
+    var seq=icSeq;
+    var el=$('icTalk');
+    el.classList.remove('mid','top','bottom');
+    el.classList.add(pos,'show');
+    el.innerHTML='<div class="ic-talk-face" style="background-image:url(\''+MANA_FACE+'\')"></div>'+
+                 '<div class="ic-talk-msg">'+msg+'</div>';
+    if(voiceFile && icSoundOn()){
+      try{
+        icTalkAudio=new Audio(VOICE+voiceFile+'.mp3');
+        icTalkAudio.volume=1;
+        icTalkAudio.onerror=function(){};   /* 声のファイルが無いときにコンソールを汚さない（船と同じ） */
+        icTalkAudio.play().catch(function(){});
+      }catch(e){}
+    }
+    /* ★finished ＝ 二重発火よけ（船の spTalkShow と同じ保険）。
+       とくに会話③の onDone は、歩き出し・足音・門が閉じる・暗転・finish の全部を起動するので、
+       ここが2回走ると被害が大きい */
+    var finished=false;
+    var go=function(){
+      if(finished) return;
+      finished=true;
+      if(seq!==icSeq) return;
+      icTalkHide();
+      if(onDone) onDone();
+    };
+    el.onclick=function(e){
+      if(e && e.stopPropagation) e.stopPropagation();   /* 本体のフィールド操作を誘発させない */
+      if(icTalkTimer){ clearTimeout(icTalkTimer); icTalkTimer=null; }
+      go();
+    };
+    icTalkTimer=setTimeout(go,autoMs||4200);
+  }
+
+  /* ---------------- レイヤーの初期化 ---------------- */
+  function icResetLayers(){
+    ['icBgFar','icBgApproach','icBgHero','icBgGate','icBgGateOpen','icBgHall','icPanBox','icFloes','icSnow','icStars','icIceGlow','icSky','icMoon']
+      .forEach(function(id){ var el=$(id); if(el) el.classList.remove('show','thick','drift','ic-zoomout','horizon'); });
+    var pan=$('icPanBox');
+    if(pan){ pan.style.transition='none'; pan.style.transform='translateY(0)'; }
+    /* 月はパン中に translateY で動かすので、次のカットに引きずらないよう必ず戻す */
+    var mn=$('icMoon');
+    if(mn){ mn.style.transition='none'; mn.style.transform='translateY(0)'; }
+    var hero=$('icHero');
+    if(hero){ hero.className=''; hero.removeAttribute('style'); }
+    var mana=$('icMana');
+    /* ★style を消しただけだと、img が本来の大きさ（512px＝画面の131%）で置かれる。
+       opacity:0 なので見えないが、測るたびに「幅131%」と出て紛らわしいので幅を0にしておく */
+    if(mana){ mana.className=''; mana.removeAttribute('style'); mana.style.width='0'; mana.src=MANA_BACK_A; }
+    ['icGleam','icChill','icIceGlow','icGateShut'].forEach(function(id){ var el=$(id); if(el) el.classList.remove('run'); });
+    var bg=$('icBgGate'); if(bg) bg.classList.remove('ic-loom');   /* I4のぼかし拡大の消し忘れ（批判2回目の指摘） */
+    var fade=$('icFade'); if(fade) fade.classList.remove('show');
+    /* ★探す範囲はシーンの中だけにする（毎カット呼ばれるので、文書全体を走査しない） */
+    var stg=$('icStage');
+    if(stg) stg.querySelectorAll('.ic-mist').forEach(function(m){ if(m.parentNode) m.parentNode.removeChild(m); });
+    var hr=$('icBgHero'); if(hr) hr.classList.remove('ic-zoomout');
+    icTalkHide();
+  }
+
+  /* ---------------- 画像の割り当て ---------------- */
+  function icBindImages(){
+    /* ★絵はすべて webp。透過PNGのままだと9枚で約25MBあり、お手本の船シーン（10枚1.1MB）と
+       桁が2つちがう。webpにしても透明度の差は0・色の差も見分けられない範囲だった（_webpにする.py） */
+    /* ★2代目の到着の絵（2026-08-09・準也さんの指摘で作り直し）＝
+       「最初のシーンの城は小さすぎる（遠過ぎる）。氷の城に来た！って感じがしない。
+         あそこまで何時間かかるって感じ」→ 設計書§3の「ずっと先に、黒いシルエットの城」という
+       設計そのものを見直し、**目の前にそびえる**構図にした。
+       ★縦長（1024×1536）で発注した＝このゲームは縦画面なので、横長だと左右が各33%切れて
+         絵の中央3分の1しか写らない（城が枠の外に落ちた事故の原因でもあった）。
+         縦長なら切れるのは各12.5%で、絵のほぼ全部が見える。だから位置合わせは不要＝center。
+       ★縦画面での実測：城の塔の先28% ／ 門52〜60% ／ 城の足もと（＝道の消失点）60% ／ 道60〜100% */
+    $('icBgApproach').style.backgroundImage="url('"+IMG+"ice-approach2-cut.webp')";
+    $('icBgApproach').style.backgroundPosition='center center';
+    /* ★IF（遠景）＝初代の到着カット。城が絵の65〜83%（中心68%）にあり、縦画面だと
+       中央33〜67%しか写らないので、72%へずらして城を画面に入れる（実測して決めた値） */
+    $('icBgFar').style.backgroundImage="url('"+IMG+"ice-approach-cut.webp')";
+    $('icBgFar').style.backgroundPosition='72% center';
+    /* ★-cut ＝「空だけ純緑」で発注し、_緑をぬく2.py で空を透明にした版。
+       空が透けるので、後ろの夜空(#icSky)と月(#icMoon)が城の向こうに見える */
+    $('icBgHero').style.backgroundImage   ="url('"+IMG+"ice-castle-hero-cut.webp')";
+    /* ★門と回廊は2代目＝全景(hero)を見本に描き直して城を統一したもの。
+       ★初代は「門のアップ」だったが、2代目は「城の正面全体」＝構図がちがう。
+         そのため I4・I5・I6 のキャラの座標を測り直してある（_縦画面で見る.py で実測）。
+         縦画面での床＝階段の上端(門の敷居)が82%、階段の下端が100% */
+    $('icBgGate').style.backgroundImage   ="url('"+IMG+"ice-gate-closed2-cut.webp')";
+    $('icBgGateOpen').style.backgroundImage="url('"+IMG+"ice-gate-open2-cut.webp')";
+    /* 回廊の床は85%（奥）〜100%（手前）。門の敷居82%とはつながらないので、
+       回廊に切り替わる瞬間にキャラを手前の床へ置き直す（playI6を参照） */
+    $('icBgHall').style.backgroundImage   ="url('"+IMG+"ice-hall-dark2.webp')";
+    /* ★-cut2 は「空を透明にした upper」と「塔の部分を切り落とした lower」をつないだ版
+       （_つなぎ目を切り詰める3.py で作る。元の絵も images/ に残してある）。
+       upper の空が透けるので、見上げていくと後ろの月（#icMoon）が現れる */
+    $('icPanImg').src   = IMG+'ice-castle-pan.webp';
+    $('icFloesImg').src = IMG+'ice-floes-cut.webp';  /* 純緑を抜いた透過版（_緑をぬく2.py） */
+    $('icMoon').src     = IMG+'ice-moon-cut.webp';   /* 月＝城とは別レイヤー（純緑で発注→抜いた） */
+    $('icHero').style.backgroundImage="url('"+icHeroSheet()+"')";
+    $('icMana').src=MANA_BACK_A;
+  }
+  /* パンの帯を「一番下が見えている」状態に置き、動かせる距離を返す。
+     あわせて、つなぎ目の霧を「2枚の境目」に置く（2枚の高さは同じではない） */
+  function icPanToBottom(){
+    var box=$('icPanBox'), stage=$('icStage');
+    if(!box||!stage) return 0;
+    var sh=stage.offsetHeight, w=box.offsetWidth;
+    var img=$('icPanImg');
+    /* ★画像がまだ読めていないと offsetHeight が 0 になり、パンが動かなくなる。
+       そのときは絵本来の縦横比（読めていれば naturalHeight）から計算して代わりに使う。
+       ★数字の 2198/1024 は _つなぎ目を焼きこむ.py の出力（ice-castle-pan）。作り直したら合わせる */
+    var ratio=(img&&img.naturalWidth)?(img.naturalHeight/img.naturalWidth):(2198/1024);
+    var h=box.offsetHeight;
+    if(h < sh*1.2) h=w*ratio;
+    var d=Math.max(0,Math.round(h-sh));
+    /* ★transition を丸ごと none にすると、#icPanBox の0.55秒フェードインまで消えて
+       城の絵が一瞬で出る（§7「上が不透明になってから下を消す」に反する）。
+       止めたいのは transform だけなので、opacity は生かしたまま transform を即座に決める。 */
+    box.style.transition='opacity .55s ease';
+    box.style.transform='translateY(0)';   /* bottom:0 基準＝最初から下端（門と階段）が見えている */
+    return d;
+  }
+
+  /* ==============================================================
+     IF：遠景（3.2秒）　いま遊んでいた流氷の海から、これから向かう城が遠くに見える
+     ★2026-08-09・準也さんの裁定「Cで」＝フィールド（ゲームの画面）と城のあいだをつなぐ1カット。
+       暗転のあと「あそこへ行くのか」と分かってから、次のI0で「着いた」に変わる＝旅した感じが出る。
+       絵は初代の到着カット（遠くに城のシルエットが見える版）をそのまま使っている。
+       キャラは出さない＝プレイヤー自身が見ている景色として見せる。
+  ============================================================== */
+  function playIF(){
+    var seq=icSeq;
+    icResetLayers();
+    icBindImages();
+    $('icBgFar').classList.add('show');
+    $('icSnow').classList.add('show');
+    $('icStars').classList.add('show');
+    icMoonSet(IC_MOON.iF);
+    $('icSky').classList.add('horizon');   /* 地平線が見えるカット＝空の下ぎわを明るく */
+    icWindSet(.055,0);                     /* 風はここで作る（I0へ引きつぐ） */
+    icCreak(1.6,.040);                     /* 遠くの氷の軋み */
+    icTone(58,.2,2.6,'sine',.05);          /* 低い持続音＝これから向かう場所の重さ */
+    setTimeout(function(){
+      if(seq!==icSeq) return;
+      $('icSky').classList.remove('horizon');
+      playI0();
+      /* ★playI0 の中で icResetLayers() が走って icBgFar も消えるので、そのあとに出し直す。
+         こうすると「遠景の上に到着の絵がゆっくり重なる」クロスフェードになる（§7の作法） */
+      $('icBgFar').classList.add('show');
+      setTimeout(function(){ if(seq!==icSeq) return; $('icBgFar').classList.remove('show'); },550);
+    }, IC_FAR_MS);
+  }
+
+  /* ==============================================================
+     I0：到着（5.0秒）　流氷の海べを2人で奥へ歩く
+  ============================================================== */
+  function playI0(){
+    var seq=icSeq;
+    icResetLayers();
+    icBindImages();
+    $('icBgApproach').classList.add('show');
+    $('icSnow').classList.add('show');
+    $('icStars').classList.add('show');
+    icMoonSet(IC_MOON.i0);          /* いちばん引いた画＝月は小さい */
+    /* ★2代目の絵では城が地平線を覆っているので、地平線の光（horizon）は使わない。
+       初代（遠くに城のシルエットが見える絵）のときだけ必要だった */
+    icWindSet(.075,0);   /* 風＝ここで1回だけ作る。あとのカットは音量を上げ下げするだけ */
+    icCreak(1.2,.048); icCreak(3.4,.044);   /* 遠くの軋み。近くのI2（.075〜.098）より小さく */
+
+    var hero=$('icHero'), mana=$('icMana');
+    hero.style.backgroundImage="url('"+icHeroSheet()+"')";
+    hero.style.backgroundSize='300% 200%';
+    hero.style.zIndex='31';
+    /* ★2代目の絵に合わせて全部測り直した（2026-08-09）。
+       この絵は「城へまっすぐ続く氷の道」の一点透視で、**消失点＝城の足もと＝画面の60%**。
+       奥へ歩くときの大きさは「足もと% − 60%」に比例させる。
+       　手前 足もと90.0%（差30）で幅22% → 奥 足もと74.0%（差14）で幅10.3%
+       　（22×14÷30＝10.3。この比を外すと「その場で足踏み」に見える）
+       ★道は下へ行くほど広がるので、x も少しずつ中央へ寄せる（道の外＝海に立たせない）。
+       ★★マナは「はかせ」＝大人。**主人公（子ども）の1.5倍の背丈**にする（2026-08-09・準也さん指摘）。
+         前は0.92倍にしていたので、主人公が着ぐるみのように大きく見えていた。
+         主人公とマナは、絵の中で占める割合がほぼ同じ（主85%／マナ86%）なので、
+         **width をそのまま身長として扱ってよい**＝マナの幅 ＝ 主人公の幅 × 1.5 ×（遠近の補正）。 */
+    icPutHero(22,79.8,22,0); icPutMana(44,75.0,33,0);
+    hero.classList.add('show'); mana.classList.add('show');
+    /* ★歩きの切り替えは270ms（前は170ms＝毎秒5.9回）。歩行シートの正面・後ろ姿は
+       上下段が同じ絵で、左右反転しかできないので、速すぎると「震えている」ように見える。
+       足音（0.54秒ごと）と2コマ:1歩でそろえた */
+    icWalkTick(270);
+    icStep(.2); icStep(.74); icStep(1.28); icStep(1.82); icStep(2.36); icStep(2.9); icStep(3.44);
+
+    setTimeout(function(){ if(seq!==icSeq) return; icPutHero(27,76.5,18.3,1.4); icPutMana(46,72.5,27.5,1.4); },120);
+    setTimeout(function(){ if(seq!==icSeq) return; icPutHero(32,72.8,14.3,1.4); icPutMana(48,69.7,21.5,1.4); },1500);
+    setTimeout(function(){ if(seq!==icSeq) return; icPutHero(36,69.2,10.3,1.4); icPutMana(50,66.9,15.5,1.4); },2900);
+    setTimeout(function(){ if(seq!==icSeq) return; playI1(); }, IC_MS.i0);
+  }
+
+  /* ==============================================================
+     I1：麓（会話①で次へ）　城の足もと。2人は下すみにとても小さく
+  ============================================================== */
+  function playI1(){
+    var seq=icSeq;
+    icStopWalk();
+    $('icSky').classList.remove('horizon');   /* 城の足もとへ寄る＝地平線はもう見えない */
+    /* ★I0と同じカメラ位置なので月も同じ。ここで呼ばないと、確認用に I1 だけを再生したときに
+       月が消える（_jump は icResetLayers を通るため）。I6と同じ理由の呼び直し */
+    icMoonSet(IC_MOON.i0);
+    var d=icPanToBottom();
+    $('icPanBox').classList.add('show');
+    $('icSnow').classList.add('show');
+    setTimeout(function(){ if(seq!==icSeq) return; $('icBgApproach').classList.remove('show'); },550);
+    /* ★風は消さない。マナが喋るあいだ、後ろで小さく鳴らし続ける（準也さんの指摘）。
+       前はここで完全に消していたので、会話が始まった瞬間に音が途切れて不自然だった */
+    icWindSet(.020,1.2);
+    icDroneStart(.06);
+    icCreak(.6,.04);
+
+    var hero=$('icHero'), mana=$('icMana');
+    hero.style.zIndex='31';
+    /* ★2人は「城の足もとにとても小さく」。ただし下すみ(80%)に置くと会話カードに隠れたので
+       63%（会話カードは上に出す）にした（2026-08-08に実物で確認） */
+    /* ★マナ（はかせ＝大人）は主人公の1.5倍の背丈。足もとの高さは主人公とほぼ同じ */
+    icPutHero(32,77,12,0); icPutMana(47,74.8,18,0);
+    hero.classList.add('show'); mana.classList.add('show');
+    /* ★正面向き（hakase.webp）は「カメラ目線・笑顔・手を挙げた挨拶」の絵。
+       2人とも城を見上げている場面なので後ろ姿にする。顔は会話カードのアイコンで見えている。
+       （前は正面向きで、「つめたい きはいが するの」と言いながら手を振っていた） */
+    mana.src=MANA_BACK_A;
+
+    setTimeout(function(){
+      if(seq!==icSeq) return;
+      icTalkShow('ここが りゅうひょうの うみの はて。<br>……ぜんぶ こおりで できた しろよ','top','ic01',4600,function(){
+        playI2(d);
+      });
+    },900);
+  }
+
+  /* ==============================================================
+     I2：見上げパン（7.0秒）★このシーンの心臓。速くしない
+  ============================================================== */
+  function playI2(dist){
+    var seq=icSeq;
+    var box=$('icPanBox');
+    var d=(typeof dist==='number'&&dist>0)?dist:icPanToBottom();
+    /* 2人はカメラが上がるぶん下へ流れて画面から消える（その場で消すと不自然）。
+       ★下がる量は「壁が上へ動く量」と同じにする。前は壁の1.6倍の速さで下がりながら
+       勝手に25%縮んでいたので、退場が「滑って落ちていく」ように見えた。
+       カメラが上を向くだけなら、地上のものは壁と同じだけ下がり、大きさは変わらない。
+       ★2026-08-09・準也さんの指摘＝「上にスクロールするシーンでキャラクターが消える。
+         もう少しひっぱる」。1.3秒→**2.2秒**に延ばし、消すのも1.1秒→**2.0秒**へ。
+         2.2秒で壁が動く量は約200px＝画面の25.6%。足もと82.6%→108.2%（下端の外）。
+         幅は12%のまま（カメラが上を向くだけなので大きさは変わらない）。 */
+    icPutHero(32,102.7,12,2.2); icPutMana(47,100.4,18,2.2);
+    setTimeout(function(){
+      if(seq!==icSeq) return;
+      $('icHero').classList.remove('show'); $('icMana').classList.remove('show');
+    },2000);
+
+    /* ★transitionを切った直後に同じフレームで動かすと、まとめて計算されてアニメが効かない。
+       いったん強制的にレイアウトを確定させ（void offsetHeight）、2フレーム置いてから動かす。
+       ★opacity のフェードは生かす（transform だけ即座に決める） */
+    box.style.transition='opacity .55s ease';
+    box.style.transform='translateY(0)';
+    void box.offsetHeight;
+    /* ★緩急の実測（2026-08-08）：cubic-bezier(.34,.05,.30,1) は4.5秒で93%進んでしまい、
+       残り2.5秒が「止まって見える」＝7秒かけて見上げる意味が消えていた。
+       最後まで動き続けて、終わりぎわだけ減速する形に変えた（実測は shots/_実測.json） */
+    box.style.transition='transform '+PAN_MS+'ms cubic-bezier(.30,.02,.76,1)';
+
+    /* ★月は城の帯より「ゆっくり」動く＝遠いものほど動かない（視差）。
+       同じ速さで動かすと、月が城に貼りついたまま上がっていくように見える。
+       パンの終わり（尖塔が見えるところ）で IC_MOON.i2 の位置に来るよう、
+       開始時だけ上へずらしておく＝見上げるほど月が下りてくる。 */
+    icMoonSet(IC_MOON.i2);
+    var mn=$('icMoon');
+    var mv=Math.round(d*0.35);
+    mn.style.transition='none';
+    mn.style.transform='translateY('+(-mv)+'px)';
+    void mn.offsetHeight;
+
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){
+        if(seq!==icSeq) return;
+        box.style.transform='translateY('+d+'px)';
+        mn.style.transition='opacity .55s ease,transform '+PAN_MS+'ms cubic-bezier(.30,.02,.76,1)';
+        mn.style.transform='translateY(0)';
+      });
+    });
+
+    /* 氷の中を光が走る＝模様の少ない壁の区間でも「動いているもの」がある（設計書§2の12） */
+    $('icIceGlow').classList.add('run');
+    /* ★ここにあった「横切る雲」2枚は外した（2026-08-09・準也さんの指摘）。
+       準也さんの言葉＝「見上げているものについていくので、**カメラのほこりみたいな見え方**を
+       していますけど、これは何の意味があるんでしょうか」。
+       元は「雲を突きぬける高さを出す」「つなぎ目を通過するとき視線を逃がす」ためだったが、
+       　① つなぎ目は絵の側で焼き込んで消えた（§8-6）＝視線を逃がす必要がなくなった
+       　② 絵が透過版になり、塔や月が見え続けるので「間のび」もしない
+       　③ 何より、見る人に雲だと伝わっていない＝演出として成立していない
+       意味が伝わらないものは、主役（7秒のパン）の邪魔にしかならないので外す。 */
+    /* 上るほど風が強くなる。★新しく作らず、I0から鳴っている風の音量を上げる
+       （icWindStartを呼ぶと古いノードが残ったまま二重になる） */
+    icWindSet(.055,1.5);
+    /* ★軋みは4回→3回。1回が1.3秒と長いので、4回だと重なって鳴りっぱなしになる。
+       上るほど強くする。音量は聞こえるところまで上げた（.042→.075／.052→.088／.058→.098） */
+    icCreak(1.4,.075); icCreak(3.4,.088); icCreak(5.4,.098);
+
+    setTimeout(function(){ if(seq!==icSeq) return; $('icSnow').classList.add('thick'); }, PAN_MS*0.42);
+    setTimeout(function(){ if(seq!==icSeq) return; $('icSnow').classList.remove('thick'); }, PAN_MS*0.62);
+    /* パンが終わってから0.6秒そのまま見せる（設計書§3-2） */
+    setTimeout(function(){ if(seq!==icSeq) return; playI3(); }, PAN_MS+600);
+  }
+
+  /* ==============================================================
+     I3：全景＋月（4.5秒）　城の全体が初めて見える
+  ============================================================== */
+  function playI3(){
+    var seq=icSeq;
+    $('icIceGlow').classList.remove('run');     /* 城の中の光は壁のカットだけ */
+    var hero=$('icBgHero');
+    hero.classList.add('show');
+    hero.classList.add('ic-zoomout');
+    icMoonSet(IC_MOON.i3);          /* 引きの決めカット＝月は小さめ（画角が広いから） */
+    /* ★カットが変わる瞬間に薄いモヤを1枚流す（2026-08-09・準也さんの案）。
+       見上げ・全景・門は別々に描かれた絵で、色みがそろっていない。
+       動いているモヤをかぶせると、切り替わりの差が「霧が流れた」に見えて気にならなくなる。 */
+    icMistPass(0, 42, 3000, .18, 16);
+    $('icFloes').classList.add('show','drift');
+    setTimeout(function(){ if(seq!==icSeq) return; $('icPanBox').classList.remove('show'); },550);
+    icWindSet(.026,1.5);              /* 引きの画＝風は遠くに小さく。ただし止めない */
+    icTone(58,0,3.4,'sine',.07);      /* 荘厳な低音 */
+    icTone(87,.2,3.0,'triangle',.035);
+    icHeart(2.2,3,.09);
+    setTimeout(function(){ if(seq!==icSeq) return; playI4(); }, IC_MS.i3);
+  }
+
+  /* ==============================================================
+     I4：主人公に戻る（会話②で次へ）　見上げる後ろ姿のアップ
+  ============================================================== */
+  function playI4(){
+    var seq=icSeq;
+    /* 城が背後に大きくぼやけて迫る（I1の麓の絵と同じに見えないように・批判1回目の指摘） */
+    $('icBgGate').classList.add('show','ic-loom');
+    icMoonSet(IC_MOON.i4);          /* いちばん寄った画＝月も最大 */
+    icMistPass(0, 58, 2800, .16, 15);   /* 全景→門 の切り替わりを薄いモヤでなじませる */
+    icWindSet(.022,1.2);                /* 城のふもと＝風はさらに小さく。ここでも止めない */
+    $('icFloes').classList.remove('show');
+    setTimeout(function(){ if(seq!==icSeq) return; $('icBgHero').classList.remove('show','ic-zoomout'); },550);
+
+    var hero=$('icHero'), mana=$('icMana');
+    hero.style.backgroundImage="url('"+icHeroSheet()+"')";
+    hero.style.backgroundSize='300% 200%';
+    hero.style.backgroundPosition='50% 0%';     /* 後ろ姿 */
+    hero.style.zIndex='31';
+    /* ★ここで hero.style.transition='none' を書いてはいけない（2026-08-09に削除）。
+       transition:none は transition-property:none なので、そのあと icPutHero が
+       transitionDuration だけ書いても効かず、opacity のフェード(.35s)まで死ぬ。
+       icPutHero(...,0) で dur=0 を渡していれば、位置は即座に決まる。 */
+    /* ★見上げている主人公を「下から大きく」。2代目の門の絵は階段が手前に広がる構図で、
+       縦画面での床は82%（門の敷居）〜100%（階段の下端）。
+       このカットは背景に ic-loom（1.18倍・origin center 76%）がかかるので、階段の上端は
+       76+(82−76)×1.18＝83.1% に上がる。足もと88.6%は階段の中ほど。
+       ★足もとの高さ ＝ top + width×0.465（主人公）／×0.455（マナ）。
+         width は「画面の幅」の%、top は「画面の高さ」の%なので、縦横比で換算した値
+         （0.93×0.5＝0.465）。船シーンのコメントの0.43はこの換算済みの値で、正しかった。 */
+    icPutHero(8,72.8,34,0);  /* 足もと=72.8+34×0.465=88.6%＝階段の中ほどに大きく立つ */
+    /* ★★2026-08-09・準也さんの指摘＝「2シーンにまたがって、マナ博士が前の方にいるバージョンと、
+       隣にいるバージョンがシーンの切り替え時で別々になってます。どっちかに統一しましょう」。
+       → **全カット「隣に並ぶ」に統一**（足もとの高さを主人公とそろえ、幅は1.5倍）。
+       前はこのカットだけマナを奥（足もと85.5%）に置いていた＝I5で隣に戻るので、
+       カメラが引いた瞬間にマナが前へ出てきたように見えていた。
+       ★2人を隣に並べると横幅が要るので、主人公を 40%→34% にした（アップ感は保てる）。
+         主 足もと88.6・幅34 → top = 88.6 − 34×0.465 = 72.8／中心25.0%
+         マナ 足もと88.6・幅51（34×1.5）→ top = 88.6 − 51×0.455 = 65.4／中心67.5% */
+    icPutMana(42,65.4,51,0);
+    /* ★ここも後ろ姿。「だれかが なかで まってる」と言う場面で、正面向き（笑顔・手を挙げる）は真逆 */
+    mana.src=MANA_BACK_A;
+    hero.classList.add('show'); mana.classList.add('show');
+    icHeart(.1,3,.075);
+
+    setTimeout(function(){
+      if(seq!==icSeq) return;
+      icTalkShow('だれかが なかで まってる。<br>とても つめたい きはいが するの','top','ic02',4400,function(){
+        playI5();
+      });
+    },700);
+  }
+
+  /* ==============================================================
+     I5：門がひらく（3.5秒）
+  ============================================================== */
+  function playI5(){
+    var seq=icSeq;
+    /* ★カメラが引く＝背後にぼやけて迫っていた城が、はっきりした門に戻る（1.2秒）。
+       キャラだけが縮むと「カメラが引いた」ようには見えない（批判1回目の指摘） */
+    $('icBgGate').classList.remove('ic-loom');
+    icMoonSet(IC_MOON.i5,1.2);      /* 背景と同じ1.2秒で月も引く（取り残されないように） */
+    /* カメラが引いて、2人は門の前に小さく立つ（後ろ姿）。
+       ここで置き直さないと、I4のアップのままの大きさで門の中へ歩くことになる */
+    var hero=$('icHero'), mana=$('icMana');
+    hero.style.backgroundImage="url('"+icHeroSheet()+"')";
+    hero.style.backgroundSize='300% 200%';
+    hero.style.backgroundPosition='50% 0%';
+    hero.style.zIndex='31';
+    mana.src=MANA_BACK_A;
+    /* ★2代目の門の絵は「城の正面全体」＝階段が手前に広がる構図。縦画面での床は
+       門の敷居82%・階段の下端100%（_縦画面で見る.py で実測）。
+       ここは階段の中ほど＝足もと88%に立たせる（I6で敷居82%まで6%ぶん歩いて見せるため）。
+       top = 足もと% − width% × 0.465（主人公）／× 0.455（マナ）＝設計書§7の式
+       ★マナは主人公と同じ高さなので、幅も同じにする（前は13%＝主人公より小さく、
+         「手前にいるのに小さい」と奥行きが逆になっていた） */
+    /* ★★ここは「カメラが引く」ではなく「別のカット」として扱う（2026-08-09）。
+       I4のアップ（幅40%）から I5（幅14%）へ 1.2秒かけて動かすと、
+       背景は1.18→1.00（×0.85）なのに人だけ×0.35＝人だけがしぼんで見えた（批判3回目の×7）。
+       いったん0.35秒で消して、新しい位置で出し直す＝カットが変わったと読める。 */
+    hero.classList.remove('show'); mana.classList.remove('show');
+    setTimeout(function(){
+      if(seq!==icSeq) return;
+      hero.style.transition='none'; mana.style.transition='none';
+      icPutHero(34,81.5,14,0); icPutMana(50,78.4,21,0);
+      void hero.offsetWidth;
+      hero.style.transition='left 1.2s ease,top 1.2s ease,width 1.2s ease,opacity .4s ease';
+      mana.style.transition='left 1.2s ease,top 1.2s ease,width 1.2s ease,opacity .4s ease';
+      hero.classList.add('show'); mana.classList.add('show');
+    },380);
+    $('icGleam').classList.remove('run');
+    void $('icGleam').offsetWidth;              /* アニメを確実にやり直す */
+    $('icGleam').classList.add('run');
+    icTone(1245,0,.5,'sine',.05); icTone(1660,.08,.45,'sine',.035);
+
+    /* ★門を開ける音（準也さん提供・1.71秒）は**冒頭がいちばん大きい**ので、
+       扉の絵が動きだす0.15秒前に鳴らす＝「音がして、それから扉が動く」順になって自然。
+       合成音の icGateRumble は、この録音に置き換えたので鳴らさない。 */
+    icSfx('ic-gate-open',.85,950);
+
+    setTimeout(function(){
+      if(seq!==icSeq) return;
+      $('icBgGateOpen').classList.add('show');
+      $('icChill').classList.remove('run'); void $('icChill').offsetWidth; $('icChill').classList.add('run');
+      icChillSound(.3);
+      /* ★門が開く瞬間に、冷たいモヤを手前へ2枚流す（2026-08-09・準也さんの案）。
+         閉じた門と開いた門は別々に描かれた絵なので、入れ替わるとき城全体がわずかにゆらぐ。
+         動いているモヤをかぶせると、そのゆらぎが「冷気が噴き出したせい」に見えて気にならなくなる。
+         濃さは .30／.22＝見上げの雲(.62)よりずっと薄い。門のあたり（画面の55%・72%）を通す。 */
+      icMistPass(0,   55, 2600, .30, 14);
+      icMistPass(320, 72, 3000, .22, 12);
+      setTimeout(function(){ if(seq!==icSeq) return; $('icBgGate').classList.remove('show'); },550);
+    },1100);
+
+    setTimeout(function(){ if(seq!==icSeq) return; playI6(); }, IC_MS.i5);
+  }
+
+  /* ==============================================================
+     I6：入城（5.0秒）　会話③→門の中へ→背後で門が閉じる→黒へ
+  ============================================================== */
+  function playI6(){
+    var seq=icSeq;
+    /* ★I5と同じカメラなので月も同じ。ここで呼ばないと、確認用に I6 だけを再生したときに
+       月が出ない（通し再生では I5 の設定が残るので気づけない）。何度呼んでも同じ結果になる */
+    icMoonSet(IC_MOON.i5);
+    var hero=$('icHero'), mana=$('icMana');
+    /* I5で門の前に立っている状態から始まる（2人は後ろ姿・width14%前後） */
+    if(!hero.classList.contains('show')){
+      hero.style.backgroundImage="url('"+icHeroSheet()+"')";
+      hero.style.backgroundSize='300% 200%';
+      hero.style.backgroundPosition='50% 0%';
+      hero.style.zIndex='31';
+      icPutHero(34,81.5,14,0); icPutMana(50,78.4,21,0);   /* I5と同じ＝足もと88%（階段の中ほど） */
+      hero.classList.add('show'); mana.classList.add('show');
+      mana.src=MANA_BACK_A;
+    }
+    icTalkShow('いくわよ。<br>ここまで こられた きみなら、だいじょうぶ','top','ic03',4000,function(){
+      if(seq!==icSeq) return;
+      mana.src=MANA_BACK_A;
+      hero.style.transition='left 1.5s linear,top 1.5s linear,width 1.5s linear,opacity .5s ease';
+      mana.style.transition='left 1.5s linear,top 1.5s linear,width 1.5s linear,opacity .5s ease';
+      icWalkTick(270);   /* ★足音（0.54秒ごと）と2コマ:1歩でそろえる。180msでは足が震えて見えた */
+      icStep(.2); icStep(.74); icStep(1.28); icStep(1.82);
+      /* 階段を上って門の敷居（82%）まで歩く。足もと＝77.4+10×0.465＝82.0%
+         マナは主人公より少し手前なので、少し大きい（10.5%） */
+      icPutHero(39,77.4,10,1.5); icPutMana(50,75.2,15,1.5);   /* マナも足もと82.0%＝隣に並ぶ */
+
+      setTimeout(function(){
+        if(seq!==icSeq) return;
+        $('icBgHall').classList.add('show');
+        icMoonHide();                    /* 城の中に入った＝空も月も見えない */
+        setTimeout(function(){ if(seq!==icSeq) return; $('icBgGateOpen').classList.remove('show'); },550);
+        /* ★門の絵と回廊の絵では床の高さがちがう（門の敷居82% ／ 回廊の床は奥85%〜手前100%）。
+           ★2026-08-09・準也さんの指摘＝「最後の廊下に映るシーンで、主人公とマナ先生が
+             前のシーンの位置を引きずっているので、切り替え時に宙に浮いている状態になっています」。
+             回廊の絵が出はじめてから置き直すまでの間、門の敷居（82%）に立ったままなので、
+             回廊の床（85%〜）より上＝宙に浮いて見えていた。
+           ★直し方＝「置き直すタイミングを探す」のではなく、**2人をいったん消してから出し直す**。
+             0.3秒で消え、回廊の絵が出そろってから新しい位置で0.3秒かけて現れる。
+             浮いた姿も、飛ぶ瞬間も、どちらも見えなくなる（I4→I5で使ったのと同じ手） */
+        hero.style.transition='opacity .3s ease'; mana.style.transition='opacity .3s ease';
+        hero.classList.remove('show'); mana.classList.remove('show');
+        setTimeout(function(){
+          if(seq!==icSeq) return;
+          hero.style.transition='none'; mana.style.transition='none';
+          /* ★回廊は奥へ行くほど細い。2人は**中央（消失点 x50%）へ寄りながら**小さくなる。
+             前は主人公を左へ・マナを右へ動かしていたので、奥へ行くほど2人が離れて見えた
+             （準也さんの指摘＝「二人が離れて歩いてっているというシーンになってます」）。
+             ★マナは大人なので主人公の1.5倍。2人の間隔も遠近で縮める（15%→12.3%）。 */
+          icPutHero(37.5,82.9,11,0);     /* 足もと 88.0%・中心43.0% */
+          icPutMana(49.8,80.5,16.5,0);   /* 足もと 88.0%＝主人公と同じ高さ（隣に並ぶ）・中心58.0% */
+          void hero.offsetWidth;
+          /* ★2026-08-09・準也さんの指摘＝「扉が閉まる前に二人の歩きが止まってしまうので、
+             歩き続けた中で扉が閉まるようにしてもらっていいですか？」
+             前は 1.4秒で移動しきって、そのあと扉が閉じるまでの1.5秒は止まっていた。
+             移動を **3.0秒** に延ばし、扉が閉まりきる（＝歩きを止める）まで動き続けるようにした。 */
+          hero.style.transition='left 3s linear,top 3s linear,width 3s linear,opacity .35s ease';
+          mana.style.transition='left 3s linear,top 3s linear,width 3s linear,opacity .35s ease';
+          hero.classList.add('show'); mana.classList.add('show');
+          /* ★奥へ。中心が 43.0→43.9 と 58.0→56.1 で、2人が中央に寄っていく */
+          icPutHero(39.4,81.8,9,3.0);    /* 足もと 86.0%・中心43.9% */
+          icPutMana(49.3,79.7,13.5,3.0); /* 足もと 85.8%＝主人公と同じ高さ（隣に並ぶ） */
+        },330);
+      },1500);
+
+      setTimeout(function(){
+        if(seq!==icSeq) return;
+        /* ★ここで icStopWalk() を呼んではいけない（2026-08-09・準也さんの指摘）。
+           「扉が閉まる前に二人の歩きが止まってしまうので、歩き続けた中で扉が閉まるように」。
+           歩きを止めるのは、扉が閉まりきってから（下の5200ms）。 */
+        /* ★2人は消さない。門が閉じる扉(z-index 64)がキャラ(30)より前に来るので、
+           扉に隠れていく＝「背後で門が閉まった」に見える。先に消すと置き去りに見える */
+        /* ★背後で門が閉じるところを「絵」でも見せる。音だけでは子どもに伝わらないし、
+           I5で開くところを見せたのに閉じるところが無いのはもったいない（批判1回目の指摘） */
+        var gs=$('icGateShut'); gs.classList.remove('run'); void gs.offsetWidth; gs.classList.add('run');
+        /* ★鉄の扉を閉める音（準也さん提供・1.22秒）は**0.3秒でいちばん大きくなる**。
+           扉が閉まりきるのは1.5秒後なので、1.2秒おいてから鳴らすと
+           「ドン」が閉まりきる瞬間にぴったり合う。合成音の icGateRumble は置き換えた。 */
+        icSfx('ic-gate-close',.9,1200);
+        icFadeOutLoop('drone',1.6); icFadeOutLoop('wind',1.0);
+      },3600);   /* 回廊の絵をもう少し見せる（2.2秒。2026-08-08に実物を見て2900→3600） */
+
+      /* ★扉が閉まりきる（3600+1500＝5100ms）まで歩き続け、そこで止める */
+      setTimeout(function(){ if(seq!==icSeq) return; icStopWalk(); },5200);
+
+      /* 門が閉まりきってから暗転 → 完全な静寂をおいて終わる（設計書§5） */
+      setTimeout(function(){ if(seq!==icSeq) return; $('icFade').classList.add('show'); },5300);
+      setTimeout(function(){ if(seq!==icSeq) return; finish(); },6500);
+    });
+  }
+
+  /* ---------------- 発火・とばす・終了 ---------------- */
+  /* オーバーレイを出す／しまう。display の切り替えを1か所にまとめる
+     （出すときは display→次のフレームで opacity、しまうときは フェード後に display:none） */
+  function icShowOverlay(){
+    var ov=$('iceOverlay'); if(!ov) return;
+    ov.style.display='block';
+    void ov.offsetHeight;
+    ov.classList.add('show');
+  }
+  function icHideOverlay(){
+    var ov=$('iceOverlay'); if(!ov) return;
+    ov.classList.remove('show');
+    var seq=icSeq;
+    setTimeout(function(){
+      if(seq!==icSeq) return;          /* 次のシーンが始まっていたら消さない */
+      ov.style.display='none';
+    },820);
+  }
+  function start(onDone){
+    /* ★すでに動いているときも onDone は必ず消化する。捨てると、本体側の
+       「シーンが終わったら ちずを開く」が呼ばれず、プレイヤーがフィールドに取り残される
+       （closeFree() はすでにポップを閉じて return しているため、他に開く道がない） */
+    if(icActive){ if(typeof onDone==='function') onDone(); return; }
+    icActive=true;
+    icOnDone=(typeof onDone==='function')?onDone:null;
+    icSeq++;
+    icShowOverlay();
+    icSnowBuild(); icStarsBuild();
+    icBindImages();
+    icSoundWatchStart();
+    /* ★★フィールドから直接シーンに入ると、ゲームの画面と音楽が残ったまま始まってしまう
+       （2026-08-09・準也さんの指摘＝「イベントのシーンが台無しになっています。
+         ここはもう流氷の海はクリアして、画面を一回暗くしてから、イベントシーンに行くのが自然」）。
+       → オーバーレイが黒く覆いきる（0.8秒）のを待ち、さらに真っ暗な間を0.5秒おいてから始める。
+       音楽は本体側（closeFree）で bgmStop() して断つ。
+       ★確認用の _jump は即座に始めたいので、この待ちは start() だけに入れる。 */
+    var seq=icSeq;
+    setTimeout(function(){ if(seq!==icSeq) return; playIF(); }, IC_BLACK_MS);
+  }
+  function skip(){ if(icActive) finish(); }
+  function finish(){
+    icSeq++;
+    icActive=false;
+    icSoundWatchStop();
+    icBusKill();
+    icSfxStop();      /* 録音した効果音（<audio>）も止める＝とばした直後に扉の音が残らない */
+    icStopWalk();
+    icHideOverlay();
+    icResetLayers();
+    var cb=icOnDone; icOnDone=null;
+    if(cb) cb();
+  }
+
+  /* 撮影・確認用：好きなカットから始める（本体でも残してよい＝startFromZoneと同じ考え方） */
+  function _jump(cut){
+    /* ★生きているシーンに割り込むと風の音が二重に鳴る（船シーンで起きた事故）。先に全部止める。
+       icOnDone も捨てる＝本編の途中で飛ぶと、飛び先の終わりで元のonDoneが呼ばれてしまうため
+       （批判2回目の指摘） */
+    icBusKill(); icSfxStop(); icStopWalk(); icTalkHide(); icOnDone=null;
+    icSeq++;
+    icActive=true;
+    icShowOverlay();
+    icSnowBuild(); icStarsBuild();
+    icResetLayers(); icBindImages();
+    icSoundWatchStart();
+    $('icSnow').classList.add('show'); $('icStars').classList.add('show');
+    if(cut==='IF'){ playIF(); return; }
+    if(cut==='I0'){ playI0(); return; }
+    if(cut==='I1'){ playI1(); return; }
+    if(cut==='I2'){ $('icPanBox').classList.add('show'); playI2(icPanToBottom()); return; }
+    if(cut==='I3'){ playI3(); return; }
+    if(cut==='I4'){ playI4(); return; }
+    if(cut==='I5'){ $('icBgGate').classList.add('show'); playI5(); return; }
+    if(cut==='I6'){ $('icBgGateOpen').classList.add('show'); playI6(); return; }
+  }
+
+  /* ★とばすボタンは HTML 側に onclick="IceScene.skip()" を直書きしてある（船・新幹線と同じ）。
+     ここで getElementById して結線すると、本体に貼るときHTMLとJSの前後関係しだいで
+     null になり、if(_sk) が黙って飲みこんで「とばすが効かない」状態になる。
+     本体のJSは1つの <script> にまとまっていて、既存シーンのHTMLはその前にあるため
+     順番を間違えやすい。直書きなら前後関係に左右されない。 */
+
+  return { start:start, skip:skip, isActive:function(){ return icActive; }, _jump:_jump };})();
+/* IC1:JS:END */
+
 </script>
 </body>
 </html>
