@@ -35,65 +35,18 @@
        ・フィールド … #app ごと広げて マップのビューポートを大きくする。1マスの大きさは
          computeTileSize() 側で 480px相当に頭打ちにしてあるので、マスが大きくなるのではなく
          「見えるマスが増える」（スマホと同じ大きさのキャラのまま、視野だけ広がる）
-       ・バトル … UIは480pxのまま中央に置く（札・メッセージ・選択肢は position:absolute の
-         実測値が480px幅前提のため #app は広げない）。背景の絵だけを 画面いっぱいの
-         固定レイヤー #battleWideBg に敷き、#app を透明にして 1枚の絵に見せる */
-  #battleWideBg{display:none}
+       ・バトル … ★2026-08-09に取りやめた（準也さん裁定B）。絵とキャラが別の物差しで
+         置かれるため、画面のたて横比が変わると必ずズレるのが理由。バトルは常に
+         480pxの枠の中だけで完結させる。詳しくはJS側（renderBattleBg付近）のコメント */
   @media (min-width:481px){
     body.wide-field #app{max-width:min(100vw,1100px)}
     body.wide-field #screen-field{max-width:none}
-    /* ★ここは触るときに必ず読む（2026-08-02・準也さんの差し戻し）★
-       やってはいけないこと＝background-size:cover や position:center にすること。
-       それをやると 絵そのものが 横にずれ、敵が立つ位置に 橋がなくなって 宙に浮く。
-       敵の立ち位置は CSS の規格値で固定されており、絵のほうは 弾R-1/R-3 で
-       「右はし基準・auto 145%・たて32%」に そろえてある。この3つは 絶対に変えない。
-       正しいやり方＝480pxのはばの中は 今までと1pxも同じ絵・同じ位置のまま、
-       その「外がわ」に 絵の続きを 見せるだけ。
-         ・下の層(::before) … 絵をぼかして 画面いっぱいに敷く（右がわの すき間うめ。
-           絵の右はしは もともと画面の右はしに来ているので、右に足せる絵が無いため）
-         ・上の層(::after)  … 本物の絵。大きさ auto 145%・たて32% は そのまま。
-           よこ位置だけ「絵の右はしが #app の右はしに ぴったり重なる」px を計算して置く。
-           #app の右はし＝(100vw+480px)/2 ／ 絵のはば＝100vh×1.45×(1024/1536)＝96.667vh */
-    /* ★★2026-08-09・準也さんの実物指摘＝
-         「タブレットまで表示されるように横幅をちょっと持たせたんですけど、持たせすぎちゃって
-           パソコンでやるときにかなり変な画角になってます。……こんなに広いタブレットはないと思います。
-           ちょっとスマートフォンよりやや広いぐらいに横幅を抑えてもらった方がいい」
-       絵の大きさは「画面の高さの145%」で決まるので、画面が横長になるほど
-       路面ばかりが大きく写り、UIだけが小さく中央に浮いた妙な画になっていた。
-       → 絵を敷く幅に上限（IC=640px＝スマホの480pxより やや広い）を設け、中央に置く。
-         それより外は何も敷かない（＝画面の地の色）。
-       ★フィールドは準也さんが「いいと思う」と言われたので、そのまま（触らない）。 */
-    body.wide-battle #battleWideBg{display:block;position:fixed;inset:0;z-index:0;
-      background-repeat:no-repeat;background-size:0 0}
-    /* ぼかし層＝よこ向きなど「絵が画面のはばに とどかない」ときの すき間うめ。
-       たて向きのタブレットでは 絵が画面ぜんたいを おおうので これは見えない。
-       案②では すき間は 絵の右どなり（＝#appの右はしより外）に出るので、
-       位置を right にして 絵の右がわの色でうめると 自然につながる */
-    body.wide-battle #battleWideBg::before{content:'';position:absolute;inset:0;
-      background-image:inherit;background-size:cover;background-position:right center;
-      filter:blur(34px);transform:scale(1.15)}
-    /* ★よこ位置の計算（2026-08-09に上限を入れたので作り直した）
-       ねらいは前と同じ＝「絵の右はしが #app の右はしに ぴったり重なる」。
-       いまは #battleWideBg 自体が 640px（画面が狭ければ100vw）で中央にあるので、
-       その中での座標で考える：
-         #battleWideBg の左はし … (画面はば − 640)/2
-         #app の右はし          … (画面はば + 480)/2
-         → 差 ＝ (480 + 640)/2 ＝ 560px（画面はばに関係なく一定になる）
-       絵のはば ＝ 100vh×1.45×(1024/1536) ＝ 96.667vh なので、絵の左はしは 560px − 96.667vh。
-       ※画面が640pxより狭いときは #battleWideBg＝100vw なので、
-         差は (480 + 100vw)/2 ＝ 前と同じ式になる。min() を使えば両方に対応できる。 */
-    body.wide-battle #battleWideBg::after{content:'';position:absolute;top:0;bottom:0;
-      width:min(100vw,640px);left:50%;transform:translateX(-50%);
-      background-image:inherit;background-repeat:no-repeat;background-size:auto 145%;
-      background-position:calc((min(100vw,640px) + 480px)/2 - 96.667vh) 32%}
-    /* box-shadow も消す。透明にしただけだと #app のふちの影が絵の上に
-       うすい縦線として残る（タブレットで実際に見えた） */
-    /* 準也さん裁定（2026-08-02）＝案②「480pxの枠は 画面の中央のまま」。
-       右はしへ寄せる案③は「右に寄りすぎておかしい」ため不採用。
-       ★大前提＝スマホがメイン。タブレットは「あいた場所に絵が見えるだけ」の
-       おまけであって、タブレットに合わせてレイアウトを動かさない。 */
-    body.wide-battle #app{background:transparent;box-shadow:none;z-index:1}
-    body.wide-battle #screen-battle.tate{background-image:none!important}
+    /* ★★バトル側のタブレット拡張（絵を画面いっぱいに広げる）は 2026-08-09 に取りやめた。
+       準也さんの指摘＝「そもそも絵に対して敵かんじモンや主人公の位置が変わってしまうことがネック」。
+       絵は「画面の高さの145%」で、キャラは「480pxの枠の中」＝別の物差しなので、
+       画面のたて横比が変わると必ずズレる（実測で主人公がよこ7.7%・たて8.6%動いていた）。
+       バトルは常に480pxの枠の中だけで完結させる。詳しい経緯はJS側のコメント（renderBattleBg付近）。
+       ※フィールド側（body.wide-field）は準也さんが「いいと思う」と言われたので残している。 */
   }
 
   /* ===== 画面ベース ===== */
@@ -2500,6 +2453,9 @@
 
 
 
+
+
+
 /* IC1:CSS:BEGIN */
 /* ===== 弾IC-1：氷の城シーン「りゅうひょうの うみの はて」＝ゾーン83クリア後に1回だけ ===== */
 /* ===== 氷の城シーン（本体へはこのCSSごと移す。接頭辞は ic ） ===== */
@@ -2574,7 +2530,8 @@
   /* ★2026-08-09：上の絵を透過版にしたら、空になった部分にも縦すじが乗って
      「夜空にカーテンがかかった」ように見えたので .8 → .5 に落とした。
      氷のかべ（明るい）にはまだ効き、夜空（暗い）にはほとんど効かない */
-  #icPanTexture{position:absolute;inset:0;pointer-events:none;mix-blend-mode:overlay;opacity:.5;
+  /* ★.8→.5→.25 と下げた。透過版にしたぶん夜空の面積が広く、うっすらでも「カーテン」に見えるため */
+  #icPanTexture{position:absolute;inset:0;pointer-events:none;mix-blend-mode:overlay;opacity:.25;
     background-image:
       repeating-linear-gradient(91deg,rgba(255,255,255,.10) 0 1px,rgba(255,255,255,0) 1px 9px),
       repeating-linear-gradient(89.5deg,rgba(190,230,255,.08) 0 2px,rgba(190,230,255,0) 2px 27px),
@@ -2635,6 +2592,15 @@
   .ic-star{position:absolute;width:2px;height:2px;border-radius:50%;background:#fff;animation:icTwinkle ease-in-out infinite}
   @keyframes icTwinkle{0%,100%{opacity:.25}50%{opacity:1}}
 
+  /* ★足もとの影。これが無いと、キャラが地面に「乗っている」ではなく「貼ってある」ように見える。
+     とくに回廊は鏡のような床で、柱も奥の光も映りこんでいるのに2人だけ映らないのが目立っていた。
+     ＝キャラと同じ動き（left/top/width）で動かすので、icPutHero/icPutMana から一緒に置く。
+     z-indexはキャラ(29〜31)より下・背景(10)より上。 */
+  .ic-shadow{position:absolute;z-index:28;opacity:0;pointer-events:none;border-radius:50%;
+    background:radial-gradient(ellipse at 50% 50%,rgba(2,8,20,.42) 0%,rgba(2,8,20,.22) 52%,rgba(2,8,20,0) 78%);
+    transition:left .9s linear,top .9s linear,width .9s linear,height .9s linear,opacity .35s ease}
+  .ic-shadow.show{opacity:1}
+
   /* キャラクター */
   #icHero{position:absolute;background-repeat:no-repeat;background-size:300% 200%;background-position:50% 0%;
     aspect-ratio:1/1;z-index:30;opacity:0;transition:left .9s linear,top .9s linear,width .9s linear,opacity .35s ease}
@@ -2656,6 +2622,11 @@
   .ic-talk-face{width:74px;height:74px;flex:none;border-radius:10px;background-size:cover;background-position:center top;box-shadow:0 0 0 2px rgba(125,211,252,.5)}
   .ic-talk-msg{font-size:15px;line-height:1.55;font-weight:700;color:#eaf6ff;text-shadow:0 1px 2px rgba(0,0,0,.6)}
 
+  /* ★回廊は「門の中＝暗い」はずなのに、絵が大聖堂のように明るく、門の内側の5.3倍の明るさだった。
+     直前に見せた「黒い口」とつながらず、中に入ったのに明るくなる＝畏れが解ける。
+     絵を描き直さずに暗くする（奥の光の点は残る）。 */
+  #icBgHall{filter:brightness(.58) saturate(.92)}
+
   /* I4＝見上げている主人公の背後で、城が大きくぼやけて写る（設計書§3のI4）。
      ★これが無いと I1（麓）とまったく同じ絵の使い回しになり「戻ってきた」感じが出ない
      （批判1回目の指摘）。I5でこれを外すと、カメラが引いていく動きになる。 */
@@ -2664,11 +2635,16 @@
 
   /* 背後で門が閉じる＝左右から氷の扉が閉じてくる（I5で開くのに閉じるのを見せていなかった） */
   #icGateShut{position:absolute;inset:0;z-index:64;pointer-events:none}
+  /* ★閉じてくる扉。前は「内がわの先っぽが画面でいちばん明るい水色」だったので、
+     暗くなって終わるはずの場面で画面が明るくなり、劇場の幕が開いたように見えていた。
+     → 明るいのは外がわのふち（＝氷のエッジの反射）だけにして、中へ行くほど暗くする。
+     船シーンの「白いワイプ」と対にする＝この弾は黒に落ちて終わる（設計書§2の9）。 */
   #icGateShut i{position:absolute;top:0;height:100%;width:52%;opacity:0;
-    background:linear-gradient(90deg,#0b1a34 0%,#17427a 55%,#8fd4ff 100%);
+    background:linear-gradient(90deg,#bfe6ff 0%,#5b93c9 3%,#1b3f6e 26%,#0a1730 68%,#04091a 100%);
     box-shadow:0 0 34px rgba(0,0,0,.65)}
   #icGateShut i:first-child{left:-52%}
-  #icGateShut i:last-child{right:-52%;background:linear-gradient(270deg,#0b1a34 0%,#17427a 55%,#8fd4ff 100%)}
+  #icGateShut i:last-child{right:-52%;
+    background:linear-gradient(270deg,#bfe6ff 0%,#5b93c9 3%,#1b3f6e 26%,#0a1730 68%,#04091a 100%)}
   #icGateShut.run i{opacity:1;animation:icShutL 1.5s ease-in 1 forwards}
   #icGateShut.run i:last-child{animation-name:icShutR}
   @keyframes icShutL{from{transform:translateX(0)}to{transform:translateX(100%)}}
@@ -2700,7 +2676,6 @@
 <body>
 <!-- 弾TB-1：タブレットでバトルの絵を画面いっぱいに敷くための層。#app の外（下）に置く。
      スマホ（480px以下）では CSS で display:none のまま＝存在しないのと同じ -->
-<div id="battleWideBg"></div>
 <div id="app">
 
   <!-- ===== タイトル ===== -->
@@ -3356,6 +3331,9 @@
 
 
 
+
+
+
 <!-- IC1:HTML:BEGIN -->
 <!-- 弾IC-1：氷の城シーン（弾IC-1）＝ゾーン83クリア後に1回だけ流す -->
 <!-- ============ ここから本体へ移すHTML ============ -->
@@ -3386,6 +3364,8 @@
       <div id="icFloes"><img id="icFloesImg" alt=""></div>
       <div id="icGleam"></div>
       <div id="icChill"></div>
+      <div class="ic-shadow" id="icShadowHero"></div>
+      <div class="ic-shadow" id="icShadowMana"></div>
       <div id="icHero"></div>
       <img id="icMana" alt="">
       <div id="icSnow"></div>
@@ -9701,7 +9681,7 @@ function showScreen(id){
      バトル＝背景の絵だけ画面いっぱいに敷く。スマホ幅ではCSS側が全部止まるので何も起きない。
      バトルは縦長背景(tate)のときだけ＝それ以外の戦場で黒い帯が出るのを防ぐ（applySceneBg側で判定して付け直す） */
   document.body.classList.toggle('wide-field', id==='screen-field');
-  if(id!=='screen-battle') document.body.classList.remove('wide-battle');
+  /* （弾TB-1のバトル側は2026-08-09に取りやめ。wide-battle は付けなくなったので後始末も不要） */
   window.scrollTo(0,0);
   if(id==='screen-title') { updateTitle(); bgmPlay('title'); }                       // 第9弾：タイトル系=title
   if(id==='screen-stages') { renderStages(); bgmPlay('title'); }                     // タイトル系=title
@@ -10881,13 +10861,19 @@ function applySceneBg(sn,k){
     scr.classList.toggle('tate',tate);
     scr.style.backgroundImage=tate?"url('images/battle-tate/stage"+sn+".webp')":'';
   }
-  /* 弾TB-1：タブレットのときだけ、同じ絵を画面いっぱいの層(#battleWideBg)にも敷く。
-     縦長背景がある戦場だけ。スマホ幅ではCSSがdisplay:noneで止めるので、印を付けても何も起きない */
-  const wbg=$('battleWideBg');
-  if(wbg){
-    wbg.style.backgroundImage=tate?"url('images/battle-tate/stage"+sn+".webp')":'';
-    document.body.classList.toggle('wide-battle',tate);
-  }
+  /* ★★弾TB-1のバトル側（タブレットで絵を画面いっぱいに広げる）は 2026-08-09 に取りやめた。
+     準也さんの指摘＝「タブレット問題は**そもそも絵に対して敵かんじモンや主人公の位置が
+     変わってしまうことがネック**です」→ 裁定「B（タブレット拡張をやめる）」。
+     理由（実測で裏づけた）＝
+       ・絵    … 大きさが「画面の高さの145%」＝画面の高さで決まる
+       ・キャラ… 480pxの枠の中に置かれる＝枠の幅と高さで決まる
+       この2つは別の物差しなので、画面のたて横比が変わると必ずズレる。
+       絵の中でのキャラの位置を測ると、主人公はよこ7.7%・たて8.6%も動いていた
+       （縦長のスマホ同士＝780と844でも2%ずれる）。
+       幅を640pxに抑えても、この構造は直らない。
+     ＝バトルは常に480pxの枠の中だけで完結させる（敵の立ち位置は弾R-1/R-3で
+       その前提に合わせ込んであるため、そこを崩さないのがいちばん安全）。
+     ※フィールド側（wide-field）は準也さんが「いいと思う」と言われたので、そのまま残す。 */
   if(tate){
     sc.className='scene battle tatebg';
     sc.style.backgroundImage='';
@@ -21317,6 +21303,9 @@ return { start:startPlaneSceneEvent, skip:planeSceneSkip, isActive:()=>planeScen
 
 
 
+
+
+
 /* IC1:JS:BEGIN */
 /* ============================================================
    弾IC-1：氷の城シーン「りゅうひょうの うみの はて」
@@ -21709,15 +21698,42 @@ var IceScene = (function(){
   /* ⚠️ transitionDuration を4つまとめて指定するので、呼び出す前に style.transition で
      opacity の秒数を書いても、ここで .35s / .4s に上書きされる（批判2回目の指摘）。
      opacity の速さを変えたいときは、この関数の中の数字を変えること。 */
+  /* 足もとの影を、キャラと同じ動きで置く。
+     footK＝絵の中でキャラの足が来る割合（主人公0.465／マナ0.455＝設計書§7の式と同じ）。
+     影の幅はキャラの55%、たては幅の30%（画面のたて横比で換算）＝つぶれた楕円。 */
+  function icPutShadow(id,x,y,w,footK,dur){
+    var s=$(id); if(!s) return;
+    var r=icStageRatio();
+    var foot=y + w*footK;          /* 足もとの高さ（画面の高さの%） */
+    var sw=w*0.55;                 /* 影の幅（画面の幅の%） */
+    var sh=sw*r*0.30;              /* 影のたて（画面の高さの%） */
+    s.style.transitionDuration=dur+'s,'+dur+'s,'+dur+'s,'+dur+'s,.35s';
+    s.style.left=(x+(w-sw)/2).toFixed(2)+'%';
+    s.style.top=(foot-sh/2).toFixed(2)+'%';
+    s.style.width=sw.toFixed(2)+'%';
+    s.style.height=sh.toFixed(2)+'%';
+  }
   function icPutHero(x,y,w,dur){
     var h=$('icHero');
     h.style.transitionDuration=dur+'s,'+dur+'s,'+dur+'s,.35s';
     h.style.left=x+'%'; h.style.top=y+'%'; h.style.width=w+'%';
+    icPutShadow('icShadowHero',x,y,w,0.465,dur);
   }
   function icPutMana(x,y,w,dur){
     var m=$('icMana');
     m.style.transitionDuration=dur+'s,'+dur+'s,'+dur+'s,.4s';
     m.style.left=x+'%'; m.style.top=y+'%'; m.style.width=w+'%';
+    icPutShadow('icShadowMana',x,y,w,0.455,dur);
+  }
+  /* ★2人と影の出し入れは、必ずこの1か所を通す。
+     別々に書くと、影だけ置き去りになる箇所が必ず出る（9か所あった）。 */
+  function icCharsShow(on){
+    var h=$('icHero'), m=$('icMana');
+    if(h) h.classList.toggle('show',!!on);
+    if(m) m.classList.toggle('show',!!on);
+    ['icShadowHero','icShadowMana'].forEach(function(id){
+      var s=$(id); if(s) s.classList.toggle('show',!!on);
+    });
   }
 
   /* ---------------- 会話カード ---------------- */
@@ -21764,7 +21780,7 @@ var IceScene = (function(){
 
   /* ---------------- レイヤーの初期化 ---------------- */
   function icResetLayers(){
-    ['icBgFar','icBgApproach','icBgHero','icBgGate','icBgGateOpen','icBgHall','icPanBox','icFloes','icSnow','icStars','icIceGlow','icSky','icMoon']
+    ['icBgFar','icBgApproach','icBgHero','icBgGate','icBgGateOpen','icBgHall','icPanBox','icFloes','icSnow','icStars','icIceGlow','icSky','icMoon','icShadowHero','icShadowMana']
       .forEach(function(id){ var el=$(id); if(el) el.classList.remove('show','thick','drift','ic-zoomout','horizon'); });
     var pan=$('icPanBox');
     if(pan){ pan.style.transition='none'; pan.style.transform='translateY(0)'; }
@@ -21909,7 +21925,7 @@ var IceScene = (function(){
          主人公とマナは、絵の中で占める割合がほぼ同じ（主85%／マナ86%）なので、
          **width をそのまま身長として扱ってよい**＝マナの幅 ＝ 主人公の幅 × 1.5 ×（遠近の補正）。 */
     icPutHero(22,79.8,22,0); icPutMana(44,75.0,33,0);
-    hero.classList.add('show'); mana.classList.add('show');
+    icCharsShow(true);
     /* ★歩きの切り替えは270ms（前は170ms＝毎秒5.9回）。歩行シートの正面・後ろ姿は
        上下段が同じ絵で、左右反転しかできないので、速すぎると「震えている」ように見える。
        足音（0.54秒ごと）と2コマ:1歩でそろえた */
@@ -21948,7 +21964,7 @@ var IceScene = (function(){
        63%（会話カードは上に出す）にした（2026-08-08に実物で確認） */
     /* ★マナ（はかせ＝大人）は主人公の1.5倍の背丈。足もとの高さは主人公とほぼ同じ */
     icPutHero(32,77,12,0); icPutMana(47,74.8,18,0);
-    hero.classList.add('show'); mana.classList.add('show');
+    icCharsShow(true);
     /* ★正面向き（hakase.webp）は「カメラ目線・笑顔・手を挙げた挨拶」の絵。
        2人とも城を見上げている場面なので後ろ姿にする。顔は会話カードのアイコンで見えている。
        （前は正面向きで、「つめたい きはいが するの」と言いながら手を振っていた） */
@@ -21980,7 +21996,7 @@ var IceScene = (function(){
     icPutHero(32,102.7,12,2.2); icPutMana(47,100.4,18,2.2);
     setTimeout(function(){
       if(seq!==icSeq) return;
-      $('icHero').classList.remove('show'); $('icMana').classList.remove('show');
+      icCharsShow(false);
     },2000);
 
     /* ★transitionを切った直後に同じフレームで動かすと、まとめて計算されてアニメが効かない。
@@ -22101,7 +22117,23 @@ var IceScene = (function(){
     icPutMana(42,65.4,51,0);
     /* ★ここも後ろ姿。「だれかが なかで まってる」と言う場面で、正面向き（笑顔・手を挙げる）は真逆 */
     mana.src=MANA_BACK_A;
-    hero.classList.add('show'); mana.classList.add('show');
+    icCharsShow(true);
+    /* ★このカットは「見上げている後ろ姿」なのに、頭が水平のままだった（設計書§3は
+       「首がわずかに上を向く」と書いてある）。7秒かけて見上げた直後なので、ここで動かないと
+       「あのパンは誰の視線だったのか」が消える。
+       足もとを軸にわずかに反らせる＝見上げるしぐさ。歩行の左右反転（icWalkFrame）とは
+       ぶつからない（このカットは icStopWalk 済みで歩いていない）。 */
+    [hero,mana].forEach(function(el,i){
+      el.style.transformOrigin='center bottom';
+      el.style.transform='rotate(0deg)';
+    });
+    setTimeout(function(){
+      if(seq!==icSeq) return;
+      hero.style.transition=hero.style.transition+',transform 1.6s ease';
+      mana.style.transition=mana.style.transition+',transform 1.6s ease';
+      hero.style.transform='rotate(-2.4deg)';
+      mana.style.transform='rotate(-1.6deg)';   /* 大人のほうが動きは小さい */
+    },260);
     icHeart(.1,3,.075);
 
     setTimeout(function(){
@@ -22139,15 +22171,17 @@ var IceScene = (function(){
        I4のアップ（幅40%）から I5（幅14%）へ 1.2秒かけて動かすと、
        背景は1.18→1.00（×0.85）なのに人だけ×0.35＝人だけがしぼんで見えた（批判3回目の×7）。
        いったん0.35秒で消して、新しい位置で出し直す＝カットが変わったと読める。 */
-    hero.classList.remove('show'); mana.classList.remove('show');
+    icCharsShow(false);
     setTimeout(function(){
       if(seq!==icSeq) return;
       hero.style.transition='none'; mana.style.transition='none';
+      /* ★I4で足した「見上げるしぐさ」の傾きを、ここで元に戻す（引きずると門の前で傾いたまま立つ） */
+      hero.style.transform='none'; mana.style.transform='none';
       icPutHero(34,81.5,14,0); icPutMana(50,78.4,21,0);
       void hero.offsetWidth;
       hero.style.transition='left 1.2s ease,top 1.2s ease,width 1.2s ease,opacity .4s ease';
       mana.style.transition='left 1.2s ease,top 1.2s ease,width 1.2s ease,opacity .4s ease';
-      hero.classList.add('show'); mana.classList.add('show');
+      icCharsShow(true);
     },380);
     $('icGleam').classList.remove('run');
     void $('icGleam').offsetWidth;              /* アニメを確実にやり直す */
@@ -22192,7 +22226,7 @@ var IceScene = (function(){
       hero.style.backgroundPosition='50% 0%';
       hero.style.zIndex='31';
       icPutHero(34,81.5,14,0); icPutMana(50,78.4,21,0);   /* I5と同じ＝足もと88%（階段の中ほど） */
-      hero.classList.add('show'); mana.classList.add('show');
+      icCharsShow(true);
       mana.src=MANA_BACK_A;
     }
     icTalkShow('いくわよ。<br>ここまで こられた きみなら、だいじょうぶ','top','ic03',4000,function(){
@@ -22220,7 +22254,7 @@ var IceScene = (function(){
              0.3秒で消え、回廊の絵が出そろってから新しい位置で0.3秒かけて現れる。
              浮いた姿も、飛ぶ瞬間も、どちらも見えなくなる（I4→I5で使ったのと同じ手） */
         hero.style.transition='opacity .3s ease'; mana.style.transition='opacity .3s ease';
-        hero.classList.remove('show'); mana.classList.remove('show');
+        icCharsShow(false);
         setTimeout(function(){
           if(seq!==icSeq) return;
           hero.style.transition='none'; mana.style.transition='none';
@@ -22237,7 +22271,7 @@ var IceScene = (function(){
              移動を **3.0秒** に延ばし、扉が閉まりきる（＝歩きを止める）まで動き続けるようにした。 */
           hero.style.transition='left 3s linear,top 3s linear,width 3s linear,opacity .35s ease';
           mana.style.transition='left 3s linear,top 3s linear,width 3s linear,opacity .35s ease';
-          hero.classList.add('show'); mana.classList.add('show');
+          icCharsShow(true);
           /* ★奥へ。中心が 43.0→43.9 と 58.0→56.1 で、2人が中央に寄っていく */
           icPutHero(39.4,81.8,9,3.0);    /* 足もと 86.0%・中心43.9% */
           icPutMana(49.3,79.7,13.5,3.0); /* 足もと 85.8%＝主人公と同じ高さ（隣に並ぶ） */
