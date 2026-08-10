@@ -1449,7 +1449,13 @@
   /* 手直し はかせ顔クロノトリガー化：顔はウィンドウ幅基準のclamp()で決める固定サイズ（align-self:stretch等でウィンドウの実高さに追従させない＝
      「狭い画面→文字が折り返して縦長→顔が伸びて幅を圧迫→さらに折り返す」という暴走ループになるため引き続き回避する）。
      画像は256×256の正方形なので幅=高さ。セリフ1〜3行なら顔の高さ≒ウィンドウの高さになり、クロノトリガー風の左肖像に見える */
-  .hakase-talk-face{flex:0 0 auto;width:clamp(84px,24%,124px);height:clamp(84px,24%,124px);border-radius:14px;
+  /* ★★不具合の修正（2026-08-10・弾YJ-1の作業中に発見）＝はかせの顔が出ていなかった。
+     高さに書いていた `clamp(84px,24%,124px)` の **24% が計算できない**（親 .hakase-talk の高さが
+     auto なので、パーセントの基準が決まらない）。すると height の指定ごと無効になり、
+     中身のない箱が **79×4px につぶれて** 顔が見えなくなる（実機で実測）。
+     → 高さは書かず `aspect-ratio:1` で正方形にする。画像は256×256の正方形なので幅=高さでよい。
+     ※上のコメントの意図（ウィンドウの実高さに追従させない）はそのまま守られる。 */
+  .hakase-talk-face{flex:0 0 auto;width:clamp(84px,24%,124px);aspect-ratio:1;border-radius:14px;
     background:rgba(255,255,255,.16);border:2px solid rgba(255,255,255,.75);
     display:flex;align-items:center;justify-content:center;font-size:2.6rem;overflow:hidden}
   .hakase-talk-face.has-img{background-size:cover;background-position:center top;font-size:0}
@@ -2671,6 +2677,56 @@
   @keyframes icZoomOut{from{transform:scale(1.09)}to{transform:scale(1)}}
 /* IC1:CSS:END */
 
+/* YJF:CSS:BEGIN */
+/* ===== 弾YJ-1（フィールド版）：四字熟語モン登場「そらから おちてくる」 =====
+   ★バトル版とのちがいは「見せ方」だけ。時間割・音・芝居の順番はまったく同じにしてある
+     （＝2つを見くらべたとき、ちがって見えるところは「見せ方のちがい」だけになる）。
+   ★フィールドの言葉づかいで芝居する＝小さい歩行スプライト・「！」マーク・ちいさく跳ねる。
+     絵が細かくないぶん、2Dのペラペラ感が出ない（2026-08-10・準也さんの指摘） */
+  #yfOverlay{position:absolute;inset:0;z-index:9999;display:none;opacity:0;transition:opacity .35s ease}
+  #yfOverlay.show{opacity:1}
+  /* カメラ＝マップを動かす入れもの（本体の #fieldGrid の transform と同じ役目） */
+  #yfMap{position:absolute;left:0;top:0;transform-origin:0 0;
+    background-repeat:no-repeat;background-size:100% 100%;will-change:transform}
+  /* 落ちてくるものの影・主人公の足もとの影 */
+  .yf-shadow{position:absolute;border-radius:50%;pointer-events:none;opacity:0;
+    background:radial-gradient(ellipse at 50% 50%,rgba(0,0,0,.78) 0%,rgba(0,0,0,.52) 58%,rgba(0,0,0,0) 80%)}
+  /* じゅくごモン＝フィールドの かんじモン と同じ作り（漢字＋顔）。大きさもフィールドの 47px にそろえる */
+  .yf-boss{position:absolute;font-weight:900;line-height:1;white-space:nowrap;color:#495057;
+    text-shadow:0 0 10px rgba(255,255,255,.95),0 0 4px rgba(255,255,255,.9),2px 2px 5px rgba(0,0,0,.3);
+    user-select:none;opacity:0;transform-origin:50% 100%}
+  /* 主人公＝歩行スプライトを1コマ切り出す（本体 .hero-sprite と同じ 300%×200%） */
+  #yfHero{position:absolute;transform-origin:50% 100%;pointer-events:none}
+  #yfHeroSp{position:absolute;left:50%;bottom:0;background-repeat:no-repeat;background-size:300% 200%;
+    image-rendering:pixelated;transform:translateX(-50%)}
+  /* ★ポーズ絵＝「その時だけ」歩行スプライトと差し替える（2026-08-10・準也さんの案）。
+     たてを つぶして 頭のはばと 背たけを 歩行スプライトに合わせてある（下の POSE_FIT）。
+     つぶさないと 歩行スプライト2.5頭身・ポーズ絵4頭身 で別人に見える。 */
+  #yfHero img{position:absolute;left:50%;bottom:0;transform:translateX(-50%);opacity:0;
+    filter:drop-shadow(0 1px 2px rgba(0,0,0,.35))}
+  /* 「！」＝気づいたことを見せる、RPGでおなじみの記号 */
+  #yfBang{position:absolute;font-weight:900;color:#fff;opacity:0;pointer-events:none;line-height:1;
+    text-shadow:0 0 3px #1a1a1a,2px 2px 0 #1a1a1a,-2px 2px 0 #1a1a1a,2px -2px 0 #1a1a1a,-2px -2px 0 #1a1a1a}
+  /* 土煙・速度線・花びら */
+  #yfDust,#yfLines,#yfPetal{position:absolute;inset:0;pointer-events:none}
+  .yf-dust{position:absolute;border-radius:50%;opacity:0;
+    background:radial-gradient(circle at 40% 38%,rgba(255,250,235,.95) 0%,rgba(226,205,164,.78) 45%,rgba(190,165,120,0) 76%)}
+  .yf-line{position:absolute;left:50%;top:50%;height:3px;transform-origin:0 50%;opacity:0;border-radius:2px;
+    background:linear-gradient(90deg,rgba(255,255,255,0) 0%,rgba(255,255,255,.55) 30%,rgba(255,255,255,1) 78%,rgba(255,255,255,0) 100%);
+    box-shadow:0 0 4px rgba(255,255,255,.7)}
+  .yf-petal{position:absolute;opacity:0;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;box-shadow:0 0 0 .5px rgba(255,255,255,.35)}
+  /* 幕・白フラッシュ（フィールドの枠の中だけを覆う＝画面全体は覆わない） */
+  #yfVeil{position:absolute;inset:0;pointer-events:none;opacity:0;
+    background:radial-gradient(ellipse 78% 58% at 50% 50%,rgba(0,0,0,0) 0%,rgba(0,0,0,.55) 100%)}
+  #yfFlash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:70}
+  /* ★はかせの窓は「下」に出す。このシーンは2体がゲートの前＝画面の上にいるので、
+     本体の既定（top:14%）だと いちばん見せたい山場を まるごと隠してしまう
+     （2026-08-10・スクショで発見）。本体の positionHakaseTalkWindow も
+     「キャラの位置から逆算して置く」作りなので、考え方は同じ。 */
+  #yfTalkHost .hakase-talk.at-bottom{top:auto;bottom:5%}
+  #yfSkip{position:absolute;right:10px;top:10px;z-index:80;background:rgba(20,14,4,.72);color:#fff8e7;
+    border:1px solid rgba(255,212,59,.75);border-radius:999px;padding:7px 15px;font-size:13px;font-weight:700;cursor:pointer}
+/* YJF:CSS:END */
 </style>
 </head>
 <body>
@@ -2836,6 +2892,26 @@
       </div>
       <!-- 手直し はじまりズーム演出：ゾーン全体→自分の位置ズームのスキップボタン（演出中だけ表示） -->
       <button class="intro-skip-btn" id="fieldSkipBtn" onclick="fieldSkipIntro()">▶ スキップ</button>
+    <!-- YJF:HTML:BEGIN -->
+    <div id="yfOverlay">
+      <div id="yfMap">
+        <div class="yf-shadow" id="yfShadow1"></div>
+        <div class="yf-shadow" id="yfShadow2"></div>
+        <div class="yf-shadow" id="yfHeroShadow"></div>
+        <div class="yf-boss" id="yfBoss1"><span class="fc" id="yfBoss1Text"></span><span class="face face-jukugo angry"><span class="eyes"><span class="eye"></span><span class="eye"></span></span><span class="mouth"></span><span class="cheek l"></span><span class="cheek r"></span></span></div>
+        <div class="yf-boss" id="yfBoss2"><span class="fc" id="yfBoss2Text"></span><span class="face face-jukugo angry"><span class="eyes"><span class="eye"></span><span class="eye"></span></span><span class="mouth"></span><span class="cheek l"></span><span class="cheek r"></span></span></div>
+        <div id="yfDust"></div>
+        <div id="yfHero"><div id="yfHeroSp"></div><img id="yfArt" alt=""></div>
+        <div id="yfBang">！</div>
+        <div id="yfPetal"></div>
+      </div>
+      <div id="yfLines"></div>
+      <div id="yfVeil"></div>
+      <div id="yfFlash"></div>
+      <div id="yfTalkHost"></div>
+      <button id="yfSkip" type="button" onclick="event.stopPropagation();YojiFieldScene.skip()">とばす</button>
+    </div>
+<!-- YJF:HTML:END -->
     </div>
     <div class="field-tip">ゆびで スワイプ、または みぎしたの ボタンで あるこう</div>
   </section>
@@ -8693,6 +8769,8 @@ let difficulty='easy';
 // 発注_OP3 作業2：AUTOえらび（カントウ開放まで自動選択）。新規ゲーム＝AUTOオン（既定値どおり）
 let autoPick=true;          // true=自動でこうげきする子を選ぶ／false=じぶんでタップ
 let autoPickExplained=false; // カントウ開放後の「じぶんで えらんでみて」説明カードを見せた（＝AUTOをオフにした）か
+let autoPartySwapSeen=false; // 弾AP-1：てもちの自動いれかえを、はかせが説明したか（初回だけ説明・以後はトースト）
+let autoPickNudged=[];       // 弾AP-1：AUTOを「オフにしてみる？」と誘った学年（学年ごとに1回だけ）
 let labSeen=false;      // けんきゅうじょを開いたことがあるか（NEWバッジ表示判定）
 let shinySeen=false;    // 色違いの初遭遇演出を見たか
 let intrudeSeen=false;  // おじゃまかんじもんの初回演出を見たか
@@ -8825,7 +8903,9 @@ function save(){
       caught:[...caught],bodies:[...bodies],unlocked:unlocked,cleared:[...cleared],
       levels:levels,party:party,sound:soundOn,tut:partyTutorialDone,
       jukugo:[...jukugo],shiny:[...shiny],difficulty:difficulty,
-      autoPick:autoPick,autoPickExplained:autoPickExplained,   // 発注_OP3 作業2
+      autoPick:autoPick,
+      autoPartySwapSeen:autoPartySwapSeen,   // 弾AP-1
+      autoPickNudged:autoPickNudged,         // 弾AP-1autoPickExplained:autoPickExplained,   // 発注_OP3 作業2
       labSeen:labSeen,shinySeen:shinySeen,intrudeSeen:intrudeSeen,
       fieldPos:fieldPos,introSeen:introSeen,zoneVisited:[...zoneVisited],
       freeZones:[...freeZones],heroChar:heroChar,
@@ -9066,6 +9146,8 @@ function load(){
     }else{
       autoPick=true; autoPickExplained=false;
     }
+    autoPartySwapSeen=(d.autoPartySwapSeen===true);   // 弾AP-1：旧セーブは未説明あつかい
+    autoPickNudged=Array.isArray(d.autoPickNudged)?d.autoPickNudged.filter(x=>typeof x==='number'):[];
     // 弾3-6§6-3：旧セーブ移行③「たびの つづき」通知の判定（cleared済みだが未訪問＝1回だけ次のフィールド表示で消費）
     pendingTravelContinueBanner = (!travelContinueSeen && cleared.has(STAGE2_COUNT) && !zoneVisited.includes(STAGE2_COUNT+1));
     // 弾4-6§6-3：旧セーブ移行③′。カンサイ→チュウブ側（44クリア済み・45未訪問）の「たびの つづき」通知
@@ -11116,10 +11198,25 @@ function spawnEnemy(){
     $('enemyInfo').style.display='';
     $('eType').innerHTML='<span class="tbadge t-'+enemyType+'">'+TYPE_EMOJI[enemyType]+' '+enemyType+(isBoss?'　👑ボス':'')+'</span>';
     renderEnemyHp();
+    /* ★弾AP-1（2026-08-10）：AUTOのときは、ここで必要なら1体だけ入れかえる。
+       renderParty() より前に呼ぶ＝入れかわった後のてもちが描かれる。 */
+    const apSwap=autoPartyFix();
     // 敵が出るたびに必ず「えらぶ」から（そうせいを考えるひと呼吸が学習の核）
     if(!party.includes(selectedAttacker)) selectedAttacker=null;
     phase='select';
     renderParty();
+    if(apSwap){
+      /* 初めての1回だけ、はかせが何をしたのか説明する。以後は短いトーストだけ */
+      if(!autoPartySwapSeen){
+        autoPartySwapSeen=true; save();
+        setTimeout(()=>{
+          showBattleHakase('この あいてには 『'+K[apSwap.in].c+'』の ほうが つよいわ。'
+            +'つかれた こは やすませて、じどうで いれかえて おくね','bh11');
+        },0);
+      }else{
+        showToast('『'+K[apSwap.out].c+'』と 『'+K[apSwap.in].c+'』を いれかえた！');
+      }
+    }
   }else{
     $('enemyInfo').style.display='none';
   }
@@ -11591,6 +11688,62 @@ function requiredHitsFor(attackerIdx,defenderIdx,defenderIsBoss){
 /* ヘトヘトでない子の中から、必要正解数が最少の子を選ぶ。同点はレベルが高い方、それも同点なら
    partyの並び順で先（＝列の左）を優先。usableはparty順を保ったまま絞り込むため、走査を
    「厳密に上回った時だけ更新」にすることで、同点タイの左優先を自然に満たす（追加の分岐不要） */
+/* ==============================================================
+   弾AP-1：てもちの自動いれかえ（2026-08-10・準也さんの「1年生オート構想」）
+
+   準也さんの言葉＝「1年生はもうある程度オートにしちゃおうかなと思ってます。比較的タップだけで
+   物語が進んでいくゲームっていうのが割と魅力的……手持ちのかんじモンとかを勝手に選んだり、
+   属性がいいものに差し替えたりとか。何だったら手持ちを入れ替えたりとか」
+
+   ★やること＝バトルに入るたび、いまの4体では手こずる相手のとき **1体だけ** 入れかえる。
+     4体まるごと替えない＝「さっきの子がいない」の連続になって、自分のてもちを覚えられないため。
+   ★「外したい度」には3つを入れる（準也さんの指示）：
+     ① この相手に何発かかるか（多いほど外したい）
+     ② つかれ具合（げんき3以下＝+3／5以下＝+1）
+        …準也さん「疲れているから交代させる。そうすると1体だけやたらとレベルが上がるのを抑えられる」
+        いまは げんき1以下（ヘトヘト）になって初めて使えなくなるので、その直前まで1体が酷使される。
+     ③ レベルの低い子に少しだけ下駄（育っていない子にも出番を作る）
+        …準也さん「レベルも低いかんじもんを使いたい。ただやりすぎると難易度あがりますね」
+        →下駄は控えめ（Lv差9で1.6ぶん＝必要正解数1〜2発ぶんの重み）
+   ★難易度の考え方（準也さん）＝
+     「自動モードでゲームバランスを作って、マニュアルだとイージーにすればよい」
+     ＝自動は育っていない子も使うぶん少し難しい。自分で選べば最善を選べる＝やさしくなる。
+============================================================== */
+const AP_TIRED_LOW=3, AP_TIRED_MID=5;    // げんきがこれ以下＝つかれている
+const AP_TIRED_W_LOW=3, AP_TIRED_W_MID=1;// つかれの重み（必要正解数の何発ぶんに相当するか）
+const AP_LOWLV_W=0.2;                    // レベルが1低いごとに、この分だけ選ばれやすくする（控えめに）
+/* 「その子を外したい度合い」。大きいほど、てもちから外す候補になる */
+function apBenchScore(i,enemyIdx,isBoss){
+  const hits=requiredHitsFor(i,enemyIdx,isBoss);
+  const g=genkiOf(i);
+  const tired = g<=AP_TIRED_LOW ? AP_TIRED_W_LOW : (g<=AP_TIRED_MID ? AP_TIRED_W_MID : 0);
+  const lowLv = (9-levelOf(i))*AP_LOWLV_W;   // 低いレベルほど大きい＝引くと残りやすい
+  return hits + tired - lowLv;
+}
+/* バトルに入るとき、必要なら1体だけ入れかえる。AUTOえらびがオンのときだけ働く。
+   戻り値＝{out,in} 入れかえたとき／null 何もしなかったとき */
+function autoPartyFix(){
+  if(!autoPick || battleMode!=='party' || enemyIdx==null) return null;
+  if(isJukugoBoss || isTwinBoss) return null;          // ボス専用フローは対象外（既存の作法に合わせる）
+  if(party.length<4) return null;                       // 空きがあるときは autoJoinParty の役目
+  const cand=[...caught].filter(i=>!party.includes(i) && genkiOf(i)>GENKI_TIRED);
+  if(!cand.length) return null;
+  /* いま外したい子（＝いちばんスコアが大きい） */
+  let out=null, outScore=-Infinity;
+  party.forEach(i=>{ const s=apBenchScore(i,enemyIdx,enemyIsBoss); if(s>outScore){ outScore=s; out=i; } });
+  /* 控えの中でいちばん良い子（＝いちばんスコアが小さい） */
+  let inn=null, innScore=Infinity;
+  cand.forEach(i=>{ const s=apBenchScore(i,enemyIdx,enemyIsBoss); if(s<innScore){ innScore=s; inn=i; } });
+  if(out==null || inn==null) return null;
+  /* ★はっきり良くなるときだけ替える（1発ぶん以上）。わずかな差で毎回入れかわると落ち着かない */
+  if(outScore - innScore < 1) return null;
+  const pi=party.indexOf(out);
+  if(pi<0) return null;
+  party[pi]=inn;
+  if(selectedAttacker===out) selectedAttacker=null;    // 外した子が選ばれていたら選び直させる
+  save();
+  return {out,in:inn};
+}
 function autoPickBestIdx(){
   const usable=party.filter(i=>genkiOf(i)>GENKI_TIRED);
   if(usable.length===0) return null;
@@ -11613,17 +11766,35 @@ function maybeAutoPickAttacker(){
   if(party.length===0 || enemyIdx==null) return;
   // カントウ開放時の切り替え：AUTOオンのまま開放済み状態で選択フェーズに入った最初の1回だけ、
   // 説明カード＋音声(bh12)を出してAUTOをオフにし、このバトルから手動選択にする（自動選択はしない）
+  /* ★★2026-08-10・準也さんの裁定＝ここで **強制的にオフにするのをやめた**。
+     準也さんの言葉＝「学年が上がるたびにオフを促す案内を出す。というのはどうでしょうか。
+       ずっとワンクリックでやりたい人もいるはず。というかだいたいそう？」
+     ＝オフにするかどうかはプレイヤーが決める。こちらは折々に誘うだけにする。
+     （前はカントウ開放の瞬間に問答無用でオフにしていたので、選ぶ余地が無かった） */
   if(unlocked>=STAGE1_COUNT+1 && !autoPickExplained){
-    autoPickExplained=true; autoPick=false; save();
-    autoPickArmed=false; autoPickSeq++;   // 進行中の自動選択タイマーがあれば無効化
+    autoPickExplained=true; save();
     // 検品差し戻し対応（不具合B）：ここ（renderParty()の中）はspawnEnemy等の演出初期化の途中で、
     // この数行後に「前の敵の残りカードを消す」既存の無条件hideBattleHakase()が必ず呼ばれる。
     // 同期処理内で表示するとその場で消されてしまうため、setTimeout(...,0)で今の同期処理が
     // 終わってから表示する（spawnEnemy側やhideBattleHakase自体は一切変更しない）
     setTimeout(()=>{
-      showBattleHakase('ここからは こうげきする かんじもんを じぶんで えらんでみて！ あいしょうの いい こを えらぶと、すこしの せいかいで こえが とどくのよ。じどうで えらんで ほしいときは、タイトルの AUTO を オンに してね','bh12');
+      showBattleHakase('ここからは、こうげきする かんじもんを じぶんで えらんでみる？ '
+        +'あいしょうの いい こを えらぶと、すこしの せいかいで こえが とどくのよ。'
+        +'じぶんで えらびたく なったら、タイトルの AUTO を オフに してね','bh12');
     },0);
-    return;
+    /* ★ここで return しない＝オフにしていないので、このまま自動で選ぶ（前は強制オフだったので止めていた） */
+  }
+  /* ★学年が上がるたびに、もう一度だけ誘う（3年＝カントウ開放／5年／6年）。
+     押しつけずに「そろそろ どう？」と声をかけるだけ。オフにするかはプレイヤーが決める。 */
+  if(autoPick && autoPickExplained){
+    const g=zoneGrade(curStage||1);
+    if(g>=3 && !autoPickNudged.includes(g)){
+      autoPickNudged.push(g); save();
+      setTimeout(()=>{
+        showBattleHakase(g+'ねんせいに なったのね！ じぶんで えらぶと、どの こが とくいか おぼえられるわよ。'
+          +'ためして みたく なったら タイトルの AUTO を オフに してね','bh12');
+      },0);
+    }
   }
   if(autoPickArmed) return;   // 既に自動選択の待機演出中（多重起動防止）
   const idx=autoPickBestIdx();
@@ -12287,6 +12458,19 @@ function launchEventTwinBossIntro(zone){
     renderField();
     // 手直し はじまりズーム演出：はじまりズームが再生中ならそれが終わってから、はかせの一言を出す（同時演出の衝突回避）
     afterFieldZoomIntro(()=>{
+      /* 弾YJ-1（2026-08-10）：ゾーン44だけ「四字熟語モン登場」シーン（20.7秒）に差し替える。
+         64・83（かくれツイン）は今までどおり はかせの一言のまま。
+         シーンの中で はかせが同じことを言う（声＝yj01.mp3・四国めたん）ので、
+         ここでの hakaseTalkOnce は呼ばない。 */
+      if(zone===44 && typeof YojiFieldScene!=='undefined'){
+        bgmStop();                              // 氷の城と同じ＝シーンの前にフィールド曲を断つ
+        YojiFieldScene.start(()=>{
+          const scr0=$('screen-field');
+          if(!scr0 || !scr0.classList.contains('active')) return;   // 離脱していたら始めない
+          launchTwinBossBattle(zone);
+        });
+        return;
+      }
       const line = yojiTwinIntroLine(zone);   // 弾5-6§3：ゾーン別のはかせ一言（44は原文で回帰保証）
       hakaseTalkOnce(line, ()=>{
         // 会話ウィンドウの途中で「〈 もどる」等により画面を離脱済みなら開始しない（launchEventBossIntroと同じ安全弁）
@@ -22426,6 +22610,932 @@ var IceScene = (function(){
   return { start:start, skip:skip, isActive:function(){ return icActive; }, _jump:_jump };})();
 /* IC1:JS:END */
 
+
+/* YJF:JS:BEGIN */
+/* ==============================================================
+   弾YJ-1（フィールド版）：四字熟語モン登場「そらから おちてくる」
+   ・外へ出るのは YojiFieldScene.start(onDone) / .skip() / .isActive() / .render(t) / ._jump(cut)
+   ・時間割・音・芝居の順番は バトル版とまったく同じ（見せ方だけがちがう）
+   ・render(t) が t だけから絵を決める（バトル版と同じ作法）
+============================================================== */
+var YojiFieldScene = (function(){
+  'use strict';
+
+  function yfSoundOn(){ return (typeof soundOn==='undefined') ? true : !!soundOn; }
+  function yfSheet(){ return (typeof heroSheetUrl==='function') ? heroSheetUrl() : 'images/sprites/hero.webp'; }
+
+  var MAP_URL = 'images/fullart/zone44.webp';
+  var MANA_FACE = 'images/sprites/hakase-face.webp';
+  var VOICE = 'audio/battle/', VOICE_FILE='yj01';
+
+  /* ---- フィールドの寸法（本体で実測した値・_フィールドを実測する.js） ----
+     ゾーン44＝30列×20行／1マス42px（画面の幅の1/9）／主人公の絵は1マスの115% */
+  var TILE=42, MAPW=30, MAPH=20, SPRITE=1.15;
+  /* ★カメラ＝ボスマスに着いたときの位置。本体 updateCamera と同じ式で出した固定値。
+     ★★ボスマスは「ゲートの真下の1マス」＝本体 findBossMonPos() がそう決めている
+       （'>' をさがし、下→左→右→上 の順で最初に歩けるマス）。
+       ゾーン44は ゲート(14,2) → ボスマス(14,3)。
+       ＝このイベントは **ゲートの前** で起きる（2026-08-10・準也さんの指摘で調べ直した。
+         最初は広場に置いていたが、それは まったく別の場所だった）。
+     カメラ＝camX=clamp(382/2-(14+0.5)*42, 382-1260, 0)=-418／camY=clamp(664/2-3.5*42,-176,0)=0
+     イベント中はカメラを主人公に追わせない（追うと画面が揺れて芝居が読みにくい） */
+  var CAM = {x:-418, y:0};
+
+  var yfActive=false, yfSeq=0, yfOnDone=null, yfRaf=null, yfT0=0, yfFrozen=false;
+  var VW=382, VH=664;
+
+  /* ============================================================
+     1) 時間割（★バトル版と同じ数字。ここを変えたら両方そろえること）
+     ============================================================ */
+  var TL = {
+    Y0:[ 0.00,  2.00], Y1:[ 2.00,  3.50], Y2:[ 3.50,  6.00], Y3:[ 6.00,  9.00],
+    Y4:[ 9.00, 11.00], Y5:[11.00, 15.00], YW:[15.00, 16.20], Y6:[16.20, 20.70]
+  };
+  var TOTAL = 20.70;
+  var M = {
+    shadow1In:0.55, shadow1Full:1.25,
+    fall1:2.00,  land1:3.00,  freeze1End:3.20,  settle1End:3.58,
+    blow:3.72,   blowEnd:4.05, bound1:4.20, bound2:4.50, slideEnd:4.70,   /* ★打撃音の余韻ぶん後ろへ（無音0.30秒を残す） */
+    rise:6.00,   riseEnd:6.60, brushEnd:7.10,
+    step1:7.10,  step1End:7.70, step2:7.95, step2End:8.55,
+    shadow2In:9.00, look2:9.30, fall2:9.55, land2:10.05, freeze2End:10.15,
+    dodge:9.85,  dodgeEnd:10.05,
+    converge:11.00, convergeEnd:12.20,
+    talkIn:11.15,  talkOut:16.20,
+    turn:16.00,   turnEnd:16.18,
+    readyStill:16.18, runStart:17.00,
+    runEnd:19.60, whiteFull:20.20
+  };
+
+  /* ============================================================
+     2) 立ち位置（マスの座標。x=列, y=行。小数でよい）
+        画面に見えているのは x 19.0〜28.0／y 0〜15.8 のあたり
+     ============================================================ */
+  /* ★立ち位置は「絵の上で どこに立つか」を見て決めた（2026-08-10）。
+     はじめは屋台の屋根の上に立っていた＝真上から見た絵では、置く場所を絵で確かめないと空中や
+     建物の上に立ってしまう。舗装（ひろば）の上に来るように置き直した。 */
+  /* ★立ち位置＝ゲート前の参道。**歩ける石だたみは マス x14.0〜15.6 の細い帯だけ**で、
+     その外は ヤシの木・植えこみ・池（マス目を重ねた絵 `_確認_マス目.png` で確かめた）。
+     2026-08-10・準也さんの実物指摘で全部この帯の上に置き直した＝
+     「一心が主人公とずれている」「吹き飛ぶ先が木にかかっている」「避けた先が木の上」。
+     ★一心は主人公の**真上（奥）**に落とす＝縦にそろうので「ずれ」が消える。 */
+  var HERO = {
+    stand:{x:14.8, y:5.4},    /* ボスマスのあたりに立っている（ゲートを見上げる向き） */
+    fallen:{x:14.9, y:9.4},   /* 吹き飛ばされて 手前（画面の下）へ＝石だたみの広いところ */
+    walked:{x:14.9, y:7.4},   /* 2歩（2マス）あゆみ寄ってもどる */
+    back:{x:15.3, y:9.0},     /* 避けて跳んだ先＝Y5もここで止まる（石だたみの上） */
+    charge:{x:14.9, y:4.6}    /* 2体のあいだへ駆けこむ */
+  };
+  var BOSS = {
+    from1:{x:16.2},           /* ★ななめに落ちてくる＝影が主人公の足もとを横切る */
+    land1:{x:14.8, y:4.0},    /* 主人公の真上（奥）＝縦にそろう */
+    from2:{x:14.9},           /* ★同体は主人公のいる所へ 真上から */
+    land2:{x:14.9, y:7.4},    /* ＝主人公が Y3 で立っている場所そのもの */
+    /* ★Y5＝ゲートの前に2体が並ぶ（「ゲートを まもる」がそのまま絵になる） */
+    pair1:{x:13.1, y:3.8},
+    pair2:{x:16.3, y:3.8}
+  };
+  /* ★イベントに入るときだけ 少し寄る（2026-08-10・準也さんのご提案）。
+     ふだんのフィールドと同じ画角から始まって ゆっくり寄る＝「何かが始まる」合図になる。
+     見る中心＝参道のまんなか。寄せすぎると ゲートも吹き飛ぶ先も画面から出るので 1.30倍まで。 */
+  var ZOOM_MAX = 1.30;
+  var FOCUS = {x:14.9, y:6.0};
+  /* じゅくごモンの字の大きさ＝フィールドの かんじモン と同じ 47px（そこに立っている見た目にそろえる） */
+  var BOSS_FONT = 47;
+
+  /* ★ポーズ絵を「フィールドの大きさ」で出すための表（マス＝42px を 1.0 とした割合）。
+     ★★決め方（2026-08-10・準也さんの案「大きさを合わせて、少し縦をつぶす」を数字にしたもの）
+       ・歩行スプライトは **2.5頭身**（頭17px・背たけ43px）、ポーズ絵は **4頭身**。
+         ひとつの倍率で縮めると、頭を合わせれば背が高すぎ、背を合わせれば頭が小さすぎる。
+       ・→ **よこは「頭のはば」に合わせ、たては「背たけ」に合わせる**（＝縦だけつぶす）。
+         これで頭も背たけも そろい、同じ子に見える。つぶす量は 0.59〜0.75倍。
+       ・ready(しゃがみ)は背が低いのが正しいので0.86、surpriseは0.94をかけている。
+       ・down(寝ている)は「体の長さ」を立ったときの背たけに合わせる。
+     道具＝`_縦をつぶして合わせる.py`（ぼうしの色ではなく**シルエットの太さ**で頭を測る。
+     色で測るとブーツの茶色を拾って体のはばになる＝実際にやった失敗）。 */
+  /* ★服ごとに数字を持つ。服が変わると 絵の頭身が変わる（実測＝ゆきのドレスは頭13.2px・
+     ロボは20.0px と 1.5倍ちがう）ので、ひとつの数字ではそろわない。
+     道具＝`_縮める数字を全部だす.py`（絵を足したら流し直して、この表を貼りかえる） */
+  var POSE_FIT = {
+    'boy': { back:{w:0.573,h:1.024}, lookup:{w:0.716,h:1.024}, surprise:{w:0.739,h:0.963}, ready:{w:0.887,h:0.881}, down:{w:1.024,h:0.837} },
+    'boy-robo': { back:{w:0.710,h:1.029}, lookup:{w:0.708,h:1.029}, surprise:{w:0.827,h:0.967}, ready:{w:1.107,h:0.885}, down:{w:1.029,h:0.963} },
+    'boy-rpg': { back:{w:0.596,h:0.997}, lookup:{w:0.561,h:0.997}, surprise:{w:0.721,h:0.938}, ready:{w:0.848,h:0.857}, down:{w:0.997,h:0.784} },
+    'boy-space': { back:{w:0.450,h:1.092}, lookup:{w:0.501,h:1.091}, surprise:{w:0.503,h:1.026}, ready:{w:0.617,h:0.939}, down:{w:1.092,h:0.613} },
+    'boy-suit': { back:{w:0.445,h:0.988}, lookup:{w:0.545,h:0.988}, surprise:{w:0.716,h:0.929}, ready:{w:0.736,h:0.850}, down:{w:0.988,h:0.646} },
+    'boy-wafuku': { back:{w:0.581,h:1.096}, lookup:{w:0.696,h:1.097}, surprise:{w:0.674,h:1.031}, ready:{w:0.874,h:0.942}, down:{w:1.096,h:0.991} },
+    'girl': { back:{w:0.565,h:0.979}, lookup:{w:0.562,h:0.979}, surprise:{w:0.624,h:0.921}, ready:{w:0.921,h:0.842}, down:{w:0.979,h:0.781} },
+    'girl-pink': { back:{w:0.666,h:0.984}, lookup:{w:0.769,h:0.984}, surprise:{w:0.677,h:0.925}, ready:{w:0.819,h:0.846}, down:{w:0.984,h:0.750} },
+    'girl-rpg': { back:{w:0.522,h:1.114}, lookup:{w:0.559,h:1.114}, surprise:{w:0.546,h:1.047}, ready:{w:0.763,h:0.958}, down:{w:1.114,h:0.847} },
+    'girl-snow': { back:{w:0.785,h:1.087}, lookup:{w:0.736,h:1.087}, surprise:{w:0.837,h:1.022}, ready:{w:1.024,h:0.935}, down:{w:1.087,h:0.649} },
+    'girl-suit': { back:{w:0.410,h:1.006}, lookup:{w:0.517,h:1.007}, surprise:{w:0.602,h:0.945}, ready:{w:0.486,h:0.865}, down:{w:1.006,h:0.791} },
+    'girl-wafuku': { back:{w:0.524,h:1.042}, lookup:{w:0.588,h:1.042}, surprise:{w:0.616,h:0.980}, ready:{w:0.957,h:0.896}, down:{w:1.042,h:0.812} }
+  };
+
+
+  /* ============================================================
+     3) 音（★バトル版とまったく同じ表）
+     ============================================================ */
+  var SFX = [
+    {at: 0.00, dur:1.85, id:'windUp'   },   /* 草原の風（ループ）。1.30から引きはじめ1.85で無音 */
+    {at: 1.30, dur:0.00, id:'windDown' },
+    /* ★ここから 準也さんご提供の録音（2026-08-10）。合成音より場面に合う */
+    {at: 1.55, dur:1.45, id:'fall1'    },   /* ヒューンと落下（後ろ1.45秒＝下降の終わりが着地にそろう） */
+    {at: 3.00, dur:0.42, id:'imp1'     },   /* 打撃4（0.42秒でフェードアウト＝直後の無音を残すため） */
+    /* ▼無音0.30秒（3.42〜3.72）＝合否#2 */
+    {at: 3.72, dur:0.35, id:'blow'     },
+    {at: 4.20, dur:0.18, id:'bound1'   },
+    {at: 4.50, dur:0.14, id:'bound2'   },
+    {at: 4.70, dur:0.30, id:'slide'    },
+    /* ▼無音1.00秒（5.00〜6.00）＝合否#3 */
+    {at: 6.00, dur:3.50, id:'windBack' },
+    {at: 7.16, dur:0.14, id:'step'     },
+    {at: 8.01, dur:0.14, id:'step'     },
+    {at: 9.30, dur:0.18, id:'notice'   },
+    {at: 9.55, dur:0.50, id:'fall2'    },   /* ヒューンと落下（0.50秒版） */
+    {at: 9.85, dur:0.20, id:'dodge'    },
+    {at:10.05, dur:0.30, id:'imp2'     },   /* 打撃4（短く小さく＝2回目だから） */
+    {at:11.00, dur:5.40, id:'press'    },   /* ゴゴゴゴ＝2体そろって圧をかける（Y5のあいだ） */
+    {at:16.18, dur:0.62, id:'jump'     },   /* ジャンプ＝立ち向かった瞬間 */
+    {at:18.70, dur:2.00, id:'rush'     }    /* 対戦カード表示2＝向かっていく／バトルへ */
+  ];
+  (function(){
+    var t=M.runStart, gap=0.30;
+    while(t < 19.50){ SFX.push({at:+t.toFixed(3), dur:0.12, id:'run'}); gap*=0.90; t+=gap; }
+    SFX.sort(function(a,b){ return a.at-b.at; });
+  })();
+
+  var yfBus=null, yfLoopNodes=[], yfLoopGains={wind:null,growlA:null,growlB:null};
+  function busGet(){
+    if(!yfSoundOn()) return null;
+    ensureAudio(); if(!audioCtx) return null;
+    if(!yfBus){
+      yfBus=audioCtx.createGain(); yfBus.gain.value=1;
+      var comp=audioCtx.createDynamicsCompressor();
+      yfBus.connect(comp); comp.connect(audioCtx.destination);
+    }
+    return yfBus;
+  }
+  function busKill(){
+    yfLoopNodes.forEach(function(n){ try{n.stop();}catch(e){} try{n.disconnect();}catch(e){} });
+    yfLoopNodes=[]; yfLoopGains={wind:null,growlA:null,growlB:null};
+    if(yfBus){ try{ yfBus.disconnect(); }catch(e){} yfBus=null; }
+  }
+  var yfWatch=null;
+  function watchStart(){
+    if(yfWatch) return;
+    yfWatch=setInterval(function(){
+      if(!yfActive){ watchStop(); return; }
+      if(yfBus){ try{ yfBus.gain.value = yfSoundOn()?1:0; }catch(e){} }
+    },200);
+  }
+  function watchStop(){ if(yfWatch){ clearInterval(yfWatch); yfWatch=null; } }
+
+  function tone(freq,start,dur,type,vol){
+    var bus=busGet(); if(!bus) return;
+    var o=audioCtx.createOscillator(), g=audioCtx.createGain();
+    o.type=type||'sine'; o.frequency.value=freq; o.connect(g); g.connect(bus);
+    var t=audioCtx.currentTime+start;
+    g.gain.setValueAtTime(0.0001,t);
+    g.gain.linearRampToValueAtTime(vol||.1,t+.012);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    o.start(t); o.stop(t+dur+.03);
+  }
+  function slide(f0,f1,start,dur,type,vol,attack){
+    var bus=busGet(); if(!bus) return;
+    var o=audioCtx.createOscillator(), g=audioCtx.createGain();
+    o.type=type||'triangle';
+    var t=audioCtx.currentTime+start;
+    o.frequency.setValueAtTime(f0,t);
+    o.frequency.linearRampToValueAtTime(f1,t+dur);
+    g.gain.setValueAtTime(0.0001,t);
+    g.gain.linearRampToValueAtTime(vol||.09,t+(attack||dur*0.5));
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    o.connect(g); g.connect(bus);
+    o.start(t); o.stop(t+dur+.03);
+  }
+  function noise(start,dur,f0,f1,vol,q){
+    var bus=busGet(); if(!bus) return;
+    var len=Math.max(1,Math.floor(audioCtx.sampleRate*dur));
+    var buf=audioCtx.createBuffer(1,len,audioCtx.sampleRate);
+    var ch=buf.getChannelData(0);
+    for(var i=0;i<len;i++) ch[i]=Math.random()*2-1;
+    var src=audioCtx.createBufferSource(); src.buffer=buf;
+    var f=audioCtx.createBiquadFilter(); f.type='bandpass'; f.Q.value=q||.9;
+    var g=audioCtx.createGain();
+    var t=audioCtx.currentTime+start;
+    f.frequency.setValueAtTime(Math.max(40,f0),t);
+    f.frequency.linearRampToValueAtTime(Math.max(40,f1),t+dur);
+    g.gain.setValueAtTime(0.0001,t);
+    g.gain.linearRampToValueAtTime(vol,t+dur*.25);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    src.connect(f); f.connect(g); g.connect(bus);
+    src.start(t); src.stop(t+dur+.05);
+  }
+  function windStart(vol){
+    var bus=busGet(); if(!bus) return;
+    var len=Math.floor(audioCtx.sampleRate*4);
+    var buf=audioCtx.createBuffer(1,len,audioCtx.sampleRate);
+    var ch=buf.getChannelData(0);
+    for(var i=0;i<len;i++) ch[i]=Math.random()*2-1;
+    var src=audioCtx.createBufferSource(); src.buffer=buf; src.loop=true;
+    var f=audioCtx.createBiquadFilter(); f.type='bandpass'; f.Q.value=.55; f.frequency.value=620;
+    var lfo=audioCtx.createOscillator(); lfo.frequency.value=.15;
+    var lg=audioCtx.createGain(); lg.gain.value=340;
+    lfo.connect(lg); lg.connect(f.frequency);
+    var g=audioCtx.createGain();
+    var t=audioCtx.currentTime;
+    g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(vol,t+0.9);
+    src.connect(f); f.connect(g); g.connect(bus);
+    src.start(); lfo.start();
+    yfLoopNodes.push(src,lfo); yfLoopGains.wind=g;
+  }
+  function fadeLoop(key,vol,sec){
+    var g=yfLoopGains[key]; if(!g||!audioCtx) return false;
+    try{
+      var t=audioCtx.currentTime;
+      g.gain.cancelScheduledValues(t);
+      g.gain.setValueAtTime(g.gain.value,t);
+      g.gain.linearRampToValueAtTime(Math.max(0.0001,vol),t+(sec||0.8));
+    }catch(e){}
+    return true;
+  }
+  function growlStart(key,freq,vol){
+    var bus=busGet(); if(!bus) return;
+    var o=audioCtx.createOscillator(); o.type='sawtooth'; o.frequency.value=freq;
+    var f=audioCtx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=190; f.Q.value=.7;
+    var lfo=audioCtx.createOscillator(); lfo.frequency.value=(key==='growlA')?0.55:0.71;
+    var lg=audioCtx.createGain(); lg.gain.value=2.4;
+    lfo.connect(lg); lg.connect(o.frequency);
+    var g=audioCtx.createGain();
+    var t=audioCtx.currentTime;
+    g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(vol,t+1.0);
+    o.connect(f); f.connect(g); g.connect(bus);
+    o.start(); lfo.start();
+    yfLoopNodes.push(o,lfo); yfLoopGains[key]=g;
+  }
+  function playSfx(id){
+    switch(id){
+      case 'windUp':   windStart(.15); break;
+      case 'windDown': fadeLoop('wind',0.0001,0.55); break;
+      case 'windBack': if(!fadeLoop('wind',.12,1.2)) windStart(.12); break;
+      case 'fall1':    playRec('yjfallA',1.0); break;
+      case 'fall2':    playRec('yjfallB',0.9); break;
+      case 'imp1':     playRec('yjimpA',1.0); break;
+      case 'imp2':     playRec('yjimpB',0.85); break;
+      case 'blow':     noise(0,0.35,240,1500,.15,.8); slide(420,140,0,0.35,'triangle',.10,0.02); break;
+      case 'bound1':   noise(0,0.18,600,180,.11,.9); break;
+      case 'bound2':   noise(0,0.14,520,160,.075,.9); break;
+      case 'slide':    noise(0,0.35,900,260,.075,1.2); break;
+      case 'step':     noise(0,0.14,420,150,.055,1.0); break;
+      case 'run':      noise(0,0.12,520,180,.065,1.0); break;
+      case 'notice':   slide(420,1150,0,0.18,'square',.05,0.03); break;
+      case 'dodge':    noise(0,0.20,900,340,.075,1.3); break;
+      case 'press':    playRec('yjpressA',0.62); break;
+      case 'jump':     playRec('yjjump',1.0); break;
+      case 'rush':     playRec('yjrushA',1.0); break;
+    }
+  }
+  /* ---- ★録音した効果音（2026-08-10・準也さんご提供）----
+     合成音より ずっと場面に合う。file:// でも鳴るよう <audio> で鳴らす（WebAudioのバスは通らないので、
+     とばす・画面離脱のときは ここで持っている一覧を全部 止める）。
+     ★長さは 場面に合わせて ffmpeg で切ってある（切らないと「無音」の演出が消える）。
+       yjfallA 1.45秒／yjfallB 0.50秒／yjimpA 0.42秒／yjimpB 0.30秒／yjpressA 5.40秒／yjrushA 2.00秒 */
+  var SFXDIR='audio/battle/';
+  var recAudios=[];
+  function playRec(file,vol){
+    if(!yfSoundOn()) return null;
+    try{
+      var a=new Audio(SFXDIR+file+'.mp3');
+      a.volume=(vol===undefined?1:vol);
+      a.onerror=function(){};
+      a.play().catch(function(){});
+      recAudios.push(a);
+      return a;
+    }catch(e){ return null; }
+  }
+  function recStopAll(){
+    recAudios.forEach(function(a){ try{ a.pause(); a.currentTime=0; }catch(e){} });
+    recAudios=[];
+  }
+  var sfxIdx=0;
+  function sfxReset(){ sfxIdx=0; }
+  function sfxUpdate(t){ while(sfxIdx<SFX.length && SFX[sfxIdx].at<=t){ playSfx(SFX[sfxIdx].id); sfxIdx++; } }
+  function sfxStopAll(){ busKill(); recStopAll(); if(talkAudio){ try{ talkAudio.pause(); }catch(e){} talkAudio=null; } }
+
+  /* ============================================================
+     4) 小道具
+     ============================================================ */
+  var DUST_N=14, LINE_N=16, PETAL_N=12;
+  var PETAL_COL=['#ff9fb2','#ffd0a0','#fff2f5','#ff8a6a','#ffc2d4'];
+  var RND=[];
+  (function(){ var s=20260810; for(var i=0;i<200;i++){ s=(s*1103515245+12345)&0x7fffffff; RND.push(s/0x7fffffff); } })();
+  var dustEls=[], lineEls=[], petalEls=[];
+  function buildParts(){
+    var d=$('yfDust'); if(d && !dustEls.length){
+      for(var i=0;i<DUST_N;i++){ var e=document.createElement('div'); e.className='yf-dust'; d.appendChild(e); dustEls.push(e); }
+    }
+    var l=$('yfLines'); if(l && !lineEls.length){
+      for(var j=0;j<LINE_N;j++){ var e2=document.createElement('i'); e2.className='yf-line'; l.appendChild(e2); lineEls.push(e2); }
+    }
+    var g=$('yfPetal'); if(g && !petalEls.length){
+      for(var k=0;k<PETAL_N;k++){
+        var e3=document.createElement('i'); e3.className='yf-petal';
+        e3.style.background=PETAL_COL[k%PETAL_COL.length];
+        g.appendChild(e3); petalEls.push(e3);
+      }
+    }
+  }
+
+  /* ============================================================
+     5) 計算の小道具
+     ============================================================ */
+  function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+  function seg(t,a,b){ return clamp((t-a)/(b-a),0,1); }
+  function lerp(a,b,u){ return a+(b-a)*u; }
+  function easeOut(u){ return 1-Math.pow(1-u,3); }
+  function easeIn(u){ return u*u*u; }
+  function easeInOut(u){ return u<.5 ? 2*u*u : 1-Math.pow(-2*u+2,2)/2; }
+  function measure(){
+    /* 試作では #yfWrap、本体では #fieldWrap がフィールドの枠。どちらでも動くようにする */
+    var w=$('yfWrap') || $('fieldWrap'); if(!w) return;
+    VW=w.clientWidth||382; VH=w.clientHeight||664;
+  }
+  /* マスの座標 → マップの中のピクセル */
+  function px(v){ return v*TILE; }
+
+  /* ============================================================
+     6) render(t)
+     ============================================================ */
+  function render(t){
+    t = clamp(t, 0, TOTAL);
+    apply(sceneState(t));
+  }
+
+  function sceneState(t){
+    var S={};
+    /* カメラ＝固定＋衝撃の揺れ（本体の #app.shake と同じ役目） */
+    var shake=0;
+    if(t>=M.freeze1End && t<3.50) shake=(1-seg(t,M.freeze1End,3.50))*3.2;
+    if(t>=M.freeze2End && t<10.42) shake=(1-seg(t,M.freeze2End,10.42))*1.8;
+    /* ★寄り＝①入るときに ゆっくり1.30倍まで ②最後の突入で さらに1.28倍
+       中心は FOCUS（参道のまんなか）。マップの外が見えないよう 端でとめる（本体 updateCamera と同じ） */
+    var zoom = (1 + easeOut(seg(t,0.15,1.35))*(ZOOM_MAX-1)) * (1 + easeIn(seg(t,19.00,19.85))*0.28);
+    var mw = MAPW*TILE*zoom, mh2 = MAPH*TILE*zoom;
+    var camx = clamp(VW/2      - FOCUS.x*TILE*zoom, Math.min(0, VW-mw),  0);
+    var camy = clamp(VH*0.45   - FOCUS.y*TILE*zoom, Math.min(0, VH-mh2), 0);
+    S.cam={ x:camx + (shake?Math.sin(t*63)*shake:0),
+            y:camy + (shake?Math.cos(t*71)*shake*0.7:0),
+            sc:zoom, camx:camx, camy:camy };
+
+    /* 一心 */
+    var b1={show:false};
+    if(t>=M.fall1){
+      var x1=BOSS.land1.x, y1=BOSS.land1.y, rot1=0, stretch=1;
+      if(t<M.land1){
+        var u=seg(t,M.fall1,M.land1);
+        y1 = lerp(BOSS.land1.y-14, BOSS.land1.y, easeIn(u));   /* 画面の上（14マス上）から落ちてくる */
+        x1 = lerp(BOSS.from1.x, BOSS.land1.x, easeIn(u));
+        stretch = 1 + 0.30*easeIn(u);
+        rot1 = lerp(-7,0,u);
+      }else if(t<M.freeze1End){
+        /* ★着地の0.2秒＝完全停止 */
+      }else if(t<M.settle1End){
+        var v=seg(t,M.freeze1End,M.settle1End);
+        y1 = BOSS.land1.y - Math.sin(v*Math.PI)*0.28;
+      }
+      if(t>=M.converge){
+        var w=easeInOut(seg(t,M.converge,M.convergeEnd));
+        x1=lerp(BOSS.land1.x,BOSS.pair1.x,w); y1=lerp(BOSS.land1.y,BOSS.pair1.y,w);
+      }
+      /* ★2体そろってからは 小刻みにふるえる＝圧をかけている感じ（音の「ゴゴゴゴ」と合わせる）。
+         ふるえは 1ピクセルに満たない細かさ。大きく揺らすと「止めて見せる」山場が台なしになる */
+      if(t>=M.converge){ var q1=Math.min(1,seg(t,M.converge,M.converge+0.9)); 
+        x1+=Math.sin(t*47.0)*0.035*q1; y1+=Math.cos(t*53.0)*0.028*q1; }
+      b1={show:true,x:x1,y:y1,rot:rot1,stretch:stretch,fade:clamp(seg(t,M.fall1,M.fall1+0.12),0,1)};
+    }
+    S.boss1=b1;
+
+    /* 同体 */
+    var b2={show:false};
+    if(t>=M.fall2){
+      var x2=BOSS.land2.x, y2=BOSS.land2.y, rot2=0, stretch2=1;
+      if(t<M.land2){
+        var u2=seg(t,M.fall2,M.land2);
+        y2 = lerp(BOSS.land2.y-14, BOSS.land2.y, easeIn(u2));
+        x2 = lerp(BOSS.from2.x, BOSS.land2.x, easeIn(u2));
+        stretch2 = 1 + 0.30*easeIn(u2);
+        rot2 = lerp(7,0,u2);
+      }else if(t<M.freeze2End){
+      }else if(t<10.50){
+        var v2=seg(t,M.freeze2End,10.50);
+        y2 = BOSS.land2.y - Math.sin(v2*Math.PI)*0.20;
+      }
+      if(t>=M.converge){
+        var w2=easeInOut(seg(t,M.converge,M.convergeEnd));
+        x2=lerp(BOSS.land2.x,BOSS.pair2.x,w2); y2=lerp(BOSS.land2.y,BOSS.pair2.y,w2);
+      }
+      if(t>=M.converge){ var q2=Math.min(1,seg(t,M.converge,M.converge+0.9));
+        x2+=Math.sin(t*49.0+1.7)*0.035*q2; y2+=Math.cos(t*51.0+0.8)*0.028*q2; }
+      b2={show:true,x:x2,y:y2,rot:rot2,stretch:stretch2,fade:clamp(seg(t,M.fall2,M.fall2+0.12),0,1)};
+    }
+    S.boss2=b2;
+
+    /* 落ちてくるものの影（マス単位の半径） */
+    var s1x=(t<M.fall1)?BOSS.from1.x:lerp(BOSS.from1.x,BOSS.land1.x,easeIn(seg(t,M.fall1,M.land1)));
+    S.shadow1 = t<M.land1
+      ? {show:t>=M.shadow1In, x:s1x, y:BOSS.land1.y,
+         r:(t<M.fall1 ? lerp(0.30,1.15,easeOut(seg(t,M.shadow1In,M.fall1)))
+                      : lerp(1.15,1.80,easeIn(seg(t,M.fall1,M.land1)))),
+         op:0.28+0.50*seg(t,M.shadow1In,M.shadow1Full)}
+      : {show:true, x:b1.show?b1.x:BOSS.land1.x, y:b1.show?b1.y:BOSS.land1.y, r:1.45, op:0.44};
+    var s2x=(t<M.fall2)?BOSS.from2.x:lerp(BOSS.from2.x,BOSS.land2.x,easeIn(seg(t,M.fall2,M.land2)));
+    S.shadow2 = (t<M.shadow2In) ? {show:false}
+      : (t<M.land2
+        ? {show:true, x:s2x, y:BOSS.land2.y,
+           r:(t<M.fall2 ? lerp(0.30,1.05,easeOut(seg(t,M.shadow2In,M.fall2)))
+                        : lerp(1.05,1.60,easeIn(seg(t,M.fall2,M.land2)))),
+           op:0.28+0.50*seg(t,M.shadow2In,M.fall2)}
+        : {show:true, x:b2.show?b2.x:BOSS.land2.x, y:b2.show?b2.y:BOSS.land2.y, r:1.40, op:0.44});
+
+    S.hero = heroState(t);
+
+    /* 白フラッシュ（バトル版と同じ長さ） */
+    var fl=0;
+    if(t>=M.land1 && t<M.land1+0.07) fl=Math.max(fl,(1-seg(t,M.land1,M.land1+0.07))*0.95);
+    if(t>=M.land2 && t<M.land2+0.055) fl=Math.max(fl,(1-seg(t,M.land2,M.land2+0.055))*0.62);
+    /* ★突入のフラッシュ（2026-08-10・準也さんのご指示）。
+       「対戦カード表示」の音に合わせて パッ・パッ と2回光らせてから 白へ。1回だけだと弱い */
+    if(t>=18.70 && t<18.86) fl=Math.max(fl,(1-seg(t,18.70,18.86))*0.75);
+    if(t>=19.05 && t<19.19) fl=Math.max(fl,(1-seg(t,19.05,19.19))*0.55);
+    if(t>=M.runEnd) fl=Math.max(fl,seg(t,M.runEnd,M.whiteFull));
+    S.flash=fl;
+    S.veil = 0.26*seg(t,M.converge,M.converge+1.4)*(1-seg(t,M.talkOut,M.talkOut+0.5));
+    S.dust = dustState(t);
+    /* 速度線＝★「四字熟語モンの中心」から外へ流れる（2026-08-10・準也さんの指摘
+       「四字熟語モン中心に放射線状じゃないと向かっている感が無い」）。
+       中心は 2体が並ぶ場所の まんなか。画面のまんなかではない。 */
+    S.lines = { op:seg(t,M.runStart,M.runStart+0.55)*(1-seg(t,M.runEnd-0.15,M.runEnd+0.2)),
+                ph:t,
+                cx:((BOSS.pair1.x+BOSS.pair2.x)/2*TILE*zoom + camx)/VW*100,
+                cy:((BOSS.pair1.y*TILE - BOSS_FONT/2)*zoom + camy)/VH*100 };
+    S.petal = petalState(t);
+    S.talk = (t>=M.talkIn && t<M.talkOut);
+    return S;
+  }
+
+  /* ---- 主人公の芝居（フィールドの言葉づかい）----
+     dir: 'down'(正面) / 'up'(背中) / 'side'(よこ)　frame: 0 or 1　bang: 「！」の濃さ
+     art: ポーズ絵の名前（null なら いつもの歩行スプライト）
+     ★★歩行スプライトで足りない芝居（倒れる・見上げる・驚く・構える）だけ、
+       ポーズ絵に差し替える（2026-08-10・準也さんの案）。歩く・走るは歩行スプライトのまま
+       ＝動いているところは スプライト、止まって見せるところは ポーズ絵、という分担になる。 */
+  function heroState(t){
+    var h={x:HERO.stand.x, y:HERO.stand.y, dir:'up', frame:0, rot:0, sx:1, lift:0, bang:0, art:null};
+
+    /* Y0〜Y1：★1体目には気づかない（上を向かない）＝だから直撃する */
+    if(t < M.blow){
+      h.dir='up'; h.frame=0;
+      return h;
+    }
+
+    /* Y2：吹き飛ぶ（手前＝画面の下へ）→2回バウンド→倒れて静止 */
+    if(t < M.rise){
+      var swapped = (t >= M.blow+0.14);                  /* ここで倒れ姿の絵に入れかわる */
+      h.art = swapped ? 'down' : null;
+      h.dir='down'; h.frame=1;
+      if(t<M.blowEnd){
+        var u=seg(t,M.blow,M.blowEnd);
+        h.x=lerp(HERO.stand.x,14.4,u);
+        h.y=lerp(HERO.stand.y,7.6,u);
+        h.lift=Math.sin(u*Math.PI)*0.35;
+        h.rot=swapped ? lerp(22,4,seg(t,M.blow+0.14,M.blowEnd)) : lerp(0,-30,seg(t,M.blow,M.blow+0.14));
+      }else if(t<M.bound1){
+        var v=seg(t,M.blowEnd,M.bound1);
+        h.x=lerp(14.4,14.3,v); h.y=lerp(7.6,8.2,v);
+        h.lift=Math.sin(v*Math.PI)*0.55;
+        h.rot=lerp(4,-6,v);
+      }else if(t<M.bound2){
+        var w=seg(t,M.bound1,M.bound2);
+        h.x=lerp(14.3,14.25,w); h.y=lerp(8.2,8.45,w);
+        h.lift=Math.sin(w*Math.PI)*0.22;
+        h.rot=lerp(-6,2,w);
+      }else if(t<M.slideEnd){
+        var z=easeOut(seg(t,M.bound2,M.slideEnd));
+        h.x=lerp(14.25,HERO.fallen.x,z); h.y=lerp(8.45,HERO.fallen.y,z);
+        h.rot=lerp(2,0,z);
+      }else{
+        h.x=HERO.fallen.x; h.y=HERO.fallen.y; h.rot=0;
+      }
+      return h;
+    }
+
+    /* Y3：立ち上がる → 砂をはらう → 2歩あゆみ寄る（★台詞なし） */
+    if(t < M.shadow2In){
+      if(t<M.riseEnd){
+        var r=seg(t,M.rise,M.riseEnd);
+        var up=seg(t,M.rise+0.32,M.rise+0.38);           /* 一瞬で 倒れ姿→立ち姿 に入れかえる */
+        h.art = (up<1) ? 'down' : 'back';
+        h.x=HERO.fallen.x; h.y=HERO.fallen.y;
+        h.rot=(up<1) ? lerp(0,-34,easeIn(r)) : 0;
+        return h;
+      }
+      if(t<M.brushEnd){
+        var b=seg(t,M.riseEnd,M.brushEnd);
+        h.art='back';
+        h.x=HERO.fallen.x; h.y=HERO.fallen.y;
+        h.lift=Math.abs(Math.sin(b*Math.PI*2))*0.14;     /* 砂をはらう＝小さく2回はずむ */
+        return h;
+      }
+      h.dir='up';                                        /* 歩くところは 歩行スプライトにもどす */
+      var sx0=HERO.fallen.x, sy0=HERO.fallen.y;
+      if(t<M.step1End){
+        var p=seg(t,M.step1,M.step1End);
+        h.x=lerp(sx0,(sx0+HERO.walked.x)/2,p);
+        h.y=lerp(sy0,(sy0+HERO.walked.y)/2,p);
+        h.frame=(p<0.5?1:0); h.lift=Math.sin(p*Math.PI)*0.09;
+      }else if(t<M.step2){
+        h.x=(sx0+HERO.walked.x)/2; h.y=(sy0+HERO.walked.y)/2; h.frame=0;
+      }else if(t<M.step2End){
+        var q=seg(t,M.step2,M.step2End);
+        h.x=lerp((sx0+HERO.walked.x)/2,HERO.walked.x,q);
+        h.y=lerp((sy0+HERO.walked.y)/2,HERO.walked.y,q);
+        h.frame=(q<0.5?1:0); h.lift=Math.sin(q*Math.PI)*0.09;
+      }else{
+        h.x=HERO.walked.x; h.y=HERO.walked.y; h.frame=0;
+      }
+      return h;
+    }
+
+    /* Y4：★今度は気づく（「！」が出て 上を向く）→ 落ちてくる前に手前へ跳んで避ける */
+    if(t < M.turn){
+      if(t<M.dodge){
+        /* ★「上を向く」は歩行スプライトにできない芝居＝ここだけ見上げの絵にする */
+        h.art=(t>=M.look2)?'lookup':null;
+        h.dir='up'; h.frame=0;
+        h.x=HERO.walked.x; h.y=HERO.walked.y;
+        h.bang=seg(t,M.look2,M.look2+0.12)*(1-seg(t,M.dodge-0.05,M.dodge));
+        h.lift=(t>=M.look2)?Math.max(0,Math.sin(seg(t,M.look2,M.look2+0.22)*Math.PI))*0.16:0;  /* はっ！と はずむ */
+        return h;
+      }
+      if(t<M.dodgeEnd){
+        var c=seg(t,M.dodge,M.dodgeEnd);
+        h.art=(c<0.30)?'lookup':'surprise';                /* 跳んだ瞬間に おどろき顔へ */
+        h.x=lerp(HERO.walked.x,HERO.back.x,easeOut(c));
+        h.y=lerp(HERO.walked.y,HERO.back.y,easeOut(c));
+        h.lift=Math.sin(c*Math.PI)*0.5;
+        h.rot=Math.sin(c*Math.PI)*10;
+        return h;
+      }
+      /* ★Y5：主人公は動かない（間）。おどろいた姿のまま止める */
+      h.art='surprise'; h.x=HERO.back.x; h.y=HERO.back.y;
+      return h;
+    }
+
+    /* 構えへ向きなおる（読み待ちの最後）→ 構えの静止 → 駆ける */
+    if(t < M.runStart){
+      if(t<M.turnEnd){
+        var k=seg(t,M.turn,M.turnEnd);
+        h.art=(k<0.5)?'surprise':'ready';
+        h.sx=1-Math.sin(k*Math.PI)*0.55;                  /* 横につぶす＝すばやい振り向き */
+        h.x=HERO.back.x; h.y=HERO.back.y;
+        return h;
+      }
+      /* ★構えの静止（0.82秒）。1ピクセルも動かさない */
+      h.art='ready'; h.x=HERO.back.x; h.y=HERO.back.y;
+      return h;
+    }
+
+    /* Y6：駆ける＝2体のあいだへ。奥へ進むのでコマを速く回す */
+    var g=seg(t,M.runStart,M.runEnd);
+    var ge=easeIn(g)*0.35+g*0.65;
+    h.dir='up';
+    h.x=lerp(HERO.back.x,HERO.charge.x,ge);
+    h.y=lerp(HERO.back.y,HERO.charge.y,ge);
+    var cad=lerp(5,11,g);
+    h.frame=(Math.floor(g*cad)%2);
+    h.lift=Math.abs(Math.sin(g*Math.PI*cad))*0.10;
+    h.sx=(h.frame===1)?-1:1;                              /* 本体と同じ＝背面のBコマは左右反転で足を出す */
+    return h;
+  }
+
+  function dustState(t){
+    var out=[];
+    function burst(t0,cx,cy,n,pw,life,scale){
+      for(var i=0;i<n;i++){
+        var u=seg(t,t0,t0+life); if(u<=0||u>=1){ out.push({op:0}); continue; }
+        var a=(RND[i*3]*2-1);
+        var dist=pw*(0.35+RND[i*3+1]*0.65)*easeOut(u);
+        out.push({ x:cx+a*dist, y:cy-(0.05+RND[i*3+2]*0.18)*easeOut(u)*scale,
+                   r:(0.10+RND[i*3+1]*0.22)*scale*(0.6+u*0.9), op:(1-u)*(0.55+RND[i*3+2]*0.35) });
+      }
+    }
+    if(t>=M.freeze1End && t<M.freeze1End+1.5) burst(M.freeze1End,BOSS.land1.x,BOSS.land1.y,DUST_N,1.5,1.5,1.0);
+    else if(t>=M.freeze2End && t<M.freeze2End+1.2) burst(M.freeze2End,BOSS.land2.x,BOSS.land2.y,DUST_N,1.2,1.2,0.8);
+    else if(t>=M.runStart && t<M.runEnd){
+      for(var i=0;i<DUST_N;i++){
+        var t0=M.runStart+i*0.18;
+        var u=seg(t,t0,t0+0.7);
+        if(u<=0||u>=1){ out.push({op:0}); continue; }
+        var gg=seg(t0,M.runStart,M.runEnd);
+        var ee=easeIn(gg)*0.35+gg*0.65;
+        out.push({ x:lerp(HERO.back.x,HERO.charge.x,ee)+(RND[i*3]*2-1)*0.3,
+                   y:lerp(HERO.back.y,HERO.charge.y,ee)+u*0.15,
+                   r:(0.10+RND[i*3+1]*0.14)*(0.7+u*0.8), op:(1-u)*0.42 });
+      }
+    }else{ for(var j=0;j<DUST_N;j++) out.push({op:0}); }
+    while(out.length<DUST_N) out.push({op:0});
+    return out;
+  }
+
+  function windDist(t){
+    var v0=3.6;
+    if(t<=1.30) return v0*t;
+    var s=Math.min(t,1.85)-1.30;
+    return v0*(1.30+s-s*s/1.1);
+  }
+  function petalState(t){
+    var out=[];
+    var fadeIn=seg(t,0.15,0.80), gone=seg(t,3.00,3.55);
+    var burst=46*easeOut(seg(t,3.00,3.75));
+    var d=windDist(t);
+    for(var i=0;i<PETAL_N;i++){
+      var x0=RND[i*4]*108, y0=10+RND[i*4+1]*88, sz=1.5+RND[i*4+2]*1.3, ph=RND[i*4+3]*6.28;
+      var x=((x0-d)%108+108)%108-4;
+      var y=y0+Math.sin(t*0.85+ph)*1.3;
+      if(burst>0){
+        var bx=50, by=45;   /* 花びらは画面のまんなかから外へ散らす（カメラが動くので固定値でよい） */
+        var dx=x-bx, dy=y-by, len=Math.max(6,Math.sqrt(dx*dx+dy*dy));
+        x+=dx/len*burst; y+=dy/len*burst*0.45-burst*0.10;
+      }
+      out.push({x:x,y:y,w:sz,h:sz*0.72,rot:(ph*57+t*(i%2?46:-38)+burst*6),
+                op:fadeIn*(1-gone)*(0.72+RND[i*4+2]*0.28)});
+    }
+    return out;
+  }
+
+  /* ============================================================
+     7) 状態 → DOM
+     ============================================================ */
+  function apply(S){
+    var map=$('yfMap');
+    if(map) map.style.transform='translate('+S.cam.x.toFixed(2)+'px,'+S.cam.y.toFixed(2)+'px) scale('+S.cam.sc.toFixed(4)+')';
+
+    applyBoss($('yfBoss1'),S.boss1);
+    applyBoss($('yfBoss2'),S.boss2);
+    applyShadow($('yfShadow1'),S.shadow1);
+    applyShadow($('yfShadow2'),S.shadow2);
+
+    var h=S.hero, el=$('yfHero'), sp=$('yfHeroSp'), art=$('yfArt');
+    if(el&&sp){
+      var size=TILE*SPRITE;
+      el.style.left=px(h.x).toFixed(2)+'px';
+      el.style.top =(px(h.y)-px(h.lift)).toFixed(2)+'px';
+      el.style.width='0'; el.style.height='0';
+      el.style.transform='rotate('+h.rot.toFixed(2)+'deg)';
+      sp.style.width=size+'px'; sp.style.height=size+'px';
+      sp.style.backgroundImage="url('"+yfSheet()+"')";
+      sp.style.backgroundPosition=(h.dir==='down'?'0%':(h.dir==='up'?'50%':'100%'))+' '+(h.frame?'100%':'0%');
+      sp.style.transform='translateX(-50%) scaleX('+h.sx.toFixed(3)+')';
+      /* ★ポーズ絵に差し替える瞬間＝歩行スプライトを隠して、縦をつぶしたポーズ絵を出す */
+      if(art){
+        if(h.art){
+          var c0=yfChar(), sf0=yfSuffix();
+          var fit=((POSE_FIT[c0+sf0]||POSE_FIT[c0]||POSE_FIT.boy)[h.art])||POSE_FIT[c0][h.art];
+          setArt(h.art);
+          art.style.opacity='1';
+          art.style.width=(fit.w*TILE).toFixed(1)+'px';
+          art.style.height=(fit.h*TILE).toFixed(1)+'px';
+          art.style.transform='translateX(-50%) scaleX('+h.sx.toFixed(3)+')';
+          sp.style.opacity='0';
+        }else{
+          art.style.opacity='0'; sp.style.opacity='1';
+        }
+      }
+    }
+    var hs=$('yfHeroShadow');
+    if(hs){
+      var r=(h.art==='down')?0.62:0.34;
+      hs.style.opacity=(0.30).toFixed(3);
+      hs.style.width=(r*2*TILE).toFixed(1)+'px';
+      hs.style.height=(r*0.72*TILE).toFixed(1)+'px';
+      hs.style.left=(px(h.x)-r*TILE).toFixed(1)+'px';
+      hs.style.top =(px(h.y)-r*0.36*TILE).toFixed(1)+'px';
+    }
+    /* 「！」＝気づいた合図（RPGの定番） */
+    var bg=$('yfBang');
+    if(bg){
+      bg.style.opacity=h.bang.toFixed(3);
+      bg.style.fontSize=Math.round(TILE*0.62)+'px';
+      bg.style.left=(px(h.x)-TILE*0.12).toFixed(1)+'px';
+      bg.style.top =(px(h.y)-TILE*1.55-h.bang*4).toFixed(1)+'px';
+    }
+
+    $('yfFlash').style.opacity=S.flash.toFixed(3);
+    $('yfVeil').style.opacity=S.veil.toFixed(3);
+
+    for(var i=0;i<dustEls.length;i++){
+      var d=S.dust[i]||{op:0}, e=dustEls[i];
+      if(!d.op){ e.style.opacity='0'; continue; }
+      var rr=d.r*TILE;
+      e.style.opacity=d.op.toFixed(3);
+      e.style.width=(rr*2).toFixed(1)+'px'; e.style.height=(rr*1.5).toFixed(1)+'px';
+      e.style.left=(px(d.x)-rr).toFixed(1)+'px'; e.style.top=(px(d.y)-rr*0.75).toFixed(1)+'px';
+    }
+    /* ★線は「中心のすぐそば」で生まれ、外へ伸びながら流れて消える＝前へ進んでいる感じになる。
+       ★ずらす量は px で指定する。transform の translateX(%) は"その線自身の長さ"に対する割合なので、
+         %で書くと中心からのずれが線の長さに引きずられて、ねらった位置に置けない（前はこれで失敗していた） */
+    var lo=S.lines.op;
+    var cxp=S.lines.cx/100*VW, cyp=S.lines.cy/100*VH;
+    for(var j=0;j<lineEls.length;j++){
+      var le=lineEls[j];
+      if(lo<=0.001){ le.style.opacity='0'; continue; }
+      var ph=((S.lines.ph*1.7+RND[j+100])%1+1)%1;
+      var inner=lerp(0.05,0.80,ph)*VW;
+      var len=lerp(0.09,0.46,ph)*VW;
+      var ang=(j/LINE_N)*360+RND[j+40]*16;
+      le.style.opacity=(lo*Math.sin(ph*Math.PI)*(0.75+RND[j+60]*0.25)).toFixed(3);
+      le.style.left=cxp.toFixed(1)+'px'; le.style.top=cyp.toFixed(1)+'px';
+      le.style.width=len.toFixed(1)+'px';
+      le.style.transform='rotate('+ang.toFixed(2)+'deg) translateX('+inner.toFixed(1)+'px)';
+    }
+    for(var k=0;k<petalEls.length;k++){
+      var pe=petalEls[k], ps=S.petal[k];
+      if(!ps||ps.op<=0.003){ pe.style.opacity='0'; continue; }
+      pe.style.opacity=ps.op.toFixed(3);
+      pe.style.left=ps.x.toFixed(2)+'%'; pe.style.top=ps.y.toFixed(2)+'%';
+      pe.style.width=ps.w.toFixed(2)+'%'; pe.style.height=(ps.h*VW/VH).toFixed(2)+'%';
+      pe.style.transform='translate(-50%,-50%) rotate('+ps.rot.toFixed(1)+'deg)';
+    }
+    talkSet(S.talk);
+  }
+
+  function applyBoss(el,b){
+    if(!el) return;
+    if(!b.show){ el.style.opacity='0'; return; }
+    el.style.opacity=(b.fade!==undefined?b.fade:1).toFixed(3);
+    el.style.fontSize=BOSS_FONT+'px';
+    el.style.left=px(b.x).toFixed(2)+'px';
+    el.style.top =px(b.y).toFixed(2)+'px';
+    el.style.transform='translate(-50%,-100%) rotate('+(b.rot||0).toFixed(2)+'deg) scaleY('+(b.stretch||1).toFixed(3)+')';
+  }
+  function applyShadow(el,s){
+    if(!el) return;
+    if(!s||!s.show){ el.style.opacity='0'; return; }
+    var w=s.r*2*TILE, hh=w*0.42;
+    el.style.opacity=s.op.toFixed(3);
+    el.style.width=w.toFixed(1)+'px'; el.style.height=hh.toFixed(1)+'px';
+    el.style.left=(px(s.x)-w/2).toFixed(1)+'px'; el.style.top=(px(s.y)-hh/2).toFixed(1)+'px';
+  }
+
+  /* ---- ポーズ絵の割りあて（着替え対応・無ければ標準の絵に倒す＝設計書§3-4の逃げ道） ---- */
+  var TATE='images/battle-tate/';
+  /* ★試作だけのつまみ：ポーズ絵の「頭の大きさ」を切りかえる。
+       herofld- ＝頭を歩行スプライトとぴったり同じはばに（理屈どおり）
+       heroflk- ＝頭を1割小さく（準也さんの「頭が大きい気がする」への案）
+     どちらを採用するか決まったら、片方だけ残す。 */
+  var ARTPRE = 'herofld-';   /* 採用＝頭はそのまま・体だけつぶす版（2026-08-10 準也さん裁定） */
+  var artNow=null, artPre={}, costOK={};
+  function yfChar(){ return (typeof heroChar==='string' && heroChar==='girl') ? 'girl' : 'boy'; }
+  function yfSuffix(){ return (typeof costumeSuffix==='function') ? (costumeSuffix()||'') : ''; }
+  function artUrl(pose){ return TATE+ARTPRE+pose+'-'+yfChar()+'.webp'; }
+  /* ★着替えの絵は「読めることを確かめてから」使う（本体の heroBackOK と同じ流儀）。
+     出すときに src を差し替えて onerror で戻す作りだと、読み込み失敗が分かるまでの
+     一瞬だけ 主人公が消える。先に確かめておけば その一瞬が出ない。 */
+  function setArt(pose){
+    var el=$('yfArt'); if(!el || artNow===pose) return;
+    artNow=pose;
+    var c=yfChar(), sf=yfSuffix();
+    var key=pose+'-'+c+sf;
+    el.src = (sf && costOK[key]) ? (TATE+ARTPRE+pose+'-'+c+sf+'.webp')
+                                 : (TATE+ARTPRE+pose+'-'+c+'.webp');
+  }
+  function bindImages(){
+    var map=$('yfMap');
+    if(map){
+      map.style.width=(MAPW*TILE)+'px'; map.style.height=(MAPH*TILE)+'px';
+      map.style.backgroundImage="url('"+MAP_URL+"')";
+    }
+    var b1=$('yfBoss1Text'); if(b1) b1.textContent='一心';
+    var b2=$('yfBoss2Text'); if(b2) b2.textContent='同体';
+    var sp=$('yfHeroSp'); if(sp) sp.style.backgroundImage="url('"+yfSheet()+"')";
+    /* ポーズ絵は先に読みこんでおく（差し替わる瞬間に白く抜けないように）。
+       着替えを着ているときは、その絵が読めるかどうかも ここで確かめておく */
+    artNow=null;
+    var c=yfChar(), sf=yfSuffix();
+    ['back','lookup','surprise','ready','down'].forEach(function(p){
+      if(!artPre[p+'-'+c]){
+        var im=new Image(); im.onerror=function(){}; im.src=artUrl(p); artPre[p+'-'+c]=im;
+      }
+      if(sf){
+        var key=p+'-'+c+sf;
+        if(costOK[key]===undefined){
+          costOK[key]=false;
+          var im2=new Image();
+          im2.onload=function(){ costOK[key]=true; };
+          im2.onerror=function(){};              /* 無いのが普通＝コンソールを汚さない */
+          im2.src=TATE+ARTPRE+p+'-'+c+sf+'.webp';
+        }
+      }
+    });
+  }
+
+  /* ---- 会話カード（本体フィールドの .hakase-talk と同じ形。★主人公は喋らない） ---- */
+  var TALK_MSG='じゅくごモンが 2体…… まさか この ペアは、うわさに きく 四字熟語モン……！';
+  var talkAudio=null, talkShown=false;
+  function talkSet(show){
+    var host=$('yfTalkHost'); if(!host) return;
+    if(show && !talkShown){
+      talkShown=true;
+      host.innerHTML='<div class="hakase-talk at-bottom" id="yfTalkWin">'+
+        '<div class="hakase-talk-face has-img" style="background-image:url(\''+MANA_FACE+'\')"></div>'+
+        '<div class="hakase-talk-text"></div></div>';
+      host.querySelector('.hakase-talk-text').textContent=TALK_MSG;   /* 本体と同じ＝文字だけ（HTMLは入れない） */
+      host.querySelector('.hakase-talk').onclick=function(ev){ ev.stopPropagation(); jumpTo(M.talkOut); };
+      if(!yfFrozen && yfSoundOn()){
+        try{
+          talkAudio=new Audio(VOICE+VOICE_FILE+'.mp3');
+          talkAudio.onerror=function(){};
+          talkAudio.play().catch(function(){});
+        }catch(e){}
+      }
+    }else if(!show && talkShown){
+      talkShown=false; host.innerHTML='';
+      if(talkAudio){ try{ talkAudio.pause(); }catch(e){} talkAudio=null; }
+    }
+  }
+
+  /* ============================================================
+     8) 再生
+     ============================================================ */
+  function loop(){
+    var my=yfSeq;
+    function step(){
+      if(my!==yfSeq) return;
+      var t=(performance.now()-yfT0)/1000;
+      render(t); sfxUpdate(t);
+      if(t<TOTAL) yfRaf=requestAnimationFrame(step);
+      else finish();
+    }
+    yfRaf=requestAnimationFrame(step);
+  }
+  function jumpTo(t){
+    yfT0=performance.now()-t*1000;
+    while(sfxIdx<SFX.length && SFX[sfxIdx].at<=t) sfxIdx++;
+  }
+  function showOverlay(){ var o=$('yfOverlay'); if(!o) return; o.style.display='block'; void o.offsetHeight; o.classList.add('show'); }
+  function hideOverlay(){
+    var o=$('yfOverlay'); if(!o) return;
+    o.classList.remove('show');
+    var my=yfSeq;
+    setTimeout(function(){ if(my!==yfSeq) return; o.style.display='none'; },420);
+  }
+  function start(onDone){
+    if(yfActive){ if(typeof onDone==='function') onDone(); return; }
+    yfActive=true; yfFrozen=false;
+    yfOnDone=(typeof onDone==='function')?onDone:null;
+    yfSeq++;
+    showOverlay(); buildParts(); bindImages(); measure();
+    sfxReset(); talkShown=false; var h=$('yfTalkHost'); if(h) h.innerHTML='';
+    watchStart(); render(0);
+    yfT0=performance.now(); loop();
+  }
+  function skip(){ if(yfActive) finish(); }
+  function finish(){
+    if(!yfActive) return;
+    yfSeq++;
+    if(yfRaf){ cancelAnimationFrame(yfRaf); yfRaf=null; }
+    yfActive=false;
+    watchStop(); sfxStopAll(); talkSet(false); hideOverlay();
+    var cb=yfOnDone; yfOnDone=null;
+    if(cb) cb();
+  }
+  function _jump(cut){
+    sfxStopAll(); talkSet(false); yfOnDone=null;
+    yfSeq++; yfActive=true; yfFrozen=false;
+    showOverlay(); buildParts(); bindImages(); measure(); watchStart();
+    var a=(TL[cut]||TL.Y0)[0];
+    sfxReset(); while(sfxIdx<SFX.length && SFX[sfxIdx].at<=a) sfxIdx++;
+    render(a); yfT0=performance.now()-a*1000; loop();
+  }
+  /* ★yfActive を true にしない（1枚絵を描くだけ・シーンは走っていない） */
+  function _freeze(t){
+    yfSeq++;
+    if(yfRaf){ cancelAnimationFrame(yfRaf); yfRaf=null; }
+    sfxStopAll(); watchStop();
+    yfActive=false; yfFrozen=true;
+    showOverlay(); buildParts(); bindImages(); measure();
+    talkShown=false; var h=$('yfTalkHost'); if(h) h.innerHTML='';
+    render(t);
+  }
+  function _sfxPlan(){ return SFX.map(function(s){ return {at:s.at,dur:s.dur,id:s.id}; }); }
+  function _marks(){ return {TL:TL,M:M,TOTAL:TOTAL,HERO:HERO,BOSS:BOSS,TILE:TILE,CAM:CAM}; }
+
+  window.addEventListener('resize',function(){ measure(); });
+
+  return { start:start, skip:skip, isActive:function(){ return yfActive; },
+           render:render, _jump:_jump, _freeze:_freeze, _sfxPlan:_sfxPlan, _marks:_marks };
+})();
+/* YJF:JS:END */
 </script>
 </body>
 </html>
