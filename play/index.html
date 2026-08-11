@@ -3214,7 +3214,7 @@
       <div style="font-size:.8rem;font-weight:900;color:#555;margin-bottom:8px">てもち レベル（ぜんいん）</div>
       <div style="display:flex;align-items:center;gap:8px">
         <span style="font-size:.7rem;color:#999">1</span>
-        <input type="range" min="1" max="9" value="3" id="ts-level" style="flex:1" oninput="$('ts-level-val').textContent=this.value">
+        <input type="range" min="1" max="59" value="3" id="ts-level" style="flex:1" oninput="$('ts-level-val').textContent=this.value">
         <span style="font-size:.7rem;color:#999">9</span>
         <span style="font-size:1.15rem;font-weight:900;color:var(--red);min-width:24px;text-align:center" id="ts-level-val">3</span>
       </div>
@@ -8979,7 +8979,13 @@ function load(){
     // レベル（旧セーブは無し → 全員Lv1）
     levels={};
     if(d&&typeof d.levels==='object'){
-      for(const k in d.levels){ const lv=(d.levels[k]|0); if(lv>=1&&lv<=9) levels[k]=lv; }
+      for(const k in d.levels){   // ★弾LV-1：上限はその子のホームゾーンのcap（新キャップで保存しても9に戻らない）
+        const lv=(d.levels[k]|0);
+        const kc=K[k]?K[k].c:null;
+        const si=(kc!=null)?CHAR_STAGE[kc]:null;
+        const cap=capOfZone((si!=null)?si+1:1);
+        if(lv>=1&&lv<=cap) levels[k]=lv;
+      }
     }
     // てもち
     party=[];
@@ -10144,7 +10150,7 @@ function sendHomeAllTired(source){
 }
 function genkiSelfTest(){
   let monotonic=true, prev=0;
-  for(let lv=1; lv<=9; lv++){
+  for(let lv=1; lv<=59; lv++){   // ★弾LV-1：上限59まで拡張（genki公式は単調増加なので59でもOK）
     const v=GENKI_BASE + Math.floor((lv-1)/2)*GENKI_PER_2LV;
     if(v<prev) monotonic=false;
     prev=v;
@@ -10301,7 +10307,9 @@ function launchJukugoBossBattle(zone){
    ※ボスの強さの微調整は、この数字か、ゾーンごとの敵レベル表のどちらかで行う。 */
 function jukugoBossHp(){
   const lvs=party.filter(i=>i!=null).map(i=>levelOf(i));
-  const band=levelBandOf(lvs.length?Math.max(...lvs):1);
+  const maxLv=lvs.length?Math.max(...lvs):1;
+  const baseMaxLv=Math.max(1,Math.min(9,Math.round(maxLv*9/capOfZone(curStage))));  // ★弾LV-1：実Lvをbase[1-9]に正規化してから帯判定
+  const band=levelBandOf(baseMaxLv);
   const base = band>=3 ? 5 : (band===2 ? 7 : 9);
   const hidden = !!(jukugoBossWordObj && jukugoBossWordObj.hidden);
   return hidden ? base+2 : base;
@@ -11587,7 +11595,13 @@ const ZONE_ENEMY_LEVELS={
   82:{815:7,816:7,817:7,818:7,819:7,820:8,821:8,822:8,823:8,824:8}, // z82 くしろしつげんの つる
   83:{825:7,826:7,827:7,828:7,829:7,830:8,831:8,832:8,833:8,834:8}, // z83 りゅうひょうの うみ
 };
-const GRADE_LV_BASE={1:[1,2],2:[2,3],3:[4,5],4:[5,6],5:[7,8]};   // §6：学年ベースのレベル帯フォールバック基準（弾5-6：5年[7,8]追加）
+const GRADE_LV_BASE={1:[1,2],2:[2,3],3:[4,5],4:[5,6],5:[7,8],6:[8,9]};   // §6：学年ベースのレベル帯フォールバック基準（弾5-6：5年[7,8]追加・弾LV-1：6年[8,9]追加）
+
+/* ★弾LV-1：レベル上限の段階解放（設計書§4-3・準也さん裁定2）
+   学年到達ごとに +10 ずつ上限が解放される。capOfZone＝そのゾーンの学年の上限。
+   apBenchScore(A3)・enemyLevelFor(B1)・planLevelUp・labFuse・セーブの範囲チェックがこれを使う。 */
+const LV_CAP_BY_GRADE={1:9,2:19,3:29,4:39,5:49,6:59};
+function capOfZone(zone){ return LV_CAP_BY_GRADE[gradeOfZone(zone)]||9; }
 function gradeOfZone(zone){
   for(const g of GRADE_ZONES){ if(zone>=g.from && zone<=g.to) return g.grade; }
   return zone<GRADE_ZONES[0].from ? 1 : GRADE_ZONES[GRADE_ZONES.length-1].grade;
@@ -11639,8 +11653,10 @@ function enemyLevelFor(idx,isBossEnemy){
   const si=CHAR_STAGE[K[idx].c];
   const zone=(si!=null)?(si+1):curStage;
   const table=ZONE_ENEMY_LEVELS[zone];
-  if(table && table[idx]!=null) return table[idx];   // 弾B2-2の量産データがあれば優先
-  return enemyLevelFallback(idx,isBossEnemy);
+  const base = (table && table[idx]!=null) ? table[idx] : enemyLevelFallback(idx,isBossEnemy);   // 弾B2-2の量産データ優先・無ければフォールバック
+  /* ★弾LV-1：B1スケール（base×cap/9）。上限9のベース値を、その学年の上限まで引き伸ばす。
+     1年(cap=9)は×1.0＝そのまま／6年(cap=59)は×6.56。シミュレーション(結果5)のA3/B1と同じ。 */
+  return Math.max(1, Math.round(base * capOfZone(zone)/9));
 }
 /* §1-2：9マス表（レベル帯の関係×相性→撃破に必要な正解数）。値は設計書§1-2で確定済み */
 const REQUIRED_HITS_TABLE={
@@ -11717,7 +11733,14 @@ function apBenchScore(i,enemyIdx,isBoss){
   const hits=requiredHitsFor(i,enemyIdx,isBoss);
   const g=genkiOf(i);
   const tired = g<=AP_TIRED_LOW ? AP_TIRED_W_LOW : (g<=AP_TIRED_MID ? AP_TIRED_W_MID : 0);
-  const lowLv = (9-levelOf(i))*AP_LOWLV_W;   // 低いレベルほど大きい＝引くと残りやすい
+  /* ★弾LV-1：lowLv を比率で正規化（A3・上限非依存・最大1.6）。
+     旧：(9-levelOf)*0.2 は上限9前提で、上限59だと最大11.6になり hits を圧倒して壊れる（結果4）。
+     新：(1-levelOf/cap)*1.6 は上限がいくつでも [0,1.6] に収まり、hits(1〜9) が勝つ＝本来の挙動（結果5）。
+     cap＝いま戦っている敵のいるゾーンの学年上限。準也さん弾BL-1§0「比率で見る」と同じ。 */
+  const si=CHAR_STAGE[K[enemyIdx].c];
+  const zone=(si!=null)?(si+1):curStage;
+  const cap=capOfZone(zone);
+  const lowLv = (1-levelOf(i)/cap)*1.6;
   return hits + tired - lowLv;
 }
 /* バトルに入るとき、必要なら1体だけ入れかえる。AUTOえらびがオンのときだけ働く。
@@ -11995,7 +12018,9 @@ Object.keys(MAGIC_ART_KEY).forEach(t=>{
 function magicLevelOf(attackerIdx, defenderIdx, defenderIsBoss){
   const selfLv = (attackerIdx!=null) ? levelOf(attackerIdx) : 1;
   const enemyLv = enemyLevelFor(defenderIdx, defenderIsBoss);
-  const sb = levelBandOf(selfLv), eb = levelBandOf(enemyLv);
+  const cap=capOfZone(curStage);   // ★弾LV-1：実Lvをbase[1-9]に正規化してから帯判定（演出専用・ダメージには無関係）
+  const norm=lv=>Math.max(1,Math.min(9,Math.round(lv*9/cap)));
+  const sb = levelBandOf(norm(selfLv)), eb = levelBandOf(norm(enemyLv));
   return sb > eb ? 'max' : (sb === eb ? 'mid' : 'weak');
 }
 /* 敵のいるあたりに、属性のまほうを出す。演出だけで、ダメージ計算には一切関与しない。 */
@@ -12294,21 +12319,22 @@ function evoBlink(fromIdx,toIdx,done){ evoBlinkRaw(K[fromIdx].c, K[toIdx].c, 200
 
 function planLevelUp(att){
   const oldLv=levelOf(att);
-  if(oldLv>=9){
-    // 手直し(7/18)§3・案A：Lv9でも進化条件を満たしていれば進化のみ行う（Lvは9のまま）
+  const cap=capOfZone(curStage);   // ★弾LV-1：いまのゾーンの学年上限
+  if(oldLv>=cap){
+    // 手直し(7/18)§3・案A：上限でも進化条件を満たしていれば進化のみ行う（Lvはcapのまま）
     // 手直し(7/18朝)：進化先がすでにてもちにいる場合は発火しない（party[pi]=toで同じ字が
     // てもちに2体並ぶ破綻と、進化演出の繰り返し再生を防ぐガード。下の通常進化にも同じガード）
     const e=EVO[att];
-    if(!(e && e.lv<=9) || party.includes(e.to)) return null;   // 進化なし＝従来どおり何も起きない
+    if(!(e && e.lv<=cap) || party.includes(e.to)) return null;   // 進化なし＝従来どおり何も起きない
     const to=e.to;
-    levels[to]=Math.max(levelOf(to), 9);      // §2の下げ防止を適用
+    levels[to]=Math.max(levelOf(to), cap);      // §2の下げ防止を適用
     genki[to]=genkiMaxOf(to); delete genki[att];
     const pi=party.indexOf(att);
     if(pi>=0) party[pi]=to;
     if(selectedAttacker===att) selectedAttacker=to;
     caught.add(to);
     save();
-    return {from:att,to:to,newLv:9};
+    return {from:att,to:to,newLv:cap};
   }
   const newLv=oldLv+1;
   levels[att]=newLv;
@@ -13243,7 +13269,11 @@ function labSuccess(ji,a,b){
     speakJa(j.y+'ー');                   // 読みを叫ぶ（既存の仕組み流用）
     if(isNew){
       jukugo.add(j.w);
-      [a,b].forEach(i=>{ const lv=levelOf(i); if(lv<9) levels[i]=lv+1; });  // 素材+1（直接・上限9・しんかなし）
+      [a,b].forEach(i=>{   // 素材+1（直接・しんかなし）★弾LV-1：上限はその子のホームゾーンのcap
+        const lv=levelOf(i);
+        const si=CHAR_STAGE[K[i].c]; const zone=(si!=null)?(si+1):curStage;
+        if(lv<capOfZone(zone)) levels[i]=lv+1;
+      });
       snd('get'); setTimeout(()=>sfxLevelup(),300);
     }else{ snd('get'); }
     save();
@@ -18129,7 +18159,7 @@ function setTsDiff(d){                   // 既存 setDifficulty と同じ .on �
    levels を caught 全員にセットすれば party 分も自動で入って整合する。 */
 function makeTestSave(opts){
   const base=makeZoneStartSave(Math.min(STAGE_COUNT,Math.max(1,opts.zone|0)));  // zoneは1〜102でクランプ（applyTestSettingsでもクランプ済だが関数内でも防御）
-  const lv=Math.min(9,Math.max(1,opts.level|0));
+  const lv=Math.min(59,Math.max(1,opts.level|0));   // ★弾LV-1：上限59（ロード時クランプで各子のcapに丸まる）
   const levelsObj={};
   base.caught.forEach(i=>{ levelsObj[i]=lv; });
   base.levels=levelsObj;
@@ -18140,7 +18170,7 @@ function makeTestSave(opts){
 function applyTestSettings(){
   const opts={
     zone:Math.min(STAGE_COUNT,Math.max(1,$('ts-zone').value|0)),
-    level:Math.min(9,Math.max(1,$('ts-level').value|0)),
+    level:Math.min(59,Math.max(1,$('ts-level').value|0)),   // ★弾LV-1：上限59
     coins:Math.max(0,$('ts-coins').value|0),
     difficulty:tsDifficulty
   };
