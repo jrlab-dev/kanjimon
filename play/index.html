@@ -2727,6 +2727,120 @@
   #yfSkip{position:absolute;right:10px;top:10px;z-index:80;background:rgba(20,14,4,.72);color:#fff8e7;
     border:1px solid rgba(255,212,59,.75);border-radius:999px;padding:7px 15px;font-size:13px;font-weight:700;cursor:pointer}
 /* YJF:CSS:END */
+  /* ===== 弾EV-1：学年の しゅうりょうしき と 賞状 =====
+     専用div(#sjOverlay)・専用CSS接頭辞(sj-)。既存の.overlayは使い回さない（先例＝氷の城 iceOverlay・ic-接頭辞）。
+     見た目は発注書§4のHTML/CSSをそのまま採用（デザインし直さない）。#appの直下（position:relative）に置く
+     絶対配置なので、position:absoluteのままアプリ画面いっぱいに広がる。 */
+  .sj-overlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;
+    flex-direction:column;gap:14px;background:rgba(0,0,0,.75);z-index:60;padding:16px}
+  .sj-overlay.show{display:flex}
+  .sj-paper{width:min(92%,420px);max-height:76vh;overflow-y:auto;
+    background:linear-gradient(#fffdf5,#fff8e6);
+    border:3px solid #c8a54a;outline:1px solid #c8a54a;outline-offset:4px;
+    border-radius:10px;padding:22px 18px 18px;text-align:center;
+    box-shadow:0 10px 30px rgba(0,0,0,.45);
+    transform:translateY(24px);opacity:0;transition:transform .6s ease-out,opacity .6s ease-out}
+  .sj-paper.in{transform:translateY(0);opacity:1}
+  .sj-title{font-size:26px;font-weight:800;letter-spacing:.4em;color:#8a6d1f;
+    margin-bottom:14px;text-indent:.4em}
+  /* 弾EV-2：100%（かみさま）のときだけタイトルの下に出す★。既定は非表示（HTML側でdisplay:none） */
+  .sj-star{font-size:20px;color:#d4a017;margin:-10px 0 12px;font-weight:900}
+  /* 2026-08-14：17pxだと「1ねんせいの ぼうけんを やりとげま／した」と改行が割れて読みにくかった。
+     1行に収まる大きさに下げた（賞状は親も読む紙なので、変な位置で切れないこと） */
+  .sj-body{font-size:15px;font-weight:700;line-height:1.7;color:#3b3226;margin-bottom:14px;
+    white-space:nowrap}
+  /* 弾EV-2：しょうごう＝いちばん目立たせる（発注書§2のCSSをそのまま採用） */
+  .sj-rank{font-size:21px;font-weight:900;color:#8a6d1f;letter-spacing:.06em;margin:2px 0 10px}
+  .sj-paper.kami .sj-rank{color:#a67c00}
+  /* 仲間の数 */
+  .sj-count{font-size:14px;font-weight:800;color:#6b5a34;margin:-6px 0 12px}
+  /* 漢字1マス。★2026-08-14＝はじめ10列×30pxで作ったが、顔と字が重なって
+     「どの漢字か読めない」状態になった（実物のスクショで発見）。賞状は「どの字をおぼえたか」を
+     見せる紙なので、字が読めないのは本末転倒。→ 8列に減らしてマスを大きくした（80字＝8列×10行ちょうど）。
+     ずかんは5列・1マス64pxなので字と顔が両立している＝賞状もマスの大きさが要る、という話。 */
+  .sj-chars{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;
+    justify-content:center;margin:0 auto 14px;max-width:100%}
+  .sj-ch{position:relative;aspect-ratio:1;min-width:0;line-height:1;font-size:21px;font-weight:700;
+    background:#fff;border:1px solid #e0d3a8;border-radius:6px;text-align:center;
+    display:flex;align-items:center;justify-content:center}
+  .sj-ch.got{color:#5a4a2a}                                  /* なかま＝はっきり */
+  .sj-ch.sleep{opacity:.55}                                  /* からだだけ＝薄い */
+  .sj-ch.none{color:#c9c0aa;background:#faf7ef;border-style:dashed}  /* まだ＝うすい灰色 */
+  /* 弾EV-2：顔（元気な顔・ねむり顔）は、ずかん(renderZukan/showZukanDetail)で使っている.face系クラスを
+     そのまま入れる（ずかん側の.face/.eyes/.eye/.mouth/.sleeping/.normalのCSSは1行も変えない）。
+     .face内部の目・口はem単位（親のfont-size基準）のため、.sj-chの文字サイズ(16px)のままだと
+     目・口が1〜2pxしかなく見えなくなる（8/14実機確認で発見）。.faceだけ大きめのfont-sizeを与えて
+     目・口を視認できる大きさにする＝文字(.fc)のサイズは変えない・ずかん側のCSSも変えない。 */
+  /* ★顔の大きさは「字より小さく」。2026-08-14に30px（字は21px）にしたら顔が字より大きくなり、
+     仲間の字が顔に覆われて読めなくなった（実物のスクショで発見・2回目の失敗）。
+     賞状の主役は「どの字を おぼえたか」なので、字が読めなくなったら本末転倒。
+     目と口は em 単位（.face の font-size 基準）＝ここを字より小さくすると顔が控えめになる。 */
+  .sj-ch .face{font-size:22px}
+  /* 100%のときの金の紙 */
+  .sj-paper.kami{background:linear-gradient(#fffbe8,#fdf2c9);border-color:#d4a017;outline-color:#d4a017}
+  .sj-date{font-size:13px;color:#7a6a4a;margin-bottom:6px}
+  .sj-foot{font-size:15px;font-weight:700;color:#b4602a}
+  .sj-close{padding:10px 26px;font-size:16px;font-weight:700;border:none;border-radius:99px;
+    background:#fff;color:#333;box-shadow:0 3px 0 rgba(0,0,0,.25)}
+  /* ★手直し：賞状そのものは飛ばせない（見せるのが目的）。演出中（賞状が上がりきる前）は
+     「とじる」を押せないようにする＝.sj-paperが.inになって初めて現れる（CSSだけで同期・JS不要）。 */
+  .sj-close{opacity:0;pointer-events:none;transition:opacity .3s ease}
+  .sj-paper.in ~ .sj-close{opacity:1;pointer-events:auto}
+  /* とばす＝演出中（0〜3.2秒）だけ右上に出す。賞状そのものは飛ばせないので賞状が出た瞬間に消える。
+     既存の.intro-skip-btnと似た見た目にそろえるが、クラス名はsj-専用（名前の衝突回避）。
+     ★sjOverlayは#app直下でinset:0（y=0から）＝グローバルの🔇🔊ボタン(.sound-btn:top10px/right10px/
+     46×46/z-index300)とtop:8pxのままだと真上に重なって隠れてしまう（8/14実機確認で発見）。
+     その下（top:64px）まで避けて置く。 */
+  .sj-skip{position:absolute;z-index:61;top:64px;right:8px;display:none;
+    background:rgba(20,20,20,.62);color:#fff;border:none;border-radius:50px;
+    padding:7px 14px;font-size:.72rem;font-weight:900;font-family:inherit;cursor:pointer;
+    box-shadow:0 3px 8px rgba(0,0,0,.25)}
+  .sj-skip.show{display:block}
+  /* ちず画面「あと◯」＝2段目のサブ見出し(#wmSubChip)に文字を差し替えて出す。
+     ★はじめは3段目のチップ(top:70px)を新設したが、そこにゾーン6のノードが来て帯の裏に隠れた
+     （2026-08-14に実物のスクショで発見）。pointer-events:noneなので押せはするが、
+     6歳は「見えないもの」を押さない。→ 段を増やさず2段目に統合した。**3段目を作らないこと。** */
+  #wmSubChip{font-size:.78rem;font-weight:900;color:var(--ink)}
+
+  /* ===== 弾NM-1：なまえと せいべつを きめる（発注書§3・§5のCSSをそのまま採用） =====
+     見た目はデザインし直さない。#appの直下（position:relative）に置く絶対配置＝sj-overlayと同じ流儀。 */
+  .nm-overlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;
+    background:rgba(0,0,0,.8);z-index:70;padding:10px}
+  .nm-overlay.show{display:flex}
+  .nm-panel{width:min(96%,430px);max-height:94vh;overflow-y:auto;background:#fffdf7;
+    border-radius:14px;padding:14px 12px;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+  .nm-talk{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .nm-face{width:56px;height:56px;flex:0 0 56px;border-radius:10px;background-size:cover;
+    background-position:center;background-color:#e9e3d5;display:flex;align-items:center;
+    justify-content:center;font-size:30px}
+  .nm-talk-text{font-size:15px;font-weight:700;line-height:1.6;color:#2b2620}
+  .nm-input{min-height:52px;border:2px dashed #c9bfa6;border-radius:10px;background:#fff;
+    display:flex;align-items:center;justify-content:center;gap:2px;
+    font-size:28px;font-weight:800;letter-spacing:.08em;color:#2b2620;margin-bottom:10px}
+  .nm-caret{display:inline-block;width:2px;height:30px;background:#c9bfa6;animation:nmblink 1s steps(1) infinite}
+  @keyframes nmblink{50%{opacity:0}}
+  .nm-keys{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;margin-bottom:12px}
+  /* 手直し：320px幅で実機検証すると、aspect-ratio:1+min-height:30pxのせいでボタンが常に30×30pxに
+     固定され、1列ぶんの器(264px÷10列=22.8px)より広いため隣どうしが約3px重なっていた
+     （発注書§3の★注記どおりの不具合）。min-width:0だけでは直らず、width:100%で「グリッドの1列ぶんの
+     はばに必ず合わせる」ことを明示して初めて重なりが消える（正方形の縦横比はそのまま・390px等の
+     広い幅では列のはばが30px以上あるので見た目は1pxも変わらない。320pxだけ縦がわずかに正方形より
+     高くなるが、詰まって重なるより優先） */
+  .nm-key{aspect-ratio:1;min-height:30px;min-width:0;width:100%;border:none;border-radius:7px;background:#f0e9d8;
+    font-size:17px;font-weight:800;font-family:inherit;color:#2b2620;
+    box-shadow:0 2px 0 rgba(0,0,0,.16);cursor:pointer;padding:0}
+  .nm-key:active{transform:translateY(2px);box-shadow:none}
+  .nm-key.blank{background:transparent;box-shadow:none;pointer-events:none}
+  .nm-key.mark{background:#e3dcc8}
+  .nm-btns{display:flex;gap:10px;justify-content:center}
+  .nm-btn{padding:11px 22px;font-size:16px;font-weight:800;font-family:inherit;
+    border:none;border-radius:99px;cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.2)}
+  .nm-del{background:#efe7d7;color:#4a4030}
+  .nm-ok{background:#f5a524;color:#fff}
+  .nm-ok:disabled{background:#ddd6c6;color:#fff;box-shadow:none}
+
+  /* 弾NM-1：賞状に名前を1行足す（名前が空のときは行ごと出さない＝JS側でdisplay制御） */
+  .sj-name{font-size:18px;font-weight:800;color:#5a4a2a;margin:-6px 0 12px;letter-spacing:.05em}
 </style>
 </head>
 <body>
@@ -3140,7 +3254,10 @@
          リスナー（誤爆防止のstopPropagation）にタップごと握りつぶされてボタンのonclickが発火しないため。 -->
     <button class="intro-skip-btn" id="wmSkipBtn" onclick="wmSkipIntro()">▶ スキップ</button>
     <h2 class="wm-chip wm-chip-title">ワールドマップ</h2>
-    <div class="wm-chip wm-chip-sub">いく ゾーンを えらぼう</div>
+    <!-- 弾EV-1：いま挑戦中の学年の「あと◯」をここに出す（初期値＝案内文）。
+         ★3段目のチップを新設したら、ゾーン6のノードが帯の裏に隠れて見えなくなった（8/14に実物で発見）。
+         見出しは2段までにして、3段目を作らないこと。 -->
+    <div class="wm-chip wm-chip-sub" id="wmSubChip">いく ゾーンを えらぼう</div>
     <div class="wm-btnbar">
       <button class="btn btn-ghost" onclick="closeWorldMap();openNipponMap();">にほんちずへ</button>
       <button class="btn btn-yellow" onclick="warpTown()">🏘️ まち</button>
@@ -3455,6 +3572,42 @@
     </div>
   </div>
 <!-- IC1:HTML:END -->
+
+<!-- 弾EV-1：学年の しゅうりょうしき と 賞状（GRADE_ZONESの各学年の最後のゾーンをクリアした瞬間に1回だけ）。
+     専用div・専用CSS接頭辞(sj-)。#appの直下＝画面いっぱいに暗転する（既存の.overlayは使い回さない・先例=iceOverlay）。 -->
+<div id="sjOverlay" class="sj-overlay">
+  <button class="sj-skip" id="sjSkipBtn" onclick="sjSkip()">とばす</button>
+  <div class="sj-paper" id="sjPaper">
+    <div class="sj-title">しょうじょう</div>
+    <!-- 弾EV-2：100%（かみさま）のときだけ★を出す（既定は非表示） -->
+    <div class="sj-star" id="sjStar" style="display:none">★</div>
+    <div class="sj-name" id="sjName" style="display:none"></div>
+    <!-- 弾EV-2：しょうごう（地方の名前＋呼び名） -->
+    <div class="sj-rank" id="sjRank"></div>
+    <div class="sj-body" id="sjBody"></div>
+    <!-- 弾EV-2：なかまに なった かんじの実数 -->
+    <div class="sj-count" id="sjCount"></div>
+    <div class="sj-chars" id="sjChars"></div>
+    <div class="sj-date" id="sjDate"></div>
+    <div class="sj-foot">おうちの ひとに みせよう！</div>
+  </div>
+  <button class="sj-close" onclick="sjClose()">とじる</button>
+</div>
+
+<!-- 弾NM-1：なまえと せいべつを きめる（オープニングのあと・セーブが無い初回だけ1回出す）。
+     専用div・専用CSS接頭辞(nm-)。#appの直下＝画面いっぱいに暗転する（先例=sjOverlay/iceOverlay）。 -->
+<div id="nmOverlay" class="nm-overlay">
+  <div class="nm-panel" onclick="nmTapAdvance()">
+    <!-- 弾NM-2：マナの顔(nm-face)はHTMLごと出さない（②はまだ物語が始まる前の画面のため）。CSSクラスは残してある -->
+    <div class="nm-talk"><div class="nm-talk-text" id="nmTalkText"></div></div>
+    <div class="nm-input" id="nmInput"><span class="nm-caret"></span></div>
+    <div class="nm-keys" id="nmKeys"><!-- ボタンはJSで並べる --></div>
+    <div class="nm-btns">
+      <button class="nm-btn nm-del" onclick="event.stopPropagation();nmDel()">けす</button>
+      <button class="nm-btn nm-ok" id="nmOkBtn" onclick="event.stopPropagation();nmOk()" disabled>これで いい</button>
+    </div>
+  </div>
+</div>
 
 <script>
 /* ==============================
@@ -6023,19 +6176,19 @@ YOJIJUKUGO.forEach((j,i)=>{ YOJIJUKUGO_BY_KEY[j.w]=i; });
 ================================ */
 const STAGE_DEFS=[
   {name:'かずの そうげん',  chars:'一二三四五六七八九十百千'},
-  {name:'もりと はなばたけ',chars:'木林森草花竹田野虫犬'},
+  {name:'もりと はなばたけ',chars:'木林森草花竹田虫犬'},
   {name:'そらと みずべ',    chars:'空天月日夕水川雨貝青'},
-  {name:'かざんの たからやま',chars:'山土石谷火赤力金玉光'},
-  {name:'ひとの むら',      chars:'人男女子王目耳口手足'},
-  {name:'まちと がっこう',  chars:'町村学校字文音見円車'},
+  {name:'かざんの たからやま',chars:'山土石火赤力金玉'},
+  {name:'ひとの むら',      chars:'人男女子王目耳口手名足'},
+  {name:'まちと がっこう',  chars:'町村学校字文音見円本車'},
   {name:'ふしぎの めいろ',  chars:'上下左右中大小白糸年'},
   {name:'かんじの しろ',    chars:'生先正早立出入休気'},
   /* 第18弾§2：小2カントウ16ゾーン追加（第14弾§3の並び・第14弾§付録Aスクリプトで生成・検証済み） */
   {name:'かぞくの いえ',       chars:'父母兄弟姉妹親友家内'},
   {name:'まなびやの もり',     chars:'教室図書算数国語科答'},
-  {name:'いわやまの さと',     chars:'岩原高台地里広丸角毛'},
+  {name:'いわやまの さと',     chars:'岩原高台地里広丸角野谷毛'},
   {name:'まきばと どうぶつえん',chars:'牛馬鳥羽鳴肉麦米茶園'},
-  {name:'ひかりの おてら',     chars:'寺社門戸古今新明京当'},
+  {name:'ひかりの おてら',     chars:'寺社門戸古今新明京光当'},
   {name:'とけいの とう',       chars:'時間分半午前後毎週曜'},
   {name:'えかきの もり',       chars:'色黒黄形点線細太画絵'},
   {name:'うみの ぼうけん',     chars:'海魚船汽池外遠近帰回'},
@@ -6046,7 +6199,7 @@ const STAGE_DEFS=[
   {name:'ちからだめしの どうくつ',chars:'強弱引切刀矢弓走止直'},
   {name:'にぎやかな しょうてんがい',chars:'店売買市場多少万番組'},
   {name:'であいの みなとまち', chars:'会合交公同元長朝風何'},
-  {name:'じぶんの しろ',       chars:'自顔首体頭食紙本名'},
+  {name:'じぶんの しろ',       chars:'自顔首体頭食紙'},
   /* 弾3-6§2-1：3年カンサイ・シコク20ゾーン追加（設計書の表を1文字も変えずに使用） */
   {name:'おいせまいりの さんどう',    chars:'神宮祭礼客幸命式和全'},
   {name:'にんじゃの さと',           chars:'打投反転血対決速追死'},
@@ -6267,6 +6420,36 @@ const CHAR_GRADE={};
 Object.keys(CHAR_STAGE).forEach(ch=>{ CHAR_GRADE[ch]=zoneGrade(CHAR_STAGE[ch]+1); });
 /* ゾーン文脈のない画面（ずかん・けんきゅうじょ・町等）用＝「進行度学年」＝開放済み最高ゾーンの学年 */
 function progressGrade(){ return zoneGrade(unlocked); }
+/* 弾EV-1：学年しゅうりょうしき・「あと◯」共通ヘルパー。GRADE_ZONESに1行足せば学年が増えても
+   そのまま動く汎用実装（「ゾーン8だけ特別扱い」にしない）。 */
+// そのゾーンが学年の最後（=しゅうりょうしきの対象）なら学年番号、そうでなければnull
+function gradeFinishedByZone(zone){
+  const g=GRADE_ZONES.find(g=>g.to===zone);
+  return g?g.grade:null;
+}
+// 学年の漢字を並び順どおりに1本の文字列にする（賞状のsj-chars用）
+function gradeCharsStr(grade){
+  const g=GRADE_ZONES.find(g=>g.grade===grade); if(!g) return '';
+  let s=''; for(let z=g.from; z<=g.to; z++) s+=STAGE_DEFS[z-1].chars;
+  return s;
+}
+// 弾EV-2：学年の漢字をK配列のインデックスで並び順どおりに1本の配列にする（賞状の3つの見た目・しょうごうの割合計算用）
+function gradeIndices(grade){
+  const g=GRADE_ZONES.find(g=>g.grade===grade); if(!g) return [];
+  let arr=[]; for(let z=g.from; z<=g.to; z++) arr=arr.concat(STAGE_DEFS[z-1].indices);
+  return arr;
+}
+// いま挑戦中の学年＝クリアしていないゾーンがある最も若い学年（全クリア済みなら最終学年）
+function currentChallengeGrade(){
+  for(const g of GRADE_ZONES){ for(let z=g.from; z<=g.to; z++){ if(!cleared.has(z)) return g.grade; } }
+  return GRADE_ZONES[GRADE_ZONES.length-1].grade;
+}
+// その学年の残りゾーン数（未クリア数）
+function gradeRemainCount(grade){
+  const g=GRADE_ZONES.find(g=>g.grade===grade); if(!g) return 0;
+  let n=0; for(let z=g.from; z<=g.to; z++){ if(!cleared.has(z)) n++; }
+  return n;
+}
 
 /* ==============================
    第4弾：フィールド マップデータ（設計書 §3 の地図。意味配置は不変）
@@ -6312,7 +6495,7 @@ const ZONES=[
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTT>>TTTTTTTTTTTTTT",
-    "TTTT,,,,,,,,,,,.J,,,,,TT,TTTTT",
+    "TTTT,,,,,,,,,,,.,,,,,,TT,TTTTT",
     "TTTT,,TTT,,,F,,.,,G,,,TT,TTTTT",
     "TTT,,,,,,R,,,,,.,,,TT,,,,TTTTT",
     "TT,,,T,,E,,,,,,.R,,,,,,,R,,TTT",
@@ -6372,9 +6555,9 @@ const ZONES=[
     "TTT,R,R,,F,RR,,.,,TRRWR,RR,TTT",
     "TTTTRD,,,,,,,,,.H,,,WWW,R,,TTT",
     "TTT,,,,,R,,,,,R.,RR,WWR,,,,,TT",
-    "TTT,,,WW,,I,,,,.,,TT,RR,,,,TTT",
+    "TTT,,,WW,,,,,,,.,,TT,RR,,,,TTT",
     "TTT,,,R,,R,,,,,.R,,,,,RR,,,TTT",
-    "TTTTT,,,,RR,,,,.,,,RJ,,,RTTTTT",
+    "TTTTT,,,,RR,,,,.,,,R,,,,RTTTTT",
     "TTTTTRR,,RR,,,,.,R,TTTRRRTTTTT",
     "TTTTRRTTTTTTTT,.TT,RTTRTTTTTTT",
     "TTTTTTTTTTTTTT,STTTTTTTTTTTTTT",
@@ -6396,7 +6579,7 @@ const ZONES=[
     "TTTT,TT,TT,,,,,.T,HTTTTTTTTTTT",
     "TTTT,,,,,,,RG,,.TTTTTTTTRTTTTT",
     "TTTTRTT,,T,,,,,.,RTTTTTTRTTTTT",
-    "TTTTTTT,,TRI,,,.,,,F,RTTRTTTTT",
+    "TTTTTTT,,TRI,K,.,,,F,RTTRTTTTT",
     "TTTTTTT,,,,,,J,.,,,,RTTTTTTTTT",
     "TTTTTTTTTTRTTTT.TTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTT.TTTTTTTTTTTTTT",
@@ -6413,7 +6596,7 @@ const ZONES=[
     "TTTTTTTTTTTTT,..TTT,TTTT,TTTTT",
     "TTTTTTTTTTTTTT..TB,IF,,,,,TTTT",
     "TTTTTTTTTTTTTT..T,T,,T,,,,,TTT",
-    "TTTTTTTTTTTTTT,.TTTTTT,,,,,TTT",
+    "TTTTTTTTTTTTTT,.TTTTTT,,,K,TTT",
     "TTTTTTTTTTTTTT,.TTTTTTD,TJTTTT",
     "TTTTTTTTTT,,,,,.TTTT,E,,,,,TTT",
     "TTTT,,,,,,,TTT,.TTTT,TTTTTTTTT",
@@ -6535,8 +6718,8 @@ const ZONES=[
     "RRRR,,,TRRT,,,R.,,,RR,,RRTRTRR",
     "RTTT,G,RTRT,,,,.,,,,,,H,,TRTTR",
     "RTTTR,,,RR,,TR,.,,TR,,RTTTTTTR",
-    "RRRTRRR,,I,TRR,.,RRRR,RRTTTRRR",
-    "RRRTRRRT,,,,,,,.,RRT,,,TTTRRRR",
+    "RRRTRRR,,I,TRR,.,RRRRLRRTTTRRR",
+    "RRRTRRRT,,,,,,,.,RRT,K,TTTRRRR",
     "RRRRRTR,,RRR,,.,,RRT,J,,TTRRRR",
     "RRRRRTRTRRRR,T.TTRRRRTRRRRRRRR",
     "RRRRRRRRRRRRRT.TRRRRRRRRRRRRRR",
@@ -6584,7 +6767,7 @@ const ZONES=[
     "TTTT,,,,RRRTTT..,RTRTTTTTTTTTT",
     "TTTTT,RRRRRRH,..TRTTTRRTTTTTTT",
     "TTTTTTTRRRRT,R..,TTRRRRRTTTTTT",
-    "TTTTTTT,IJ,,,T..TTTTRRTTTTTTTT",
+    "TTTTTTT,IJK,,T..TTTTRRTTTTTTTT",
     "TTTTTTTT,TTTTTT.TTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTS.TTTTTTTTTTTTTT"] },
   { name:'とけいの とう', scene:'s-stone', grid:[
@@ -6832,10 +7015,10 @@ const ZONES=[
     "TTR,,,,T,,,CRR..RT,,G,TT,,,RTT",
     "TTTTT,,,W,T,,,..RTTT,W,,,TTTTT",
     "TTTTT,,TW,,TTT..RTT,,W,R,TTTTT",
-    "TTTR,,,,TD,,,,..,R,HRT,,,,RTTT",
+    "TTTR,,,,TD,,,,..,R,,RT,,,,RTTT",
     "TTTR,,,E,,,,,T..TT,,,,,,,,,TTT",
     "TTR,,,,,T,,,R,..R,,,,TT,,,TRTT",
-    "TTTTT,T,,R,,TT..TT,,RTTTI,TTTT",
+    "TTTTT,T,,R,,TT..TT,,RTTT,,TTTT",
     "TTTTTTTTTTTTTT..TTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTT..TTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTT..TTTTTTTTTTTTTT",
@@ -8831,6 +9014,8 @@ let shipSceneSeen=false;      // 弾S-1：ゾーン76→77で船シーン（つ�
 let planeSceneSeen=false;     // 弾6-1：ゾーン83→84で飛行機シーン（北海道→トットリ）を見たか
 const IC_ZONE=83;             // 弾IC-1：氷の城シーンが流れるゾーン（りゅうひょうの うみ）
 let iceCastleSeen=false;      // 弾IC-1：ゾーン83クリア後の氷の城シーンを見たか
+// 弾EV-1：学年の しゅうりょうしき・賞状を見たか（学年番号→初めて受け取った日 'YYYY-MM-DD'）。旧セーブはキー無し＝未見あつかい
+let gradeCeremonySeen={};
 // 弾3-6§6-3：「たびの つづき」通知（旧セーブ移行）を見たか（旧セーブは未見あつかい）
 let travelContinueSeen=false;
 let pendingTravelContinueBanner=false;   // セッション値：load()で判定し、次のrenderField()で1回だけ消費
@@ -8850,6 +9035,8 @@ let zoneVisited=[];     // バナー済みゾーン番号（1-8）の配列
 let freeZones=new Set();  // 自由移動解禁済みゾーン番号（1-8）
 // 第5.5弾：主人公キャラ（'boy'｜'girl'・既定'boy'）。セーブに含む（後方互換）
 let heroChar='boy';
+// 弾NM-1：主人公の なまえ（文字列・既定は空文字）。セーブに含む（旧セーブは空文字にフォールバック）
+let playerName='';
 /* ===== 手直し_着替えシステム第1弾（2026-07-25）=====
    見た目だけの着替え（強さには一切影響しない＝アイデア帳の原則）。
    画像URLは「今までの名前 + suffix」で作るので、標準衣装(std)のURLは今までと1バイトも変わらない。
@@ -8909,6 +9096,7 @@ function save(){
       labSeen:labSeen,shinySeen:shinySeen,intrudeSeen:intrudeSeen,
       fieldPos:fieldPos,introSeen:introSeen,zoneVisited:[...zoneVisited],
       freeZones:[...freeZones],heroChar:heroChar,
+      playerName:playerName,   // 弾NM-1
       mayoigoLoreSeen:mayoigoLoreSeen,
       tamashiiFirstSeen:tamashiiFirstSeen,tamashiiLoreSeen:tamashiiLoreSeen,
       reviewIntrudeFirstSeen:reviewIntrudeFirstSeen,
@@ -8925,6 +9113,7 @@ function save(){
       shipSceneSeen:shipSceneSeen,             // 弾S-1：船シーンを見たか
       planeSceneSeen:planeSceneSeen,           // 弾6-1：飛行機シーンを見たか
       iceCastleSeen:iceCastleSeen,             // 弾IC-1：氷の城シーンを見たか
+      gradeCeremonySeen:gradeCeremonySeen,     // 弾EV-1：学年しゅうりょうしき・賞状を見たか（学年→日付）
       travelContinueSeen:travelContinueSeen,   // 弾3-6§6-3
       chubuHakaseSeen:chubuHakaseSeen,         // 弾4-6§6-1
       travelContinueSeen2:travelContinueSeen2, // 弾4-6§6-3
@@ -9024,6 +9213,8 @@ function load(){
     cleared.forEach(sn=>freeZones.add(sn));   // クリア済みゾーンは読み込み時に自動解禁
     // 第5.5弾：主人公キャラ（後方互換：heroChar無し・想定外値はすべて'boy'に倒す）
     heroChar = (d.heroChar==='girl') ? 'girl' : 'boy';
+    // 弾NM-1：なまえ（後方互換：旧セーブ・想定外の型はすべて空文字に倒す）
+    playerName = (typeof d.playerName==='string') ? d.playerName : '';
     /* 手直し_着替え：もっている服・きている服は主人公ごとに持つ（7/25夜の指摘）。
        男女の区別がなかったころの古いセーブは、**いまの主人公のぶん**として引き継ぐ
        ＝もう片方は買い直し（1着ぶんの値段で2着ぶん手に入っていたのを直したもの）。
@@ -9078,6 +9269,14 @@ function load(){
     shipSceneSeen = (d.shipSceneSeen===true);         // 弾S-1：旧セーブは未見あつかい
     planeSceneSeen = (d.planeSceneSeen===true);       // 弾6-1：旧セーブは未見あつかい
     iceCastleSeen = (d.iceCastleSeen===true);         // 弾IC-1：旧セーブは未見あつかい
+    // 弾EV-1：学年しゅうりょうしき・賞状（旧セーブはキー無し＝未見あつかい。値=初めて受け取った日付文字列のみ採用）
+    gradeCeremonySeen={};
+    if(d && typeof d.gradeCeremonySeen==='object' && d.gradeCeremonySeen){
+      for(const gk in d.gradeCeremonySeen){
+        const gn=(gk|0), v=d.gradeCeremonySeen[gk];
+        if(gn>=1 && gn<=6 && typeof v==='string') gradeCeremonySeen[gn]=v;
+      }
+    }
     travelContinueSeen = (d.travelContinueSeen===true);
     // 弾4-6§6-1／§6-3：新規セーブ項目（旧セーブは未見あつかい）
     chubuHakaseSeen = (d.chubuHakaseSeen===true);
@@ -13899,6 +14098,8 @@ function isPassableTile(ch,zone){
 /* 第6弾§2：前回位置の自動再開は廃止。タイトル→ワールドマップ→ゾーン選択→Sから開始 */
 function goField(){
   // 第5.5弾§4：完全な新規プレイヤー（起動時セーブ無し）で女の子画像あり → ちずの前に選択ポップ
+  // 弾NM-1（2026-08-14）：新規プレイヤーは今はop1Finish()側の②画面で既にせいべつを選び終えており、
+  // heroSelectShownOnceが立っているのでこの分岐は通常発火しない（削除はせず保険として残す＝既存の流儀）。
   if(!hadSaveAtBoot && heroSelectAvailable() && !heroSelectShownOnce){
     heroSelectShownOnce=true;   // 同一セッションで2度出さない
     openHeroSelect(function(){ openWorldMap(); });
@@ -13937,6 +14138,134 @@ function selectHero(char){
 function closeHeroSelect(){             // タイトル切替時の「とじる」（初回は表示されない）
   $('heroSelectOverlay').classList.remove('show');
   heroSelectAfter=null;
+}
+
+/* ==============================
+   弾NM-1：なまえと せいべつを きめる（弾NM-2でop1の前へ移動）
+   オープニング(op1)が始まる前・セーブが無い初回だけ1回出す専用オーバーレイ（#nmOverlay・接頭辞nm-）。
+   物語が始まる前の画面なのでマナは名乗らない＝なまえを ひらがなキーボードで入力→せいべつをえらぶ
+  （既存openHeroSelectを流用）、の順で進む。マナの名乗りはop1の中のS3b/S3c（弾NM-2新設）へ移した。
+   見た目(HTML/CSS)は発注書§3のものをそのまま使用。ロジックだけここに実装する。
+================================ */
+let nmActive=false;          // ②の画面を表示中か（多重発火防止・情報用）
+let nmStep='ask';            // 'ask'|'confirm'|'gender'（キー入力を受け付けるのは'ask'のときだけ）
+let nmVal='';                // 入力中の名前（確定前・「これで いい」を押すとplayerNameへ）
+let nmAfterDone=null;        // 弾NM-2：なまえ・せいべつが終わったあとに呼ぶコールバック（op1開始への橋渡し）
+let nmAdvanceTimerId=null;   // 自動で次のセリフへ進むタイマー（既存hakaseTalkのscheduleHakaseAdvanceと同じ発想）
+let nmAdvanceTrigger=null;   // タップで先送りする関数（自動送りタイマーと同じ処理を即実行）。'ask'中はnullにして誤操作を防ぐ
+const NM_ROWS=[   // 発注書§3の並び（・は空白マス＝押せない・詰めない）
+  ['あ','か','さ','た','な','は','ま','や','ら','わ'],
+  ['い','き','し','ち','に','ひ','み','・','り','を'],
+  ['う','く','す','つ','ぬ','ふ','む','ゆ','る','ん'],
+  ['え','け','せ','て','ね','へ','め','・','れ','・'],
+  ['お','こ','そ','と','の','ほ','も','よ','ろ','・'],
+  ['゛','゜','ゃ','ゅ','ょ','っ','ー']
+];
+const NM_DAKUTEN={か:'が',き:'ぎ',く:'ぐ',け:'げ',こ:'ご',さ:'ざ',し:'じ',す:'ず',せ:'ぜ',そ:'ぞ',
+  た:'だ',ち:'ぢ',つ:'づ',て:'で',と:'ど',は:'ば',ひ:'び',ふ:'ぶ',へ:'べ',ほ:'ぼ'};
+const NM_HANDAKUTEN={は:'ぱ',ひ:'ぴ',ふ:'ぷ',へ:'ぺ',ほ:'ぽ'};
+const NM_MAXLEN=6;   // 発注書§3：最大6文字
+const NM_MARKS='゛゜ゃゅょっー';   // 見た目だけ他の行と区別する6行目（.nm-key.mark）
+function nmBuildKeys(){
+  const wrap=$('nmKeys'); if(!wrap || wrap.dataset.built) return;   // 二重生成防止（再表示のたびに作り直さない）
+  wrap.dataset.built='1';
+  NM_ROWS.forEach(row=>{
+    row.forEach(ch=>{
+      if(ch==='・'){ const b=document.createElement('div'); b.className='nm-key blank'; wrap.appendChild(b); return; }
+      const b=document.createElement('button');
+      b.type='button';
+      b.className='nm-key'+(NM_MARKS.indexOf(ch)>=0?' mark':'');
+      b.textContent=ch;
+      b.onclick=(e)=>{ e.stopPropagation(); nmKeyPress(ch); };
+      wrap.appendChild(b);
+    });
+  });
+}
+function nmRenderInput(){
+  const el=$('nmInput'); if(!el) return;
+  el.innerHTML=[...nmVal].map(c=>'<span>'+c+'</span>').join('')+'<span class="nm-caret"></span>';
+}
+function nmUpdateOkState(){ const b=$('nmOkBtn'); if(b) b.disabled=(nmVal.length===0); }
+function nmKeyPress(ch){
+  if(nmStep!=='ask') return;   // 名前入力中(askステップ)以外はキーを受け付けない
+  if(ch==='゛'){
+    if(nmVal.length){ const last=nmVal[nmVal.length-1]; if(NM_DAKUTEN[last]) nmVal=nmVal.slice(0,-1)+NM_DAKUTEN[last]; }
+    nmRenderInput(); return;   // 濁音にできない字なら何も起きない（マップに無ければ素通り）
+  }
+  if(ch==='゜'){
+    if(nmVal.length){ const last=nmVal[nmVal.length-1]; if(NM_HANDAKUTEN[last]) nmVal=nmVal.slice(0,-1)+NM_HANDAKUTEN[last]; }
+    nmRenderInput(); return;
+  }
+  if(nmVal.length>=NM_MAXLEN) return;   // 6文字まで。それ以上は音も出さず静かに無視
+  nmVal+=ch;
+  nmRenderInput(); nmUpdateOkState();
+}
+function nmDel(){
+  if(nmStep!=='ask') return;
+  nmVal=nmVal.slice(0,-1);
+  nmRenderInput(); nmUpdateOkState();
+}
+function nmOk(){
+  if(nmStep!=='ask' || nmVal.length===0) return;   // 空のままでは確定できない
+  playerName=nmVal; save();
+  nmShowConfirm();
+}
+function nmSetTalk(msg){ const el=$('nmTalkText'); if(el) el.textContent=msg; }
+function nmClearAdvanceTimer(){
+  if(nmAdvanceTimerId){ clearTimeout(nmAdvanceTimerId); nmAdvanceTimerId=null; }
+  nmAdvanceTrigger=null;
+}
+/* 自動送り＋タップ先送り（既存hakaseTalkのscheduleHakaseAdvance／hakaseTapTriggerと同じ考え方の簡易版） */
+function nmScheduleAdvance(ms, fn){
+  nmClearAdvanceTimer();
+  nmAdvanceTrigger=fn;
+  nmAdvanceTimerId=setTimeout(()=>{ nmAdvanceTimerId=null; const f=nmAdvanceTrigger; nmAdvanceTrigger=null; if(f) f(); }, ms);
+}
+function nmTapAdvance(){ if(nmAdvanceTrigger){ const f=nmAdvanceTrigger; nmClearAdvanceTimer(); f(); } }
+/* 入口：弾NM-2でop1の前へ移動＝起動時トリガー（本ファイル末尾）から呼ぶ。afterCbは「なまえ・せいべつが
+   済んだあと」に呼ぶコールバック（op1開始）。playerNameが既にある・オーバーレイ要素が無いときは
+   画面を出さずafterCbだけ即呼ぶ（安全側＝この画面が原因でop1が始まらなくなる事故を防ぐ） */
+function nmOpen(afterCb){
+  nmAfterDone=(typeof afterCb==='function') ? afterCb : null;
+  if(playerName || !$('nmOverlay')){
+    const f=nmAfterDone; nmAfterDone=null; if(f) f();
+    return;
+  }
+  nmActive=true; nmVal='';
+  nmBuildKeys(); nmRenderInput(); nmUpdateOkState();
+  $('nmOverlay').classList.add('show');
+  nmSayAsk();
+}
+/* 弾NM-2：②はまだ物語が始まる前の画面＝マナは名乗らない（マナの顔・名乗りはop1の中のS3b/S3cへ移した）。
+   最初から入力を受け付ける（マナのあいさつぶんの自動送りは廃止） */
+function nmSayAsk(){
+  nmStep='ask';
+  nmClearAdvanceTimer();   // 入力中はタップ先送りを無効化（キー操作を優先）
+  nmSetTalk('なまえを おしえてね');
+}
+function nmShowConfirm(){
+  nmStep='confirm';
+  nmSetTalk(playerName+'だね！');
+  nmScheduleAdvance(1800, heroSelectAvailable() ? nmSayGenderPrompt : nmGoGender);
+}
+function nmSayGenderPrompt(){
+  nmStep='gender';
+  nmSetTalk('きみは どっち？');
+  nmScheduleAdvance(1100, nmGoGender);
+}
+/* せいべつをえらぶ＝新しく作らず既存openHeroSelect(afterCb)をそのまま使う（発注書§2）。
+   女の子の絵が読めないとき(heroSelectAvailable()===false)はポップを出さず、そのままゾーン1へ。 */
+function nmGoGender(){
+  nmClearAdvanceTimer();
+  $('nmOverlay').classList.remove('show');
+  nmActive=false;
+  const afterDone=nmAfterDone; nmAfterDone=null;   // 弾NM-2：呼び出し元（op1開始）へ「なまえ・せいべつが済んだ」を伝える
+  if(heroSelectAvailable()){
+    heroSelectShownOnce=true;   // 第5.5弾のgoField()側フォールバックと二重発火しないための番人（既存の流儀のまま）
+    openHeroSelect(function(){ if(afterDone) afterDone(); });
+  }else if(afterDone){
+    afterDone();
+  }
 }
 
 const FIELD_STEP_MS=140;   // 1マスのなめらかな移動時間（手動＝自由移動・等速・クロノトリガー風）
@@ -15038,6 +15367,18 @@ function enterNextZone(){
     return;
   }
   if(gateFxLock) return;   // 第17弾§2：演出（音＋フラッシュ）が鳴り終わるまで連打による二重発火を無視
+  // 弾EV-1：いま出ようとしているゾーンが学年の最後（GRADE_ZONESの.to）で、まだしゅうりょうしきを見ていなければ、
+  //   ここで足止めしてしゅうりょうしき→賞状を先に見せる。閉じたら続き（本来のゲート通過処理）を実行する。
+  //   ★ゾーン24等は直後に新幹線などの地方間移動シーンがあるため、しゅうりょうしきは必ずそれより先に出す
+  //   （汎用実装＝GRADE_ZONESに1行足せば増える。「ゾーン8だけ特別扱い」のコードにはしない）。
+  const evFinishedGrade=gradeFinishedByZone(fieldZone);
+  if(evFinishedGrade && !gradeCeremonySeen[evFinishedGrade]){
+    startGradeCeremony(evFinishedGrade, enterNextZoneAfterCeremony);
+    return;
+  }
+  enterNextZoneAfterCeremony();
+}
+function enterNextZoneAfterCeremony(){
   gateFxLock=true;
   ensureAudio(); snd('gatepass');                          // 第17弾§2：ゲート通過の効果音（sfxFanfareとは別・控えめ・🔇連動はsnd()側で担保）
   const gf=$('gateFlash'); if(gf) gf.classList.add('on');  // 第17弾§2：短いフラッシュ（evo-flashとは別の軽量要素）
@@ -15388,12 +15729,19 @@ function hakaseTalk(){
   if(hakaseStartTimer){ clearTimeout(hakaseStartTimer); hakaseStartTimer=null; }   // 自動開始待ちタイマーは役目終了
   const msgs=[
     'かんじもんの せかいへ ようこそ！',
+    // 2026-08-14 準也さん裁定：ここで初めて「マナ」と名乗る（それまでゲーム内に名前が一度も出ていなかった）。
+    // 設定＝アンドロイドのマナ／あらゆることを研究して「ぜんぶの はかせ」になった／いまは漢字にハマっている。
+    // ねらい＝ラスボスのイージー（生まれたときから全知・学んだ経験がない）との差を、説明でなく自己紹介で立てる。正本＝設計書\世界観_1枚紙.md §4
+    'わたしは マナ。アンドロイドの はかせだよ！',
+    'なんでも けんきゅうして、ぜんぶの はかせに なったの。いまは かんじに むちゅう！',
     'きみに あいぼうの 『一』を あげよう！ いっしょに ぼうけんだ！',
     // 第12弾§4-1：はかせが一をくれる場面の直後に世界観の導入（きみの一に宿るたましいの話）
-    // 手直し はかせみため§4：長文を3分割（文言は一字も変えず、文の区切りで分けただけ。連結すると元の1文と完全一致＝node照合済み）
-    'よみと いう たましいを なくした かんじは、こわくて あばれてしまうんじゃ。',
+    // 手直し はかせみため§4：長文を3分割（文の区切りで分けただけ）
+    // 2026-08-14：この3文のうち1文目と3文目が old な老人口調（〜んじゃ／〜おるじゃろ）のまま残っていたので女性口調に直した。
+    // 　オープニング（op1ManaText「…見えているのね」）と30秒で人格が入れ替わって見えていたための修正。意味は変えていない。
+    'よみと いう たましいを なくした かんじは、こわくて あばれてしまうの。',
     'ただしい よみを よんであげると、たましいの きおくが もどって おちつく。',
-    'きみの 一には、ちゃんと たましいが やどっておるじゃろ？',
+    'きみの 一には、ちゃんと たましいが やどっているでしょ？',
     'かんじもんを つかまえて ずかんを かんせい させよう！',
     'あるいて さがして、きになる こに ちかづいてみよう！'
   ];
@@ -15899,6 +16247,12 @@ function renderWorldMap(regionOverride){
   }
   // 手直し ちず拡大とパン§1-2/1-3：地方ごとの固定倍率でズームし、現在地ゾーン（townPrevZone補正込み）が
   // 窓の中心に来るよう初期パンを計算する。範囲外（別地方をにほんちずから直接開いた等）は地図の中央を初期表示にする
+  // 弾EV-1：いま挑戦中の学年の「あと◯」（地方に関わらず、ゲーム全体の進行度を表示）
+  const goalEl=$('wmSubChip');
+  if(goalEl){
+    const wmGrade=currentChallengeGrade(), wmRemain=gradeRemainCount(wmGrade);
+    goalEl.textContent = wmGrade+'ねんせいの かんじ　'+(wmRemain>0 ? ('あと '+wmRemain) : 'ぜんぶ たすけた！');
+  }
   const scale=WM_ZOOM[region]||1.0;
   const centerZone=isTownLike(fieldZone)?townPrevZone:fieldZone;
   const centerCoord=(centerZone>=zFrom && centerZone<=zTo)?coords[centerZone-zFrom]:{x:50,y:50};
@@ -17675,7 +18029,7 @@ function otGuideHtml(){
   if(otetsudaiGuideSeen) return '';
   otetsudaiGuideSeen=true; save();
   const face=hakaseFaceImgOK?'<div class="battle-hakase-face has-img" style="background-image:url(\'images/sprites/hakase-face.webp\')"></div>':'<div class="battle-hakase-face">🧑‍🔬</div>';
-  return '<div class="battle-hakase show" style="margin-bottom:10px">'+face+'<div class="battle-hakase-text">まちの ひとの おてつだいを すると、おだちんが もらえるぞ！ なんども やって いいんじゃ</div></div>';
+  return '<div class="battle-hakase show" style="margin-bottom:10px">'+face+'<div class="battle-hakase-text">まちの ひとの おてつだいを すると、おだちんが もらえるよ！ なんども やって いいの</div></div>';
 }
 function renderOtetsudaiMenu(msg){
   otClearTimer(); otetsudaiState=null;
@@ -17908,7 +18262,7 @@ function openInn(auto){
   if(auto && !innGuideSeen){
     innGuideSeen=true; save();
     const face=hakaseFaceImgOK?'<div class="battle-hakase-face has-img" style="background-image:url(\'images/sprites/hakase-face.webp\')"></div>':'<div class="battle-hakase-face">🧑‍🔬</div>';
-    guideBox.innerHTML='<div class="battle-hakase show" style="margin-bottom:10px">'+face+'<div class="battle-hakase-text">つかれたら この やどで やすむと いい。むりょう じゃぞ</div></div>';
+    guideBox.innerHTML='<div class="battle-hakase show" style="margin-bottom:10px">'+face+'<div class="battle-hakase-text">つかれたら この やどで やすむと いいよ。むりょうだよ</div></div>';
   }else guideBox.innerHTML='';
   $('innMsg').textContent='やどで やすんで いく？（むりょう）';
   $('innBtns').style.display='';
@@ -18039,7 +18393,135 @@ function showAllClear(){
   $('allClearOverlay').classList.add('show');
   sfxAllclear();
 }
-function closeAllClear(){ $('allClearOverlay').classList.remove('show'); showScreen('screen-title'); }
+function closeAllClear(){
+  $('allClearOverlay').classList.remove('show');
+  // 弾EV-1：ゾーン102（6年の最後）は「ぜんステージ クリア！」のあとに6年の賞状を出す（1回だけ）
+  if(!gradeCeremonySeen[6]){ startGradeCeremony(6, ()=>{ showScreen('screen-title'); }); return; }
+  showScreen('screen-title');
+}
+
+/* ==============================
+   弾EV-1：学年の しゅうりょうしき と 賞状（発注書:設計書\弾EV-1_学年のしゅうりょうしきと賞状.md）
+   - 対象＝GRADE_ZONESの各学年の最後のゾーンをクリアした瞬間（enterNextZoneから・102だけcloseAllClearから）
+   - 時間割：0.0秒 画面が暗くなる→0.4秒 マナの会話（既存の会話ウィンドウを流用）→2.6秒 会話が消えて
+     賞状が上がる(0.6秒)＋ファンファーレ→3.2秒〜 賞状は自動で消えない（タップで閉じるまで待つ）
+   - 声（VOICEVOX）は今回は入れない＝無音で組む（後で親が足す）
+================================ */
+let sjActive=false;             // 二重発火防止（オーバーレイが画面をふさぐので通常は到達しないが念のため）
+let sjTimers=[];                // 保留中のsetTimeoutID（とばす／close時にまとめて解除）
+let sjCloseCallback=null;       // 「とじる」を押した後に呼ぶ関数（enterNextZoneの続き、またはタイトルへ）
+let sjSkipToPaperFn=null;       // 「とばす」が呼ぶ「即座に賞状の表示状態へ飛ぶ」関数
+const GRADE_CEREMONY_MANA_MSG={ // 学年ごとのマナの一言（表に1行足せば学年が増えても動く）
+  1:'1ねんせいの かんじ、ぜんぶ たすけたね',
+  2:'2ねんせいの かんじ、ぜんぶ たすけたね',
+  3:'3ねんせいの かんじ、ぜんぶ たすけたね',
+  4:'4ねんせいの かんじ、ぜんぶ たすけたね',
+  5:'5ねんせいの かんじ、ぜんぶ たすけたね',
+  6:'6ねんせいの かんじ、ぜんぶ たすけたね。ぜんぶの かんじを たすけたよ！'
+};
+/* ==============================
+   弾EV-2：賞状の3つの見た目・しょうごう（発注書:設計書\弾EV-2_賞状に キャラと しょうごうを のせる.md）
+   - なかま/からだだけ/まだ あっていない の3つの見た目・地方名+割合の呼び名・100%で金の賞状
+================================ */
+const GRADE_TITLE_HEAD={   // しょうごうの頭（地方の名前・学年ごと。発注書§1の表のとおり）
+  1:'トウキョウの',2:'ひがしの',3:'にしの',4:'まんなかの',5:'きたの',6:'なんごくの'
+};
+/* 学年gradeの「なかまになった割合」からしょうごうを組み立てる。
+   ★caughtだけを数える（bodiesは仲間ではないので数に入れない）／★割合は切り捨て
+   ／★100%は「1字も欠けていない」ときだけ（切り捨て後の値が100になる場合と一致するが、
+   念のため count===total を直接見て判定する＝発注書の★注記どおり） */
+function sjRankInfo(grade){
+  const inds=gradeIndices(grade);
+  const total=inds.length;
+  const count=inds.filter(i=>caught.has(i)).length;
+  const isFull=total>0 && count===total;
+  const pct=total>0?Math.floor(count/total*100):0;
+  let name;
+  if(isFull) name='かみさま';
+  else if(pct>=80) name='おうさま';
+  else if(pct>=60) name='えらいひと';
+  else if(pct>=40) name='リーダー';
+  else if(pct>=20) name='ヌシ';
+  else name='こども';
+  return {count:count, total:total, isFull:isFull, rankText:(GRADE_TITLE_HEAD[grade]||'')+' '+name};
+}
+/* 賞状の漢字1字ぶんのHTML。顔はずかん(renderZukan・showZukanDetail)と同じ.face系マークアップを使う
+   （ねむり顔＝renderZukanのsleeping表示と同一。元気な顔＝showZukanDetailのnormal表示と同一）。
+   ずかん側の.face/.eyes/.eye/.mouth/.sleeping/.normalのCSSはここでは1行も変えない。 */
+function sjCharCellHtml(i){
+  const k=K[i];
+  if(caught.has(i)){
+    return '<span class="sj-ch got"><span class="fc">'+k.c+'</span>'
+      +'<span class="face normal"><span class="eyes"><span class="eye"></span><span class="eye"></span></span><span class="mouth"></span><span class="cheek l"></span><span class="cheek r"></span></span></span>';
+  }
+  if(bodies.has(i)){
+    return '<span class="sj-ch sleep"><span class="fc">'+k.c+'</span>'
+      +'<span class="face sleeping"><span class="eyes"><span class="eye"></span><span class="eye"></span></span><span class="mouth"></span></span></span>';
+  }
+  return '<span class="sj-ch none">'+k.c+'</span>';   // まだ あっていない＝「？」にせず薄い灰色の字のまま見せる
+}
+function sjClearTimers(){ sjTimers.forEach(t=>clearTimeout(t)); sjTimers=[]; }
+// 'YYYY-MM-DD'（ktTodayStrの形式）→ '2026ねん 8がつ 14にち'
+function sjFormatDate(ymd){
+  const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(ymd||'');
+  if(!m) return '';
+  return m[1]+'ねん '+Number(m[2])+'がつ '+Number(m[3])+'にち';
+}
+function sjShowSkip(on){ const b=$('sjSkipBtn'); if(b) b.classList.toggle('show', !!on); }
+/* 学年gradeのしゅうりょうしきを再生し、「とじる」が押されたら onClose を呼ぶ */
+function startGradeCeremony(grade, onClose){
+  if(sjActive) return;   // オーバーレイが画面をふさぐため通常は二重発火しないが、念のための番人
+  sjActive=true;
+  sjCloseCallback=onClose;
+  // 初めて受け取った日を確定（2回目以降に開いても同じ日付。gradeCeremonySeenへは今ここで1回だけ保存）
+  let dateStr=gradeCeremonySeen[grade];
+  if(!dateStr){ dateStr=ktTodayStr(); gradeCeremonySeen[grade]=dateStr; save(); }
+  // 賞状の中身を用意
+  // 弾NM-1：なまえがあるときだけ「◯◯ さん」の行を出す（旧セーブ等でplayerNameが空のときは行ごと出さない＝レイアウト維持）
+  const sjNameEl=$('sjName');
+  if(sjNameEl){
+    if(playerName){ sjNameEl.textContent=playerName+' さん'; sjNameEl.style.display=''; }
+    else{ sjNameEl.textContent=''; sjNameEl.style.display='none'; }
+  }
+  // 弾EV-2：しょうごう・仲間の実数・3つの見た目（元気な顔／ねむり顔／うすい灰色の字）・100%なら金の賞状
+  const rankInfo=sjRankInfo(grade);
+  const inds=gradeIndices(grade);
+  $('sjRank').textContent=rankInfo.rankText;
+  $('sjBody').textContent=grade+'ねんせいの ぼうけんを やりとげました';
+  $('sjCount').textContent='なかまに なった かんじ　'+rankInfo.count+'／'+rankInfo.total;
+  $('sjChars').innerHTML=inds.map(sjCharCellHtml).join('');
+  $('sjDate').textContent=sjFormatDate(dateStr);
+  const sjStarEl=$('sjStar'); if(sjStarEl) sjStarEl.style.display=rankInfo.isFull?'':'none';
+  const paper=$('sjPaper');
+  paper.classList.toggle('kami', rankInfo.isFull);
+  paper.classList.remove('in'); paper.scrollTop=0;
+  $('sjOverlay').classList.add('show');
+  sjShowSkip(true);
+  const toPaper=()=>{   // 会話を閉じて賞状を出す（自然経過でも「とばす」でも、ここに合流する）
+    sjClearTimers();
+    hideHakaseTalkWindow();
+    sjShowSkip(false);
+    ensureAudio(); sfxFanfare();
+    paper.classList.add('in');
+  };
+  sjSkipToPaperFn=toPaper;
+  sjTimers.push(setTimeout(()=>{ showHakaseTalkWindow(GRADE_CEREMONY_MANA_MSG[grade]||''); },400));   // 0.4秒：マナの会話（声は今回無し）
+  sjTimers.push(setTimeout(toPaper,2600));   // 2.6秒：会話を消して賞状を上げる
+}
+/* とばす＝演出中（0〜3.2秒）だけ押せる。賞状そのものは飛ばせない＝押した瞬間に賞状の表示状態へ飛ぶだけ */
+function sjSkip(){ if(sjActive && sjSkipToPaperFn) sjSkipToPaperFn(); }
+/* とじる＝賞状は自動で消えないのでタップでのみ閉じる。閉じたら本来の続き（次のゾーンへ／タイトルへ）を行う */
+function sjClose(){
+  if(!sjActive) return;
+  sjClearTimers();
+  hideHakaseTalkWindow();
+  sjShowSkip(false);
+  $('sjOverlay').classList.remove('show');
+  document.querySelector('#sjOverlay .sj-paper').classList.remove('in');
+  sjActive=false; sjSkipToPaperFn=null;
+  const cb=sjCloseCallback; sjCloseCallback=null;
+  if(cb) cb();
+}
 
 /* 第5弾§5：隠しリセット「さいしょから」
    入口は見えない：タイトルロゴを2秒以内に5回連続タップでのみ確認オーバーレイが開く。
@@ -18199,6 +18681,11 @@ let op1AnswerLock=false;  // S4：クイズ回答の連打防止
    （音声が無くても文字だけで完走できる＝既存speakJaフォールバック思想と同じ）。 */
 const OP1_VOICE_MS={ s0:7400, s3:4900, s4a:1800, s4b:3100, s5:9500 };
 const OP1_VOICE_PAUSE_MS=700;   // 台詞を言い切ってから次のシーンへ移るまでの一呼吸（子ども向けの間）
+/* 弾NM-2：S3b/S3c（マナの名乗り）は声をまだ作っていないので、ゲーム内の会話と同じ式で表示時間を決める
+   （HAKASE_MSG_MS_PER_CHAR/HAKASE_MSG_MS_BASE/HAKASE_MSG_MS_MIN/HAKASE_MAX_MSは14069行あたりで定義済み）。 */
+function op1CharMs(msg){
+  return Math.min(HAKASE_MAX_MS, Math.max(msg.length*HAKASE_MSG_MS_PER_CHAR + HAKASE_MSG_MS_BASE, HAKASE_MSG_MS_MIN));
+}
 let op1SndCache={};   // key -> HTMLAudioElement|null
 let op1SndFailed={};  // key -> true（読込失敗が確定済み。以後は無音のまま・再試行しない）
 
@@ -18326,21 +18813,10 @@ function op1EnterFromGate(){
   if(!op1Active) return;
   $('op1GateBtn').classList.remove('show');
   ensureAudio();   // 既存の効果音まわりと同じ解禁呼び出し（無害・二重呼びOK）
-  /* 弾OP5c§2：完全新規プレイヤー（起動時セーブ無し）かつ女の子画像が読み込めている場合だけ、
-     OP開始直前（このタップの直後）にしゅじんこう選択ポップを挟む。heroSelectShownOnceにより
-     goField()内の第5.5弾ロジックとの二重発火はしない（goField側は削除せず将来の保険として残す）。
-     女の子画像が無い場合はポップを出さず、今までどおりboyのままOPが始まる（既存フォールバック継続）。 */
-  if(!hadSaveAtBoot && heroSelectAvailable() && !heroSelectShownOnce){
-    heroSelectShownOnce=true;
-    // 選択を強制している最中に「とばす」を押されると選ばずフィールド直行になり、繰り上げた意味が薄れるため一時的に隠す。
-    // S0以降は元々スキップ可能な状態に戻すので、選択完了コールバック内（S0開始直前）で復帰させる。
-    $('op1SkipBtn').classList.remove('show');
-    openHeroSelect(function(){
-      $('op1SkipBtn').classList.add('show');
-      op1PlayS0();
-    });
-    return;
-  }
+  /* 弾NM-1（2026-08-14）：しゅじんこう選択ポップは「オープニングのあと・なまえと同じ画面」へ移した
+     （準也さんのご指示＝オープニングムービー→なまえ・せいべつ→ゾーン1の順）。以前はここ（OP開始直前）で
+     選ばせていたが、それだと「なまえ」より先に「せいべつ」だけ決まってしまい二度手間になるため。
+     以前の分岐（弾OP5c§2）はop1Finish()側（②なまえ・せいべつ画面）に統合した。 */
   op1PlayS0();
 }
 /* 右上「とばす」：どのシーンからでも即・完走時と同じ最終状態（ゾーン1フィールド開始）へ飛ばす。
@@ -18358,6 +18834,8 @@ function op1Finish(){
   // 歓迎・「一」を渡す・たましいの世界観を語る内容で丸ごと重複するため、二重に流れないようここで済み扱いにする
   introSeen=true;
   warpZone(1);           // ゾーン1のS地点から開始（既存のはじまりズーム演出もそのまま続けて再生される）
+  // 弾NM-2：なまえ・せいべつの画面はop1より前へ移した（起動時トリガー側でnmOpen(startOp1Event)として呼ぶ）ので、
+  // ここでは何も呼ばない。
 }
 function op1SetManaFace(){
   const face=$('op1ManaFace');
@@ -18449,14 +18927,29 @@ function op1PlayS2(){
   setTimeout(()=>{ if(seq!==op1Seq) return; soul.classList.remove('rise'); soul.classList.add('hover'); },1600);
   setTimeout(()=>{ if(seq!==op1Seq) return; op1PlayS3(); },5000);
 }
-/* ---- S3：マナ登場（約5秒）。一言だけ（設計書§2 S3・確定文言） ---- */
+/* ---- S3：マナ登場（約5秒）。一言だけ（設計書§2 S3・確定文言。1文字も変えない＝弾NM-2） ---- */
 function op1PlayS3(){
   const seq=op1Seq;
   op1SetManaFace();
   $('op1Mana').classList.add('show');
   $('op1ManaText').textContent='みつけた。きみの目には、この字が “おもしろい絵” に 見えているのね';
   op1PlaySnd('s3');   // OP-1b§3：台詞表示と同時にマナの声を再生
-  setTimeout(()=>{ if(seq!==op1Seq) return; op1PlayS4Setup(); },OP1_VOICE_MS.s3+OP1_VOICE_PAUSE_MS);
+  setTimeout(()=>{ if(seq!==op1Seq) return; op1PlayS3b(); },OP1_VOICE_MS.s3+OP1_VOICE_PAUSE_MS);
+}
+/* ---- S3b（弾NM-2新設）：マナの名乗り①。声は今回作らない＝無音（op1PlaySnd()を呼ばない）。
+   op1Seqの世代チェックはS3等の既存シーンと同じ形。 ---- */
+function op1PlayS3b(){
+  const seq=op1Seq;
+  const msg='わたしは マナ。アンドロイドの はかせだよ';
+  $('op1ManaText').textContent=msg;
+  setTimeout(()=>{ if(seq!==op1Seq) return; op1PlayS3c(); },op1CharMs(msg));
+}
+/* ---- S3c（弾NM-2新設）：マナの名乗り②。声は今回作らない＝無音。 ---- */
+function op1PlayS3c(){
+  const seq=op1Seq;
+  const msg='なんでも けんきゅうして、ぜんぶの はかせに なったの。いまは かんじに むちゅう！';
+  $('op1ManaText').textContent=msg;
+  setTimeout(()=>{ if(seq!==op1Seq) return; op1PlayS4Setup(); },op1CharMs(msg));
 }
 /* ---- S4：即バトル＝チュートリアル（プレイヤー操作）。必要正解1・敗北なし・正解で終了へ ---- */
 function op1PlayS4Setup(){
@@ -19846,8 +20339,11 @@ kakitoriTestSelfTest(); // 発注W-2：ヒント生成・出題組み立て・�
 
 /* 弾OP-1：新規プレイヤー（起動時セーブ無し）にだけ「はじまりの一」を自動再生。
    既存セーブがある起動（hadSaveAtBoot===true）では絶対に発火しない（検品項目2）。
-   ここまでの初期化（タイトルの絵・自己検証等）が全部済んでから最後に重ねる。 */
-if(!hadSaveAtBoot){ startOp1Event(); }
+   ここまでの初期化（タイトルの絵・自己検証等）が全部済んでから最後に重ねる。
+   弾NM-2：準也さんのご指示の順（オープニングPV→なまえ・せいべつ→今あるオープニングop1）にあわせ、
+   まずnmOpen()でなまえ・せいべつを済ませてから、そのコールバックとしてstartOp1Event()を呼ぶ。
+   playerNameが既にある等の安全側の分岐に入ってもnmOpen内でstartOp1Eventはちゃんと呼ばれる。 */
+if(!hadSaveAtBoot){ nmOpen(startOp1Event); }
 
 /* 第7弾§2：画面リサイズ・モバイルのアドレスバー増減でビューポートを再計算 */
 window.addEventListener('resize', ()=>{
