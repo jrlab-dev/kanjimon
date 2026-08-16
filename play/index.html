@@ -1206,6 +1206,31 @@
   /* 水平線のかすみ（空気遠近）。遠くの海のざらつきを沈めて奥行きを出す＝絵ではなくCSSで作る */
   .field-parallax-haze{position:absolute;left:0;width:100%;pointer-events:none;
     background:linear-gradient(180deg,rgba(238,246,250,.72),rgba(238,246,250,0))}
+  /* 弾SD-1（2026-08-16）：川を自動で流れていく船（隅田川の屋形船）。準也さんのご指示。
+     ★二重構造にしてある：
+       外がわ(.field-parallax-boat)＝カメラ追従ぶんを transform で受ける（層と同じ速さ係数）
+       内がわ(.field-parallax-boat>i)＝CSSアニメで流れる
+     こうしないと、カメラ追従と自動の流れが同じ transform を奪い合って片方が効かなくなる。
+     ⚠️translateX(%) は「その要素自身の幅」が基準（2026-07-28に速度線で踏んだ罠）。
+       船の幅は72%なので -240% ＝ 画面幅の -172.8%。left:100%（右の外）から左の外まで流れる。
+     ★船の絵には航跡（なみしぶき）が焼き込んである（zone3-boat.webp）。 */
+  /* ⚠️ここに overflow:hidden を付けてはいけない（2026-08-16に船が切れた原因）。
+       船の絵は横に長く、箱は画面幅の約190%になる。ここで切ると船の右はしが消える。
+       画面の外を切るのは親の .field-parallax-layers の役目。 */
+  .field-parallax-boat{position:absolute;left:0;width:100%;pointer-events:none;
+    will-change:transform}
+  /* ⚠️2026-08-16：はじめ width:72% にしたら、船の右はしが垂直にスパッと切れた（準也さんの実機指摘）。
+       原因＝箱の形（1.76:1）と絵の形（4.63:1）が違うのに overflow:hidden で切っていたこと。
+       → 箱の形を絵の形に合わせる（aspect-ratio）。高さが決まれば幅は自動で決まる。
+     ★絵を差し替えたら、この 2575/556 も一緒に直すこと（zone3-boat.webp の実寸）。 */
+  .field-parallax-boat>i{position:absolute;left:100%;top:0;height:100%;
+    aspect-ratio:2575/556;
+    background-repeat:no-repeat;background-size:contain;background-position:left center;
+    animation:fieldBoatDrift var(--boat-dur,64s) linear infinite}
+  /* 船の幅は画面の約190%。left:100%（右の外）から、船が左の外へ抜けきるまで動かす。
+     translateX(%) は要素自身の幅が基準なので -160% ＝ 画面幅の約-304%。 */
+  @keyframes fieldBoatDrift{ from{transform:translateX(0)} to{transform:translateX(-160%)} }
+  @media (prefers-reduced-motion:reduce){ .field-parallax-boat>i{animation:none;left:14%} }
   /* 弾3-7：しまなみパララックス背景層。#fieldGridと同じ論理サイズ(マス数×タイル幅)を持たせ、
      background-size:100% 100%で画像をフィットさせる。動きだけカメラの一部(30%)に抑えて視差を出す */
   .field-parallax-bg{display:none;position:absolute;left:0;top:0;
@@ -1314,6 +1339,31 @@
     width:calc(var(--tw)*var(--tile));height:calc(var(--th)*var(--tile));z-index:calc(10 + var(--tz,14));pointer-events:none;
     background-repeat:no-repeat;background-position:center bottom;background-size:contain;
     filter:drop-shadow(0 6px 8px rgba(0,0,0,.24))}
+  /* ===== 弾OB-1（2026-08-16）：フィールドの障害物を「部品」として置く =====
+     準也さんのご指示＝
+     > 全ての配置するものはその仕組みにしないと後ろを通れないとかおかしいですよね。
+     > 立体感出ないんで、全ての障害物には通れるところと通れないものを設定する必要があります
+     ★町の建物(.town-building)とまったく同じ考え方。
+       前後は「10＋行番号」の物差し（主人公も同じ）。--tz＝部品の**根元の行**。
+       → 主人公が部品より上の行にいれば主人公が奥（＝枝葉に隠れる）
+       → 主人公が部品より下の行にいれば主人公が手前
+     ★足もと基準（background-position:center bottom）。
+       大きさを変えても根元の位置がずれないようにするため。
+     ★#fieldGrid の子として作る＝主人公と同じ親でないと z-index が比べ合えない。 */
+  .field-object{position:absolute;left:calc(var(--ox)*var(--tile));top:calc(var(--oy)*var(--tile));
+    width:calc(var(--ow)*var(--tile));height:calc(var(--oh)*var(--tile));
+    z-index:calc(10 + var(--oz,14));pointer-events:none;
+    background-repeat:no-repeat;background-position:center bottom;background-size:100% 100%;
+    filter:drop-shadow(0 4px 6px rgba(0,0,0,.22))}
+  /* ★手直し(2026-08-16)：background-size を contain から 100% 100% に変えた理由。
+     配置は「障害物配置ツール」で準也さんが目で決める＝ツールの見た目が正本。
+     ツールは たてよこを別々に伸ばせる（わざと縦をつぶせる）ので、w:h が絵の比率と
+     違うことがある。contain だと枠の中で縮んでしまい、ツールで見た形とゲームの形が
+     食いちがう。100% 100% なら必ず一致する。
+     ★足もと基準（下端＝根元）は background-position:center bottom が担うので、
+       ここを変えても「大きさを変えると位置がずれる」心配はない。
+     ★手で ZONE_OBJECTS を書くときは、w:h を絵の縦横比に合わせること（勝手に補正しない）。 */
+  .field-object.flip{transform:scaleX(-1)}
   /* 手直し しまなみ橋B案(2026-07-27)：橋の主塔。町の建物(.town-building)とまったく同じ考え方で、
      z-indexを「10＋行番号」にして主人公との前後を決める。手前の塔(行14)は主人公(行12〜14)より
      手前に出るので、塔の裏を通ると主人公が隠れる＝柱かくれ。定義＝BRIDGE_PARTS。 */
@@ -2841,6 +2891,43 @@
 
   /* 弾NM-1：賞状に名前を1行足す（名前が空のときは行ごと出さない＝JS側でdisplay制御） */
   .sj-name{font-size:18px;font-weight:800;color:#5a4a2a;margin:-6px 0 12px;letter-spacing:.05em}
+
+  /* ===== 弾EV-3：立ち絵つきイベント会話 =====
+     専用div(#evOverlay)・専用CSS接頭辞(ev-)。既存の.overlayは使い回さない（先例＝sjOverlay・iceOverlay）。
+     数値は試作（_一時\_イベント会話試作_20260815\試作_ゾーン5イベント.html）からそのまま引き継いだ＝デザインし直さない。
+     ★#fieldWrapの中ではなく、画面全体に重なる位置に置く＝カメラのtransformの影響を受けない（sjOverlayと同じ考え方）。
+       置き場所は#sjOverlay・#nmOverlayとまったく同じ並び（実際のDOMではbodyの直下になる。2026-08-15に実物で確認）。
+     z-index:80＝十字ボタン(.dpad:50)・賞状(.sj-overlay:60)・AUTOバッジ(.auto-badge:70)より前。
+     イベント中に十字ボタンやバッジが立ち絵の上へ浮かないようにするため。 */
+  #evOverlay{position:absolute;inset:0;display:none;z-index:80;overflow:hidden;cursor:pointer;
+    -webkit-user-select:none;user-select:none}
+  #evOverlay.show{display:block}
+  /* 暗幕＝ふだんは薄く、山場（dark）で濃くする */
+  #evVeil{position:absolute;inset:0;background:#0a0d1c;opacity:.30;transition:opacity .9s ease}
+  #evOverlay.dark #evVeil{opacity:.80}
+  /* 立ち絵（--sz＝キャラごとの大きさ。JS側でEV_CHARA.sizeを入れる） */
+  .ev-chara{position:absolute;bottom:118px;width:calc(46vw * var(--sz,1));max-width:calc(196px * var(--sz,1));
+    height:auto;transition:filter .35s ease, transform .35s ease, opacity .45s ease;
+    pointer-events:none;transform-origin:bottom center;
+    filter:drop-shadow(0 6px 14px rgba(0,0,0,.55))}
+  #evLeft{left:-3vw}
+  #evRight{right:-3vw}
+  /* 話していない側＝暗く・小さく・すこし奥へ */
+  .ev-chara.off{filter:brightness(.42) saturate(.75) drop-shadow(0 6px 14px rgba(0,0,0,.55));
+    transform:scale(.93) translateY(6px)}
+  /* その場にいない＝消す */
+  .ev-chara.hide{opacity:0;transform:scale(.9) translateY(18px)}
+  /* セリフ窓 */
+  #evBox{position:absolute;left:12px;right:12px;bottom:22px;
+    background:rgba(16,18,32,.90);border:2px solid rgba(255,255,255,.30);
+    border-radius:16px;padding:16px 18px 20px;min-height:104px;
+    box-shadow:0 8px 24px rgba(0,0,0,.5)}
+  #evText{color:#fff;font-size:19px;line-height:1.65;font-weight:700;letter-spacing:.01em}
+  /* イージーが喋るときだけ文字色を変える */
+  #evText.ev-easy{color:#ffcf9a}
+  #evNext{position:absolute;right:14px;bottom:8px;color:#fff;opacity:.75;font-size:13px;
+    animation:evBob 1s ease-in-out infinite}
+  @keyframes evBob{0%,100%{transform:translateY(0)}50%{transform:translateY(3px)}}
 </style>
 </head>
 <body>
@@ -3592,6 +3679,17 @@
     <div class="sj-foot">おうちの ひとに みせよう！</div>
   </div>
   <button class="sj-close" onclick="sjClose()">とじる</button>
+</div>
+
+<!-- 弾EV-3：立ち絵つきイベント会話（ゾーン初訪問のとき1回だけ流れる会話）。
+     専用div・専用CSS接頭辞(ev-)。#fieldWrapの外＝画面全体に重なる位置に置くのでカメラのtransformの
+     影響を受けない（先例=sjOverlay/nmOverlay。この並びは実際のDOMではbodyの直下になる）。
+     img に src は書かない（空srcはページ自身を読みに行くため）。JS側でEV_CHARAの絵を入れる。 -->
+<div id="evOverlay" onclick="evAdvance()">
+  <div id="evVeil"></div>
+  <img id="evLeft" class="ev-chara hide" alt="">
+  <img id="evRight" class="ev-chara hide" alt="">
+  <div id="evBox"><div id="evText"></div><div id="evNext">▼</div></div>
 </div>
 
 <!-- 弾NM-1：なまえと せいべつを きめる（オープニングのあと・セーブが無い初回だけ1回出す）。
@@ -6175,31 +6273,36 @@ YOJIJUKUGO.forEach((j,i)=>{ YOJIJUKUGO_BY_KEY[j.w]=i; });
    すみか制（ステージ再編成） — 場所と漢字を紐づけ・出現順固定
 ================================ */
 const STAGE_DEFS=[
-  {name:'かずの そうげん',  chars:'一二三四五六七八九十百千'},
-  {name:'もりと はなばたけ',chars:'木林森草花竹田虫犬'},
-  {name:'そらと みずべ',    chars:'空天月日夕水川雨貝青'},
-  {name:'かざんの たからやま',chars:'山土石火赤力金玉'},
-  {name:'ひとの むら',      chars:'人男女子王目耳口手名足'},
-  {name:'まちと がっこう',  chars:'町村学校字文音見円本車'},
-  {name:'ふしぎの めいろ',  chars:'上下左右中大小白糸年'},
-  {name:'かんじの しろ',    chars:'生先正早立出入休気'},
+  /* 弾M-2（2026-08-15）★トウキョウ8ゾーンを実在の東京の地名にした（準也さん裁定）。
+     ねらい＝「漢字メインだが地理も覚えられる」ゲームなのに、1年生だけ架空で何も覚えられなかったのを直す。
+     ★名前＝実在の地名／バナー（ZONE_BANNER）＝漢字のテーマ、の二本立てにしてある。
+       名前が漢字テーマの名札を兼ねていたので、名前を地名に変えたぶんの手がかりはバナーへ移した。
+       ここを直すときは ZONE_BANNER・ZONE_DESC・下の ZONES[].name の3か所もセットで直すこと。 */
+  {name:'にほんばし',      chars:'一二三四五六七八九十百千'},   // 数 ← 五街道の起点・道路元標
+  {name:'うえの',          chars:'木林森草花竹田虫犬'},        // 木と生きもの ← 上野公園・森・動物園
+  {name:'すみだがわ',      chars:'空天月日夕水川雨貝青'},      // 空と水 ← 隅田川
+  {name:'たかおさん',      chars:'山土石火赤力金玉'},          // 山と土と石 ← 高尾山（★23区の外だが東京都）
+  {name:'あさくさ',        chars:'人男女子王目耳口手名足'},    // 人と体 ← 雷門・仲見世の人出
+  {name:'とうきょうえき',  chars:'町村学校字文音見円本車'},    // 町と学校 ← 東京駅・都心
+  {name:'おだいば',        chars:'上下左右中大小白糸年'},      // 位置と大小 ← お台場
+  {name:'えどじょう',      chars:'生先正早立出入休気'},        // 動作と生活 ← 江戸城（ボスの城）
   /* 第18弾§2：小2カントウ16ゾーン追加（第14弾§3の並び・第14弾§付録Aスクリプトで生成・検証済み） */
-  {name:'かぞくの いえ',       chars:'父母兄弟姉妹親友家内'},
-  {name:'まなびやの もり',     chars:'教室図書算数国語科答'},
-  {name:'いわやまの さと',     chars:'岩原高台地里広丸角野谷毛'},
-  {name:'まきばと どうぶつえん',chars:'牛馬鳥羽鳴肉麦米茶園'},
-  {name:'ひかりの おてら',     chars:'寺社門戸古今新明京光当'},
-  {name:'とけいの とう',       chars:'時間分半午前後毎週曜'},
-  {name:'えかきの もり',       chars:'色黒黄形点線細太画絵'},
-  {name:'うみの ぼうけん',     chars:'海魚船汽池外遠近帰回'},
-  {name:'はつめいの まち',     chars:'電工計知才考理作用活'},
-  {name:'たびの かいどう',     chars:'東西南北方道歩通行来'},
-  {name:'きせつの はなばたけ', chars:'春夏秋冬雪晴雲星夜昼'},
-  {name:'うたと おはなしの むら',chars:'歌声楽聞言話読記心思'},
-  {name:'ちからだめしの どうくつ',chars:'強弱引切刀矢弓走止直'},
-  {name:'にぎやかな しょうてんがい',chars:'店売買市場多少万番組'},
-  {name:'であいの みなとまち', chars:'会合交公同元長朝風何'},
-  {name:'じぶんの しろ',       chars:'自顔首体頭食紙'},
+  {name:'かわごえ',            chars:'父母兄弟姉妹親友家内'},
+  {name:'ちちぶ',              chars:'教室図書算数国語科答'},
+  {name:'みょうぎさん',        chars:'岩原高台地里広丸角野谷毛'},
+  {name:'とみおか',            chars:'牛馬鳥羽鳴肉麦米茶園'},
+  {name:'にっこう',            chars:'寺社門戸古今新明京光当'},
+  {name:'うつのみや',          chars:'時間分半午前後毎週曜'},
+  {name:'なすこうげん',        chars:'色黒黄形点線細太画絵'},
+  {name:'おおあらい',          chars:'海魚船汽池外遠近帰回'},
+  {name:'つくば',              chars:'電工計知才考理作用活'},
+  {name:'かすみがうら',        chars:'東西南北方道歩通行来'},
+  {name:'みなみぼうそう',      chars:'春夏秋冬雪晴雲星夜昼'},
+  {name:'なりたさん',          chars:'歌声楽聞言話読記心思'},
+  {name:'のこぎりやま',        chars:'強弱引切刀矢弓走止直'},
+  {name:'よこはまちゅうかがい',chars:'店売買市場多少万番組'},
+  {name:'よこはまこう',        chars:'会合交公同元長朝風何'},
+  {name:'かまくら',            chars:'自顔首体頭食紙'},
   /* 弾3-6§2-1：3年カンサイ・シコク20ゾーン追加（設計書の表を1文字も変えずに使用） */
   {name:'おいせまいりの さんどう',    chars:'神宮祭礼客幸命式和全'},
   {name:'にんじゃの さと',           chars:'打投反転血対決速追死'},
@@ -6293,30 +6396,33 @@ const STAGE_COUNT=STAGE_DEFS.length;
    書くときの決まり：18〜26文字・ひらがな中心（1年生が読める）・意味のかたまりで半角スペース・
    ゾーン名をそのまま繰り返さない・64本すべて書き出しを変える。 */
 const ZONE_DESC=[
-  'かぞえる こえが きこえる、ひろい くさはら',        //  1 かずの そうげん
-  'はっぱの におい、むしの こえ。みどりが いっぱい',   //  2 もりと はなばたけ
-  'そらが うつる みずべ。あおが きれいな ところ',      //  3 そらと みずべ
-  'あかく もえる やま。ひかる いしが かくれてる',      //  4 かざんの たからやま
-  'みんなが くらす むら。げんきな こえが とびかう',    //  5 ひとの むら
-  'くるまが はしり、かねが なる。にぎやかな まいにち',  //  6 まちと がっこう
-  'みぎ？ ひだり？ しろい みちが まがりくねる',        //  7 ふしぎの めいろ
-  'たかい もんが そびえる。ここが さいごの ばしょ',    //  8 かんじの しろ
-  'おかえりの こえが する、あたたかい ばしょ',        //  9 かぞくの いえ
-  'ほんの ページを めくる おとが ひびく もり',        // 10 まなびやの もり
-  'ごつごつした いわが つづく、たかい ばしょ',        // 11 いわやまの さと
-  'うしや うまの なきごえ。ひろい まきばが つづく',    // 12 まきばと どうぶつえん
-  'ふるい もんを くぐると、しずかな にわが ある',      // 13 ひかりの おてら
-  'カチカチと はりが うごく。じかんの まちだ',        // 14 とけいの とう
-  'えのぐの いろが とびちる、たのしい もり',          // 15 えかきの もり
-  'しおの かおり。ふねに のって とおくへ いこう',      // 16 うみの ぼうけん
-  'ピカピカ ひかる きかい。あたらしい ものを つくる',   // 17 はつめいの まち
-  'ずっと つづく みち。どこまでも あるいて いける',    // 18 たびの かいどう
-  'はるも ふゆも ある、ふしぎな はなぞの',            // 19 きせつの はなばたけ
-  'どこからか うたが きこえる、やさしい むら',        // 20 うたと おはなしの むら
-  'くらい あなの おく。ちからくらべが まっている',     // 21 ちからだめしの どうくつ
-  'いらっしゃいの こえ。おみせが ずらりと ならぶ',     // 22 にぎやかな しょうてんがい
-  'ふねが つく たびに、だれかと であえる まち',        // 23 であいの みなとまち
-  'かがみに うつる じぶんと むきあう ばしょ',         // 24 じぶんの しろ
+  /* 弾M-2（2026-08-15）：1〜8を実在の東京の地名に変えたので、説明も実物の雰囲気に書き直した。
+     ★ここは「その場所が どんな ところか」を書く欄。地理を覚えてもらうのが目的なので、
+       ファンタジーの雰囲気ではなく、本当にそこにあるものを書くこと。 */
+  'にっぽんじゅうの みちが ここから はじまる ばしょ',  //  1 にほんばし
+  'ひろい こうえんに さくらと どうぶつが いる',       //  2 うえの
+  'ゆったり ながれる おおきな かわ。はしが かかる',    //  3 すみだがわ
+  'すぎの さんどうを のぼると、おてらが まっている',   //  4 たかおさん
+  'ちょうちんの あかい もん。したまちの にぎわい',     //  5 あさくさ
+  'レンガづくりの えきに でんしゃが あつまってくる',   //  6 とうきょうえき
+  'ビルと かんらんしゃ。うみの うえに できた まち',    //  7 おだいば
+  'いしがきと ほりに かこまれた、さいごの しろ',       //  8 えどじょう
+  'くらづくりの まちなみ。ときの かねが ひびく まち',  //  9 かわごえ
+  'やまあいの まち。かわの かわらと ふるい じんじゃ',  // 10 ちちぶ
+  'するどく とがった いわの やまが そびえている',      // 11 みょうぎさん
+  'あかレンガの おおきな せいしじょうと くわばたけ',  // 12 とみおか
+  'しゅいろの もんが ならぶ おてらと すぎなみき',      // 13 にっこう
+  'おおたにの いしきりば。きりだした いしが ならぶ',  // 14 うつのみや
+  'こうげんの なだらかな みち。あきは もみじが あかい', // 15 なすこうげん
+  'なみの なかの いわの うえに とりいが たっている',   // 16 おおあらい
+  'しろい けんきゅうじょと ひろい なみきみちの まち',  // 17 つくば
+  'ひろい みずうみに しろい ほの ふねが うかんでいる', // 18 かすみがうら
+  'はなばたけが いちめんに ひろがり、うみも みえる',   // 19 みなみぼうそう
+  'おおきな とうの おてら。いしだんの さんどうが つづく', // 20 なりたさん
+  'しかくく きりだされた いわの かべと いしの かいだん', // 21 のこぎりやま
+  'あかと きんいろの もんと あかい ちょうちんが ならぶ', // 22 よこはまちゅうかがい
+  'あかレンガの そうこと おおきな ふねが とまる はとば', // 23 よこはまこう
+  'おおきな だいぶつが すわっていて、うみも ちかい',   // 24 かまくら
   'ながい かいだんの さき、かみさまが まっている',     // 25 おいせまいりの さんどう
   'かぜのように はやい。にんじゃたちの かくれが',      // 26 にんじゃの さと
   'うみみたいに ひろい みずうみが きらきら ひかる',    // 27 びわこの みずうみ
@@ -6457,205 +6563,187 @@ function gradeRemainCount(grade){
    - ゾーン7 だけ設計書が「実装側で迷路を組む」と指定（厳守条件で構成）
 ================================ */
 const ZONES=[
-  { name:'かずの そうげん', scene:'s-meadow', grid:[
-    /* 第22弾：一枚絵(images/fullart/zone1.webp)に合わせた横長30×20（フェーズDの型・ゾーン3と同方式）。
-       旧16×24マップは第7弾設計書§3に残存。S(下端の道)→道1本→上端ゲート>。すみかA〜L（12字ぶん）。
-       検証：verify_grid.js（行長30×20・S/>/A〜L各1・BFS全到達・歩ける225/600）＋重ね絵目視2周。
-       ※手直し 道順フィールド試作（7/18）はタイル描画の見た目がユーザー実機で品質不合格→本グリッドへ復元。
-       道順グリッド案は _一時\_道順試作\ に保管（方式改訂＝高品質一枚絵＋透明障害物部品のユーザー配置へ）。
-       発注_初回チュートリアル修正2(2026-07-21)：(x=9,y=9)の一マスだけ ',' → 'z' に変更（初回チュートリアルの
-       「透明な1回限りイベントマス」）。小文字zは検品\自動回帰テスト.jsのすみか判定(/[A-Z]/のみ対象)にも
-       onArriveTileのすみか判定(/[A-L]/)にも一致しない＝どちらにも影響しない専用の新記号。isPassableTileでは
-       T/R/W/未開ゲート以外なので通行可（ただの床と同じ）。pickAutoTarget/autoTickの専用分岐でのみ意味を持つ。 */
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT>>TTTTTTTTTTTTTT",
-    "TTTTTTT,,,,,,,.L,T,,,,,TTTTTTT",
-    "TTTTT,,,TT,E,,.,,F,,,,,,TTTTTT",
-    "TTTTT,,,,,,,,,.,,,,T,,,,,TTTTT",
-    "TTTTT,,,,,,,,,.,,,,,TR,,,TTTTT",
-    "TTTT,,,,,DT,,R.,,,,G,,,,,TTTTT",
-    "TTTT,,,,,,,,,,.,,,,,,,,H,TTTTT",
-    "TTTT,R,,,z,,,,.,TR,,,,,,RTTTTT",
-    "TTTTRR,,,,,,,..,K,,,,,,,,TTTTT",
-    "TTTT,,C,,R,,,..,,,R,,,I,,TTTTT",
-    "TTTT,,,,,,,,,..,,,,,,,,,,TTTTT",
-    "TTTT,,TT,,,,,.,,,,,,,,,,,TTTTT",
-    "TTTTT,,,,,B,,.,,,,J,T,,,,TTTTT",
-    "TTTTTT,,,,,,,.,A,,,,,,,TTTTTTT",
-    "TTTTTTTTTTT,,.,,,,,TTTTTTTTTTT",
-    "TTTTTTTTTTTTTT,,TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTSTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"
-  ] },
-  { name:'もりと はなばたけ', scene:'s-forest', grid:[
-    /* 第22弾：新一枚絵(images/fullart/zone2.webp・量産レシピ版)に合わせた横長30×20（フェーズDの型）。
-       旧一枚絵＋16×24（第20弾確定版）は _一時\zone2_旧一枚絵_第20弾バックアップ.webp と本設計書に退避。
-       検証：verify_grid.js（行長30×20・S/>/A〜J各1・BFS全到達・歩ける227/600）＋重ね絵目視2周。 */
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT>>TTTTTTTTTTTTTT",
-    "TTTT,,,,,,,,,,,.,,,,,,TT,TTTTT",
-    "TTTT,,TTT,,,F,,.,,G,,,TT,TTTTT",
-    "TTT,,,,,,R,,,,,.,,,TT,,,,TTTTT",
-    "TT,,,T,,E,,,,,,.R,,,,,,,R,,TTT",
-    "TT,,T,,,,,,,,,,.,,,,,,,,,,,TTT",
-    "TT,,,D,,,,,,,T,.,TT,,,H,T,,TTT",
-    "TT,,,,,TT,,T,,,.,TT,,,,,,,,TTT",
-    "TT,,,,,,,,TTT,,.,,,T,,,,,RTTTT",
-    "TTT,,RT,,,,,,,,.,,,,,I,,,,,TTT",
-    "TTT,,,CT,,,,,,,.,,,,,,,,,,,TTT",
-    "TTT,,,,,,,,B,R,.,TTT,,,,,,TTTT",
-    "TTTT,,,,,,,,,,,.,,,TR,TT,TTTTT",
-    "TTTTT,,T,,,,,,,.AT,,,TTTTTTTTT",
-    "TTTTTTTTTTTTT,,.,,,TTTTTTTTTTT",
-    "TTTTTTTTTTTTTTT.TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTSTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"
-  ] },
-  { name:'そらと みずべ', scene:'s-sky', grid:[
-    /* フェーズD試作v3（2026-07-11）：単純化版の一枚絵(images/fullart/zone3.webp)＝Codex直接発注1号。
-       v2はユーザー実機評価「複雑で歩きにくい」で絵ごと差し替え。深い森の外周＋草原＋木立障害物＋川1本橋2本。
-       Claudeが絵から手起こし→BFS到達検証済み。旧16×24マップは第8弾設計書に残っている。 */
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT>TTTTTTTTTTTTTTT",
-    "TTTTTT,,,,,,,,..,,,,,,,RTTTTTT",
-    "TTT,TT,,TTTTT,..,TTTTT,TTTTTTT",
-    "TT,E,,,TTTTTT,..,TTTTT,T,TTTTT",
-    "TTTT,TTT,TTTTJ..,,TT,H,,,,WWWT",
-    "TT,,,TTT,,,,,,,,G,,,,,,T,WWWWT",
-    "TT,F,TTTR,,,,RRR.,,,,,,,,WWWTT",
-    "TT,,,,,,,,,,,RRR.,,,,,,WWWWTTT",
-    "WWWWW,,,,,,TT....,D,WWWW,,,TTT",
-    "WWWWWW,B,,,,,...TTTW.WW,,,,TTT",
-    "TTWWWWWW,,,,,..,WWWW.,,,C,,TTT",
-    "TTTWWWWWW,,WW.WWWW,,,..,,,,TTT",
-    "TTT,,,,,TTT,,.,,R,TT,,TTT,,TTT",
-    "TTT,,,,,TTTA,..,,,,,,TTT,,TTTT",
-    "TTTT,,,,I,,,,..,,,,,,TTTTTTTTT",
-    "TTTTTTTTTTTTR..RTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTT.STTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"] },
-  { name:'かざんの たからやま', scene:'s-fire', grid:[
-    /* 第22弾：一枚絵(images/fullart/zone4.webp)に合わせた横長30×20（フェーズDの型・ゾーン1/2と同方式）。
-       旧一枚絵なし・旧16×24グリッド（第8弾）は _一時\zone4_旧グリッド_バックアップ.txt に退避。
-       火山ふもと岩場テーマ：外周=岩壁（縁取り2〜7列相当）＋上中央に門(>)・下中央に入口(S)、縦1本の道、溶岩だまり5箇所はW固定。
-       検証：verify_grid.js（行長30×20・S/>/A〜J各1・BFS全到達・歩ける219/600）＋重ね絵目視2周（ホーム3個が岩上に乗っていたのを移動、境界の岩はみ出し十数マスを追加ブロック）。 */
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTT>TTTTTTTTTTTTTT",
-    "TTTTTTTRRWR,,,,.,,,RR,,,,TTTTT",
-    "TTTTTTTTWWWB,R,.,,,R,,RRC,TTTT",
-    "TTTTTWWR,,,,,R,.,,,WWWW,,,RTTT",
-    "TTTT,RR,,,,,,,,.,,,WWWW,,,TTTT",
-    "TTTT,,,TTT,,,R,.,,,WWWWERRT,TT",
-    "TTTTTA,,TT,,,,,.,RR,,,,,RRR,TT",
-    "TTT,,,,,,,,,,R,.R,,,,,RG,R,,TT",
-    "TTT,R,R,,F,RR,,.,,TRRWR,RR,TTT",
-    "TTTTRD,,,,,,,,,.H,,,WWW,R,,TTT",
-    "TTT,,,,,R,,,,,R.,RR,WWR,,,,,TT",
-    "TTT,,,WW,,,,,,,.,,TT,RR,,,,TTT",
-    "TTT,,,R,,R,,,,,.R,,,,,RR,,,TTT",
-    "TTTTT,,,,RR,,,,.,,,R,,,,RTTTTT",
-    "TTTTTRR,,RR,,,,.,R,TTTRRRTTTTT",
-    "TTTTRRTTTTTTTT,.TT,RTTRTTTTTTT",
-    "TTTTTTTTTTTTTT,STTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"] },
-  { name:'ひとの むら', scene:'s-spring', grid:[
-    /* 第22弾：一枚絵(images/fullart/zone5.webp)に合わせた横長30×20（フェーズDの型・分離監査体制で作成）。
-       旧マップは過去弾設計書に残存。検証：verify_grid.js（行長30×20・各記号1個・BFS全到達・歩ける123/600）＋拡大クロップ全数監査。 */
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTT>TTTTTTTTTTTTTT",
-    "TTTTTTTTTTRA,,,.,,RTTTTRTTTTTT",
-    "TTTTTTTTTTTT,,,.T,,TTTTTTTTTTT",
-    "TTTTTTTTTT,B,,,.TTTTTTTTTTTTTT",
-    "TTTTRTTTTTT,,,,.,,TTCTTTTTTTTT",
-    "TTTTTTTTT,D,T,,.TT,,,TTTTTTTTT",
-    "TTTTTTTTTTT,,,,.,T,,TTTTTTTTTT",
-    "TTTT,TTTTT,,,E,.,T,TTTTTTTTTTT",
-    "TTTT,TT,TT,,,,,.,,,TTTTTTTTTTT",
-    "TTTT,TT,TT,,,,,.T,HTTTTTTTTTTT",
-    "TTTT,,,,,,,RG,,.TTTTTTTTRTTTTT",
-    "TTTTRTT,,T,,,,,.,RTTTTTTRTTTTT",
-    "TTTTTTT,,TRI,K,.,,,F,RTTRTTTTT",
-    "TTTTTTT,,,,,,J,.,,,,RTTTTTTTTT",
-    "TTTTTTTTTTRTTTT.TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTT.TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTSTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"] },
-  { name:'まちと がっこう', scene:'s-berry', grid:[
-    /* 第22弾：一枚絵(images/fullart/zone6.webp)に合わせた横長30×20（フェーズDの型・分離監査体制で作成）。
-       旧マップは過去弾設計書に残存。検証：verify_grid.js（行長30×20・各記号1個・BFS全到達・歩ける136/600）＋拡大クロップ全数監査。 */
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTT>,,TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTT,..,,TTTTTTTTTTTT",
-    "TTTTTTTTTTTTT,..,,,G,,,,,TTTTT",
-    "TTTTTTTTTTTTT,..TTT,TTTT,TTTTT",
-    "TTTTTTTTTTTTTT..TB,IF,,,,,TTTT",
-    "TTTTTTTTTTTTTT..T,T,,T,,,,,TTT",
-    "TTTTTTTTTTTTTT,.TTTTTT,,,K,TTT",
-    "TTTTTTTTTTTTTT,.TTTTTTD,TJTTTT",
-    "TTTTTTTTTT,,,,,.TTTT,E,,,,,TTT",
-    "TTTT,,,,,,,TTT,.TTTT,TTTTTTTTT",
-    "TTTT,,,A,,,TTT,.,TTTTTTTTTTTTT",
-    "TTTT,,,,,C,TTT,.,,,,TTTTTTTTTT",
-    "TTTT,,,,H,,,TT,,,,,,,,,,TTTTTT",
-    "TTTTTTTT,TTTTT,,TTT,,,,,TTTTTT",
-    "TTTTTTTTTTTTTT..TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT..TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTS.TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"] },
-  { name:'ふしぎの めいろ', scene:'s-candy', grid:[
-    /* 第22弾：一枚絵(images/fullart/zone7.webp)に合わせた横長30×20（フェーズDの型・分離監査体制で作成）。
-       旧マップは過去弾設計書に残存。検証：verify_grid.js（行長30×20・各記号1個・BFS全到達・歩ける134/600）＋拡大クロップ全数監査。 */
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTT>TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT,.TTTTTTTTTTTTTT",
-    "TTTTTTTTTRH,T,T.TTTTTTTRRTTTTT",
-    "TTTTTT,TTT,TT,,.,TTTTTT,TTTTTT",
-    "TTTT,R,TTT,R,,T.,TT,,,,,TTTTTT",
-    "TTTT,T,TT,A,,T,.TT,E,TTTTTTTTT",
-    "TTTT,T,,,TT,TT,.,,D,,TTTTJTTTT",
-    "TTTT,TTT,TT,,BT.TTTTTTTTT,TTTT",
-    "TTTT,T,,,TT,,,T.RTT,TTTTT,TTTT",
-    "TTT,,,,TTTTTTTT.TTT,RT,,,,TTTT",
-    "TTT,TRC,,,,,,,,.T,,G,,,,TTTTTT",
-    "TTT,,,,TTTTFT,T.T,TTTT,,TTTTTT",
-    "TTT,TT,TTTT,,,T.,,,,,TI,TTTTTT",
-    "TTT,,,TTTTTTTT,.RTT,RTT,TTTTTT",
-    "TTTTRTRTTTTT,,..RR,,RTT,TTTTTT",
-    "TTTTTTTTTTTTTTT.TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTSTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"] },
-  { name:'かんじの しろ', scene:'s-gold', grid:[
-    /* 第22弾：一枚絵(images/fullart/zone8.webp)に合わせた横長30×20（フェーズDの型・分離監査体制で作成）。
-       旧マップは過去弾設計書に残存。検証：verify_grid.js（行長30×20・各記号1個・BFS全到達・歩ける188/600）＋拡大クロップ全数監査。 */
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT>TTTTTTTTTTTTTTT",
-    "TTTTTT,TTTTTTT.TTTTTTTTTTTTTTT",
-    "TTTTTT,TTTTT,,.T,,TTTTT,TTTTTT",
-    "TTTT,,,TTT,,A,..,,,,,,,,,,,TTT",
-    "TTTTTT,,TTTT,T..TT,,TT,,B,TTTT",
-    "TTTTT,,,TTTT,T..,TT,TT,,,,TTTT",
-    "TTTTT,,,TTTT,T..,TT,TT,,,TTTTT",
-    "TTTTC,,,,,,DTT..T,E,,,,,,FTTTT",
-    "TTT,,,,WWT,,TT..TTTTT,,,,,TTTT",
-    "TT,,,,,WWT,T,T..TTTTT,,TWT,,TT",
-    "TT,,,G,,,,,,,,..,,,,H,,TWT,TTT",
-    "TTTT,,,,,,,,,T..T,,,,,,,,,,TTT",
-    "TTTTTT,,,,,TTT..,TT,,,,,TT,,TT",
-    "TTTTTTTTTT,TTT..TTT,TTTTTTTTTT",
-    "TTTTTTTTTT,,,T..T,,TTTTTTTTTTT",
-    "TTTTTTTTTT,,I,..,,TTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTS.TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"] },
+  /* 弾M-2（2026-08-15）：1〜8の name を実在の地名に変更（表示に使うのは STAGE_DEFS[].name のほう。
+     ここの name は読む人のための見出しだが、食い違うと次のセッションが混乱するので合わせてある）。
+     ★scene（s-meadow 等）は色味の指定なので変えていない。絵を差し替えたら見直すこと。 */
+  { name:'にほんばし', scene:'s-meadow', grid:[
+   "TTTTTTTTTTTTTT,,TTTTTTTTTTTTTT",
+   "TTTTTTTTTTTTTT,,TTTTTTTTTTTTTT",
+   "TTTTTTTTTTTTTT>>TTTTTTTTTTTTTT",
+   "TTTTTTTTTTTTTT.,TTTTTTTTTTTTTT",
+   "TTTTT,,,,,TTTTL,,,,,,TTTTTTTTT",
+   "TTTTTTTTT,TTE,.,,TT,,,,DTTTTTT",
+   "TTTTTTTTT,,,,,.,,TT,T,,,,TTTTT",
+   "TTTT,,,F,,,,,,.,,,,,TT,T,TTTTT",
+   "TTTTTTT,,,,,,,.,,,,,,,,TT,TTTT",
+   "TTT,,R,,TT,,,,.,,,,,,,,C,,TTTT",
+   "TTTTG,,,TTTJ,..,,K,,,,,,T,TTTT",
+   "TTTT,,,,T,,,,..,,,,,TT,,T,TTTT",
+   "TTTT,,TTH,,,,..,,,,,TT,,,TTTTT",
+   "TTTTT,TT,,,,,.,,,,,,,,,,TTTTTT",
+   "TTTTT,,,,TT,,.,,,A,,,,,,,TTTTT",
+   "TTTTT,TT,TT,I.,,,,,TT,,B,TTTTT",
+   "TTTTTTTTTTTT,.,,,,TTTTTTTTTTTT",
+   "TTTTTTTTTTTTTT,,TTTTTTTTTTTTTT",
+   "TTTTTTTTTTTTTT,,TTTTTTTTTTTTTT",
+   "TTTTTTTTTTTT,,,S,,TTTTTTTTTTTT"
+  ]},
+  { name:'うえの', scene:'s-forest', grid:[
+   "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+   "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+   "TTTTTTTTTTTTTT>>TTTTTTTTTTTTTT",
+   "TTTT,TTT,,F,,,,.,,,,,E,,,,TTTT",
+   "TTT,,TTTT,,,,,,.,,T,,,,,,,TTTT",
+   "TTT,TTTTT,,,,,,.,,TT,,,,T,,TTT",
+   "TT,,TTTTT,,,,,,.,,TT,,TTRT,TTT",
+   "TT,,,,TT,,,,,,,.,,TT,,TTTTTTTT",
+   "TT,,,,,,,,,,,,,.,,,,,,TTTTTTTT",
+   "TT,G,,,,,,,,,,,.,,,,,,,TTT,TTT",
+   "TT,,,,,,,,,,,,I.,,,,,,,,,,DTTT",
+   "TT,,,,,,T,,,,,,.,,,B,,,,,,,TTT",
+   "TT,,,,,,T,,,,,,.,,,,,TTTT,,TTT",
+   "TTT,,,,,T,,,,,,.,,,,TTTTT,,,TT",
+   "TTTTT,,,,,H,,,,A,T,,,TTTT,,,TT",
+   "TTT,TTT,,,,,,,,.TT,,,TTTT,,TTT",
+   "TTTT,,TTTTTTTT,TT,,,,,,,,,TTTT",
+   "TTTTTTT,,TTT,,,.,,,C,,,,TTTTTT",
+   "TTTTTTTTTTTT,,,,TTTTTTTTTTTTTT",
+   "TTTTTTTTTTTTT,S,TTTTTTTTTTTTTT"
+  ]},
+  { name:'すみだがわ', scene:'s-sky', grid:[
+   "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+   "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+   "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+   "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+   "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+   "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+   "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+   "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+   "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+   "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+   "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+   "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+   "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+   "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+   ",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,>",
+   ",,,,,A,,,,,,,,,,,,,,,,,,,,,E,,,,,,,,,,,,,,,,,,,,,I,,,,,,,,,>",
+   ",,,,,,,,,,,,,,,,C,,,,,,,,,,,,,,,,,,,,,G,,,,,,,,,,,,,,,,,,,,>",
+   "S,,,,,,,,,,,,,,,,,,,,,D,,,,,,,,,,,,,,,,,,,,,H,,,,,,,,,,,,,,>",
+   ",,,,,,,,,,,B,,,,,,,,,,,,,,,,,,,,,F,,,,,,,,,,,,,,,,,,,,,J,,,>",
+   ",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,>"
+  ]},
+  { name:'たかおさん', scene:'s-fire', grid:[
+   "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+   "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+   "TTTTTTTTTTTTTTT,TTTTTTTTTTTTTT",
+   "TTTTTTTRRWRTTT>,TTTRRTTTTTTTTT",
+   "TTTTTTTTWWW,TR,.TTTRTTRRTTTTTT",
+   "TTTTTWWRTT,,,,H.,TTWWWWTTTRTTT",
+   "TTTTTRRTTT,T,,,.,TTWWWWTTTTTTT",
+   "TTTTTTTT,,,,,,,.,,TWWWWTRRTTTT",
+   "TTTTT,,,,T,,,,,.,,,TTTTTRRRTTT",
+   "TTTTT,,T,TE,,,,.,,TT,CRTTRTTTT",
+   "TTTTR,,T,,,,,,,.D,,,,,,TRRTTTT",
+   "TTTTR,,,F,,T,,,.,,,,W,,,,TTTTT",
+   "TTTTTT,,,,,T,,,.,,,TW,,T,TTTTT",
+   "TTTTTT,WTT,,,,,.,,,,,,B,,TTTTT",
+   "TTTTT,,TTR,,,,,.,,,,,TR,TTTTTT",
+   "TTTTTT,,,,,G,,,.,,A,TTT,RTTTTT",
+   "TTTTTRRTTR,,,,,.,R,TTTRRRTTTTT",
+   "TTTTRRTTTT,TT,,.,T,RTTRTTTTTTT",
+   "TTTTTTTTTTTTT,,,,TTTTTTTTTTTTT",
+   "TTTTTTTTTTTTT,S,,TTTTTTTTTTTTT"
+  ]},
+  { name:'あさくさ', scene:'s-spring', grid:[
+   "TTTTT,,,,TTTTTTTTTTTT,,,,TTTTT",
+   "TTTTT,,T,TTTTTTTTTTTT,,,,TTTTT",
+   "TTTTT,TTTTTTTT>.TTTTT,D,,TTTTT",
+   "TTTT,,TTT,,,,,,.,,,,,,,,,,TTTT",
+   "TTTT,,TTT,,,,,,.,,,T,,,,,,TTTT",
+   "TTTT,,TTT,,,,,,.,,TTT,,,,CTTTT",
+   "TTT,,TTTT,,,,,,.,,TT,,,,,,,TTT",
+   "TTT,,TTTT,F,,,,.,,E,,,TT,,,TTT",
+   "TTT,,,,,,,,,,,K.,,,,,,TTTT,TTT",
+   "TTT,T,G,,,,,,,,.,,,,T,,TTT,TTT",
+   "TT,,TT,,,,,,,,,.,,,TTT,TT,,,TT",
+   "TT,,TT,,T,,,,,,.,,,TTT,,,,,,TT",
+   "TT,,,,,TT,,,,,,.,,,TTT,,,TT,TT",
+   "TT,TR,,TT,,,,,J.,,,TTT,,,TT,,T",
+   "T,,TTT,TT,,TTTTTTTT,,,,,,TT,,T",
+   "T,,TTT,,,,,TTTTTTTT,RTTT,,,,,T",
+   "T,,TTT,,,,,TTTTTTTT,TTTT,,,,,T",
+   "T,,,,,,,,,,,TTTTTT,,,,,T,,,B,T",
+   ",,,,,,,,,,I,TT,STT,,,,,,,,,,,,",
+   ",,H,,,,,,,,,,,,,,,,,,,A,,,,,,,"
+  ]},
+  { name:'とうきょうえき', scene:'s-berry', grid:[
+   "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+   "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+   "TTT,TTTTTTTTTTTTTTTTTTTTTTT,TT",
+   "TTT,,,TTTTTTTTT>TTTTTTTTT,,,TT",
+   "TTT,,,,,,,,,,,..,,,,,,,,,,D,TT",
+   "TT,,,TTG,,,,,,..,,,,,,,TT,,,TT",
+   "TT,,,TT,,,,,,,..,,,,,,,TT,,TTT",
+   "T,,,,TT,,,,F,,..,,T,,E,TT,,,TT",
+   "T,TTT,,,,,,,,,,K,,T,,,,,,,,,,T",
+   "T,TTT,,,,,,,,,,.,,T,,TTT,,,,,T",
+   "TTT,,,,,,,,,,,,.,,,,TTTT,,,C,T",
+   "T,,,,,TT,,,,,,,.,,,,,TTT,,,,,T",
+   "T,,,,,TT,,,,,,,J,,,,,,,,,,,,,T",
+   "T,,,,,TT,,,,,,,.,,,,,,,,,,,,,T",
+   "T,,TT,,T,,TT,,,,,T,TT,,,TT,,,T",
+   "T,,,H,,,,,,,I,,,,A,,,,,,,B,,,T",
+   "T,,,,,,,,,,,,,..,,,,,,,,,,,,,T",
+   ",,,,,,,,,,,,,,..,,,,,,,,,,,,,T",
+   ",,,,,,,,,,,,,,,.,,,,,,,,,,,,,,",
+   ",,,,,,,,,,,,,,,S,,,,,,,,,,,,,,"
+  ]},
+  { name:'おだいば', scene:'s-candy', grid:[
+   "TTTTTTTTTTTTTT,>TTTTTTTTTTTTTT",
+   "TTTTTTTTTTTTTT,,TTTTTTTTTTTTTT",
+   "TTTTTTT,,T,,,,H,,,,,,,T,,,TTTT",
+   "TTTTTTTT,T,,,,,.,,,,,TTT,,,TTT",
+   "TTTTTTT,,R,,,,,.,,,,,,TRR,,TTT",
+   "TTT,TTT,TTT,E,,.,,,,,,,,TTTTTT",
+   "TT,,TRT,,,,,,,,.,,,,,,D,TTTTTT",
+   "TT,,,F,,,,,,,,,.,,,,,,,,TTT,,T",
+   "T,,,,,,,,,,,,,,.,,,,,,,,TJT,,T",
+   "T,,,TTTT,,,,,,,.,,,,,,,,T,T,,T",
+   ",,TTTTTTT,,,,,,.,,,,,,,,,,C,,T",
+   ",TTTTTTTTT,,,,,.,TTT,,,,,,,,TT",
+   ",TTTTRTTTT,,,,,.,TTT,,,,,,,,T,",
+   ",TTTTTTTTT,,,,,.,TTT,,TTTT,,B,",
+   ",TTTTTTTT,,,,,,.,TTT,,ITTT,,,,",
+   ",TTTTTTTT,,G,,,.,TTT,,TTTTTT,,",
+   ",TTTRTRT,,,,,,..,,,A,,,T,TTT,,",
+   ",,TTTTT,,,,,,,,.,,,,,,,,,,,,,,",
+   "TTTTTTTTTTTTT,,,,TTTTTTTTTTTTT",
+   "TTTTTTTTTTT,,,S,,,,TTTTTTTTTTT"
+  ]},
+  { name:'えどじょう', scene:'s-gold', grid:[
+   "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+   "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+   "TTTT,,,,,,,,TTTTTT,,,,,,,,TTTT",
+   "TTT,,TT,,,,,TTTTTT,,,,,TT,,TTT",
+   "TTT,TTT,,,T,TT.,TT,,,,TTTT,TTT",
+   "TTT,,TT,,,T,A,..,,,T,,TTTT,TTT",
+   "TTT,,,,,,,T,,,..,,,T,,,,B,,TTT",
+   "TTT,TTT,,,,,,,..,,,,,,,,,,,TTT",
+   "TTT,TTT,,,,,,,..,,,,,,,TTT,TTT",
+   "TTT,C,,,,,,D,,..,,E,,,,TTF,TTT",
+   "TT,,,,,,,,,,,,..,,,,,,,TTT,,TT",
+   "TT,,,TT,,TT,,,..,,,T,,,,,,,,TT",
+   "TT,,TG,,,TT,,,..,,,TH,,TW,,,TT",
+   "TT,,TTT,,TT,,,..,,,T,,,TT,,,TT",
+   "TT,,,,,,,,,,,,S,>,,,,,,TT,,,TT",
+   "TT,,,,,,,,,TTTTTTTT,,,,,,,,,TT",
+   "TT,,,,,,,,,TTTTTTTT,,,,,,,,,TT",
+   "TTTTTTTTTT,,I,..,TTTTTTTTTTTTT",
+   "TTTTTTTTTTTTTT,.TTTTTTTTTTTTTT",
+   "TTTTTTTTTTTTTT,,TTTTTTTTTTTTTT"
+  ]},
   /* 第18弾§2：小2カントウ16ゾーンの grid（第14弾§付録Aスクリプトを実装フォルダ内で再実行し、全16ゾーンerr=0を確認してから転記） */
-  { name:'かぞくの いえ', scene:'s-cream', grid:[
+  { name:'かわごえ', scene:'s-cream', grid:[
     /* 第22弾：一枚絵(images/fullart/zone9.webp)に合わせた横長30×20（フェーズDの型・分離監査体制で作成）。
        旧マップは過去弾設計書に残存。検証：verify_grid.js（行長30×20・各記号1個・BFS全到達・歩ける229/600）＋拡大クロップ全数監査。 */
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
@@ -6678,7 +6766,7 @@ const ZONES=[
     "TTTTTTTTTTTTTT.T,,TTTTTTTTTTTT",
     "TTTTTTTTTTTTTT.T,,TTTTTTTTTTTT",
     "TTTTTTTTTTTTTTSTTTTTTTTTTTTTTT"] },
-  { name:'まなびやの もり', scene:'s-forest', grid:[
+  { name:'ちちぶ', scene:'s-forest', grid:[
     /* 第22弾：一枚絵(images/fullart/zone10.webp)に合わせた横長30×20（フェーズDの型・分離監査体制で作成）。
        旧マップは過去弾設計書に残存。検証：verify_grid.js（行長30×20・各記号1個・BFS全到達・歩ける259/600）＋拡大クロップ全数監査。 */
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
@@ -6701,7 +6789,7 @@ const ZONES=[
     "TTTTTTTTT,,,,T.TTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTSTTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"] },
-  { name:'いわやまの さと', scene:'s-mountain', grid:[
+  { name:'みょうぎさん', scene:'s-mountain', grid:[
     /* 第22弾：一枚絵(images/fullart/zone11.webp)に合わせた横長30×20（フェーズDの型・分離監査体制で作成）。
        旧マップは過去弾設計書に残存。検証：verify_grid.js（行長30×20・各記号1個・BFS全到達・歩ける167/600）＋拡大クロップ全数監査。 */
     "RRRRRRRRRRRRRTTTTRRRRRRRRRRRRR",
@@ -6724,7 +6812,7 @@ const ZONES=[
     "RRRRRTRTRRRR,T.TTRRRRTRRRRRRRR",
     "RRRRRRRRRRRRRT.TRRRRRRRRRRRRRR",
     "RRRRRRRRRRRRRRSRRRRRRRRRRRRRRR"] },
-  { name:'まきばと どうぶつえん', scene:'s-meadow', grid:[
+  { name:'とみおか', scene:'s-meadow', grid:[
     /* 第22弾：一枚絵(images/fullart/zone12.webp)に合わせた横長30×20（フェーズDの型・分離監査体制で作成）。
        旧マップは過去弾設計書に残存。検証：verify_grid.js（行長30×20・各記号1個・BFS全到達・歩ける188/600）＋拡大クロップ全数監査。 */
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
@@ -6747,7 +6835,7 @@ const ZONES=[
     "TTTTTTTT,,,HR,.,RTT,,I,,TTTTTT",
     "TTTTTTTTTTTTTTSTTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"] },
-  { name:'ひかりの おてら', scene:'s-sun', grid:[
+  { name:'にっこう', scene:'s-sun', grid:[
     /* 第22弾：一枚絵(images/fullart/zone13.webp)に合わせた横長30×20（フェーズDの型・分離監査体制で作成）。
        旧マップは過去弾設計書に残存。検証：verify_grid.js（行長30×20・各記号1個・BFS全到達・歩ける143/600）＋拡大クロップ全数監査。 */
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
@@ -6770,7 +6858,7 @@ const ZONES=[
     "TTTTTTT,IJK,,T..TTTTRRTTTTTTTT",
     "TTTTTTTT,TTTTTT.TTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTS.TTTTTTTTTTTTTT"] },
-  { name:'とけいの とう', scene:'s-stone', grid:[
+  { name:'うつのみや', scene:'s-stone', grid:[
     /* 第22弾：一枚絵(images/fullart/zone14.webp)に合わせた横長30×20（フェーズDの型・分離監査体制で作成）。
        旧マップは過去弾設計書に残存。検証：verify_grid.js（行長30×20・各記号1個・BFS全到達・歩ける195/600）＋拡大クロップ全数監査。 */
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
@@ -6793,7 +6881,7 @@ const ZONES=[
     "TTTTTTTTTTTTTT.TTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTT.TTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTSTTTTTTTTTTTTTTT"] },
-  { name:'えかきの もり', scene:'s-flower', grid:[
+  { name:'なすこうげん', scene:'s-flower', grid:[
     /* 第22弾：一枚絵(images/fullart/zone15.webp)に合わせた横長30×20（フェーズDの型・分離監査体制で作成）。
        旧マップは過去弾設計書に残存。検証：verify_grid.js（行長30×20・各記号1個・BFS全到達・歩ける244/600）＋拡大クロップ全数監査。 */
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
@@ -6816,7 +6904,7 @@ const ZONES=[
     "TTTTTTTTTTTTTTT,T,,TRTTTTTTTTT",
     "TTTTTTTTTTTTTT.,TTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTSTTTTTTTTTTTTTTT"] },
-  { name:'うみの ぼうけん', scene:'s-ocean', grid:[
+  { name:'おおあらい', scene:'s-ocean', grid:[
     /* 第22弾：一枚絵(images/fullart/zone16.webp)に合わせた横長30×20（フェーズDの型・分離監査体制で作成）。
        旧マップは過去弾設計書に残存。検証：verify_grid.js（行長30×20・各記号1個・BFS全到達・歩ける208/600）＋拡大クロップ全数監査。 */
     "WWWWWWWWWWRRRRRRRRRRWWTWWWWWWW",
@@ -6839,7 +6927,7 @@ const ZONES=[
     "WRRRRRTRRTRRTR,.RTRRRTRRRRRWWW",
     "WWRRRRRRRRRRTR,.RTRRRRRRRRWWWW",
     "WWWWWWWWRRRRRRWSWRRRWWWWWWWWWW"] },
-  { name:'はつめいの まち', scene:'s-ice', grid:[
+  { name:'つくば', scene:'s-ice', grid:[
     /* 第22弾：一枚絵(images/fullart/zone17.webp)に合わせた横長30×20（フェーズDの型・分離監査体制で作成）。
        旧マップは過去弾設計書に残存。検証：verify_grid.js（行長30×20・各記号1個・BFS全到達・歩ける157/600）＋拡大クロップ全数監査。 */
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
@@ -6862,7 +6950,7 @@ const ZONES=[
     "TTTTTTTTTTTTTT,.TTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTT,.TTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTT.STTTTTTTTTTTTTT"] },
-  { name:'たびの かいどう', scene:'s-sunset', grid:[
+  { name:'かすみがうら', scene:'s-sunset', grid:[
     /* 第22弾：一枚絵(images/fullart/zone18.webp)に合わせた横長30×20（フェーズDの型・分離監査体制で作成）。
        旧マップは過去弾設計書に残存。検証：verify_grid.js（行長30×20・各記号1個・BFS全到達・歩ける253/600）＋拡大クロップ全数監査。 */
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
@@ -6885,7 +6973,7 @@ const ZONES=[
     "TTTTTTTTTTTTT,.,TTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTT.TTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTSTTTTTTTTTTTTTTT"] },
-  { name:'きせつの はなばたけ', scene:'s-meadow', grid:[
+  { name:'みなみぼうそう', scene:'s-meadow', grid:[
     /* 第22弾：一枚絵(images/fullart/zone19.webp)に合わせた横長30×20（フェーズDの型・分離監査体制で作成）。
        旧マップは過去弾設計書に残存。検証：verify_grid.js（行長30×20・各記号1個・BFS全到達・歩ける220/600）＋拡大クロップ全数監査。 */
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
@@ -6908,7 +6996,7 @@ const ZONES=[
     "TTTTT,TTTTTTTTT.TTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTT.TTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTSTTTTTTTTTTTTTT"] },
-  { name:'うたと おはなしの むら', scene:'s-berry', grid:[
+  { name:'なりたさん', scene:'s-berry', grid:[
     /* 第22弾：一枚絵(images/fullart/zone20.webp)に合わせた横長30×20（フェーズDの型・分離監査体制で作成）。
        旧マップは過去弾設計書に残存。検証：verify_grid.js（行長30×20・各記号1個・BFS全到達・歩ける232/600）＋拡大クロップ全数監査。 */
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
@@ -6931,7 +7019,7 @@ const ZONES=[
     "TTTTTTTTTTTTTTT.TTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTT.TTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTSTTTTTTTTTTTTTT"] },
-  { name:'ちからだめしの どうくつ', scene:'s-mountain', grid:[
+  { name:'のこぎりやま', scene:'s-mountain', grid:[
     /* 第22弾：一枚絵(images/fullart/zone21.webp)に合わせた横長30×20（フェーズDの型・分離監査体制で作成）。
        旧マップは過去弾設計書に残存。検証：verify_grid.js（行長30×20・各記号1個・BFS全到達・歩ける215/600）＋拡大クロップ全数監査。 */
     "RRRRRRRRRRRRRRTTTRRRRRRRRRRRRR",
@@ -6954,7 +7042,7 @@ const ZONES=[
     "RRRRRRRRRRR,,,,.,RRRRTRRRRRRRR",
     "RRRRRRRRRRRRRT.TTRRRRRRRRRRRRR",
     "RRRRRRRRRRRRRRS.RRRRRRRRRRRRRR"] },
-  { name:'にぎやかな しょうてんがい', scene:'s-candy', grid:[
+  { name:'よこはまちゅうかがい', scene:'s-candy', grid:[
     /* 第22弾：一枚絵(images/fullart/zone22.webp)に合わせた横長30×20（フェーズDの型・分離監査体制で作成）。
        旧マップは過去弾設計書に残存。検証：verify_grid.js（行長30×20・各記号1個・BFS全到達・歩ける235/600）＋拡大クロップ全数監査。 */
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
@@ -6977,7 +7065,7 @@ const ZONES=[
     "TTTTTTTTT,,,TT..TTR,TTTTTTTTTT",
     "TTTTTTTTTTTTTTS.TTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"] },
-  { name:'であいの みなとまち', scene:'s-water', grid:[
+  { name:'よこはまこう', scene:'s-water', grid:[
     /* 第22弾：一枚絵(images/fullart/zone23.webp)に合わせた横長30×20（フェーズDの型・分離監査体制で作成）。
        旧マップは過去弾設計書に残存。検証：verify_grid.js（行長30×20・各記号1個・BFS全到達・歩ける139/600）＋拡大クロップ全数監査。 */
     "WWWWWWWWWWWTTWWWWTTWTTTTTWWWWW",
@@ -7000,7 +7088,7 @@ const ZONES=[
     "WTTTTTTTTTTTTT,.TTTTTTTTTTTTTW",
     "WTTTTTTTTTTTTT,.TTTTTTTTTTTTTW",
     "WRRRRRRRRRRRRRTSTRRRRRRRRRRRRW"] },
-  { name:'じぶんの しろ', scene:'s-gold', grid:[
+  { name:'かまくら', scene:'s-gold', grid:[
     /* 第22弾：一枚絵(images/fullart/zone24.webp)に合わせた横長30×20（フェーズDの型・分離監査体制で作成）。
        旧マップは過去弾設計書に残存。検証：verify_grid.js（行長30×20・各記号1個・BFS全到達・歩ける208/600）＋拡大クロップ全数監査。 */
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
@@ -9016,6 +9104,8 @@ const IC_ZONE=83;             // 弾IC-1：氷の城シーンが流れるゾー�
 let iceCastleSeen=false;      // 弾IC-1：ゾーン83クリア後の氷の城シーンを見たか
 // 弾EV-1：学年の しゅうりょうしき・賞状を見たか（学年番号→初めて受け取った日 'YYYY-MM-DD'）。旧セーブはキー無し＝未見あつかい
 let gradeCeremonySeen={};
+// 弾EV-3：立ち絵つきイベント会話を見たゾーン（ゾーン番号→true）。旧セーブはキー無し＝未見あつかい
+let evSeen={};
 // 弾3-6§6-3：「たびの つづき」通知（旧セーブ移行）を見たか（旧セーブは未見あつかい）
 let travelContinueSeen=false;
 let pendingTravelContinueBanner=false;   // セッション値：load()で判定し、次のrenderField()で1回だけ消費
@@ -9114,6 +9204,7 @@ function save(){
       planeSceneSeen:planeSceneSeen,           // 弾6-1：飛行機シーンを見たか
       iceCastleSeen:iceCastleSeen,             // 弾IC-1：氷の城シーンを見たか
       gradeCeremonySeen:gradeCeremonySeen,     // 弾EV-1：学年しゅうりょうしき・賞状を見たか（学年→日付）
+      evSeen:evSeen,                           // 弾EV-3：立ち絵つきイベント会話を見たか（ゾーン→true）
       travelContinueSeen:travelContinueSeen,   // 弾3-6§6-3
       chubuHakaseSeen:chubuHakaseSeen,         // 弾4-6§6-1
       travelContinueSeen2:travelContinueSeen2, // 弾4-6§6-3
@@ -9275,6 +9366,14 @@ function load(){
       for(const gk in d.gradeCeremonySeen){
         const gn=(gk|0), v=d.gradeCeremonySeen[gk];
         if(gn>=1 && gn<=6 && typeof v==='string') gradeCeremonySeen[gn]=v;
+      }
+    }
+    // 弾EV-3：立ち絵つきイベント会話を見たゾーン（旧セーブはキー無し＝未見あつかい。値はtrueだけ採用）
+    evSeen={};
+    if(d && typeof d.evSeen==='object' && d.evSeen){
+      for(const zk in d.evSeen){
+        const zn=(zk|0);
+        if(zn>=1 && zn<=STAGE_COUNT && d.evSeen[zk]===true) evSeen[zn]=true;
       }
     }
     travelContinueSeen = (d.travelContinueSeen===true);
@@ -11709,14 +11808,14 @@ function onWrongSimple(btn){
    - もんばん/ツインボス方式のゾーン(25〜43,45〜64)は末尾の1字も「通常敵」のまま（真のボスは熟語モン/ツインボスという
      K配列外の別モンスターで、既存の固定HP機構のまま・本表の対象外＝コメントに「ボスは熟語/ツイン(表外)」と明記） */
 const ZONE_ENEMY_LEVELS={
-  1:{0:1,1:1,2:1,3:1,4:1,5:1,6:2,7:2,8:2,9:2,10:2,11:3}, // z1 かずの そうげん(1年帯1-2) 通常Lv1〜2・ボスLv3
-  2:{14:1,16:1,15:1,27:1,28:1,29:2,30:2,31:2,33:2,32:3}, // z2 もりと はなばたけ(1年帯1-2) 通常Lv1〜2・ボスLv3
-  3:{21:1,22:1,24:1,25:1,26:1,17:2,13:2,23:2,34:2,46:3}, // z3 そらと みずべ(1年帯1-2) 通常Lv1〜2・ボスLv3
-  4:{12:1,19:1,20:1,78:1,18:1,45:2,75:2,65:2,79:2,80:3}, // z4 かざんの たからやま(1年帯1-2) 通常Lv1〜2・ボスLv3
-  5:{40:1,41:1,42:1,43:1,44:1,35:2,36:2,37:2,38:2,39:3}, // z5 ひとの むら(1年帯1-2) 通常Lv1〜2・ボスLv3
-  6:{76:1,77:1,56:1,57:1,58:1,59:2,60:2,55:2,61:2,64:3}, // z6 まちと がっこう(1年帯1-2) 通常Lv1〜2・ボスLv3
-  7:{48:1,49:1,50:1,51:1,52:1,53:2,54:2,47:2,63:2,62:3}, // z7 ふしぎの めいろ(1年帯1-2) 通常Lv1〜2・ボスLv3
-  8:{66:1,67:1,68:1,69:1,70:2,71:2,72:2,73:2,74:3}, // z8 かんじの しろ(1年帯1-2) 通常Lv1〜2・ボスLv3
+  1:{0:1,1:1,2:1,3:1,4:1,5:1,6:2,7:2,8:2,9:2,10:2,11:3}, // z1 にほんばし(1年帯1-2) 通常Lv1〜2・ボスLv3
+  2:{14:1,16:1,15:1,27:1,28:1,29:2,30:2,31:2,33:2,32:3}, // z2 うえの(1年帯1-2) 通常Lv1〜2・ボスLv3
+  3:{21:1,22:1,24:1,25:1,26:1,17:2,13:2,23:2,34:2,46:3}, // z3 すみだがわ(1年帯1-2) 通常Lv1〜2・ボスLv3
+  4:{12:1,19:1,20:1,78:1,18:1,45:2,75:2,65:2,79:2,80:3}, // z4 たかおさん(1年帯1-2) 通常Lv1〜2・ボスLv3
+  5:{40:1,41:1,42:1,43:1,44:1,35:2,36:2,37:2,38:2,39:3}, // z5 あさくさ(1年帯1-2) 通常Lv1〜2・ボスLv3
+  6:{76:1,77:1,56:1,57:1,58:1,59:2,60:2,55:2,61:2,64:3}, // z6 とうきょうえき(1年帯1-2) 通常Lv1〜2・ボスLv3
+  7:{48:1,49:1,50:1,51:1,52:1,53:2,54:2,47:2,63:2,62:3}, // z7 おだいば(1年帯1-2) 通常Lv1〜2・ボスLv3
+  8:{66:1,67:1,68:1,69:1,70:2,71:2,72:2,73:2,74:3}, // z8 えどじょう(1年帯1-2) 通常Lv1〜2・ボスLv3
   9:{81:2,82:2,83:2,84:2,85:2,86:3,87:3,88:3,89:3,90:3}, // z9 かぞくの いえ(2年帯2-3) 通常Lv2〜3・ボスLv3
   10:{91:2,92:2,93:2,94:2,95:2,96:3,97:3,98:3,99:3,100:3}, // z10 まなびやの もり(2年帯2-3) 通常Lv2〜3・ボスLv3
   11:{101:2,102:2,103:2,104:2,105:2,106:3,107:3,108:3,109:3,110:3}, // z11 いわやまの さと(2年帯2-3) 通常Lv2〜3・ボスLv3
@@ -13573,31 +13672,35 @@ function yojiReveal(arena, word){
    第4弾：フィールド画面
 ================================ */
 const ZONE_BANNER=[
-  'かずの かんじが じゅんばんに ならんでいるぞ',
-  'きと はなの かおりが する',
-  'そらと みずが きらきら ひかる',
-  'あつい！ おたからの けはいが する…',
-  'ひとびとの くらしの むらだ',
-  'がっこうの チャイムが きこえる',
-  'まよいの めいろ… でぐちは どこだ？',
-  'トウキョウ さいごの しろ。ボスが まっている…！',   // 弾3-6§2-4：44が本当の最後になったため文言差し替え（旧「さいごの しろ。ボスが まっている…！」）
+  /* 弾M-2（2026-08-15）★ここが「漢字のテーマ」の担当になった。
+     1〜8の名前を実在の地名（にほんばし・うえの…）に変えたことで、名前が持っていた
+     「このゾーンは何の漢字か」という手がかりが消えた。そのぶんをこのバナーが受け持つ。
+     ＝ゾーンに入った瞬間に1回だけ出る1行。ここを読めば何の漢字のゾーンか分かるようにしておくこと。 */
+  'かずの かんじが じゅんばんに ならんでいるぞ',        // 1 にほんばし（数）
+  'きと はなと むしの かんじが いっぱいだ',             // 2 うえの（木と生きもの）
+  'そらと みずの かんじが きらきら ひかる',             // 3 すみだがわ（空と水）
+  'やまと つちと いしの かんじが ねむっているぞ',       // 4 たかおさん（山と土と石）
+  'ひとと からだの かんじが あつまる ばしょだ',         // 5 あさくさ（人と体）
+  'まちと がっこうの かんじ。チャイムが きこえる',      // 6 とうきょうえき（町と学校）
+  'うえ した ひだり みぎ… ばしょの かんじだ',           // 7 おだいば（位置と大小）
+  'トウキョウ さいごの しろ。ボスが まっている…！',   // 8 えどじょう。弾3-6§2-4：44が本当の最後になったため文言差し替え（旧「さいごの しろ。ボスが まっている…！」）
   /* 第18弾§2：小2カントウ16ゾーンぶんのバナー */
-  'あたたかい かぞくの いえが ならんでいるよ',
-  'がっこうの まわりに きが しげっているね',
-  'いわだらけの やまの さとに ついた',
-  'どうぶつたちの なきごえが きこえる',
-  'ひかりに つつまれた おてらだ',
-  'とけいの とうが じかんを つげる',
-  'いろとりどりの きが うつくしい もりだ',
-  'うみかぜが きもちいい ぼうけんの はじまりだ',
-  'はつめいひんが いっぱいの まちだよ',
-  'かいどうを まっすぐ すすんでいこう',
-  'きせつの はなが いちめんに さいている',
-  'うたごえが きこえる にぎやかな むらだ',
-  'ちからだめしの どうくつ… ゆだんするな',
-  'にぎやかな しょうてんがいに とうちゃく！',
-  'であいの みなとまちだ。ふねが みえるよ',
-  'カントウ さいごの しろ。ボスが まっている…！',   // 弾3-6§2-4：44が本当の最後になったため文言差し替え（旧「さいごの しろ。カントウの ボスが まっている…！」）
+  'かぞくの かんじが いっぱい あつまっているぞ',        //  9 かわごえ（家族）
+  'がっこうで べんきょうする かんじが ならんでいるぞ',  // 10 ちちぶ（学校）
+  'やまと いわの かんじが するどく とがっているぞ',     // 11 みょうぎさん（岩と地形）
+  'どうぶつと たべものの かんじが いっぱい ならぶぞ',   // 12 とみおか（動物と食べ物）
+  'たてものと ひかりの かんじが まぶしく ひかるぞ',     // 13 にっこう（建物と光）
+  'じかんの かんじが あさから ばんまで ならんでいるぞ', // 14 うつのみや（時間）
+  'いろと かたちの かんじが きれいに ならんでいるぞ',   // 15 なすこうげん（色と形）
+  'うみと さかなの かんじが おおきな なみに のるぞ',    // 16 おおあらい（海）
+  'でんきと かがくの かんじが ひらめきを まっているぞ', // 17 つくば（科学）
+  'ほうがくと みちの かんじが たびの ゆくさきを おしえるぞ', // 18 かすみがうら（方角と道）
+  'きせつと そらの かんじが いちねんじゅう まわってくるぞ', // 19 みなみぼうそう（季節と空）
+  'うたと ことばの かんじが きれいに ひびきあうぞ',     // 20 なりたさん（音とことば）
+  'ちからと うごきの かんじが いっきに はしりだすぞ',   // 21 のこぎりやま（力と動き）
+  'おみせと おかいものの かんじが にぎやかに ならぶぞ', // 22 よこはまちゅうかがい（店と数）
+  'あいさつと あつまりの かんじが ならんでいるぞ',      // 23 よこはまこう（あいさつ）
+  'じぶんと からだの かんじだ。カントウの ボスが まっている…！',   // 24 かまくら。弾3-6§2-4：44が本当の最後になったため文言差し替え（旧「さいごの しろ。カントウの ボスが まっている…！」）
   /* 弾3-6§2-4：3年カンサイ・シコク20ゾーンぶんのバナー（設計書の表を1文字も変えずに使用） */
   'とりいを くぐって おまいりに いこう',
   'にんじゃが かくれて いるかも…！',
@@ -13898,7 +14001,11 @@ const TILESET_IMG_OK={};
    この配列に足す/外すだけで対象ゾーンを1か所で切替できる（現在はゾーン1のみ試作）。 */
 const ROUTE_TRIAL_ZONES=[];   // 7/18ユーザー実機＝タイル描画は品質不合格→空に戻す（方式改訂は設計書参照）
 /* 第20弾§4：ゾーン→一枚絵ファイル名（images/fullart/）。空文字=一枚絵なし（従来表示） */
-const ZONE_FULLART=['zone1.webp','zone2.webp','zone3.webp','zone4.webp','zone5.webp','zone6.webp','zone7.webp','zone8.webp',
+/* ⚠️ゾーン3は 弾SD-1（2026-08-16）で横スクロールの層方式にした。
+   ここに入れる絵は「土手（歩く場所）」＝BRIDGE_ROAD[3] と同じもの。
+   ゾーン41と同じ流儀で、背景としては出さず（.bridge-tile）帯として敷く。
+   ★ここが空だと fullartOK に入らず、層（ZONE_PARALLAX_LAYERS）も表示されない。 */
+const ZONE_FULLART=['zone1.webp','zone2.webp','zone3-bank.webp','zone4.webp','zone5.webp','zone6.webp','zone7.webp','zone8.webp',
                     'zone9.webp','zone10.webp','zone11.webp','zone12.webp','zone13.webp','zone14.webp','zone15.webp','zone16.webp',
                     'zone17.webp','zone18.webp','zone19.webp','zone20.webp','zone21.webp','zone22.webp','zone23.webp','zone24.webp',
                     /* 弾3-6§2-4：3年カンサイ・シコク20ゾーンぶん。41番目だけnull（弾3-7で一枚絵を差し替え・nullはプリロードをスキップ＝フォールバック） */
@@ -13947,7 +14054,29 @@ const PARALLAX_SPEED=0.18;  // 背景の移動速度係数（1=前景と同速�
    ・配列は**奥から手前の順**（この順に重ねる）
    位置の微調整は ツール\橋の配置ツール.html で数字を作り、ここに貼る。 */
 /* 数字は 2026-07-28 に準也さんが ツール\橋の配置ツール.html で決めた値 */
-const ZONE_PARALLAX_LAYERS={41:[
+/* ===== 弾SD-1（2026-08-16）＝ゾーン3「すみだがわ」を横スクロールの層にする =====
+   準也さんのご提案「隅田川はしまなみ海道のようにスクロールするやつにしましょうか。
+   一番後ろがビル群で、その次に川が流れていると。手前の画面半分を土手にして土手を歩く」。
+
+   ★層の順番＝奥から手前。手前の桜は**独立した層**で、川と船の手前に立つ。
+     準也さん＝「桜の木の後ろに川が隠れてたり、船が隠れたりするのですごく3D感が出るのに、
+     ここ（＝土手の絵の中）に桜の木を置いてしまうと、ただ単純に歩ける範囲を狭めているだけ」。
+   ★歩く場所より手前に桜は描かない＝そこは準也さんが障害物データで置く。
+   ★川幅は画面の48%（準也さん裁定「一番川が広いのがいい。桜で隠してしまうから」）。
+   ★boat:… の層は「川を自動で流れる船」。CSSの .field-parallax-boat が作られる。
+     dur＝1往復にかける秒数。船の絵には航跡（なみしぶき）が焼き込んである。 */
+/* ★★この5行の数字は、2026-08-16 に準也さんが `ツール\すみだがわ配置ツール.html` で決めた値。
+     ここを手で書き換えないこと。直すときは配置ツールを開いて、出てきた数字を貼り直す。
+     （しまなみ橋が `ツール\橋の配置ツール.html` で決めているのと同じ流儀）
+   ★手前の桜は**根元だけ**が土手にもぐる位置にしてある（準也さんのご指示）。
+     根元が見えていると「土手の手前に生えている」ように見えてしまう。 */
+const ZONE_PARALLAX_LAYERS={3:[
+  {img:'zone3-buildings.webp', top:-0.12, h:0.28, speed:0.02},          /* いちばん奥＝かすんだ東京のビル群と空 */
+  {img:'zone3-river.webp',     top: 0.14, h:0.48, speed:0.38},          /* 隅田川（画面の48%） */
+  {boat:'zone3-boat.webp',     top: 0.31, h:0.09, speed:0.38, dur:70},  /* 屋形船（川と同じ速さで追従＋70秒で流れる） */
+  {img:'zone3-farbank.webp',   top:-0.02, h:0.26, speed:0.12},          /* 向こう岸の土手と桜並木（透過ずみ） */
+  {img:'zone3-sakura.webp',    top: 0.30, h:0.29, speed:0.85},          /* ★手前の桜（川と船にかぶさる。いちばん手前） */
+],41:[
   {img:'zone41-sky.webp',         top:0.00,  h:0.35,  speed:0.01},
   {img:'zone41-sea.webp',         top:0.35,  h:0.66,  speed:0.40},
   {img:'zone41-far-islands.webp', top:0.27,  h:0.125, speed:0.05},
@@ -13981,10 +14110,67 @@ const BRIDGE_CABLE={41:{dcol:3.55, top:4.55, h:9.6, sag:0.7, hangers:16, mainW:5
    top=3.9 にすると路面は **8.05〜10.86マス目**＝歩ける行8・9・10 とそろう。
    ⚠️この絵の路面は2.81マス分しかない。歩ける行を4行以上にすると必ずはみ出す（当初の設計も「通れるのは3マス」）。
    ⚠️数字を変えたら必ず実機で撮って確かめること。図＝_一時\_しまなみ_ズレの図.png（作り方＝同フォルダの.py） */
-const BRIDGE_ROAD={41:{img:'zone41-road.webp', w:9.49, h:10.45, top:3.9}};
+/* ★この表は「橋の道路」という名前だが、中身は『マップの上に帯を repeat-x で敷く』汎用の仕組み。
+   弾SD-1（2026-08-16）でゾーン3の「土手（主人公が歩く場所）」にも使う。
+   ゾーン3の土手＝絵は2172×724（3:1）なので w は h の3倍にする。
+   ⚠️top/w/h はマス単位。実機で撮って調整すること（数字は机上で決めない）。 */
+/* ★ゾーン3の数字の出し方（2026-08-16に実機で測って決めた）
+     層は「画面に対する割合」で置かれ、帯は「マップのマス」で置かれる＝物差しが違う。
+     だから帯の top は、主人公が歩く行から逆算する必要がある。
+       帯の上端を画面の60%に置きたい → top ＝ (歩く行のまん中) − 1.5 マス
+     ★ゾーン3で歩ける行は 16・17・18 の3行（＝しまなみ橋と同じ考え方）。
+       まん中の17から top＝15.5。高さ7.5マスで**画面の下のふちまで届く**。絵は3:1なので w＝h×3＝22.5。
+       絵の上半分（芝生と土）が歩く場所＝マス15.5〜19.25。行16〜18がここに入る。
+       絵の下半分（手前へ下りる階段）は歩けない＝画面の下のふちを埋める役。
+   ⚠️つまずいた点3つ（どれも実機の実測と準也さんの指摘で分かった）：
+     ①1回目は top=11.5 にして、帯が桜の層を丸ごと覆い隠した
+     ②高さ6.7マスだと、歩ける部分がマップの20行をはみ出した
+     ③高さ5マスだと**画面の下が白いまま余った**（準也さん指摘）→ 7.5マスに伸ばした */
+const BRIDGE_ROAD={41:{img:'zone41-road.webp', w:9.49, h:10.45, top:3.9},
+                    3:{img:'zone3-bank.webp',  w:25.5, h:8.5,   top:14.0}};   /* ★準也さんが配置ツールで決めた値（2026-08-16） */
 /* ゾーン41だけカメラを下げて、橋を画面の下の方に置く（上に空と島を広く見せる）。
    値＝主人公（＝道路）を画面の高さの何割の位置に置くか。0.5=まん中／大きいほど下。 */
-const ZONE_CAM_Y={41:0.78};
+const ZONE_CAM_Y={41:0.78, 3:0.72};   /* 弾SD-1：ゾーン3も主人公を下寄りに置き、上に川と桜を見せる */
+
+/* ===== 弾OB-1（2026-08-16）：フィールドに置く「部品」（木・岩・灯籠など） =====
+   準也さんのご指示＝「全ての障害物には通れるところと通れないものを設定する必要があります」
+
+   ・絵は `images/parts/` に置く（正本＝素材\部品パレット\フィールド部品\）
+   ・x,y ＝ 部品の左上（マス単位・小数可）／ w,h ＝ 大きさ（マス単位）
+   ・flip ＝ 左右反転
+   ★**前後（奥・手前）は書かない。** 部品の下端の行から自動で決まる（＝根元の行）。
+     主人公と同じ「10＋行番号」の物差しなので、
+     主人公が部品より上にいれば隠れ、下にいれば手前に出る。
+   ★通行判定（歩ける・歩けない）は今までどおり ZONES[].grid が持つ。
+     部品を置いただけでは通れなくならない。**根元の1マスだけを T に塗る**のがコツ。
+   ★登録の無いゾーンは、いままでと1ピクセルも変わらない。 */
+const ZONE_OBJECTS={
+  /* ★試しの1本（2026-08-16・目で見て確かめるため）。ゾーン2「うえの」の 列14・行16 に けやき。
+     ここを選んだ理由＝主人公のスタート（列14・行19）から まっすぐ上に歩ける道の上なので、
+     行17（木より下）→ 行16（根元と同じ）→ 行15（木より上）と動かすだけで前後の入れかわりが見える。
+     絵は 371×322（横長）。★w:h は絵の縦横比に合わせる（background-size:100% 100% のため）。
+     ★大きさ＝幅2.0マス（2026-08-16・準也さんの裁定）。
+       理由＝2.5マス・3マスだと主人公がまるごと消えて迷子になる。2マスなら帽子と頭が上に出る。
+       高さ＝2.0×322/371＝1.736マス。
+     下端＝15.264+1.736＝17.0 ＝ 行16の底 → --oz=16（＝z-index 26）。主人公は 10＋行番号。
+     ★1本ずつ変えられる（大きさは配置ツールで準也さんが決める）。 */
+  2:[
+    {img:'けやき.webp', x:13.5, y:15.264, w:2.0, h:1.736, flip:false},
+  ],
+};
+
+/* 部品の絵の読みこみ（fullartOK と同じ流儀。無ければ描かないだけで、エラーにしない） */
+const partImgOK=new Set();
+(function(){
+  const names=new Set();
+  Object.keys(ZONE_OBJECTS).forEach(z=>{ (ZONE_OBJECTS[z]||[]).forEach(o=>names.add(o.img)); });
+  names.forEach(file=>{
+    const im=new Image();
+    im.onload=()=>{ partImgOK.add(file); };
+    im.onerror=()=>{};
+    im.src='images/parts/'+file;
+  });
+})();
 /* 第20弾§4-2：一枚絵プリロード（groundImgOKと同じ流儀＝onload/onerror。無ければfullartOKに入らず従来表示） */
 const fullartOK=new Set();
 ZONE_FULLART.forEach((file,i)=>{
@@ -14343,6 +14529,12 @@ function updateCamera(instant){
          層は画面に固定したまま、**背景の位置だけ**を流す。横は repeat-x なので無限に続く。 */
       el.style.backgroundPositionX=Math.round(camX*sp)+'px';
     });
+    /* 弾SD-1（2026-08-16）：船は1隻だけなので repeat-x が使えない（背景位置では動かせない）。
+       外がわの箱を transform で動かしてカメラに追従させる。中の船はCSSアニメで別に流れている。 */
+    players.querySelectorAll('.field-parallax-boat').forEach(el=>{
+      const sp=parseFloat(el.dataset.speed)||0;
+      el.style.transform='translateX('+Math.round(camX*sp)+'px)';
+    });
   }
 }
 /* 第7弾§2：ビューポート再計算（リサイズ・画面復帰時に呼ぶ） */
@@ -14610,7 +14802,8 @@ function renderField(){
   grid.classList.toggle('has-fullart',fullart);
   grid.classList.toggle('town-map',fieldZone===TOWN_ZONE && fullart);
   // 発注_しまなみ海道 作業2：ゾーン41だけタイル敷き(repeat-x)クラスを付ける（town-mapと同じ要領の1か所切替）
-  grid.classList.toggle('bridge-tile',fieldZone===41 && fullart);
+  /* 弾SD-1（2026-08-16）：ゾーン3も同じ扱い＝背景の1枚絵は出さず、帯(.bridge-road)と層で組み立てる */
+  grid.classList.toggle('bridge-tile',(fieldZone===41||fieldZone===3) && fullart);
   grid.style.setProperty('--ground-img',hasGround?"url('images/tiles/ground"+fieldZone+".webp')":'none');
   const fullartImg=(fieldZone===TOWN_ZONE && fullart)
     ? "url('images/fullart/"+TOWN_DEF.fullart[0]+"'),url('images/fullart/"+TOWN_DEF.fullart[1]+"')"
@@ -14638,6 +14831,15 @@ function renderField(){
         el.style.height=(L.h*100)+'%';
         if(L.haze){
           el.className='field-parallax-haze';
+        }else if(L.boat){
+          /* 弾SD-1（2026-08-16）：川を自動で流れる船。
+             外がわ＝カメラ追従（transform）／内がわ＝CSSアニメで流れる（二重構造） */
+          el.className='field-parallax-boat';
+          el.dataset.speed=L.speed;
+          if(L.dur) el.style.setProperty('--boat-dur',L.dur+'s');
+          const inner=document.createElement('i');
+          inner.style.backgroundImage="url('images/fullart/"+L.boat+"')";
+          el.appendChild(inner);
         }else{
           el.className='field-parallax-layer';
           el.style.backgroundImage="url('images/fullart/"+L.img+"')";
@@ -14811,6 +15013,30 @@ function renderField(){
      縦のつり材（ハンガーロープ）も等間隔に下ろすと、ぐっと吊り橋らしくなる。 */
   /* 道路（部品として置く）。背景のままだと必ず一番奥になり、
      「奥の柱・ケーブルを道路より後ろに出す」ができないため（2026-07-28・準也さん指摘）。 */
+  /* ===== 弾OB-1（2026-08-16）：フィールドの部品を置く =====
+     ★町の建物とまったく同じ考え方。前後は「部品の根元の行」で決まる。
+       主人公も z-index:10+行番号 なので、上にいれば隠れ、下にいれば手前に出る。
+     ★#fieldGrid の子として作る（主人公と同じ親でないと前後が比べ合えない）。
+     ★登録の無いゾーンでは 1 個も作らない＝既存ゾーンに影響ゼロ。 */
+  (ZONE_OBJECTS[fieldZone]||[]).forEach(o=>{
+    if(!partImgOK.has(o.img)) return;                 // 絵が読めていないものは飛ばす
+    const el=document.createElement('div');
+    el.className='field-object'+(o.flip?' flip':'');
+    el.style.setProperty('--ox',o.x);
+    el.style.setProperty('--oy',o.y);
+    el.style.setProperty('--ow',o.w);
+    el.style.setProperty('--oh',o.h);
+    /* ★前後＝部品の下端の行（＝根元）。小数はマスの内側にいるとみなして切り捨てる。
+       ★0.02マス（＝約1ピクセル）の余裕を取る理由（2026-08-16）：
+         配置ツールは部品の位置を「整数ピクセル」に丸めて保存する（最大0.5px＝0.01マスのズレ）。
+         余裕なしだと、下端がマスの境界ぴったりのはずが 17.005 のようになり、
+         根元の行が1つ下にずれて、通れないマスと前後の基準行が食いちがう。
+       ★配置ツール側の「根元のマス」も同じ式（-0.02）で決めること。ここだけ直しても揃わない。 */
+    el.style.setProperty('--oz',Math.max(0,Math.floor(o.y+o.h-0.02)));
+    el.style.backgroundImage="url('images/parts/"+o.img+"')";
+    grid.appendChild(el);
+  });
+
   if(BRIDGE_ROAD[fieldZone] && fullart){
     const R=BRIDGE_ROAD[fieldZone];
     const tilePx=parseFloat(grid.style.getPropertyValue('--tile'))||45;
@@ -15536,6 +15762,7 @@ function ensureFieldIntro(){
   if(!zoneVisited.includes(fieldZone)){
     zoneVisited.push(fieldZone); save();
     showFieldBanner(ZONE_BANNER[fieldZone-1]);
+    maybeStartZoneEvent(fieldZone);   // 弾EV-3：台本のあるゾーンなら、バナーが消えてからイベント会話を流す
   }
 }
 function showFieldBanner(msg){
@@ -15548,6 +15775,131 @@ function showFieldBanner(msg){
   wrap.appendChild(b);
   heroLock=true;
   bannerTimer=setTimeout(()=>{ b.remove(); heroLock=false; bannerTimer=null; },2200);
+}
+
+/* ===== 弾EV-3：立ち絵つきイベント会話 =====
+   ゾーンに初めて入ったとき、ゾーン紹介バナーのあとに1回だけ流れる会話。
+   小さい顔アイコンの案内ではなく、左右に上半身の立ち絵を大きく出して「山場を山場に見せる」ための仕組み。
+   見た目・動きの正本＝試作 `_一時\_イベント会話試作_20260815\試作_ゾーン5イベント.html`。
+   流儀は hakaseTalkOnce と同じ＝heroLockで主人公を止め、fieldSeqでワープ離脱時のonDone誤発火を防ぐ。 */
+const EV_CHARA = {
+  mana : { img:'images/bust/mana_normal.webp', size:1.00, side:'left'  },
+  manaK: { img:'images/bust/mana_kiri.webp',   size:1.00, side:'left'  },
+  easy : { img:'images/bust/easy.webp',        size:0.95, side:'right' }
+};
+/* ゾーン番号 → 台本。snd は後で声を足すための空き（いまは全部 null＝声は入れない） */
+const EV_SCENES = {
+  /* ★★弾M-2（2026-08-15）実在の地名にしたときの必須チェック：
+       ゾーンに悪口を言わせないこと。ゾーン5は「あさくさ」になったので、
+       旧台詞「ここの 人たちは、もう 字を よまないの。」は
+       “実在の浅草の人は字を読まない”という意味になってしまっていた。
+       準也さん裁定＝「トウキョウの人達は特に読まなくなった」という流れにする
+       ＝主語を その土地の人 から トウキョウぜんたい に広げて、特定の町の悪口にしない。
+     ★これから他のゾーンにイベントを足すときも、同じ罠を必ず確認すること。
+       架空の土地では成立していた台詞が、実在の土地では成立しなくなる。 */
+  5: [
+    { who:'mana',  dark:false, snd:null, text:'トウキョウの 人たちは、とくに 字を よまなく なったの。' },
+    { who:'mana',  dark:false, snd:null, text:'よむ 人が いないと、字は よみを わすれてしまう。' },
+    { who:'easy',  dark:true,  snd:null, text:'……だいじょうぶ。' },
+    { who:'easy',  dark:true,  snd:null, text:'むりして おぼえなくて いいよ。' },
+    { who:'manaK', dark:false, snd:null, text:'……イージー。' },
+    { who:'manaK', dark:false, snd:null, text:'……ううん。わたしたちは いくよ。' }
+  ]
+};
+const EV_BANNER_WAIT_MS=2600;   // ゾーン紹介バナー（2.2秒）が消えるのを待ってから始める
+let evActive=false;             // イベント会話を表示中か
+let evStep=-1;                  // いま何行目か
+let evScript=null;              // 流している台本
+let evSeq=0;                    // 始めたときの fieldSeq（ワープ離脱の判定用）
+let evDoneCb=null;              // 終わったときに呼ぶもの
+let evAutoWasRunning=false;     // 始める前にオート巡回が走っていたか
+
+/* ゾーンに入ったときの入口。台本が無い／もう見たゾーンなら何もしない */
+function maybeStartZoneEvent(zone){
+  if(!EV_SCENES[zone]) return;
+  if(evSeen[zone]) return;
+  const seq=fieldSeq;
+  setTimeout(()=>{
+    // ここへ来るまでにワープ・タイトルへ離脱していたら出さない（既存の誤発火防止と同じ流儀）
+    if(seq!==fieldSeq || fieldZone!==zone || evActive || evSeen[zone]) return;
+    const fscr=$('screen-field');
+    if(!fscr || !fscr.classList.contains('active')) return;
+    evSeen[zone]=true; save();
+    startZoneEvent(zone);
+  }, EV_BANNER_WAIT_MS);
+}
+
+/* 台本を最初から流す */
+function startZoneEvent(zone, onDone){
+  const script=EV_SCENES[zone];
+  if(!script || !script.length){ if(onDone) onDone(); return; }
+  if(evActive) return;                                   // 二重発火の番人（sjActiveと同じ考え方）
+  for(const k in EV_CHARA){ const im=new Image(); im.src=EV_CHARA[k].img; }   // 表情の切り替えでちらつかせない
+  evActive=true; evScript=script; evStep=-1; evDoneCb=onDone||null; evSeq=fieldSeq;
+  evAutoWasRunning=isAutoZone(fieldZone);
+  if(evAutoWasRunning) stopAutoExplore();                // オート巡回が走っていたら止める
+  heroLock=true;   // ★stopAutoExplore は歩きかけの後始末で heroLock を外すことがある。必ずその後で立てる
+  const ov=$('evOverlay');
+  ov.classList.remove('dark');
+  // ★毎回まっさらにする。前のイベントの絵が残っていると「この台本にまだ出ていない人」が
+  //   暗いまま立ってしまう（＝上の『まだ一度も出ていない』判定がsrcを見ているため）
+  const L0=$('evLeft'), R0=$('evRight');
+  L0.removeAttribute('src'); R0.removeAttribute('src');
+  L0.className='ev-chara hide'; R0.className='ev-chara hide';
+  ov.classList.add('show');
+  evAdvance();
+}
+
+/* 立ち絵を1枚出す（絵・大きさを入れて明るく見せる） */
+function evPutChara(el, c){
+  if(el.getAttribute('src')!==c.img) el.setAttribute('src', c.img);
+  el.style.setProperty('--sz', c.size);
+  el.classList.remove('hide','off');
+}
+
+/* タップで次へ（自動送りにしない）。最後まで行ったら閉じる */
+function evAdvance(){
+  if(!evActive) return;
+  evStep++;
+  if(evStep>=evScript.length){ evFinish(); return; }
+  const s=evScript[evStep];
+  const c=EV_CHARA[s.who];
+  if(!c){ evFinish(); return; }
+  const ov=$('evOverlay'), L=$('evLeft'), R=$('evRight');
+  ov.classList.toggle('dark', !!s.dark);
+  /* 立ち絵の出し入れ＝発注書§2ステップ4のとおり「喋る側を明るく・相手を暗く・その場にいない側は消す」。
+     ★2026-08-15 準也さん裁定：一度出た人は、喋っていない間も暗いまま残す。
+       試作は5行目（マナの「……イージー。」）でイージーが消える動きだったが、
+       それはマナがイージーに呼びかけている場面なので、相手が居なくなるのはおかしい。
+       「その場にいない」＝この台本でまだ一度も喋っていない、と判定する（srcが空かどうかで見る）。 */
+  if(c.side==='left'){
+    evPutChara(L, c);
+    if(R.getAttribute('src')) R.classList.add('off');     // 右は残したまま暗くする
+    else R.classList.add('hide');                         // まだ一度も出ていないなら出さない
+  }else{
+    evPutChara(R, c);
+    if(L.getAttribute('src')) L.classList.add('off');     // 左は残したまま暗くする
+    else L.classList.add('hide');                         // まだ一度も出ていないなら出さない
+  }
+  $('evText').textContent=s.text;
+  $('evText').className=(s.who==='easy')?'ev-easy':'';    // イージーが喋るときだけ文字色を変える
+}
+
+/* 閉じてもとに戻す */
+function evFinish(){
+  if(!evActive) return;
+  evActive=false;
+  const ov=$('evOverlay');
+  ov.classList.remove('show','dark');
+  $('evLeft').classList.add('hide'); $('evRight').classList.add('hide');
+  $('evText').textContent=''; $('evText').className='';
+  const cb=evDoneCb;
+  evDoneCb=null; evScript=null; evStep=-1;
+  if(evSeq!==fieldSeq) return;   // ワープ等で離脱済みなら以降は何もしない（hakaseTalkOnceと同じ誤発火防止）
+  heroLock=false;
+  if(evAutoWasRunning && isAutoZone(fieldZone)) startAutoExplore();   // 止めていたオート巡回を戻す
+  evAutoWasRunning=false;
+  if(cb) cb();
 }
 /* 手直し はかせトーク2§1-1：ゾーン1初回、フィールド入場後・ゾーン紹介バナーが終わってから約0.8秒ではかせが自動で話し始める。
    fieldSeq世代ガード＝seqを捕まえておき、発火時に「今もこの世代・このゾーン・イントロ待ち・field画面表示中」かを確認してから動く。
@@ -15802,25 +16154,38 @@ function openWorldMap(regionOverride){
 function closeWorldMap(){ $('worldmapOverlay').classList.remove('show'); }
 /* 第5弾§6：8ゾーンを空間配置した「島の地図」。ノード＋番号順の道。タップ挙動は従来通り */
 // 手直し ちず座標v2：トウキョウv2地図（海と雲）の目印に合わせて再計測（設計書§1）
-/* 弾M-1（2026-08-08）：背景を実在の東京湾まわりの形（C案の3D・worldmap.webp）に差し替えたのに合わせ、
-   8点を「できた絵の上」で実測して置き直した。
-   ★ゾーン名（かずの そうげん・かざんの たからやま 等）は架空のまま＝§4-6の裁定どおり、
-     地図には実在の地形だけを描き、架空のゾーンはその上に「点」として置く。
-     （東京に火山は無いが、地図に火山を描いていないので嘘にはならない）
-   絵の中の目印（%）＝東京湾 x58-72・y8-65／湾のおくの大きな町 x45-80・y0-12／西の山なみ x0-25・y0-45／
-   三浦半島 x50-65・y50-68／相模湾 x10-50・y55-95／房総半島 x72-100・y15-85／伊豆大島 x42-50・y86-93。 */
+/* 弾M-2（2026-08-15）★1・2年生を「実在の地理」にする：
+   トウキョウ8ゾーンを架空の名前から【東京23区の実在の地名】に変えた（準也さん裁定 2026-08-15）。
+   背景も「東京湾まわりの広域図」から【東京23区＋西のはしに高尾山】の図に描き直した（worldmap.webp）。
+   ★8/7までの「ゾーン名は一切さわらない（地図には実在の地形だけを描き、架空のゾーンは点として置く）」という
+     §4-6の裁定は、この弾で撤回された。理由＝準也さん「1・2年生は架空になっていて全く覚えられない」。
+   ★★手順は必ず ①ちずを描く → ②できた絵の上で座標を実測 → ③名前を書き換える の順。
+     名前を先に変えると「江戸城が千葉にある」状態が生まれる（旧座標は関東全域に散っていた）。
+   ★縮尺は「見やすさ優先のデフォルメ」（準也さん裁定）。実物の日本橋・東京駅・皇居は歩いて5分の距離だが、
+     名前ラベルが読めるように引き離して描いてある。守っているのは東西南北の関係だけ。
+   8点は _一時\_地理見直し_20260815\新ちず\02_点を打って確認.py で
+   「できた絵の上」に実寸のバッジとラベルを重ねて実測した（重なり0・見切れ0・見出し帯の干渉0を確認ずみ）。
+   絵の中の目印（%）＝西の山なみ x0-24・y8-40／東京湾 y70以下と右下／隅田川 x78-100をたてに流れる／
+   雲（まだ見ぬ大地＝2年生のカントウ） x25-75・y0-15。 */
 const WM_COORDS_TOKYO=[   // エリアに対する%座標 ※第18弾§6でWM_COORDSからリネーム
-  {x:38,y:42},  // 1 かずの そうげん（中央の平野）
-  {x:25,y:35},  // 2 もりと はなばたけ（西の森のふち）
-  {x:18,y:25},  // 3 そらと みずべ（西の谷あい）
-  {x:16,y:15},  // 4 かざんの たからやま（西のはしの山なみ）★x10だと名前ラベルの左はしが画面の外に切れた（「かざんの」が「ざんの」に）。長い名前はx15以上に置く
-  {x:40,y:28},  // 5 ひとの むら（平野の北）★3と同じ高さ(y25前後)だとラベルが横並びで重なり、x33だとラベルが2のバッジに被った
-  {x:50,y:19},  // 6 まちと がっこう（湾のおくの大きな町）
-                //   ★★ちず画面の上には見出し（ワールドマップ／いく ゾーンを えらぼう）が乗る。実測＝**x30〜70％・y0〜14％**。
-                //      この範囲にノードを置くと隠れる（8/8にy8で実際に隠れ、y16でもカプセルに触れた）。y18以上にすること。
-                //      画面の左右のはし（x30未満・x70超）なら上でも隠れない（4はx10・y15で見えている）。
-  {x:52,y:55},  // 7 ふしぎの めいろ（湾の西にのびる半島）
-  {x:85,y:35}   // 8 かんじの しろ（湾の東がわの陸）
+  {x:56,y:43},  // 1 にほんばし（日本橋・道路元標の石柱の上）
+  {x:42,y:24},  // 2 うえの（上野公園・不忍池のあたり）
+                //   ★★★見出しチップの帯は「端末が狭いほど広がる」＝弾M-2で実測して分かった（検品\弾M-2_帯の実寸をはかる.js）。
+                //      旧コメントの「x30〜70％・y0〜14％」は**いちばん広い端末(414px)のときの値**でしかなかった。
+                //        414x896 → 帯 x26〜74 ・ y1.6〜13.2 ／ バッジ半径 たて3.41％
+                //        320x568 → 帯 x17.9〜82.1・y2.1〜17.7 ／ バッジ半径 たて4.55％  ←★ここが最悪ケース
+                //      つまり狭い端末では「x18〜82の範囲なら、バッジの中心は y22.3 以上」でないと帯に隠れる。
+                //      2は x42（帯の真下）なので y19 では320px端末で実際に隠れた。y24にして解消（実機4サイズでNG0を確認）。
+                //      左右のはし（x18未満・x82超）なら上でも隠れない。
+  {x:86,y:42},  // 3 すみだがわ（東を流れる隅田川・屋形船のあたり）
+  {x:13,y:30},  // 4 たかおさん（西のはしの山・赤い鳥居の上）★23区の外だが東京都。
+                //    ラベルの左はしが画面外に切れる事故（「かざんの」が「ざんの」に）の再発防止＝
+                //    320px端末ではラベル1文字ぶんの幅が4.11％。「たかおさん」5字＝20.6％なので、
+                //    x11だと左はしが0.7％しか残らず危ない。x13にして2.7％の余裕を確保した。
+  {x:78,y:27},  // 5 あさくさ（雷門と仲見世・奥にスカイツリー）
+  {x:44,y:65},  // 6 とうきょうえき（赤レンガの駅舎）
+  {x:75,y:80},  // 7 おだいば（レインボーブリッジと観覧車）
+  {x:26,y:43}   // 8 えどじょう（堀にかこまれた天守。ボスの城）
 ];
 /* 第18弾§6：カントウ16ノードの%座標。images/worldmap-kanto.webp を実際に開いて16のランドマークに目視で合わせた
    （worldmapカントー指示書_Codex用.mdのランドマーク表と対応）。9〜24の並び順＝サイタマ→グンマ→トチギ→イバラキ→チバ→カナガワ */
@@ -18419,6 +18784,8 @@ const GRADE_CEREMONY_MANA_MSG={ // 学年ごとのマナの一言（表に1行�
   5:'5ねんせいの かんじ、ぜんぶ たすけたね',
   6:'6ねんせいの かんじ、ぜんぶ たすけたね。ぜんぶの かんじを たすけたよ！'
 };
+/* 弾VO-1：しゅうりょうしきのマナの声（audio/battle/sj01〜sj06.mp3・四国めたん）の実測の長さ(ms) */
+const GRADE_CEREMONY_VOICE_MS={ 1:3019,2:2891,3:3051,4:2912,5:2934,6:5120 };
 /* ==============================
    弾EV-2：賞状の3つの見た目・しょうごう（発注書:設計書\弾EV-2_賞状に キャラと しょうごうを のせる.md）
    - なかま/からだだけ/まだ あっていない の3つの見た目・地方名+割合の呼び名・100%で金の賞状
@@ -18500,13 +18867,15 @@ function startGradeCeremony(grade, onClose){
   const toPaper=()=>{   // 会話を閉じて賞状を出す（自然経過でも「とばす」でも、ここに合流する）
     sjClearTimers();
     hideHakaseTalkWindow();
+    stopBattleHakaseVoice();
     sjShowSkip(false);
     ensureAudio(); sfxFanfare();
     paper.classList.add('in');
   };
   sjSkipToPaperFn=toPaper;
-  sjTimers.push(setTimeout(()=>{ showHakaseTalkWindow(GRADE_CEREMONY_MANA_MSG[grade]||''); },400));   // 0.4秒：マナの会話（声は今回無し）
-  sjTimers.push(setTimeout(toPaper,2600));   // 2.6秒：会話を消して賞状を上げる
+  sjTimers.push(setTimeout(()=>{ showHakaseTalkWindow(GRADE_CEREMONY_MANA_MSG[grade]||''); playBattleHakaseVoice('sj0'+grade); },400));   // 0.4秒：マナの会話＋声（弾VO-1）
+  // 弾VO-1：声を言い切ってから一呼吸(0.7秒)おいて賞状へ。声が無い/短い学年でも従来の2.6秒は必ず確保する
+  sjTimers.push(setTimeout(toPaper, Math.max(2600, 400+(GRADE_CEREMONY_VOICE_MS[grade]||0)+700)));
 }
 /* とばす＝演出中（0〜3.2秒）だけ押せる。賞状そのものは飛ばせない＝押した瞬間に賞状の表示状態へ飛ぶだけ */
 function sjSkip(){ if(sjActive && sjSkipToPaperFn) sjSkipToPaperFn(); }
@@ -18515,6 +18884,7 @@ function sjClose(){
   if(!sjActive) return;
   sjClearTimers();
   hideHakaseTalkWindow();
+  stopBattleHakaseVoice();
   sjShowSkip(false);
   $('sjOverlay').classList.remove('show');
   document.querySelector('#sjOverlay .sj-paper').classList.remove('in');
@@ -18679,13 +19049,8 @@ let op1AnswerLock=false;  // S4：クイズ回答の連打防止
    （設計書§6.6-3：台詞表示と同期して再生。台詞の文言そのものは一切変更していない）。
    既存のsePlay/seFxと同じ流儀＝Audio要素をキャッシュ・soundOnで無効化・読込失敗は握りつぶして無音のまま進行
    （音声が無くても文字だけで完走できる＝既存speakJaフォールバック思想と同じ）。 */
-const OP1_VOICE_MS={ s0:7400, s3:4900, s4a:1800, s4b:3100, s5:9500 };
+const OP1_VOICE_MS={ s0:7400, s3:4900, s3b:2688, s3c:4896, s4a:1800, s4b:3100, s5:9500 };
 const OP1_VOICE_PAUSE_MS=700;   // 台詞を言い切ってから次のシーンへ移るまでの一呼吸（子ども向けの間）
-/* 弾NM-2：S3b/S3c（マナの名乗り）は声をまだ作っていないので、ゲーム内の会話と同じ式で表示時間を決める
-   （HAKASE_MSG_MS_PER_CHAR/HAKASE_MSG_MS_BASE/HAKASE_MSG_MS_MIN/HAKASE_MAX_MSは14069行あたりで定義済み）。 */
-function op1CharMs(msg){
-  return Math.min(HAKASE_MAX_MS, Math.max(msg.length*HAKASE_MSG_MS_PER_CHAR + HAKASE_MSG_MS_BASE, HAKASE_MSG_MS_MIN));
-}
 let op1SndCache={};   // key -> HTMLAudioElement|null
 let op1SndFailed={};  // key -> true（読込失敗が確定済み。以後は無音のまま・再試行しない）
 
@@ -18936,20 +19301,22 @@ function op1PlayS3(){
   op1PlaySnd('s3');   // OP-1b§3：台詞表示と同時にマナの声を再生
   setTimeout(()=>{ if(seq!==op1Seq) return; op1PlayS3b(); },OP1_VOICE_MS.s3+OP1_VOICE_PAUSE_MS);
 }
-/* ---- S3b（弾NM-2新設）：マナの名乗り①。声は今回作らない＝無音（op1PlaySnd()を呼ばない）。
+/* ---- S3b（弾NM-2新設）：マナの名乗り①。弾VO-1で声をつけた（四国めたん・op1_s3b_mana.mp3）。
    op1Seqの世代チェックはS3等の既存シーンと同じ形。 ---- */
 function op1PlayS3b(){
   const seq=op1Seq;
   const msg='わたしは マナ。アンドロイドの はかせだよ';
   $('op1ManaText').textContent=msg;
-  setTimeout(()=>{ if(seq!==op1Seq) return; op1PlayS3c(); },op1CharMs(msg));
+  op1PlaySnd('s3b');   // 弾VO-1：台詞表示と同時にマナの声（S3等と同じ流儀）
+  setTimeout(()=>{ if(seq!==op1Seq) return; op1PlayS3c(); },OP1_VOICE_MS.s3b+OP1_VOICE_PAUSE_MS);
 }
-/* ---- S3c（弾NM-2新設）：マナの名乗り②。声は今回作らない＝無音。 ---- */
+/* ---- S3c（弾NM-2新設）：マナの名乗り②。弾VO-1で声をつけた（四国めたん・op1_s3c_mana.mp3）。 ---- */
 function op1PlayS3c(){
   const seq=op1Seq;
   const msg='なんでも けんきゅうして、ぜんぶの はかせに なったの。いまは かんじに むちゅう！';
   $('op1ManaText').textContent=msg;
-  setTimeout(()=>{ if(seq!==op1Seq) return; op1PlayS4Setup(); },op1CharMs(msg));
+  op1PlaySnd('s3c');   // 弾VO-1：台詞表示と同時にマナの声（S3等と同じ流儀）
+  setTimeout(()=>{ if(seq!==op1Seq) return; op1PlayS4Setup(); },OP1_VOICE_MS.s3c+OP1_VOICE_PAUSE_MS);
 }
 /* ---- S4：即バトル＝チュートリアル（プレイヤー操作）。必要正解1・敗北なし・正解で終了へ ---- */
 function op1PlayS4Setup(){
