@@ -928,7 +928,39 @@
     align-self:center;-webkit-tap-highlight-color:transparent}
   .genki-item-btn:active{transform:translateY(2px)}
   .genki-item-btn.arming{background:#fffbe6;box-shadow:0 0 0 3px var(--yellow),0 3px 0 rgba(0,0,0,.12)}
-  @media(max-width:374px){ .field-h .map-btn{padding:7px 8px;font-size:.85rem} .field-h h2{min-width:0;font-size:.95rem} }
+  @media(max-width:374px){
+    .field-h .map-btn{padding:7px 8px;font-size:.85rem}
+    .field-h h2{min-width:0;font-size:.85rem}
+    /* ★2026-08-17：320px端末ではゾーン名の幅が42px（2文字）しか残らず「すみ…」になっていた。
+       ＝地名を覚えるという目的が達成できないので、狭い画面だけ「もどる」の文字を隠して「〈」だけにする。
+       ★ボタンの位置・大きさ・押せる範囲は変わらない（中の文字を隠すだけ）。
+       ★390px以上では今までどおり「〈 もどる」と出る。 */
+    /* ★2026-08-17：準也さんの裁定＝B案「ゾーン名を2行目に移す」。
+       320pxではゾーン名の幅が66px（3文字）しか残らず「すみだ…」と切れていた
+       ＝地名を覚えるという目的が果たせないため。
+       ★やり方＝この帯だけ折り返しを許し（flex-wrap）、ゾーン名を最後の行へ回す（order）。
+         幅は312px使えるので「みなみぼうそう」も1行で全部読める。
+       ★ボタン（もどる・ちず・てもち・どうぐ）は位置も大きさも押せる範囲も変わらない。
+       ★390px以上では発動しない（今までどおり1行に「〈 もどる」＋名前＋ボタン3つ）。
+       ★たてに18px増える＝フィールドの絵がそのぶん縮む（computeTileSizeが自動で吸収する）。 */
+  }
+
+  /* ★2026-08-17：ゾーン名を2行目に移す（準也さんの裁定＝B案）。
+     ★実測した境目＝ゾーン名は最長7字（とうきょうえき・みなみぼうそう）で103px必要。
+       画面幅ごとに名前へ回ってくる幅：375px→60px／390px→75px／414px→99px（★どれも足りない）／
+       430px→115px（足りる）。だから **429px以下** でこの形にする。
+     ★430px以上（タブレット・PC）は今までどおり1行に全部並ぶので発動しない。
+     やり方＝この帯だけ折り返しを許し（flex-wrap）、ゾーン名を最後の行へ回す（order:9）。
+       幅は画面いっぱい使えるので7字でも全部読める。
+     ★ボタン（もどる・ちず・てもち・どうぐ）は位置も大きさも押せる範囲も変わらない。
+     ★たてに18px増える＝フィールドの絵がそのぶん縮む（computeTileSizeが自動で吸収する）。
+     ★なぜ必要か＝ゾーン名を実在の地名にしたのは「地理も覚えられるようにする」ため。
+       「とうきょ…」と切れていては目的を果たせない。 */
+  @media(max-width:429px){
+    .field-h{flex-wrap:wrap}
+    .field-h h2{order:9;flex:1 0 100%;font-size:1.0rem;margin-top:2px;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  }
 
   .damage-flash{position:absolute;inset:0;background:rgba(239,68,68,.45);
     opacity:0;pointer-events:none;z-index:40;border-radius:0}
@@ -1179,7 +1211,23 @@
   /* ===== 第4弾：フィールド画面 ===== */
   #screen-field{max-width:480px;margin:0 auto;touch-action:manipulation;padding:8px 4px 14px}
   .field-h{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-  .field-h h2{font-size:1.05rem;color:var(--ink);flex:1;line-height:1.2}
+  /* ★2026-08-17：ゾーン名を実在の地名にしたら「すみだがわ」(5字)でも2行に折り返していた。
+     準也さんの裁定＝A案（文字を少し小さくする。表示幅・レイアウトは動かさない）。
+     1.05rem→0.92rem。★白space:nowrap は付けない（もっと長い名前が来たとき、
+     はみ出すより折り返したほうが読めるため）。狭い画面(931行の .95rem)も合わせて下げる。 */
+  /* ★2026-08-17：ゾーン名が折り返す問題（準也さんの裁定＝A案・レイアウトは動かさない）。
+       原因は文字の大きさではなく【幅】だった。1行に「もどる」＋名前＋ボタン3つが並び、
+       名前は残りをもらうだけ＝320px端末では42px（3文字分）しか残らず、5字の「すみだがわ」が3行になっていた。
+     直し方＝①折り返しを禁止（nowrap）②あふれたら「…」で省略③名前に必要な幅を優先的に渡す。
+       ★ボタンの位置・大きさは1pxも変えていない（flexの取り分だけを変えた）。
+     ★これで名前は必ず1行。長すぎる名前は末尾が「…」になるが、
+       ゾーン名は最長7字（とうきょうえき）なので、実際に省略が出るのは320pxの狭い端末だけ。 */
+  .field-h h2{font-size:.92rem;color:var(--ink);line-height:1.2;
+    flex:1 1 auto;min-width:0;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* ★ボタン3つは縮まないようにする（名前に幅を回すため。見た目は変わらない） */
+  .field-h .map-btn{flex:0 0 auto}
+  .field-h .btn-ghost{flex:0 0 auto}
   .map-btn{background:#fff;border:3px solid var(--line);border-radius:12px;padding:7px 12px;
     font-weight:900;cursor:pointer;font-size:.95rem;box-shadow:0 3px 0 var(--line);font-family:inherit}
   .map-btn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--line)}
@@ -2970,7 +3018,7 @@
   <!-- ===== クイックバトル（旧ステージせんたく） ===== -->
   <section id="screen-stages" class="screen">
     <div class="screen-h">
-      <button class="btn btn-ghost" onclick="showScreen('screen-title')">〈 もどる</button>
+      <button class="btn btn-ghost" onclick="showScreen('screen-title')">〈<span class="lbl-modoru"> もどる</span></button>
       <h2>クイックバトル</h2>
     </div>
     <div class="stage-list" id="stageList"></div>
@@ -3022,7 +3070,7 @@
   <!-- ===== ずかん ===== -->
   <section id="screen-zukan" class="screen">
     <div class="screen-h">
-      <button class="btn btn-ghost" onclick="showScreen('screen-title')">〈 もどる</button>
+      <button class="btn btn-ghost" onclick="showScreen('screen-title')">〈<span class="lbl-modoru"> もどる</span></button>
       <h2>ずかん</h2>
     </div>
     <div class="zk-tabs">
@@ -3059,7 +3107,7 @@
   <!-- ===== フィールド（第4弾） ===== -->
   <section id="screen-field" class="screen">
     <div class="field-h">
-      <button class="btn btn-ghost" onclick="showScreen('screen-title')">〈 もどる</button>
+      <button class="btn btn-ghost" onclick="showScreen('screen-title')">〈<span class="lbl-modoru"> もどる</span></button>
       <h2 id="fieldZoneName">－</h2>
       <button class="map-btn" onclick="openWorldMap()">ちず</button>
       <button class="map-btn" onclick="openPartyEdit()">てもち</button>
@@ -6300,7 +6348,7 @@ const STAGE_DEFS=[
   {name:'みなみぼうそう',      chars:'春夏秋冬雪晴雲星夜昼'},
   {name:'なりたさん',          chars:'歌声楽聞言話読記心思'},
   {name:'のこぎりやま',        chars:'強弱引切刀矢弓走止直'},
-  {name:'よこはまちゅうかがい',chars:'店売買市場多少万番組'},
+  {name:'ちゅうかがい',chars:'店売買市場多少万番組'},
   {name:'よこはまこう',        chars:'会合交公同元長朝風何'},
   {name:'かまくら',            chars:'自顔首体頭食紙'},
   /* 弾3-6§2-1：3年カンサイ・シコク20ゾーン追加（設計書の表を1文字も変えずに使用） */
@@ -6420,7 +6468,7 @@ const ZONE_DESC=[
   'はなばたけが いちめんに ひろがり、うみも みえる',   // 19 みなみぼうそう
   'おおきな とうの おてら。いしだんの さんどうが つづく', // 20 なりたさん
   'しかくく きりだされた いわの かべと いしの かいだん', // 21 のこぎりやま
-  'あかと きんいろの もんと あかい ちょうちんが ならぶ', // 22 よこはまちゅうかがい
+  'よこはまの まち。あかと きんいろの もんと ちょうちん', // 22 ちゅうかがい
   'あかレンガの そうこと おおきな ふねが とまる はとば', // 23 よこはまこう
   'おおきな だいぶつが すわっていて、うみも ちかい',   // 24 かまくら
   'ながい かいだんの さき、かみさまが まっている',     // 25 おいせまいりの さんどう
@@ -7042,7 +7090,7 @@ const ZONES=[
     "RRRRRRRRRRR,,,,.,RRRRTRRRRRRRR",
     "RRRRRRRRRRRRRT.TTRRRRRRRRRRRRR",
     "RRRRRRRRRRRRRRS.RRRRRRRRRRRRRR"] },
-  { name:'よこはまちゅうかがい', scene:'s-candy', grid:[
+  { name:'ちゅうかがい', scene:'s-candy', grid:[
     /* 第22弾：一枚絵(images/fullart/zone22.webp)に合わせた横長30×20（フェーズDの型・分離監査体制で作成）。
        旧マップは過去弾設計書に残存。検証：verify_grid.js（行長30×20・各記号1個・BFS全到達・歩ける235/600）＋拡大クロップ全数監査。 */
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
@@ -13698,7 +13746,7 @@ const ZONE_BANNER=[
   'きせつと そらの かんじが いちねんじゅう まわってくるぞ', // 19 みなみぼうそう（季節と空）
   'うたと ことばの かんじが きれいに ひびきあうぞ',     // 20 なりたさん（音とことば）
   'ちからと うごきの かんじが いっきに はしりだすぞ',   // 21 のこぎりやま（力と動き）
-  'おみせと おかいものの かんじが にぎやかに ならぶぞ', // 22 よこはまちゅうかがい（店と数）
+  'おみせと おかいものの かんじが にぎやかに ならぶぞ', // 22 ちゅうかがい（店と数）
   'あいさつと あつまりの かんじが ならんでいるぞ',      // 23 よこはまこう（あいさつ）
   'じぶんと からだの かんじだ。カントウの ボスが まっている…！',   // 24 かまくら。弾3-6§2-4：44が本当の最後になったため文言差し替え（旧「さいごの しろ。カントウの ボスが まっている…！」）
   /* 弾3-6§2-4：3年カンサイ・シコク20ゾーンぶんのバナー（設計書の表を1文字も変えずに使用） */
@@ -14145,18 +14193,11 @@ const ZONE_CAM_Y={41:0.78, 3:0.72};   /* 弾SD-1：ゾーン3も主人公を下�
      部品を置いただけでは通れなくならない。**根元の1マスだけを T に塗る**のがコツ。
    ★登録の無いゾーンは、いままでと1ピクセルも変わらない。 */
 const ZONE_OBJECTS={
-  /* ★試しの1本（2026-08-16・目で見て確かめるため）。ゾーン2「うえの」の 列14・行16 に けやき。
-     ここを選んだ理由＝主人公のスタート（列14・行19）から まっすぐ上に歩ける道の上なので、
-     行17（木より下）→ 行16（根元と同じ）→ 行15（木より上）と動かすだけで前後の入れかわりが見える。
-     絵は 371×322（横長）。★w:h は絵の縦横比に合わせる（background-size:100% 100% のため）。
-     ★大きさ＝幅2.0マス（2026-08-16・準也さんの裁定）。
-       理由＝2.5マス・3マスだと主人公がまるごと消えて迷子になる。2マスなら帽子と頭が上に出る。
-       高さ＝2.0×322/371＝1.736マス。
-     下端＝15.264+1.736＝17.0 ＝ 行16の底 → --oz=16（＝z-index 26）。主人公は 10＋行番号。
-     ★1本ずつ変えられる（大きさは配置ツールで準也さんが決める）。 */
-  2:[
-    {img:'けやき.webp', x:13.5, y:15.264, w:2.0, h:1.736, flip:false},
-  ],
+  /* ★2026-08-17：ゾーン2の「試しの木」を消した（弾OB-1の目視確認に使った1本）。
+     道のまん中に立っていて不自然なのに、そのまま公開してしまっていた（8/16の公開 e8c7633）。
+     ★これから部品を置くときは、準也さんが ツール\障害物配置ツール.html で配置し、
+       道具_通行データ\配置データをゲームに入れる\83_配置データをゲームに入れる.py で入れる。
+     ★登録の無いゾーンは、いままでと1ピクセルも変わらない（＝既存101ゾーンに影響ゼロ）。 */
 };
 
 /* 部品の絵の読みこみ（fullartOK と同じ流儀。無ければ描かないだけで、エラーにしない） */
