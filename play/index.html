@@ -2835,6 +2835,48 @@
      専用div(#sjOverlay)・専用CSS接頭辞(sj-)。既存の.overlayは使い回さない（先例＝氷の城 iceOverlay・ic-接頭辞）。
      見た目は発注書§4のHTML/CSSをそのまま採用（デザインし直さない）。#appの直下（position:relative）に置く
      絶対配置なので、position:absoluteのままアプリ画面いっぱいに広がる。 */
+  /* ===== 弾EV-5：学年のフィナーレ（あつめた てがかりが つながる）=====
+     専用div(#gfOverlay)・専用CSS接頭辞(gf-)。見た目は弾EV-3（立ち絵つき会話）から引き継ぐ＝デザインし直さない。
+     z-index:85＝立ち絵つき会話(#evOverlay:80)より前。賞状(.sj-overlay:60)はこれが閉じたあとに出る。
+     ★絵は1枚も足していない（立ち絵はマナの既存2種・イージーは声だけ＝姿を出さない）。 */
+  #gfOverlay{position:absolute;inset:0;display:none;z-index:85;overflow:hidden;cursor:pointer;
+    -webkit-user-select:none;user-select:none}
+  #gfOverlay.show{display:block}
+  #gfVeil{position:absolute;inset:0;background:#0a0d1c;opacity:.74;transition:opacity .9s ease}
+  #gfOverlay.dark #gfVeil{opacity:.93}
+  /* 立ち絵＝弾EV-3と同じ大きさ・同じ位置（左） */
+  #gfChara{position:absolute;left:-3vw;bottom:118px;width:46vw;max-width:196px;height:auto;
+    transition:filter .35s ease, transform .35s ease, opacity .45s ease;
+    pointer-events:none;transform-origin:bottom center;
+    filter:drop-shadow(0 6px 14px rgba(0,0,0,.55))}
+  #gfChara.hide{opacity:0;transform:scale(.9) translateY(18px)}
+  /* あつめた てがかりが 下から 積み上がる場所（新しいものが下・古いものが上へ押し上がる）
+     ★bottom:46% ＝ 立ち絵（bottom:118px・高さ約256px）より上で終わらせる。
+       2026-08-17に実物を見たら、てがかりがマナの顔に重なって読めなかった。数字は全部OKだった。 */
+  #gfClues{position:absolute;left:14px;right:14px;top:46px;bottom:46%;
+    display:flex;flex-direction:column;justify-content:flex-end;gap:5px;overflow:hidden;pointer-events:none}
+  .gf-clue{opacity:0;transform:translateY(14px);
+    transition:opacity .5s ease, transform .5s ease;
+    background:rgba(16,18,32,.72);border-left:3px solid rgba(255,255,255,.35);
+    border-radius:0 8px 8px 0;padding:5px 9px;
+    color:#e8e4da;font-size:12.5px;line-height:1.45;font-weight:700}
+  .gf-clue.in{opacity:1;transform:translateY(0)}
+  /* ★共通する言葉（「声」など）だけを光らせる＝自分で集めたものが自分でつながる瞬間 */
+  .gf-kw{transition:color .6s ease, text-shadow .6s ease}
+  #gfClues.lit .gf-kw{color:#ffd76a;text-shadow:0 0 10px rgba(255,215,106,.9);font-size:1.15em}
+  /* セリフ窓＝弾EV-3と同じ */
+  #gfBox{position:absolute;left:12px;right:12px;bottom:22px;
+    background:rgba(16,18,32,.92);border:2px solid rgba(255,255,255,.30);
+    border-radius:16px;padding:16px 18px 20px;min-height:104px;
+    box-shadow:0 8px 24px rgba(0,0,0,.5)}
+  #gfText{color:#fff;font-size:19px;line-height:1.65;font-weight:700}
+  #gfText.gf-easy{color:#ffcf9a}
+  #gfNext{position:absolute;right:14px;bottom:8px;color:#fff;opacity:.75;font-size:13px;
+    animation:evBob 1s ease-in-out infinite}   /* ★evBobは弾EV-3で定義ずみのものを使う */
+  .gf-skip{position:absolute;right:10px;top:10px;z-index:3;
+    background:rgba(0,0,0,.55);color:#fff;border:1px solid rgba(255,255,255,.35);
+    border-radius:99px;padding:6px 14px;font-size:12px;font-weight:800;font-family:inherit;cursor:pointer}
+
   /* 弾EV-4：てがかり一覧。★ちず(#worldmapOverlay)は .overlay ＝ position:fixed / z-index:200 なので、
      こちらも fixed で z-index を上に置かないと、ちずの下に隠れて見えない（2026-08-17に実物で発見）。 */
   .tg-overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;
@@ -3426,6 +3468,17 @@
       <button class="btn btn-ghost" onclick="closeWorldMap()">とじる</button>
     </div>
   </div>
+</div>
+
+<!-- 弾EV-5：学年のフィナーレ（あつめた てがかりが つながる）。専用div・専用CSS接頭辞(gf-)。
+     置き場所は #evOverlay と同じ並び（画面全体に重なる＝カメラのtransformの影響を受けない）。
+     img に src は書かない（空srcはページ自身を読みに行くため）。JS側で立ち絵を入れる。 -->
+<div id="gfOverlay" onclick="gfTap()">
+  <div id="gfVeil"></div>
+  <img id="gfChara" class="hide" alt="">
+  <div id="gfClues"></div>
+  <div id="gfBox"><div id="gfText"></div><div id="gfNext">▼</div></div>
+  <button class="gf-skip" onclick="event.stopPropagation();gfSkip()">とばす</button>
 </div>
 
 <!-- 弾EV-4：てがかり一覧。専用div・専用CSS接頭辞(tg-)。#appの直下＝画面いっぱいに暗転する（先例=sjOverlay/nmOverlay） -->
@@ -15719,14 +15772,24 @@ function enterNextZone(){
     return;
   }
   if(gateFxLock) return;   // 第17弾§2：演出（音＋フラッシュ）が鳴り終わるまで連打による二重発火を無視
-  /* ★弾EV-4：このゾーンの「解決」（1話の終わり）がまだなら、先に流してから続きへ。
+  /* ★弾EV-4／EV-5：このゾーンの「1話の終わり」がまだなら、先に流してから続きへ。
      終わったら enterNextZone をもう一度呼ぶ＝2回目は outSeen が立っているので素通りし、
-     いままでどおり しゅうりょうしき → ゲート通過 と進む（ゾーン8＝解決 → 式 → ゾーン9 の順になる）。 */
-  const ztOut=ZONE_TALK[fieldZone];
-  if(ztOut && ztOut.out && !outSeen[fieldZone] && !ztActive){
-    outSeen[fieldZone]=true; save();
-    startZoneOut(fieldZone, enterNextZone);
-    return;
+     いままでどおり しゅうりょうしき → ゲート通過 と進む
+     （ゾーン8＝★フィナーレ → しゅうりょうしき＋賞状 → ゾーン9 の順になる）。 */
+  if(!outSeen[fieldZone] && !ztActive && !gfActive){
+    // 弾EV-5：学年の最後のゾーンは、ふつうの「解決」ではなくフィナーレを流す
+    const gf=gradeFinaleOfZone(fieldZone);
+    if(gf){
+      outSeen[fieldZone]=true; save();
+      startGradeFinale(gf.grade, enterNextZone);
+      return;
+    }
+    const ztOut=ZONE_TALK[fieldZone];
+    if(ztOut && ztOut.out){
+      outSeen[fieldZone]=true; save();
+      startZoneOut(fieldZone, enterNextZone);
+      return;
+    }
   }
   // 弾EV-1：いま出ようとしているゾーンが学年の最後（GRADE_ZONESの.to）で、まだしゅうりょうしきを見ていなければ、
   //   ここで足止めしてしゅうりょうしき→賞状を先に見せる。閉じたら続き（本来のゲート通過処理）を実行する。
@@ -16033,6 +16096,9 @@ const ZONE_TALK = {
       { snd:null, text:'……見て。だれかが、よみがなを 書き足していった あとが ある。' },
       { snd:null, text:'えきの 人が いってた。「大きな こえで、なんども おしえてた 人が いた」って。' }
     ],
+    /* ★ここだけ「こえ」を ひらがな にしてある（意図的）。
+       弾EV-5のフィナーレで光るのは漢字の「声」だけ＝③④⑦の3つ（イージーの線）。
+       この⑥はマロース先生の線なので、光らせない。漢字にするとフィナーレで一緒に光ってしまう。 */
     clue:'大きな こえで、なんども おしえてた 人が いた'
   },
   7: {
@@ -16049,18 +16115,13 @@ const ZONE_TALK = {
     clue:'地図も 声が よんでくれる'
   },
   /* ★ゾーン8は1年の答え。てがかりには数えないので clue を持たせない。
-     ★「その声は だれ？」の答えはここでは出さない（＝黒の組織のまま残す）。 */
+     ★★「解決」は ふつうの会話ではなく **弾EV-5のフィナーレ**（GRADE_FINALE）が担当する。
+        だから out を持たせない（2026-08-17 準也さんのご指摘「学年の終わりなのにショボい」への対応）。 */
   8: {
     title:'いちばん さいしょの まち',
     in:[
       { snd:null, text:'この しろから、この まちは はじまったの。トウキョウで いちばん 古い ばしょ。' },
       { snd:null, text:'……ここで、ぜんぶ つながる かもしれない。' }
-    ],
-    out:[
-      { snd:null, text:'みんな おなじことを 言ってた。「声が よんでくれる」って。' },
-      { snd:null, text:'トウキョウは、その声を いちばん「先」に、いちばん「早」く つかいはじめた まち。' },
-      { snd:null, text:'いちばん はじめの まちが、いちばん先に 字を よまなく なって——いちばん先に、あばれはじめたの。' },
-      { snd:null, text:'……でも、その声は だれ？' }
     ]
   }
 };
@@ -16070,6 +16131,170 @@ const ZONE_TALK = {
 const CLUE_SETS = {
   1: { from:1, to:7, title:'トウキョウの てがかり' }
 };
+
+/* ===== 弾EV-5：学年のフィナーレ（あつめた てがかりが つながる）=====
+   ★準也さんのご指摘（2026-08-17）＝「ゾーン8は てがかりも集まって学年の終わりのイベントなのにショボい。
+     最低限 人物を並べて会話するイベント、もしくは普通にイベントシーンを作るレベルじゃないとだめ」。
+   → 学年の最後のゾーンをクリアした瞬間に、あつめた てがかりが1つずつ積み上がり、
+     共通する言葉（1年なら「声」）だけが光って、学年の謎が解ける演出を流す。そのあと しゅうりょうしき＋賞状。
+   ★絵は1枚も足していない（立ち絵＝マナの既存2種／イージーは姿を出さず声だけ＝オレンジの字）。
+   ★6学年ぶん動く汎用。ここに1行足せば2年以降も同じ演出になる。
+   正本＝設計書\09_計画と方針\【計画】1話完結の型と1年の8話_20260817.md */
+const GRADE_FINALE = {
+  1: {
+    zone: 8,
+    keyword: '声',                                     // ★てがかりの中でここだけ光らせる言葉
+    intro : 'みんな、おなじことを 言ってた。',
+    found : '……ぜんぶ、「声」の はなし。',
+    none  : '……この まちの 人たちの はなしを、思い出してみて。',   // てがかりが0のとき（古いセーブ）
+    lines : [
+      'トウキョウは、その声を いちばん「先」に、いちばん「早」く つかいはじめた まち。',
+      'いちばん はじめの まちが、いちばん先に 字を よまなく なって——',
+      'いちばん先に、あばれはじめたの。'
+    ],
+    easy  : '……だいじょうぶ。',                        // 姿は出さない。声だけ（オレンジの字）
+    last  : '……でも、その声は だれ？',                  // マナ（きり顔）。答えはここでは出さない
+    banner: 'だい8わ「いちばん さいしょの まち」 おしまい'
+  }
+};
+
+const GF_CLUE_MS   = 1150;   // てがかりが1つ出てから次が出るまで
+const GF_LIT_MS    = 1500;   // 全部出そろってから「声」が光るまで
+const GF_AFTER_MS  = 1600;   // 光ってから次のセリフへ
+
+let gfActive=false, gfStep=-1, gfSteps=null, gfDone=null, gfSeq=0, gfTimer=null, gfTapOK=false;
+
+function gradeFinaleOfZone(zone){
+  for(const g in GRADE_FINALE){ if(GRADE_FINALE[g].zone===zone) return {grade:(g|0), def:GRADE_FINALE[g]}; }
+  return null;
+}
+/* その学年で いま持っている てがかり（取った順） */
+function gfCluesOf(grade){
+  const set=CLUE_SETS[grade]; if(!set) return [];
+  const out=[];
+  for(let z=set.from; z<=set.to; z++){
+    const zt=ZONE_TALK[z];
+    if(outSeen[z] && zt && zt.clue) out.push(zt.clue);
+  }
+  return out;
+}
+/* 光らせる言葉を <span> でくるむ。★中身は内部の固定文字列だけ（外から来る文字は入らない） */
+function gfWrapKeyword(text, kw){
+  if(!kw) return text;
+  return text.split(kw).join('<span class="gf-kw">'+kw+'</span>');
+}
+
+function startGradeFinale(grade, onDone){
+  const def=GRADE_FINALE[grade];
+  if(!def){ if(onDone) onDone(); return; }
+  if(gfActive) return;
+  gfActive=true; gfDone=onDone||null; gfSeq=fieldSeq; gfStep=-1; gfTapOK=false;
+  if(isAutoZone(fieldZone)) stopAutoExplore();
+  heroLock=true;                                  // ★stopAutoExplore の後に立てる
+  const clues=gfCluesOf(grade);
+
+  // 台本を組み立てる（clues が0本なら積み上げの場面を飛ばす＝古いセーブでも成立させる）
+  gfSteps=[];
+  gfSteps.push({k:'say', who:'mana', text:def.intro});
+  if(clues.length){
+    gfSteps.push({k:'clues', list:clues, kw:def.keyword});
+    gfSteps.push({k:'say', who:'mana', text:def.found});
+  }else{
+    gfSteps.push({k:'say', who:'mana', text:def.none});
+  }
+  def.lines.forEach(t=>gfSteps.push({k:'say', who:'mana', text:t}));
+  gfSteps.push({k:'say', who:'easy', text:def.easy});
+  gfSteps.push({k:'say', who:'manaK', text:def.last});
+  gfSteps.push({k:'end', banner:def.banner});
+
+  // 画面をまっさらにしてから出す
+  const ov=$('gfOverlay');
+  $('gfClues').innerHTML=''; $('gfClues').classList.remove('lit');
+  $('gfText').textContent=''; $('gfText').className='';
+  const ch=$('gfChara'); ch.removeAttribute('src'); ch.className='hide';
+  ov.classList.remove('dark'); ov.classList.add('show');
+  for(const k in EV_CHARA){ const im=new Image(); im.src=EV_CHARA[k].img; }   // 切り替えでちらつかせない
+  gfAdvance();
+}
+
+function gfAdvance(){
+  if(!gfActive) return;
+  if(gfSeq!==fieldSeq){ gfClose(false); return; }   // ワープ等で離脱したら黙って畳む
+  if(gfTimer){ clearTimeout(gfTimer); gfTimer=null; }
+  gfStep++;
+  const s=gfSteps[gfStep];
+  if(!s){ gfClose(true); return; }
+
+  if(s.k==='end'){ gfClose(true, s.banner); return; }
+
+  if(s.k==='clues'){
+    gfTapOK=false; $('gfNext').style.visibility='hidden';
+    // ★積み上げの最中は 立ち絵を引っこめて 暗くする＝てがかりに集中させる（2026-08-17に実物を見て追加）
+    $('gfChara').className='hide';
+    $('gfOverlay').classList.add('dark');
+    $('gfText').textContent='';
+    const box=$('gfClues');
+    let i=0;
+    const put=()=>{
+      if(gfSeq!==fieldSeq){ gfClose(false); return; }
+      if(i<s.list.length){
+        const d=document.createElement('div');
+        d.className='gf-clue';
+        d.innerHTML='「'+gfWrapKeyword(s.list[i], s.kw)+'」';   /* 内部の固定文字列のみ */
+        box.appendChild(d);
+        requestAnimationFrame(()=>d.classList.add('in'));
+        i++;
+        gfTimer=setTimeout(put, GF_CLUE_MS);
+      }else{
+        gfTimer=setTimeout(()=>{
+          if(gfSeq!==fieldSeq){ gfClose(false); return; }
+          box.classList.add('lit');                      // ★共通する言葉が光る
+          try{ ensureAudio(); snd('levelup'); }catch(e){}
+          gfTimer=setTimeout(gfAdvance, GF_AFTER_MS);
+        }, GF_LIT_MS);
+      }
+    };
+    put();
+    return;
+  }
+
+  // セリフ
+  const t=$('gfText'), ch=$('gfChara'), ov=$('gfOverlay');
+  if(s.who==='easy'){
+    ch.className='hide';                    // ★イージーは姿を出さない。声だけ
+    ov.classList.add('dark');
+    t.className='gf-easy';
+  }else{
+    const c=EV_CHARA[s.who] || EV_CHARA.mana;
+    if(ch.getAttribute('src')!==c.img) ch.setAttribute('src', c.img);
+    ch.className='';
+    ov.classList.remove('dark');
+    t.className='';
+  }
+  t.textContent=s.text;
+  gfTapOK=true; $('gfNext').style.visibility='';
+}
+
+function gfTap(){ if(gfActive && gfTapOK) gfAdvance(); }
+function gfSkip(){
+  if(!gfActive) return;
+  if(gfTimer){ clearTimeout(gfTimer); gfTimer=null; }
+  const last=gfSteps[gfSteps.length-1];
+  gfClose(true, last && last.banner);
+}
+function gfClose(runDone, banner){
+  if(gfTimer){ clearTimeout(gfTimer); gfTimer=null; }
+  gfActive=false; gfTapOK=false;
+  $('gfOverlay').classList.remove('show','dark');
+  const cb=gfDone; gfDone=null; gfSteps=null; gfStep=-1;
+  if(gfSeq!==fieldSeq || !runDone){ heroLock=false; return; }
+  if(banner) showFieldBanner(banner);
+  setTimeout(()=>{
+    if(gfSeq!==fieldSeq) return;
+    heroLock=false;
+    if(cb) cb();
+  }, banner?2400:200);
+}
 
 const EV_BANNER_WAIT_MS=2600;   // ゾーン紹介バナー（2.2秒）が消えるのを待ってから始める
 let evActive=false;             // イベント会話を表示中か
@@ -16994,6 +17219,18 @@ function renderWorldMap(regionOverride){
   wmPlayIntroZoom(scale, centerCoord.x, centerCoord.y);
 }
 function warpZone(z){
+  /* ★弾EV-5（2026-08-17）：会話・演出の最中にワープしたら、まず畳む。
+     これをしないと heroLock が立ったまま残り、行った先で主人公が動けなくなる
+     （2026-08-09の「オート巡回中に手持ちを開くとフリーズ」とまったく同じ型）。
+     ★必ず fieldZone / fieldSeq を変える前に呼ぶこと（それぞれの畳む処理が fieldSeq を見て判定するため）。
+     ★弾EV-3（立ち絵つき会話）にも同じ穴があったので、ここでまとめて塞いでいる。 */
+  if(typeof gfActive!=='undefined' && gfActive) gfClose(false);
+  if(typeof evActive!=='undefined' && evActive) evFinish();
+  if(typeof ztActive!=='undefined' && ztActive){
+    ztActive=false;
+    if(typeof hideHakaseTalkWindow==='function') hideHakaseTalkWindow();
+    heroLock=false;
+  }
   fieldZone=z;
   const s=zoneStartOf(z); fieldHx=s.x; fieldHy=s.y;
   fieldPos={zone:z,x:fieldHx,y:fieldHy}; save();
