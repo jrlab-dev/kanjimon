@@ -15998,13 +15998,13 @@ const EV_SCENES = {
   5: [
     /* 弾EV-4（2026-08-17）：1話の「事件」の入口としてこの1行だけ足した（場所の正体＝雷門の大きなちょうちん）。
        ★下の2行は2026-08-15の準也さん裁定文。1文字も変えないこと。 */
-    { who:'mana',  dark:false, snd:null, text:'大きな ちょうちんに、この まちの 名まえが 書いてある。' },
-    { who:'mana',  dark:false, snd:null, text:'トウキョウの 人たちは、とくに 字を よまなく なったの。' },
-    { who:'mana',  dark:false, snd:null, text:'よむ 人が いないと、字は よみを わすれてしまう。' },
-    { who:'easy',  dark:true,  snd:null, text:'……だいじょうぶ。' },
-    { who:'easy',  dark:true,  snd:null, text:'むりして おぼえなくて いいよ。' },
-    { who:'manaK', dark:false, snd:null, text:'……イージー。' },
-    { who:'manaK', dark:false, snd:null, text:'……ううん。わたしたちは いくよ。' }
+    { who:'mana',  dark:false, snd:'ev05_1', text:'大きな ちょうちんに、この まちの 名まえが 書いてある。' },
+    { who:'mana',  dark:false, snd:'ev05_2', text:'トウキョウの 人たちは、とくに 字を よまなく なったの。' },
+    { who:'mana',  dark:false, snd:'ev05_3', text:'よむ 人が いないと、字は よみを わすれてしまう。' },
+    { who:'easy',  dark:true,  snd:'ev05_4', text:'……だいじょうぶ。' },
+    { who:'easy',  dark:true,  snd:'ev05_5', text:'むりして おぼえなくて いいよ。' },
+    { who:'manaK', dark:false, snd:'ev05_6', text:'……イージー。' },
+    { who:'manaK', dark:false, snd:'ev05_7', text:'……ううん。わたしたちは いくよ。' }
   ]
 };
 /* ===== 弾EV-4：1ゾーン＝1話（事件 → 解決 → てがかり）=====
@@ -16022,53 +16022,53 @@ const ZONE_TALK = {
     title:'はじまりの 数',
     /* ★ゾーン1は はかせのイントロが9本あるので、事件は1行だけに抑える */
     in:[
-      { snd:null, text:'この はしは、にっぽんじゅうの みちの はじまり。……でも、みちしるべの 数が、だれにも よめないの。' }
+      { snd:'zt01i1', text:'この はしは、にっぽんじゅうの みちの はじまり。……でも、みちしるべの 数が、だれにも よめないの。' }
     ],
     out:[
-      { snd:null, text:'一、二、三……ここから ひとつずつ 数えて いく。' },
-      { snd:null, text:'だから ここが「一」ばんめ。みちしるべが よめれば、どこへでも いける。' },
-      { snd:null, text:'みちの 人が いってた。「むかしは みんな、ここを 数えて あるいたんだけどねえ」って。' }
+      { snd:'zt01o1', text:'一、二、三……ここから ひとつずつ 数えて いく。' },
+      { snd:'zt01o2', text:'だから ここが「一」ばんめ。みちしるべが よめれば、どこへでも いける。' },
+      { snd:'zt01o3', text:'みちの 人が、こう いってた。「むかしは みんな、ここを 数えて あるいたんだけどねえ」' }
     ],
     clue:'むかしは みんな、ここを 数えて あるいた'
   },
   2: {
     title:'うえのの 森',
     in:[
-      { snd:null, text:'ここは「うえのの 森」って よばれてるの。' },
-      { snd:null, text:'その 森で、こどもが まいごに なってる。たてふだが よめなくて。' }
+      { snd:'zt02i1', text:'ここは「うえのの 森」って よばれてるの。' },
+      { snd:'zt02i2', text:'その 森で、こどもが まいごに なってる。たてふだが よめなくて。' }
     ],
     out:[
-      { snd:null, text:'たてふだは「森」。木が みっつ ある ところ。' },
-      { snd:null, text:'この こうえんが まるごと「森」なの。……いた！ 見つかったよ。' },
-      { snd:null, text:'おかあさんが いってた。「もう、字を 見る くせが なくなってて」って。' }
+      { snd:'zt02o1', text:'たてふだは「森」。木が みっつ ある ところ。' },
+      { snd:'zt02o2', text:'この こうえんが まるごと「森」なの。……いた！ 見つかったよ。' },
+      { snd:'zt02o3', text:'おかあさんが、こう いってた。「もう、字を 見る くせが なくなってて」' }
     ],
     clue:'もう、字を 見る くせが なくなってて'
   },
   3: {
     title:'ふねが でない',
     in:[
-      { snd:null, text:'大きな「川」の うえを、ふねが いく まち。' },
-      { snd:null, text:'でも きょうは ふねが でないの。きょうの 天気が わからないから。' }
+      { snd:'zt03i1', text:'大きな「川」の うえを、ふねが いく まち。' },
+      { snd:'zt03i2', text:'でも きょうは ふねが でないの。きょうの 天気が わからないから。' }
     ],
     out:[
-      { snd:null, text:'「雨」は、「空」から しずくが おちる かたち。' },
-      { snd:null, text:'きょうは ふらない。……ふねが でたよ。' },
-      { snd:null, text:'せんどうさんが いってた。「声で きけば すむからな」って。' }
+      { snd:'zt03o1', text:'「雨」は、「空」から しずくが おちる かたち。' },
+      { snd:'zt03o2', text:'きょうは ふらない。……ふねが でたよ。' },
+      { snd:'zt03o3', text:'せんどうさんが、こう いってた。「声で きけば すむからな」' }
     ],
     clue:'声で きけば すむからな'
   },
   4: {
     title:'山の 火まつり',
     in:[
-      { snd:null, text:'きょうは、この「山」の うえの おてらで、火の おまつりが ある日。' },
-      { snd:null, text:'でも「火」の たてふだが よめなくて、だれも 来ないの。' }
+      { snd:'zt04i1', text:'きょうは、この「山」の うえの おてらで、火の おまつりが ある日。' },
+      { snd:'zt04i2', text:'でも「火」の たてふだが よめなくて、だれも 来ないの。' }
     ],
     /* ★てがかり④＝高尾山は電波が届かない＝「声」が届かない。だから字が要る。
        イージー（ネットの中にいる＝ネットが無い所には届かない）の設定と噛み合う伏線。 */
     out:[
-      { snd:null, text:'「火」は、もえている かたち。……みんな 集まってきた。' },
-      { snd:null, text:'山の うえが、赤く なったよ。……ねえ、きづいてる？ あばれる 子が、だんだん ふえてるの。' },
-      { snd:null, text:'山の 人が いってた。「山の うえは、声が とどかないんだ」って。' }
+      { snd:'zt04o1', text:'「火」は、もえている かたち。……みんな 集まってきた。' },
+      { snd:'zt04o2', text:'山の うえが、赤く なったよ。……ねえ、きづいてる？ あばれる 子が、だんだん ふえてるの。' },
+      { snd:'zt04o3', text:'山の 人が、こう いってた。「山の うえは、声が とどかないんだ」' }
     ],
     clue:'山の うえは、声が とどかないんだ'
   },
@@ -16076,25 +16076,31 @@ const ZONE_TALK = {
   5: {
     title:'大きな ちょうちん',
     out:[
-      { snd:null, text:'「名」は、「口」で よぶ ための しるし。' },
-      { snd:null, text:'よばれない 名は、きえてしまう。……字も おなじ。' },
-      { snd:null, text:'さっきの こえ……「むりして おぼえなくて いいよ」って いってた。' }
+      { snd:'zt05o1', text:'「名」は、「口」で よぶ ための しるし。' },
+      { snd:'zt05o2', text:'よばれない 名は、きえてしまう。……字も おなじ。' },
+      /* ★★2026-08-18 準也さん裁定＝ここから「こえ」を外した。
+         前は「さっきの こえ……」で、これが**「声」＝イージー**を直接むすんでいた。
+         学年のフィナーレは「ぜんぶ『声』の はなし」→「その声は だれ？」で終わるので、
+         この一言があると1年の段階で 声の主＝イージー とほぼ割れてしまう（準也さんのご指摘2回目）。
+         ★台詞そのものは残す（伏線Iの「似た言葉」＝1年ぶん）。消したのは「こえ」という語だけ。
+         ★言い方も「〜って いってた。」から「こう いってた。「…」」へ（文末が上がるのを直した＝弾VO-2 §3-2①）。 */
+      { snd:'zt05o3', text:'さっきの子が、こう いってた。「むりして おぼえなくて いいよ」' }
     ],
     clue:'むりして おぼえなくて いいよ'
   },
   6: {
     title:'どこへ いくの',
     in:[
-      { snd:null, text:'駅には、たくさんの 電「車」。行き先は ぜんぶ「字」で 書いてある。' },
-      { snd:null, text:'でも よめなくて、みんな 乗れないの。' }
+      { snd:'zt06i1', text:'駅には、たくさんの 電「車」。行き先は ぜんぶ「字」で 書いてある。' },
+      { snd:'zt06i2', text:'でも よめなくて、みんな 乗れないの。' }
     ],
     /* ★out の2行目は「マロース先生」（5年の中間ボス＝最初の勇者）の伏線。
        読めない人のために字を教えて回っていた人＝駅の行き先によみがなを書き足していった跡。
        半年先のどんでん返しの種なので消さないこと。 */
     out:[
-      { snd:null, text:'「町」「村」「学」「校」……行き先は ぜんぶ 字。よめれば、どこへでも いける。' },
-      { snd:null, text:'……見て。だれかが、よみがなを 書き足していった あとが ある。' },
-      { snd:null, text:'えきの 人が いってた。「大きな こえで、なんども おしえてた 人が いた」って。' }
+      { snd:'zt06o1', text:'「町」「村」「学」「校」……行き先は ぜんぶ 字。よめれば、どこへでも いける。' },
+      { snd:'zt06o2', text:'……見て。だれかが、よみがなを 書き足していった あとが ある。' },
+      { snd:'zt06o3', text:'えきの 人が、こう いってた。「大きな こえで、なんども おしえてた 人が いた」' }
     ],
     /* ★ここだけ「こえ」を ひらがな にしてある（意図的）。
        弾EV-5のフィナーレで光るのは漢字の「声」だけ＝③④⑦の3つ（イージーの線）。
@@ -16104,13 +16110,13 @@ const ZONE_TALK = {
   7: {
     title:'上から 見れば',
     in:[
-      { snd:null, text:'ここは、うみの うえに つくった あたらしい まち。' },
-      { snd:null, text:'みちが おなじ かたちばかりで、みんな まよってるの。' }
+      { snd:'zt07i1', text:'ここは、うみの うえに つくった あたらしい まち。' },
+      { snd:'zt07i2', text:'みちが おなじ かたちばかりで、みんな まよってるの。' }
     ],
     out:[
-      { snd:null, text:'かんらんしゃで「上」から 見て。……ほら、みちが わかる。' },
-      { snd:null, text:'「上」「下」「左」「右」。ばしょの 字が あれば、もう まよわない。' },
-      { snd:null, text:'はいたつの 人が いってた。「地図も 声が よんでくれる」って。' }
+      { snd:'zt07o1', text:'かんらんしゃで「上」から 見て。……ほら、みちが わかる。' },
+      { snd:'zt07o2', text:'「上」「下」「左」「右」。ばしょの 字が あれば、もう まよわない。' },
+      { snd:'zt07o3', text:'はいたつの 人が、こう いってた。「地図も 声が よんでくれる」' }
     ],
     clue:'地図も 声が よんでくれる'
   },
@@ -16120,8 +16126,8 @@ const ZONE_TALK = {
   8: {
     title:'いちばん さいしょの まち',
     in:[
-      { snd:null, text:'この しろから、この まちは はじまったの。トウキョウで いちばん 古い ばしょ。' },
-      { snd:null, text:'……ここで、ぜんぶ つながる かもしれない。' }
+      { snd:'zt08i1', text:'この しろから、この まちは はじまったの。トウキョウで いちばん 古い ばしょ。' },
+      { snd:'zt08i2', text:'……ここで、ぜんぶ つながる かもしれない。' }
     ]
   }
 };
@@ -16144,6 +16150,11 @@ const GRADE_FINALE = {
   1: {
     zone: 8,
     keyword: '声',                                     // ★てがかりの中でここだけ光らせる言葉
+    /* ★弾VO-2（2026-08-17）：声（VOICEVOX 四国めたん／イージーは白上虎太郎）。
+       置き場所は audio\battle\（playBattleHakaseVoice が読む固定の場所）。
+       2年以降を足すときは、ここに同じ形で1つ書けばよい。 */
+    snd   : { intro:'gf1_intro', found:'gf1_found', none:'gf1_none',
+              lines:['gf1_l1','gf1_l2','gf1_l3'], last:'gf1_last' },
     intro : 'みんな、おなじことを 言ってた。',
     found : '……ぜんぶ、「声」の はなし。',
     none  : '……この まちの 人たちの はなしを、思い出してみて。',   // てがかりが0のとき（古いセーブ）
@@ -16152,7 +16163,11 @@ const GRADE_FINALE = {
       'いちばん はじめの まちが、いちばん先に 字を よまなく なって——',
       'いちばん先に、あばれはじめたの。'
     ],
-    easy  : '……だいじょうぶ。',                        // 姿は出さない。声だけ（オレンジの字）
+    /* ★★2026-08-17 準也さん裁定＝1年のフィナーレでは イージーの声を鳴らさない（`easy` を持たせない）。
+       理由2つ＝①「……でも、その声は だれ？」の直前に本人が喋ると、答えを聞かせてから問う形になり、
+       1年の段階で「声の主＝イージー」がほぼ割れる（声を入れたことで、別人の声だとはっきり分かるようになった）
+       ②伏線I の決まりは「似た言葉は学年ごとに1回」で、1年ぶんはゾーン5（EV_SCENES[5]）で既に使っている。
+       ★仕組み（who:'easy' の見せ方）は残してあるので、2年以降で使いたい学年は `easy:'…'` を1行書けばよい。 */
     last  : '……でも、その声は だれ？',                  // マナ（きり顔）。答えはここでは出さない
     banner: 'だい8わ「いちばん さいしょの まち」 おしまい'
   }
@@ -16195,16 +16210,19 @@ function startGradeFinale(grade, onDone){
 
   // 台本を組み立てる（clues が0本なら積み上げの場面を飛ばす＝古いセーブでも成立させる）
   gfSteps=[];
-  gfSteps.push({k:'say', who:'mana', text:def.intro});
+  const S=def.snd||{};                                    // ★弾VO-2：声のファイル名（無い学年でもそのまま動く）
+  gfSteps.push({k:'say', who:'mana', text:def.intro, snd:S.intro});
   if(clues.length){
     gfSteps.push({k:'clues', list:clues, kw:def.keyword});
-    gfSteps.push({k:'say', who:'mana', text:def.found});
+    gfSteps.push({k:'say', who:'mana', text:def.found, snd:S.found});
   }else{
-    gfSteps.push({k:'say', who:'mana', text:def.none});
+    gfSteps.push({k:'say', who:'mana', text:def.none, snd:S.none});
   }
-  def.lines.forEach(t=>gfSteps.push({k:'say', who:'mana', text:t}));
-  gfSteps.push({k:'say', who:'easy', text:def.easy});
-  gfSteps.push({k:'say', who:'manaK', text:def.last});
+  def.lines.forEach((t,i)=>gfSteps.push({k:'say', who:'mana', text:t, snd:S.lines&&S.lines[i]}));
+  /* ★イージーの声は「その学年が easy を持っているときだけ」出す（2026-08-17 準也さん裁定）。
+     1年は持たせていない＝声の主をここで割らないため。GRADE_FINALE の注記を見ること。 */
+  if(def.easy) gfSteps.push({k:'say', who:'easy', text:def.easy, snd:S.easy});
+  gfSteps.push({k:'say', who:'manaK', text:def.last, snd:S.last});
   gfSteps.push({k:'end', banner:def.banner});
 
   // 画面をまっさらにしてから出す
@@ -16228,6 +16246,7 @@ function gfAdvance(){
   if(s.k==='end'){ gfClose(true, s.banner); return; }
 
   if(s.k==='clues'){
+    stopBattleHakaseVoice();   // ★弾VO-2：てがかりを積み上げる前に、前の声を止める
     gfTapOK=false; $('gfNext').style.visibility='hidden';
     // ★積み上げの最中は 立ち絵を引っこめて 暗くする＝てがかりに集中させる（2026-08-17に実物を見て追加）
     $('gfChara').className='hide';
@@ -16272,6 +16291,7 @@ function gfAdvance(){
     t.className='';
   }
   t.textContent=s.text;
+  if(s.snd) playBattleHakaseVoice(s.snd);                 // ★弾VO-2：この行の声（前の声は先頭で止まる）
   gfTapOK=true; $('gfNext').style.visibility='';
 }
 
@@ -16284,6 +16304,7 @@ function gfSkip(){
 }
 function gfClose(runDone, banner){
   if(gfTimer){ clearTimeout(gfTimer); gfTimer=null; }
+  stopBattleHakaseVoice();   // ★弾VO-2：閉じるときは声も止める
   gfActive=false; gfTapOK=false;
   $('gfOverlay').classList.remove('show','dark');
   const cb=gfDone; gfDone=null; gfSteps=null; gfStep=-1;
@@ -16476,12 +16497,16 @@ function evAdvance(){
   }
   $('evText').textContent=s.text;
   $('evText').className=(s.who==='easy')?'ev-easy':'';    // イージーが喋るときだけ文字色を変える
+  /* ★弾VO-2（2026-08-17）：この行の声を鳴らす（置き場所は audio\battle\）。
+     タップで次へ進むと playBattleHakaseVoice の先頭で前の声が止まるので、切り替えの後始末は要らない。 */
+  if(s.snd) playBattleHakaseVoice(s.snd);
 }
 
 /* 閉じてもとに戻す */
 function evFinish(){
   if(!evActive) return;
   evActive=false;
+  stopBattleHakaseVoice();   // ★弾VO-2：閉じるときは声も止める
   const ov=$('evOverlay');
   ov.classList.remove('show','dark');
   $('evLeft').classList.add('hide'); $('evRight').classList.add('hide');
