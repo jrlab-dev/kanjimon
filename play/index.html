@@ -2105,6 +2105,12 @@
   #worldmapOverlay .wm-btnbar .btn, #nipponMapOverlay .wm-btnbar .btn{
     pointer-events:auto;width:auto;flex:1 1 0;min-width:0;font-size:.74rem;
     padding:9px 6px;margin-top:0;border-radius:50px;white-space:nowrap}
+  /* 弾EV-4：てがかりボタンが出るとボタンが4つになる。
+     ⚠️2026-08-17に実物で2回つまずいた（両方とも直してある）：
+       ①4つを等分(flex:1 1 0)にすると「にほんちずへ」も含めて文字が切れる（320〜414pxの全部で）
+       ②2段（flex-wrap）にすると帯が46px→83pxに伸び、★ゾーン7おだいばのノードが帯の裏に隠れた
+     → ★1段のまま「それぞれの文字の幅」で並べる（flex:0 1 auto）。4つでも320pxに収まることを実測ずみ。 */
+  #worldmapOverlay .wm-btnbar.has-clue .btn{flex:0 1 auto;font-size:.64rem;padding:9px 7px}
 
   /* ===== 手直し：はじまりズーム演出（設計書「手直し_はじまりズーム演出_設計方針.md」）=====
      ちず＝開いた瞬間は地図全体(倍率1・番号なし)を少し見せてから現在地の倍率へなめらかにズーム、
@@ -2829,6 +2835,25 @@
      専用div(#sjOverlay)・専用CSS接頭辞(sj-)。既存の.overlayは使い回さない（先例＝氷の城 iceOverlay・ic-接頭辞）。
      見た目は発注書§4のHTML/CSSをそのまま採用（デザインし直さない）。#appの直下（position:relative）に置く
      絶対配置なので、position:absoluteのままアプリ画面いっぱいに広がる。 */
+  /* 弾EV-4：てがかり一覧。★ちず(#worldmapOverlay)は .overlay ＝ position:fixed / z-index:200 なので、
+     こちらも fixed で z-index を上に置かないと、ちずの下に隠れて見えない（2026-08-17に実物で発見）。 */
+  .tg-overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+    flex-direction:column;gap:12px;background:rgba(0,0,0,.8);z-index:260;padding:16px}
+  .tg-overlay.show{display:flex}
+  .tg-paper{width:min(94%,420px);max-height:74vh;overflow-y:auto;
+    background:linear-gradient(#fffdf5,#fff8e6);border:3px solid #c8a54a;border-radius:10px;
+    padding:16px 14px;box-shadow:0 10px 30px rgba(0,0,0,.45)}
+  .tg-title{font-size:19px;font-weight:800;color:#8a6d1f;text-align:center;letter-spacing:.1em}
+  .tg-count{font-size:13px;font-weight:700;color:#8a6d1f;text-align:center;margin:2px 0 10px}
+  .tg-row{display:flex;gap:8px;align-items:flex-start;padding:8px 6px;border-top:1px dashed #ddc98a}
+  .tg-row:first-child{border-top:0}
+  /* ★7字（とうきょうえき）が1行に収まる幅にしてある。3年生以降の地名も7字までの決まり */
+  .tg-place{flex:0 0 7.3em;font-size:12px;font-weight:700;color:#8a6d1f;line-height:1.5}
+  .tg-word{flex:1 1 auto;font-size:13.5px;line-height:1.6;color:#6b6660}
+  .tg-row.got .tg-word{color:#22201d;font-weight:700}
+  /* ★後ろのちずのボタン帯が透けて重なって見えたので、不透明にして枠を付けた（2026-08-17に実物で発見） */
+  .tg-close{align-self:center;background:#fff;border:2px solid #c8a54a;color:#22201d;
+    font-weight:800;padding:10px 26px;box-shadow:0 4px 12px rgba(0,0,0,.35)}
   .sj-overlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;
     flex-direction:column;gap:14px;background:rgba(0,0,0,.75);z-index:60;padding:16px}
   .sj-overlay.show{display:flex}
@@ -3396,9 +3421,21 @@
     <div class="wm-btnbar">
       <button class="btn btn-ghost" onclick="closeWorldMap();openNipponMap();">にほんちずへ</button>
       <button class="btn btn-yellow" onclick="warpTown()">🏘️ まち</button>
+      <!-- 弾EV-4：てがかり。★見出し(wm-chip)は2段までなのでここに置く（3段目を作るとノードが帯の裏に隠れる） -->
+      <button class="btn btn-ghost" id="clueBtn" style="display:none" onclick="openClueList()">てがかり<span id="clueCount"></span></button>
       <button class="btn btn-ghost" onclick="closeWorldMap()">とじる</button>
     </div>
   </div>
+</div>
+
+<!-- 弾EV-4：てがかり一覧。専用div・専用CSS接頭辞(tg-)。#appの直下＝画面いっぱいに暗転する（先例=sjOverlay/nmOverlay） -->
+<div id="tgOverlay" class="tg-overlay">
+  <div class="tg-paper">
+    <div class="tg-title" id="tgTitle"></div>
+    <div class="tg-count" id="tgCount"></div>
+    <div class="tg-list" id="tgList"></div>
+  </div>
+  <button class="btn btn-ghost tg-close" onclick="closeClueList()">とじる</button>
 </div>
 
 <!-- 第5弾§5：隠しリセット「さいしょから」（ロゴ5連続タップでのみ開く） -->
@@ -9154,6 +9191,9 @@ let iceCastleSeen=false;      // 弾IC-1：ゾーン83クリア後の氷の城�
 let gradeCeremonySeen={};
 // 弾EV-3：立ち絵つきイベント会話を見たゾーン（ゾーン番号→true）。旧セーブはキー無し＝未見あつかい
 let evSeen={};
+/* 弾EV-4：そのゾーンの「解決」（1話の終わり）を見たゾーン（ゾーン番号→true）。旧セーブはキー無し＝未見あつかい。
+   ★「てがかりを取った」＝「そのゾーンの解決を見た」と同じことなので、てがかり用のキーは別に持たない。 */
+let outSeen={};
 // 弾3-6§6-3：「たびの つづき」通知（旧セーブ移行）を見たか（旧セーブは未見あつかい）
 let travelContinueSeen=false;
 let pendingTravelContinueBanner=false;   // セッション値：load()で判定し、次のrenderField()で1回だけ消費
@@ -9253,6 +9293,7 @@ function save(){
       iceCastleSeen:iceCastleSeen,             // 弾IC-1：氷の城シーンを見たか
       gradeCeremonySeen:gradeCeremonySeen,     // 弾EV-1：学年しゅうりょうしき・賞状を見たか（学年→日付）
       evSeen:evSeen,                           // 弾EV-3：立ち絵つきイベント会話を見たか（ゾーン→true）
+      outSeen:outSeen,                         // 弾EV-4：そのゾーンの「解決」を見たか（ゾーン→true）
       travelContinueSeen:travelContinueSeen,   // 弾3-6§6-3
       chubuHakaseSeen:chubuHakaseSeen,         // 弾4-6§6-1
       travelContinueSeen2:travelContinueSeen2, // 弾4-6§6-3
@@ -9422,6 +9463,14 @@ function load(){
       for(const zk in d.evSeen){
         const zn=(zk|0);
         if(zn>=1 && zn<=STAGE_COUNT && d.evSeen[zk]===true) evSeen[zn]=true;
+      }
+    }
+    // 弾EV-4：そのゾーンの「解決」を見たか（旧セーブはキー無し＝未見あつかい。値はtrueだけ採用）
+    outSeen={};
+    if(d && typeof d.outSeen==='object' && d.outSeen){
+      for(const zk in d.outSeen){
+        const zn=(zk|0);
+        if(zn>=1 && zn<=STAGE_COUNT && d.outSeen[zk]===true) outSeen[zn]=true;
       }
     }
     travelContinueSeen = (d.travelContinueSeen===true);
@@ -15667,6 +15716,15 @@ function enterNextZone(){
     return;
   }
   if(gateFxLock) return;   // 第17弾§2：演出（音＋フラッシュ）が鳴り終わるまで連打による二重発火を無視
+  /* ★弾EV-4：このゾーンの「解決」（1話の終わり）がまだなら、先に流してから続きへ。
+     終わったら enterNextZone をもう一度呼ぶ＝2回目は outSeen が立っているので素通りし、
+     いままでどおり しゅうりょうしき → ゲート通過 と進む（ゾーン8＝解決 → 式 → ゾーン9 の順になる）。 */
+  const ztOut=ZONE_TALK[fieldZone];
+  if(ztOut && ztOut.out && !outSeen[fieldZone] && !ztActive){
+    outSeen[fieldZone]=true; save();
+    startZoneOut(fieldZone, enterNextZone);
+    return;
+  }
   // 弾EV-1：いま出ようとしているゾーンが学年の最後（GRADE_ZONESの.to）で、まだしゅうりょうしきを見ていなければ、
   //   ここで足止めしてしゅうりょうしき→賞状を先に見せる。閉じたら続き（本来のゲート通過処理）を実行する。
   //   ★ゾーン24等は直後に新幹線などの地方間移動シーンがあるため、しゅうりょうしきは必ずそれより先に出す
@@ -15872,6 +15930,9 @@ const EV_SCENES = {
      ★これから他のゾーンにイベントを足すときも、同じ罠を必ず確認すること。
        架空の土地では成立していた台詞が、実在の土地では成立しなくなる。 */
   5: [
+    /* 弾EV-4（2026-08-17）：1話の「事件」の入口としてこの1行だけ足した（場所の正体＝雷門の大きなちょうちん）。
+       ★下の2行は2026-08-15の準也さん裁定文。1文字も変えないこと。 */
+    { who:'mana',  dark:false, snd:null, text:'大きな ちょうちんに、この まちの 名まえが 書いてある。' },
     { who:'mana',  dark:false, snd:null, text:'トウキョウの 人たちは、とくに 字を よまなく なったの。' },
     { who:'mana',  dark:false, snd:null, text:'よむ 人が いないと、字は よみを わすれてしまう。' },
     { who:'easy',  dark:true,  snd:null, text:'……だいじょうぶ。' },
@@ -15880,6 +15941,133 @@ const EV_SCENES = {
     { who:'manaK', dark:false, snd:null, text:'……ううん。わたしたちは いくよ。' }
   ]
 };
+/* ===== 弾EV-4：1ゾーン＝1話（事件 → 解決 → てがかり）=====
+   立ち絵は出さない。既存の はかせ会話ウィンドウ（顔アイコン＋セリフ）をそのまま使う。
+   山場（立ち絵つき）は上の EV_SCENES のほう。
+   正本＝設計書\09_計画と方針\【計画】1話完結の型と1年の8話_20260817.md（準也さん裁定ずみ）
+   ★in ＝ゾーンに入ったとき（バナーのあと）／out ＝ゲートを通る瞬間（＝そのゾーンをクリアした瞬間）
+   ★out の最後の1行が「てがかり」。clue はてがかり一覧に出す短い言葉。
+   ★他の人の言葉は全部マナが引用する（困っている人の絵は出さない＝2026-08-17 準也さん裁定）。
+   ★事件の鍵は必ずそのゾーンの chars の中の字にしてある（習っていない字だと子どもが解けないため）。
+   ★その場所でしか成り立たない事件にしてある（＝記憶の宮殿。場所⇄事件⇄漢字の三つ巴）。
+   snd は後で声（VOICEVOX 四国めたん）を足すための空き＝いまは全部 null。 */
+const ZONE_TALK = {
+  1: {
+    title:'はじまりの 数',
+    /* ★ゾーン1は はかせのイントロが9本あるので、事件は1行だけに抑える */
+    in:[
+      { snd:null, text:'この はしは、にっぽんじゅうの みちの はじまり。……でも、みちしるべの 数が、だれにも よめないの。' }
+    ],
+    out:[
+      { snd:null, text:'一、二、三……ここから ひとつずつ 数えて いく。' },
+      { snd:null, text:'だから ここが「一」ばんめ。みちしるべが よめれば、どこへでも いける。' },
+      { snd:null, text:'みちの 人が いってた。「むかしは みんな、ここを 数えて あるいたんだけどねえ」って。' }
+    ],
+    clue:'むかしは みんな、ここを 数えて あるいた'
+  },
+  2: {
+    title:'うえのの 森',
+    in:[
+      { snd:null, text:'ここは「うえのの 森」って よばれてるの。' },
+      { snd:null, text:'その 森で、こどもが まいごに なってる。たてふだが よめなくて。' }
+    ],
+    out:[
+      { snd:null, text:'たてふだは「森」。木が みっつ ある ところ。' },
+      { snd:null, text:'この こうえんが まるごと「森」なの。……いた！ 見つかったよ。' },
+      { snd:null, text:'おかあさんが いってた。「もう、字を 見る くせが なくなってて」って。' }
+    ],
+    clue:'もう、字を 見る くせが なくなってて'
+  },
+  3: {
+    title:'ふねが でない',
+    in:[
+      { snd:null, text:'大きな「川」の うえを、ふねが いく まち。' },
+      { snd:null, text:'でも きょうは ふねが でないの。きょうの 天気が わからないから。' }
+    ],
+    out:[
+      { snd:null, text:'「雨」は、「空」から しずくが おちる かたち。' },
+      { snd:null, text:'きょうは ふらない。……ふねが でたよ。' },
+      { snd:null, text:'せんどうさんが いってた。「声で きけば すむからな」って。' }
+    ],
+    clue:'声で きけば すむからな'
+  },
+  4: {
+    title:'山の 火まつり',
+    in:[
+      { snd:null, text:'きょうは、この「山」の うえの おてらで、火の おまつりが ある日。' },
+      { snd:null, text:'でも「火」の たてふだが よめなくて、だれも 来ないの。' }
+    ],
+    /* ★てがかり④＝高尾山は電波が届かない＝「声」が届かない。だから字が要る。
+       イージー（ネットの中にいる＝ネットが無い所には届かない）の設定と噛み合う伏線。 */
+    out:[
+      { snd:null, text:'「火」は、もえている かたち。……みんな 集まってきた。' },
+      { snd:null, text:'山の うえが、赤く なったよ。……ねえ、きづいてる？ あばれる 子が、だんだん ふえてるの。' },
+      { snd:null, text:'山の 人が いってた。「山の うえは、声が とどかないんだ」って。' }
+    ],
+    clue:'山の うえは、声が とどかないんだ'
+  },
+  /* ★ゾーン5の「事件」は EV_SCENES[5]（立ち絵つき・実装ずみ）が担当する。だから in は持たせない。 */
+  5: {
+    title:'大きな ちょうちん',
+    out:[
+      { snd:null, text:'「名」は、「口」で よぶ ための しるし。' },
+      { snd:null, text:'よばれない 名は、きえてしまう。……字も おなじ。' },
+      { snd:null, text:'さっきの こえ……「むりして おぼえなくて いいよ」って いってた。' }
+    ],
+    clue:'むりして おぼえなくて いいよ'
+  },
+  6: {
+    title:'どこへ いくの',
+    in:[
+      { snd:null, text:'駅には、たくさんの 電「車」。行き先は ぜんぶ「字」で 書いてある。' },
+      { snd:null, text:'でも よめなくて、みんな 乗れないの。' }
+    ],
+    /* ★out の2行目は「マロース先生」（5年の中間ボス＝最初の勇者）の伏線。
+       読めない人のために字を教えて回っていた人＝駅の行き先によみがなを書き足していった跡。
+       半年先のどんでん返しの種なので消さないこと。 */
+    out:[
+      { snd:null, text:'「町」「村」「学」「校」……行き先は ぜんぶ 字。よめれば、どこへでも いける。' },
+      { snd:null, text:'……見て。だれかが、よみがなを 書き足していった あとが ある。' },
+      { snd:null, text:'えきの 人が いってた。「大きな こえで、なんども おしえてた 人が いた」って。' }
+    ],
+    clue:'大きな こえで、なんども おしえてた 人が いた'
+  },
+  7: {
+    title:'上から 見れば',
+    in:[
+      { snd:null, text:'ここは、うみの うえに つくった あたらしい まち。' },
+      { snd:null, text:'みちが おなじ かたちばかりで、みんな まよってるの。' }
+    ],
+    out:[
+      { snd:null, text:'かんらんしゃで「上」から 見て。……ほら、みちが わかる。' },
+      { snd:null, text:'「上」「下」「左」「右」。ばしょの 字が あれば、もう まよわない。' },
+      { snd:null, text:'はいたつの 人が いってた。「地図も 声が よんでくれる」って。' }
+    ],
+    clue:'地図も 声が よんでくれる'
+  },
+  /* ★ゾーン8は1年の答え。てがかりには数えないので clue を持たせない。
+     ★「その声は だれ？」の答えはここでは出さない（＝黒の組織のまま残す）。 */
+  8: {
+    title:'いちばん さいしょの まち',
+    in:[
+      { snd:null, text:'この しろから、この まちは はじまったの。トウキョウで いちばん 古い ばしょ。' },
+      { snd:null, text:'……ここで、ぜんぶ つながる かもしれない。' }
+    ],
+    out:[
+      { snd:null, text:'みんな おなじことを 言ってた。「声が よんでくれる」って。' },
+      { snd:null, text:'トウキョウは、その声を いちばん「先」に、いちばん「早」く つかいはじめた まち。' },
+      { snd:null, text:'いちばん はじめの まちが、いちばん先に 字を よまなく なって——いちばん先に、あばれはじめたの。' },
+      { snd:null, text:'……でも、その声は だれ？' }
+    ]
+  }
+};
+
+/* 弾EV-4：てがかりの束（学年ごと）。ここに1行足せば2年以降も同じ仕組みで動く。
+   ★いまは1年ぶんだけ。学年に束が無いときは ちず画面の「てがかり」ボタンを出さない。 */
+const CLUE_SETS = {
+  1: { from:1, to:7, title:'トウキョウの てがかり' }
+};
+
 const EV_BANNER_WAIT_MS=2600;   // ゾーン紹介バナー（2.2秒）が消えるのを待ってから始める
 let evActive=false;             // イベント会話を表示中か
 let evStep=-1;                  // いま何行目か
@@ -15890,18 +16078,121 @@ let evAutoWasRunning=false;     // 始める前にオート巡回が走ってい
 
 /* ゾーンに入ったときの入口。台本が無い／もう見たゾーンなら何もしない */
 function maybeStartZoneEvent(zone){
-  if(!EV_SCENES[zone]) return;
+  /* 弾EV-4：立ち絵つき（EV_SCENES）が無くても、ZONE_TALK に in があれば
+     顔アイコンの会話で「事件」を流す。どちらも無ければ何もしない（＝いままでどおり）。 */
+  const zt=ZONE_TALK[zone];
+  const hasEv=!!EV_SCENES[zone];
+  const hasIn=!!(zt && zt.in && zt.in.length);
+  if(!hasEv && !hasIn) return;
   if(evSeen[zone]) return;
   const seq=fieldSeq;
   setTimeout(()=>{
     // ここへ来るまでにワープ・タイトルへ離脱していたら出さない（既存の誤発火防止と同じ流儀）
-    if(seq!==fieldSeq || fieldZone!==zone || evActive || evSeen[zone]) return;
+    if(seq!==fieldSeq || fieldZone!==zone || evActive || ztActive || evSeen[zone]) return;
     const fscr=$('screen-field');
     if(!fscr || !fscr.classList.contains('active')) return;
     evSeen[zone]=true; save();
-    startZoneEvent(zone);
+    if(hasEv) startZoneEvent(zone);
+    else      startZoneTalk(zt.in, null);
   }, EV_BANNER_WAIT_MS);
 }
+
+/* ===== 弾EV-4：顔アイコンの会話を、行の配列でつなげて流す =====
+   startZoneEvent（立ち絵つき）と同じ流儀＝オート巡回を止める → heroLock → fieldSeqで離脱を見張る。
+   ⚠stopAutoExplore() は歩きかけの後始末で heroLock を外すことがあるので、必ずその後で立てる。
+   ⚠hakaseTalkOnce の引数は (msg, onDone, sndId)。順番を間違えると鳴らない（2026-08-03の事故）。 */
+let ztActive=false;   // 弾EV-4：ZONE_TALK の会話を流している最中か（二重発火の番人）
+function startZoneTalk(lines, onDone){
+  if(!lines || !lines.length){ if(onDone) onDone(); return; }
+  if(ztActive || evActive){ if(onDone) onDone(); return; }
+  ztActive=true;
+  const seq=fieldSeq;
+  const wasAuto=isAutoZone(fieldZone);
+  if(wasAuto) stopAutoExplore();
+  heroLock=true;                      // ★stopAutoExplore の後に立てる
+  let i=0;
+  const step=()=>{
+    // ワープ・タイトルへ離脱していたら、後始末だけして終わる（onDoneは呼ばない＝誤発火防止）
+    if(seq!==fieldSeq){ ztActive=false; return; }
+    if(i>=lines.length){
+      ztActive=false; heroLock=false;
+      if(onDone) onDone();
+      return;
+    }
+    const ln=lines[i++];
+    hakaseTalkOnce(ln.text, step, ln.snd||undefined);
+  };
+  step();
+}
+
+/* 弾EV-4：そのゾーンの「解決」（1話の終わり）を流す。終わったら締めのバナーを1枚出して onDone。 */
+function startZoneOut(zone, onDone){
+  const zt=ZONE_TALK[zone];
+  if(!zt || !zt.out || !zt.out.length){ if(onDone) onDone(); return; }
+  const seq=fieldSeq;
+  startZoneTalk(zt.out, ()=>{
+    if(seq!==fieldSeq) return;
+    // 締めのバナー＝「だい◯わ「題名」 おしまい」。ここが「1話が終わった」の合図になる。
+    showFieldBanner('だい'+zone+'わ「'+zt.title+'」 おしまい');
+    setTimeout(()=>{
+      if(seq!==fieldSeq) return;
+      if(onDone) onDone();
+    }, 2400);   // showFieldBanner は2200msで消えてheroLockを外す。そのすこし後に続きへ
+  });
+}
+
+/* 弾EV-4：ちず画面の「てがかり ◯/7」ボタンと一覧 */
+function clueNowZone(){
+  // 町（疑似ゾーン）から ちずを開いたときは fieldZone が0になるので、町に入る前のゾーンで学年を見る
+  const z=(typeof isTownLike==='function' && isTownLike(fieldZone)) ? (townPrevZone||1) : (fieldZone||1);
+  return z;
+}
+function clueSetOfZone(zone){
+  const g=zoneGrade(zone);
+  return CLUE_SETS[g] ? {grade:g, set:CLUE_SETS[g]} : null;
+}
+function clueFoundCount(set){
+  let n=0;
+  for(let z=set.from; z<=set.to; z++) if(outSeen[z]) n++;
+  return n;
+}
+/* ちず画面を開くたびに呼ぶ＝束が無い学年ではボタンごと隠す */
+function updateClueBtn(){
+  const btn=$('clueBtn'); if(!btn) return;
+  const bar=document.querySelector('#worldmapOverlay .wm-btnbar');
+  const cs=clueSetOfZone(clueNowZone());
+  if(!cs){
+    btn.style.display='none';
+    if(bar) bar.classList.remove('has-clue');   // ★ボタンが無い学年では帯を1段に戻す
+    return;
+  }
+  btn.style.display='';
+  if(bar) bar.classList.add('has-clue');        // ★4つ並ぶと文字が切れるので2段にする
+  const cnt=$('clueCount');
+  if(cnt) cnt.textContent=clueFoundCount(cs.set)+'/'+(cs.set.to-cs.set.from+1);
+}
+function openClueList(){
+  const cs=clueSetOfZone(clueNowZone()); if(!cs) return;
+  const set=cs.set;
+  $('tgTitle').textContent=set.title;
+  $('tgCount').textContent='あつめた てがかり　'+clueFoundCount(set)+'/'+(set.to-set.from+1);
+  const list=$('tgList'); list.innerHTML='';
+  for(let z=set.from; z<=set.to; z++){
+    const zt=ZONE_TALK[z];
+    const row=document.createElement('div');
+    row.className='tg-row'+(outSeen[z]?' got':'');
+    const place=document.createElement('div');
+    place.className='tg-place';
+    place.textContent=(STAGE_DEFS[z-1] ? STAGE_DEFS[z-1].name : ('ゾーン'+z));
+    const word=document.createElement('div');
+    word.className='tg-word';
+    word.textContent = (outSeen[z] && zt && zt.clue) ? ('「'+zt.clue+'」') : '？';
+    row.appendChild(place); row.appendChild(word);
+    list.appendChild(row);
+  }
+  $('tgOverlay').classList.add('show');
+}
+function closeClueList(){ $('tgOverlay').classList.remove('show'); }
 
 /* 台本を最初から流す */
 function startZoneEvent(zone, onDone){
@@ -16223,6 +16514,7 @@ function openWorldMap(regionOverride){
   // 手直し ちず拡大とパン：先にshowしてからrenderWorldMap()を呼ぶ（renderWorldMap内のwmSetupZoomが
   // #wmViewportのclientWidth/Heightを実測するため。display:noneのままだと0になってしまう）
   $('worldmapOverlay').classList.add('show');
+  if(typeof updateClueBtn==='function') updateClueBtn();   // 弾EV-4：てがかりボタンの表示と ◯/7 を更新
   renderWorldMap(regionOverride);
 }
 function closeWorldMap(){ $('worldmapOverlay').classList.remove('show'); }
