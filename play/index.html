@@ -1372,8 +1372,17 @@
   .field-grid.has-fullart .tile.t-rock{background:transparent;box-shadow:none;color:transparent}
   /* すみか改善(2026-07-11ユーザー指定・一枚絵ゾーン)：クリーム塗りつぶし→白半透明で芝生を透かし、
      かんじもんは3倍サイズで「そこに立っている」見た目に（顔のパーツも比例拡大） */
-  .field-grid.has-fullart .tile.t-spot{background:rgba(255,255,255,.35);border-radius:12px}   /* 2026-07-12ユーザー指定：もっと透明に(.55→.35) */
-  .field-grid.has-fullart .tile.t-spot.got{background:rgba(254,249,195,.4)}
+  /* ★2026-08-19：z-index を足した（準也さんの実機指摘「かんじモンの姿が顔だけになって見えない」）。
+     原因＝すみかは**グリッドのタイル**（前後の指定なし＝いちばん奥）なのに、しまなみ橋の道路は
+     **部品**（.bridge-road・z-index:5）。すみかの行8・10は道路の絵とぴったり重なるので、
+     かんじモンの体が道路にかぶられて顔の上だけ出ていた。
+     ★6＝道路(5)より手前・主人公や部品(10＋行番号)より奥。かんじモンの前に主人公が立てる順番。
+     ⚠️道路の帯を使うゾーン（41・3）以外では、もともと重なる相手がいないので見た目は変わらない。 */
+  /* ★2026-08-19（準也さんのご指定）：白半透明の四角そのものをやめて、完全に透明にした。
+     　「その代わり、かんじモンの字に縁をつける」＝下の .tile.t-spot .fc（全ゾーン共通）。
+     　理由＝絵の上に四角が浮いて見えるより、字そのものを縁で読ませるほうがきれい。 */
+  .field-grid.has-fullart .tile.t-spot{background:transparent;border-radius:12px;z-index:6}
+  .field-grid.has-fullart .tile.t-spot.got{background:transparent}
   .field-grid.has-fullart .tile.t-spot .spot-char{font-size:47px}   /* 2026-07-12ユーザー指定：1.2倍(39→47px・顔パーツも比例) */
   .field-grid.has-fullart .tile.t-spot .mini-face .eyes{gap:3.5px;top:30%}
   .field-grid.has-fullart .tile.t-spot .mini-face .eye{width:6px;height:7px}
@@ -1425,6 +1434,18 @@
   .bridge-road{position:absolute;left:0;top:calc(var(--rt)*var(--tile));
     width:100%;height:calc(var(--rh)*var(--tile));background-repeat:repeat-x;
     pointer-events:none;z-index:5}
+  /* ★2026-08-19（準也さんのご案）：**手前の柵だけを最前面に出す**。
+     　＝「かんじモンが柵の後ろにいるように見せられないのですか？」
+     ★なぜこれが正しいか＝手前の柵は、歩ける3行（8・9・10）より**さらに手前**にある物。
+       絵の1枚に混ざっていたので、柵とかんじモンの前後を決められなかった。
+       部品として切り出せば、塔とまったく同じ「z-indexで前後を決める」やり方に乗る。
+     ★z-index 22＝主人公(10＋行番号＝18〜20)より手前・手前の塔(24)より奥。
+       → かんじモンも主人公も、柵のすきま越しに見える（＝橋の上にいる遠近感）。
+     ★絵＝道路の絵から切り出しただけ（_一時\_しまなみ調査_20260819\柵を切り出す.py）。
+       元の道路の絵は1文字も変えていないので、柵は道路側にも残ったまま同じ位置に重なる。 */
+  .bridge-rail{position:absolute;left:0;top:calc(var(--lt)*var(--tile));
+    width:100%;height:calc(var(--lh)*var(--tile));background-repeat:repeat-x;
+    pointer-events:none;z-index:22}
   .bridge-cable{position:absolute;left:calc(var(--cx)*var(--tile));top:calc(var(--cy)*var(--tile));
     width:calc(var(--cw)*var(--tile));height:calc(var(--ch)*var(--tile));
     pointer-events:none;z-index:calc(10 + var(--cz,11));overflow:visible}
@@ -1465,6 +1486,24 @@
   /* 第19弾§5-C：まだらパッチ（草マスの一部に色味違いを重ねる。草ゆれ🌿より先にDOM挿入） */
   .gpatch{position:absolute;inset:0;pointer-events:none;z-index:1;background-position:center;background-size:100% 100%;background-repeat:no-repeat}
   .tile .spot-char{font-size:13px;font-weight:900;line-height:1}
+  /* ★2026-08-19（準也さんのご指定）：フィールドのかんじモンの字に**白フチ＋外に黒**を付ける。
+     　＝すみかの下じきの四角（白半透明の角丸）をやめた代わり。
+     ★★なぜ「白だけ」でも「黒だけ」でもないか＝**場所によって効き方が逆になる**（実機で3案を撮り比べた）。
+       　白だけ … 明るい所（砂・草）で弱い／暗い所（橋のアスファルト）でよく効く
+       　黒だけ … 明るい所でよく効く／**暗い所では背景と同化して消える**
+       　白＋外に黒 … どちらでも効く ＝ 準也さんの判定「白縁外に黒が一番きれい」（2026-08-19）
+       写真＝_一時\_しまなみ調査_20260819\フチ色_拡大_*.png（3ゾーン×3案）
+     ★太さは em（字の大きさに対する割合）で書く。すみかの字は場所で大きさが違うため
+       （一枚絵ゾーン47px／ふつうのゾーン13px）、px で書くと片方が太すぎ・細すぎになる。
+     ★paint-order:stroke fill ＝ 白フチを先に塗って、その上に字の色をのせる指定。
+       これが無いと、フチが字の内側に食い込んで字がやせる。
+     ★外の黒は text-shadow を8方向に置いて作る（stroke は1本しか引けないため）。 */
+  .tile.t-spot .fc{-webkit-text-stroke:.09em #fff;paint-order:stroke fill;
+    text-shadow:
+      .035em 0 0 rgba(0,0,0,.85), -.035em 0 0 rgba(0,0,0,.85),
+      0 .035em 0 rgba(0,0,0,.85), 0 -.035em 0 rgba(0,0,0,.85),
+      .025em .025em 0 rgba(0,0,0,.85), -.025em .025em 0 rgba(0,0,0,.85),
+      .025em -.025em 0 rgba(0,0,0,.85), -.025em -.025em 0 rgba(0,0,0,.85)}
   .mini-face{position:absolute;inset:0;pointer-events:none}
   .mini-face .eyes{display:flex;gap:1px;position:absolute;top:26%;left:50%;transform:translateX(-50%)}
   .mini-face .eye{width:2px;height:2.5px;background:#1a1a1a;border-radius:50%}
@@ -1976,6 +2015,21 @@
     background-size:300% 200%;                              /* シート全体を3列×2行に収める→1コマ分 */
     background-position:var(--bgx,0%) var(--bgy,0%);        /* 列=向き(--bgx)・行=A/B足踏み(--bgy) */
     image-rendering:pixelated}
+  /* ★弾EV-6（2026-08-18）：通りすがりの人影（マロース先生）。
+     ★大きさ＝1マスの170%（2026-08-18 準也さん決定＝「主人公が子供なので小さいので」）。
+       主人公の .hero-sprite は115%なので、約1.48倍の背たけになる。
+     ★マス目は増やさない＝これは画面の上に重ねるだけの飾りで、通行判定には いっさい関わらない。
+     ★歩行シートの使い方は .hero-sprite と同じ（300%×200%で1コマ切り出し・列=向き・行=A/B）。 */
+  .passerby{position:absolute;left:50%;bottom:var(--pb-bottom,38%);
+    width:calc(var(--pb-tile,42px) * 1.70);aspect-ratio:1;
+    transform:translateX(-50%) scale(var(--pb-scale,1));transform-origin:50% 100%;
+    background-repeat:no-repeat;background-size:300% 200%;
+    background-position:var(--pb-bgx,50%) var(--pb-bgy,0%);
+    image-rendering:pixelated;pointer-events:none;opacity:0;display:none;z-index:14;
+    filter:drop-shadow(0 3px 5px rgba(0,0,0,.35))}
+  .passerby.on{display:block;opacity:var(--pb-opacity,1);
+    transition:bottom var(--pb-ms,3600ms) linear,transform var(--pb-ms,3600ms) linear,opacity .5s ease}
+  @media (prefers-reduced-motion:reduce){.passerby.on{transition:opacity .5s ease}}
   /* ぶつかりぷるっ（heroShake）をスプライトでも再現。中心寄せtranslateX(-50%)を保持 */
   .field-grid.shake .hero-sprite{animation:heroSpriteShake .3s ease-in-out}
   @keyframes heroSpriteShake{0%,100%{transform:translateX(-50%)}
@@ -3188,6 +3242,10 @@
       <div class="field-parallax-layers" id="fieldParallaxLayers"></div>
       <div class="field-parallax-bg" id="fieldParallaxBg"></div>
       <div class="field-grid" id="fieldGrid"></div>
+      <!-- ★弾EV-6（2026-08-18）：通りすがりの人影。ふだんは出ていない。
+           ゾーンに入ったとき、奥へ歩いて去っていくだけの演出に使う（台詞なし・顔は見せない）。
+           正本＝設計書\09_計画と方針\【計画】ゾーンイベントの割り付けと伏線_20260817.md §0-2 -->
+      <div class="passerby" id="pbFigure"></div>
       <div class="dpad">
         <button class="d-empty"></button>
         <button class="d-up" id="dUp">▲</button>
@@ -9188,6 +9246,11 @@ let mayoigoLoreSeen=false;  // ※旧セーブ互換用キー（意味は引き�
 // 第15弾セーブ項目（後方互換：旧セーブは未見あつかい）
 let tamashiiFirstSeen=false;    // たましいの初回体験を見たか（§7-2・はかせのセリフ1回だけ）
 let tamashiiLoreSeen=false;     // はかせの「クリア後初回説明」を見たか（§7-3）
+/* ★2026-08-19：ゾーン24の熟語モン「自分」を倒したあとの「じゅくごの説明」を見たか。
+   ★見たときに jukugoFuseUnlocked も立てる＝**目の前で見たから研究が進む**（準也さんの裁定）。 */
+let jukugoLoreSeen=false;
+/* ★けんきゅうじょの「がったい」が使えるか。ゾーン24の「自分」を倒すまでは まだ研究中。 */
+let jukugoFuseUnlocked=false;
 let reviewIntrudeFirstSeen=false; // 第16弾：ふくしゅうのらんにゅうの初回体験を見たか（はかせのセリフ1回だけ）
 let firstFieldBattleHelped=false; // §7-1：最初のフィールドバトルで はかせの手引きをしたか
 let firstBodyIdx=null;            // §7-2：最初にゲットしたからだのKインデックス（強制たましい置き換え用）
@@ -9330,6 +9393,7 @@ function save(){
       playerName:playerName,   // 弾NM-1
       mayoigoLoreSeen:mayoigoLoreSeen,
       tamashiiFirstSeen:tamashiiFirstSeen,tamashiiLoreSeen:tamashiiLoreSeen,
+      jukugoLoreSeen:jukugoLoreSeen,jukugoFuseUnlocked:jukugoFuseUnlocked,   // ★2026-08-19
       reviewIntrudeFirstSeen:reviewIntrudeFirstSeen,
       firstFieldBattleHelped:firstFieldBattleHelped,
       firstBodyIdx:firstBodyIdx,forceTamashiiNext:forceTamashiiNext,
@@ -9481,6 +9545,9 @@ function load(){
     // 第15弾：たましい初回説明を見たか（旧セーブは未見あつかい）
     tamashiiFirstSeen = (d.tamashiiFirstSeen===true);
     tamashiiLoreSeen = (d.tamashiiLoreSeen===true);
+    // ★2026-08-19：じゅくごの説明を見たか／がったいが使えるか
+    jukugoLoreSeen     = (d.jukugoLoreSeen===true);
+    jukugoFuseUnlocked = (d.jukugoFuseUnlocked===true);
     reviewIntrudeFirstSeen = (d.reviewIntrudeFirstSeen===true); // 第16弾：旧セーブは未見あつかい
     firstFieldBattleHelped = (d.firstFieldBattleHelped===true);
     firstBodyIdx = (Number.isInteger(d.firstBodyIdx)&&d.firstBodyIdx>=0&&d.firstBodyIdx<K.length) ? d.firstBodyIdx : null;
@@ -10218,12 +10285,23 @@ const BATTLE_BG_POS={
   11:'41% 55%',    /* みょうぎさん＝とがった白い岩の峰。敵は草地の上 */
   12:'41% 55%',    /* とみおか　　＝赤レンガの製糸場と桜。敵は砂利の上 */
   13:'41% 55%',    /* にっこう　　＝朱色の陽明門が大きく映る（この回でいちばんの出来） */
-  14:'41% 88%',    /* うつのみや　＝★仮決定。敵が石の壁の面に貼りついて見える。
-                      88%（ほぼ限界）まで下げても救えなかった＝**絵の作り直しが要る**。
-                      原因＝発注文の「壁は横78%でとめて手前へ折る」が守られず、壁が右まで広がった */
+  /* 14番は 2026-08-20 に新方式（弾BG-3）へ移した＝下の「新しい方式」のかたまりを見る */
   15:'41% 75%',    /* なすこうげん＝★仮決定。55%だと敵が紅葉の葉にうもれる。
                       75%まで下げると「大きな紅葉を背にして立つ」形になる（地面ではないが成立して見える） */
-  20:'41% 55%'     /* なりたさん　＝三重の塔と本堂が右上に大きく映る。敵は石だたみの上 */
+  20:'41% 55%',    /* なりたさん　＝三重の塔と本堂が右上に大きく映る。敵は石だたみの上 */
+
+  /* ★★2026-08-19：ここから「新しい方式」（準也さんのご提案）。
+     ★何が違うか＝これまでは映す窓が絵の右はしに貼りついていた（＝逃がせる方向が片side だけ）。
+     　絵の主役をまん中に描かせ、窓もまん中に置くと、**左右どちらへも逃がせる**。
+     ★24番はその1枚目。絵を「城」から「大仏」に描き直し（Codex 3回・実物で判定）、窓を 50% 50% に。
+     ★次に作る絵の決まり（実測で出した数値・型の更新はこのあと）＝
+     　　主役は絵の【横28〜48%・たて24〜36%】に置く（＝画面では「主人公の帽子より上・かんじモンの左」）。
+     　　★準也さんのご指摘＝それより下へ広げると**道と被って道がずれる**。
+     　　★主役がボタンで隠れても問題ない（主役は背景であってメインではない）。 */
+  14:'50% 70%',    /* うつのみや　＝大谷の石切場。絵を作り直した（新方式の1枚目・Codex1枚で合格）。
+                      ★たては70%。50%だと準也さんのご指摘どおり敵が宙に浮いて見える
+                      （敵の足もとが絵のたて33%＝遠景の山の高さになるため）。70%で砂利道の上に立つ */
+  24:'50% 50%'     /* かまくら　　＝大仏。敵は石だたみの参道の上に立つ */
 };
 /* 主人公の後ろ姿（縦長モードのてもち列左端用・無ければ出さない）
    手直し_着替え第1弾：キーを衣装込み（'boy' / 'boy-wafuku' …）に拡張。標準衣装(suffix='')の
@@ -12959,6 +13037,28 @@ function launchEventBossIntro(zone){
     renderField();
     // 手直し はじまりズーム演出：はじまりズームが再生中ならそれが終わってから、はかせの一言を出す（同時演出の衝突回避）
     afterFieldZoomIntro(()=>{
+      /* ★★2026-08-19：ゾーン24＝**熟語モンの初登場**。はかせの一言ではなく登場シーンを流す。
+         ★正本＝設計書\09_計画と方針\【計画】2年カントウの16話_20260818.md §8
+         ★準也さんのご指定＝「自が落ちる → 主人公が飛ばされる → 分が落ちる → 合体して自分」。
+         ★シーンは ゾーン44の四字熟語モン登場（YojiFieldScene）を**そのまま流用**（複製しない）。
+           渡す値＝背景 zone24.webp／カメラ{x:-460,y:0}（ゲート(15,1)→ボスマス(15,2)から計算）／
+                   落ちる字＝「自」「分」／台詞＝マナが初めて見た驚き／声はまだ無いので null。
+         ★2回目以降は eventBossIntroSeen が立つのでここへは来ない（＝シーンは1回だけ）。 */
+      if(zone===24 && typeof YojiFieldScene!=='undefined'){
+        bgmStop();
+        YojiFieldScene.start(()=>{
+          const scr0=$('screen-field');
+          if(!scr0 || !scr0.classList.contains('active')) return;
+          launchEventBossBattle(zone);
+        }, {
+          map  : 'images/fullart/zone24.webp',
+          cam  : {x:-460, y:0},
+          boss1: '自', boss2: '分',
+          msg  : '……字が、二つ。……くっついた。あれが……じゅくご？',
+          voice: null
+        });
+        return;
+      }
       hakaseTalkOnce('まった！ まだ なにかの けはいが する…！', ()=>{
         // 会話ウィンドウの途中で「〈 もどる」等により画面を離脱済みなら開始しない（autoTick/hakaseFinishCurrentと同じ安全弁の流儀）
         const scr=$('screen-field');
@@ -13062,6 +13162,23 @@ function closeFree(){
   if(fieldLabOpenPending){
     fieldLabOpenPending=false;
     showLabOpenOverlay();   // 中1：ラボ開放演出（閉じた後にちずを自動で開く）
+    return;
+  }
+  /* ★★2026-08-19：ゾーン24の熟語モン「自分」を倒した直後だけ、じゅくごの説明をして
+     けんきゅうじょの「がったい」を解放する（準也さんのご指示＝倒したあとに解放すると辻褄が合う）。
+     ★勉強として大事なのは「**読み方が変わる**」ところ。そこを言わせる。
+     正本＝設計書\09_計画と方針\【計画】2年カントウの16話_20260818.md §8-4 */
+  if(!jukugoLoreSeen && fieldZone===24 && eventBossDone.has(24)){
+    jukugoLoreSeen=true; jukugoFuseUnlocked=true; save();
+    hakaseTalkOnce('二つの 字が くっついて、一つの ことばに なる。……あれが「じゅくご」。',()=>{
+      hakaseTalkOnce('「自」と「分」。べつべつに 読むと「じ」と「ぶん」。',()=>{
+        hakaseTalkOnce('でも くっつくと「じぶん」。……あなた 自身の ことに なるの。',()=>{
+          hakaseTalkOnce('いま、目の前で 見せてもらった。……これで、けんきゅうじょの 研究が すすむ。',()=>{
+            openWorldMap();
+          });
+        });
+      });
+    });
     return;
   }
   // §7-3：ゾーン1初回クリア時だけ はかせのセリフを挟んでからちずへ
@@ -13723,6 +13840,12 @@ function labTap(i){
 /* 合体実行：2体が左右から中央へ→ゴツン→白い閃光→結果 */
 function labFuse(){
   if(labBusy||labSlots.A===null||labSlots.B===null) return;
+  /* ★2026-08-19：ゾーン24の熟語モン「自分」を見るまでは、まだ研究中（準也さんの裁定）。
+     ★ボタンは押せるようにしてある＝「あとで できるようになる」と分かるほうが親切。 */
+  if(!jukugoFuseUnlocked){
+    hakaseTalkOnce('二つの 字を くっつける 研究は、まだ とちゅうなの。……もうすこし 待ってね。');
+    return;
+  }
   const a=labSlots.A, b=labSlots.B;
   const ca=K[a].c, cb=K[b].c;
   // 第6弾§5: 2文字とも色違い取得済みの漢字でないと成立しない。
@@ -14297,16 +14420,22 @@ const ZONE_PARALLAX_LAYERS={3:[
    z＝前後の順番（CSSは 10＋z で z-index にする）。準也さんの指定：
      手前の柱(24) → 道路(5) → 奥の柱(3) → ケーブル(1) の順に奥へ。
    奥の柱とケーブルは道路より奥に出すため、10を引いた小さい値を入れる。 */
+/* ★2026-08-19：topを 4.81マス上げた（準也さんの実機指摘「塔の位置がおかしい。やたらと下の方に
+   行っちゃってる・見切れちゃってる」）。
+   原因＝2026-08-08に**道路だけ** top を 8.71→3.9（＝4.81マス上）に直したとき、
+   **塔とケーブルを一緒に上げ忘れていた**。塔は道路の絵に合わせて置く部品なので、
+   道路を動かしたら必ず同じだけ動かす（＝この3つ＝道路・塔2本・ケーブルは1セット）。
+   ⚠️topが負になるのは正しい。グリッドの上（空）に塔が伸びるため。 */
 const BRIDGE_PARTS={41:[
-  {img:'zone41-tower-back.webp',  dcol:2.78, top:4.10, w:4.76, h:8.64, z:-7},
-  {img:'zone41-tower-front.webp', dcol:5.79, top:3.20, w:1.74, h:14.94, z:14},   /* 2026-07-28：柱の絵を切り直したので、同じ見え方になるよう幅と横位置を計算しなおした */
+  {img:'zone41-tower-back.webp',  dcol:2.78, top:-0.71, w:4.76, h:8.64, z:-7},    /* 旧top4.10 */
+  {img:'zone41-tower-front.webp', dcol:5.79, top:-1.61, w:1.74, h:14.94, z:14},   /* 旧3.20 ／ 2026-07-28：柱の絵を切り直したので、同じ見え方になるよう幅と横位置を計算しなおした */
 ]};
 const BRIDGE_TOWER_COLS={41:[34,80]};   // 主塔を立てる列（120マスに2本＝遠くに1本ずつ）
 /* 手直し(2026-07-28・準也さん発案)：柱と柱をつなぐ吊り橋のケーブル。
    dcol＝塔のてっぺんの横位置（塔の中心。BRIDGE_TOWER_COLSからの相対マス）
    top/h＝ケーブルを描く箱の位置と高さ（マス）／outer＝いちばん外がわを何マス伸ばすか
    hangers＝縦のつり材の本数／mainW・hangerW＝線の太さ（px相当） */
-const BRIDGE_CABLE={41:{dcol:3.55, top:4.55, h:9.6, sag:0.7, hangers:16, mainW:5, hangerW:2, color:'#c0c2c4', z:-9}};
+const BRIDGE_CABLE={41:{dcol:3.55, top:-0.26, h:9.6, sag:0.7, hangers:16, mainW:5, hangerW:2, color:'#c0c2c4', z:-9}};   /* ★2026-08-19：旧4.55。塔と同じだけ（4.81マス）上げた。上のBRIDGE_PARTSの注記を読むこと */
 /* 道路（部品）。数字は橋の配置ツールの「道路の大きさ・上下」から作られる：
    w＝絵の横幅（マス）／h＝絵の高さ（マス）／top＝置く高さ（マス） */
 /* ★2026-08-08：topを 8.71→3.9 に直した（準也さんの実機指摘「橋の位置がずれて めちゃくちゃ」）。
@@ -14332,8 +14461,28 @@ const BRIDGE_CABLE={41:{dcol:3.55, top:4.55, h:9.6, sag:0.7, hangers:16, mainW:5
      ①1回目は top=11.5 にして、帯が桜の層を丸ごと覆い隠した
      ②高さ6.7マスだと、歩ける部分がマップの20行をはみ出した
      ③高さ5マスだと**画面の下が白いまま余った**（準也さん指摘）→ 7.5マスに伸ばした */
-const BRIDGE_ROAD={41:{img:'zone41-road.webp', w:9.49, h:10.45, top:3.9},
+/* ★★★2026-08-19：道路の絵を **アスファルトを3マス分に広げた版** に差し替えた。
+   ★準也さんの実機ご指摘「かんじモンが柵にいちゃう」の**根本の原因**＝
+     もとの絵はアスファルトが **1.77マス分しかない** のに、ゲームは **3行**（行8・9・10）を
+     歩ける場所にしていた。だから **行10（下の列のかんじモン）は絵の上では最初から柵の位置**。
+     ★ずらしても直らない。絵の側を直すのが本筋。
+   ★やったこと＝**アスファルトの帯だけ**を縦に伸ばした（212px→360px）。
+     奥の柵・手前の柵・橋げたは1ピクセルも変えていない（柵を伸ばすと柱が縦長になって不自然）。
+     道具＝`_一時\_しまなみ調査_20260819\路面を広げる.py`（伸ばす帯は目で決めず、
+     「横いっぱいに不透明な行がいちばん長く続く固まり」＝アスファルトとして機械で見つけている）。
+   ★いまアスファルトは **8.00〜11.00マス**＝歩ける行8・9・10 とぴったり。
+     → 上の列も下の列も主人公も、全員が路面の上に立つ。
+   ⚠️もとの絵（zone41-road.webp）は消していない。数字を作り直したいときは上の道具を走らせる。 */
+const BRIDGE_ROAD={41:{img:'zone41-road-wide.webp', w:9.49, h:11.6833, top:3.95},
                     3:{img:'zone3-bank.webp',  w:25.5, h:8.5,   top:14.0}};   /* ★準也さんが配置ツールで決めた値（2026-08-16） */
+/* ★2026-08-19（準也さんのご案）：手前の柵だけを最前面に出す部品。
+   　＝かんじモンや主人公が「柵の後ろに立っている」ように見せるため（CSSの .bridge-rail に理由を書いた）。
+   ★絵は道路の絵から切り出しただけ（道具＝_一時\_しまなみ調査_20260819\柵を切り出す.py）。
+     切る位置は目で決めず、**路面（横いっぱいに不透明）が終わる行**を機械で見つけている。
+   ★数字の出どころ＝その道具が道路の値（top 3.9／h 10.45／w 9.49）から計算して印字したもの。
+   ⚠️**道路の top・h・w を変えたら、この3つも作り直すこと**（道具をもう一度走らせれば新しい数字が出る）。
+   ⚠️w は道路と同じ 9.49。ここを変えると柱の位置が道路の絵とずれて、柵が二重に見える。 */
+const BRIDGE_RAIL={41:{img:'zone41-rail-front.webp', w:9.49, h:2.0250, top:11.0000}};   /* ★路面を広げたので作り直した（旧top 9.7167）。柵は歩ける行のすぐ下＝11.00から */
 /* ゾーン41だけカメラを下げて、橋を画面の下の方に置く（上に空と島を広く見せる）。
    値＝主人公（＝道路）を画面の高さの何割の位置に置くか。0.5=まん中／大きいほど下。 */
 const ZONE_CAM_Y={41:0.78, 3:0.72};   /* 弾SD-1：ゾーン3も主人公を下寄りに置き、上に川と桜を見せる */
@@ -15246,6 +15395,18 @@ function renderField(){
     el.style.backgroundSize=(R.w*tilePx)+'px '+(R.h*tilePx)+'px';
     grid.appendChild(el);
   }
+  /* ★2026-08-19（準也さんのご案）：手前の柵を最前面の部品として重ねる。
+     道路とまったく同じ作り方（横に repeat-x）で、置く高さと z-index だけが違う。 */
+  if(BRIDGE_RAIL[fieldZone] && fullart){
+    const L=BRIDGE_RAIL[fieldZone];
+    const tilePx=parseFloat(grid.style.getPropertyValue('--tile'))||45;
+    const el=document.createElement('div');
+    el.className='bridge-rail';
+    el.style.setProperty('--lt',L.top); el.style.setProperty('--lh',L.h);
+    el.style.backgroundImage="url('images/fullart/"+L.img+"')";
+    el.style.backgroundSize=(L.w*tilePx)+'px '+(L.h*tilePx)+'px';
+    grid.appendChild(el);
+  }
   if(BRIDGE_CABLE[fieldZone] && fullart){
     const C=BRIDGE_CABLE[fieldZone];
     const cols=(BRIDGE_TOWER_COLS[fieldZone]||[]).map(c=>c+C.dcol).sort((a,b)=>a-b);
@@ -15873,14 +16034,29 @@ function enterNextZoneAfterCeremony(){
         if(!kansaiHakaseSeen){
           hakaseTalkOnce('カンサイ・シコクで かんじもんが あばれて いるみたい。とおいから でんこうに のって いきましょう！',()=>{
             if(enterSeq!==fieldSeq) return;   // ワープ等で離脱済みなら新幹線シーンへは進まない
-            startTrainSceneEvent(()=>{
-              if(enterSeq!==fieldSeq) return;   // 新幹線シーン再生中にワープ等で離脱済みなら以降は進めない
-              ensureFieldIntro();   // ゾーン25の紹介バナー
-              setTimeout(()=>{
-                if(enterSeq!==fieldSeq) return;
-                kansaiHakaseSeen=true; save();
-                hakaseTalkOnce('ようこそ カンサイ・シコクへ！ ここからは ボスが じゅくごモンに なるわよ！',null,'bh25');
-              },2300);   // 紹介バナーが消えてから、はかせの一言（初回のみ）
+            /* ★2026-08-19：2年の締めの1行（正本＝設計書\09_計画と方針\【計画】2年カントウの16話_20260818.md §3-6）。
+               ★「別れ」とは言わせない＝新幹線シーンには **マナの後ろ姿の絵が入っている**（#tsManaWalk／#tsManaBack）
+                 ＝一緒に乗る絵なので、別れを言うと絵と矛盾する。
+                 だから「乗ったのは べつのマナだった」と **あとで気づく** 形にする。
+               ★3年の25（おいせまいり）の「おまたせ。……わたしのこと、マナって 呼んでね」につながる。
+               ⚠️説明はしない。しんみりさせない。おかしさと少しの不気味さだけを残す。 */
+            hakaseTalkOnce('……あ。この さきは、べつの わたしが 行くね。',()=>{
+              if(enterSeq!==fieldSeq) return;
+              startTrainSceneEvent(()=>{
+                if(enterSeq!==fieldSeq) return;   // 新幹線シーン再生中にワープ等で離脱済みなら以降は進めない
+                ensureFieldIntro();   // ゾーン25の紹介バナー
+                setTimeout(()=>{
+                  if(enterSeq!==fieldSeq) return;
+                  kansaiHakaseSeen=true; save();
+                  /* ★2026-08-19：3年以降の説明をきちんとする（準也さんのご指示＝勉強としていい）。
+                   ★1行目は元の言い方を残す（声 bh25 が付いているので）。2行目・3行目を足す。 */
+                hakaseTalkOnce('ようこそ カンサイ・シコクへ！ ここからは ボスが じゅくごモンに なるわよ！',()=>{
+                  hakaseTalkOnce('二つの 字が くっついた、強い 相手よ。',()=>{
+                    hakaseTalkOnce('読み方が 変わるから、よく 見てね。');
+                  });
+                },'bh25');
+                },2300);   // 紹介バナーが消えてから、はかせの一言（初回のみ）
+              });
             });
           });
         }else{
@@ -16025,7 +16201,23 @@ const EV_SCENES = {
     { who:'easy',  dark:true,  snd:'ev05_5', text:'むりして おぼえなくて いいよ。' },
     { who:'manaK', dark:false, snd:'ev05_6', text:'……イージー。' },
     { who:'manaK', dark:false, snd:'ev05_7', text:'……ううん。わたしたちは いくよ。' }
-  ]
+  ],
+14: [
+    { who:'mana',  dark:false, snd:null, text:'ここは 岩を 切り出した あとの、地下の 大きな ひろま。' },
+    { who:'mana',  dark:false, snd:null, text:'「時」の 字が あばれてる。見学の 時間が 読めなくて、こまってる 人が いるの。……あ。' },
+    { who:'easy',  dark:true,  snd:null, text:'だいじょうぶ。ぼくが 読んで あげる。「午前」10時「半」だよ。' },
+    { who:'easy',  dark:true,  snd:null, text:'たのしい ことを するために 来たんでしょ。むずかしいことは、ぼくが やるから。' },
+    { who:'mana',  dark:false, snd:null, text:'……ありがとう。ほんとうに たすかるの。' },
+    { who:'manaK', dark:false, snd:null, text:'…………。' },
+    { who:'manaK', dark:false, snd:null, text:'……でも あなたは、じぶんで 読んでみて。そのほうが、たのしいから。' }
+  ],
+17: [
+    { who:'mana',  dark:false, snd:null, text:'白い けんきゅうじょが ならぶ まち。「考」える 人の まち。' },
+    { who:'mana',  dark:false, snd:null, text:'……わたしも、ここで しらべものを してるの。見せて あげる。' },
+    { who:'mana',  dark:false, snd:null, text:'字が あばれた ところに、大きな せなかの 人が 来てるの。……ぜんぶ。' },
+    { who:'manaK', dark:false, snd:null, text:'……その人が 来たから あばれたのか。あばれたから 来たのか。' },
+    { who:'manaK', dark:false, snd:null, text:'それが、まだ わからないの。だから まだ、なにも 言えない。' }
+  ],
 };
 /* ===== 弾EV-4：1ゾーン＝1話（事件 → 解決 → てがかり）=====
    立ち絵は出さない。既存の はかせ会話ウィンドウ（顔アイコン＋セリフ）をそのまま使う。
@@ -16149,13 +16341,210 @@ const ZONE_TALK = {
       { snd:'zt08i1', text:'この しろから、この まちは はじまったの。トウキョウで いちばん 古い ばしょ。' },
       { snd:'zt08i2', text:'……ここで、ぜんぶ つながる かもしれない。' }
     ]
+  },
+
+  /* ===== 2年カントウ（ゾーン9〜24）＝弾EV-4の型のまま16話 =====
+     正本＝設計書\09_計画と方針\【計画】2年カントウの16話_20260818.md（第3稿）
+     ★イージーは"いい人"としてだけ出す／疑いはマロースへ／てがかりは6本だけ（10・15・17・20・21・23）
+     ★14と17は立ち絵つきの山場（EV_SCENES）が事件を担当するので in を持たせていない
+     ★24は学年の最後＝フィナーレ（GRADE_FINALE）が解決を担当するので out を持たせていない */
+9: {
+    title:'くらの まちの 名ふだ',
+    in:[
+      { snd:null, text:'おもい とびらの くらが ならぶ まち。いま とっても にぎやかなの。' },
+      { snd:null, text:'……でも ひとり、こまってる 人が いる。「家」の 字が あばれて、名ふだが 読めないんだって。' }
+    ],
+    out:[
+      { snd:null, text:'「家」は、屋根の下に みんなが いる ということ。' },
+      { snd:null, text:'「親」は、木の上から 子どもを 見まもる 人。……ほら、とどいた！' },
+      { snd:null, text:'とどけ物の 人が「たすかったよ」って。……ね。読めると、うれしいでしょ。' }
+    ]
+  },
+  10: {
+    title:'やまの ちいさな 学校',
+    in:[
+      { snd:null, text:'やまあいの まち。川の 音が する ちいさな 学校が あるの。' },
+      { snd:null, text:'「教室」の 字が あばれて、だれも 中に 入れないんだって。' }
+    ],
+    out:[
+      { snd:null, text:'「図」も「書」いたものも、ぜんぶ この 学校に ある。' },
+      { snd:null, text:'「国語」の 本を ひらいたら……ほら、ひとり 入ってきた！' },
+      { snd:null, text:'先生が、こう いってた。「字は おもしろいって おしえて くれた 人が いたの。……大きな こえで、ずっと」' }
+    ],
+    clue:'字は おもしろいって おしえて くれた 人が いたの'
+  },
+  11: {
+    title:'わかれみち',
+    in:[
+      { snd:null, text:'するどく とがった 岩の 山。道が 二つに 分かれてる。' },
+      { snd:null, text:'「谷」の 字が あばれて、立てふだが 読めないの。……あ。' }
+    ],
+    out:[
+      { snd:null, text:'あの子が、先に 教えてあげてた。……ほんとうに、安全な ほうを。' },
+      { snd:null, text:'「谷」は 山と 山の あいだ。「高」い ほうが、こっちの 道。' },
+      { snd:null, text:'……ね。じぶんで 読めたね。' }
+    ]
+  },
+  12: {
+    title:'かいこの ごはん',
+    in:[
+      { snd:null, text:'あかレンガの 大きな 工場と、ひろい くわばたけ。糸を つくる まち。' },
+      { snd:null, text:'「園」の 字が あばれて、かいこの 葉と 人の 食べものが まざっちゃったの。' }
+    ],
+    out:[
+      { snd:null, text:'「麦」も「米」も、人の ごはん。かいこが 食べるのは、くわの 葉だけ。' },
+      { snd:null, text:'見た目じゃ わからない。……でも 字なら わかる。ほら、分けられた！' },
+      { snd:null, text:'……ねえ。この さきに、もっと 大きいのが いるみたい。' }
+    ]
+  },
+  13: {
+    title:'あたらしい 看板',
+    in:[
+      { snd:null, text:'しゅいろの 門が ならぶ 古い おてら。かんこうの 人で いっぱい。' },
+      { snd:null, text:'「門」の 字が あばれて、どこから 入るのか わからない 人が いるの。' }
+    ],
+    out:[
+      { snd:null, text:'「古」い ものと「今」の ものが、ならんでる まち。' },
+      { snd:null, text:'「新」しい 看板は 絵ばかり。……でも 古い 門の 字は 読める。こっちが 入口！' },
+      { snd:null, text:'……あの まるい マーク、どこにでも あるね。べんりに なったって、みんな よろこんでる。' }
+    ]
+  },
+  14: {
+    title:'いしの ひろま',
+    /* ★in は持たせない＝EV_SCENES[14]（立ち絵つき）が「事件」を担当する */
+    out:[
+      { snd:null, text:'「午前」と「午後」、それに「半」。……読めたら、時間が わかる。' },
+      { snd:null, text:'ほら。……あの人たち、地下の 入口で 会えたよ！' },
+      { snd:null, text:'……ね。じぶんで 読めると、ちょっと じまん できるでしょ。' }
+    ]
+  },
+  15: {
+    title:'ふとい 道と ほそい 道',
+    in:[
+      { snd:null, text:'なだらかな こうげんの 道。秋には もみじが 赤く なるところ。' },
+      { snd:null, text:'絵地図の「線」が あばれて、太いのと 細いの、どっちが 道か わからないの。' }
+    ],
+    out:[
+      { snd:null, text:'「太」い ほうが 大きな 道。「細」いのは 小道。' },
+      { snd:null, text:'色も 見て。「黄」は はたけ、「黒」は 森。……これで まよわない！' },
+      { snd:null, text:'案内所の 人が、こう いってた。「線の いみを 紙に 書いて、おしえて いった 人が いてね」' }
+    ],
+    clue:'線の いみを 紙に 書いて、おしえて いった 人が いてね'
+  },
+  16: {
+    title:'うみの とりい',
+    in:[
+      { snd:null, text:'なみの なかの 岩の うえに、とりいが 立ってる。' },
+      { snd:null, text:'「近」の 字が あばれて、いつ 近づいて いいのか わからないの。あぶないの。' }
+    ],
+    out:[
+      { snd:null, text:'「近」づいて いいのは、なみが 引いた とき。' },
+      { snd:null, text:'「遠」くから 見る 日と、「近」くまで 行ける 日。……書いてあった！' },
+      { snd:null, text:'みやの 人が「これで 安心だ」って。……よかったね。' }
+    ]
+  },
+  17: {
+    title:'しらべている 人',
+    /* ★★本筋イベント＝漢字の事件を持たせない（2026-08-18 準也さんのご指示）。
+       「物語の本筋イベント時は、無理にフィールドや漢字の話にこじ付けると薄くなる」
+       ★in は持たせない＝EV_SCENES[17]（立ち絵つき）が担当する */
+    out:[
+      { snd:null, text:'「理」は、ものの すじみち。「知」って、「考」えて、はじめて わかる。' },
+      { snd:null, text:'……いま わたしが してるのも、それ。' },
+      { snd:null, text:'けんきゅうじょの 人が、こう いってた。「その人なら 知ってるかも。字を おしえて まわってる 人」' }
+    ],
+    clue:'字を おしえて まわってる 人'
+  },
+  18: {
+    title:'みずうみの ほう',
+    in:[
+      { snd:null, text:'うみみたいに ひろい みずうみ。白い ほの ふねが うかんでる。' },
+      { snd:null, text:'「北」の 字が あばれて、道しるべが 読めないの。ぐるぐる 回ってる 人が いる。' }
+    ],
+    out:[
+      { snd:null, text:'「北」が わかれば、「東」も「西」も「南」も わかる。' },
+      { snd:null, text:'ほの ふねは「方」を 見て 進むの。……ほら、もどってきた！' },
+      { snd:null, text:'ちいさな子が うれしそうに いってた。「ぼく、道は わからないよ。でも あの子が いるから」' }
+    ]
+  },
+  19: {
+    title:'いちばん きれいな とき',
+    in:[
+      { snd:null, text:'花ばたけが いちめんに ひろがって、その むこうに うみが 見える。' },
+      { snd:null, text:'「春」の 字が あばれて、見ごろの ふだが 読めないの。' }
+    ],
+    out:[
+      { snd:null, text:'「春」に さく 花と、「夏」に さく 花。ふだに 書いてあった！' },
+      { snd:null, text:'「晴」れた 日の「昼」。……いま、いちばん きれいな とき。' },
+      { snd:null, text:'……ねえ。うみの むこうから、大きいのの 気配が するの。' }
+    ]
+  },
+  20: {
+    title:'よむのと きくのは',
+    in:[
+      { snd:null, text:'大きな 塔の おてら。長い 石段の 参道が つづいてる。' },
+      { snd:null, text:'ここは 字が 多いから、こまってる 人も 多いの。「読」の 字が あばれてる。' }
+    ],
+    out:[
+      { snd:null, text:'「読」むのと「聞」くのは、ちがうの。……「心」に のこるのは、どっち？' },
+      { snd:null, text:'（じぶんで 読んでみる）……そう。それが「読」む ということ。' },
+      { snd:null, text:'石段の 人が、こう いってた。「まえに、字の たのしさを ずっと 話してく 人が いてね。……長かった」' }
+    ],
+    clue:'字の たのしさを ずっと 話してく 人が いてね'
+  },
+  21: {
+    title:'とまれの ふだ',
+    in:[
+      { snd:null, text:'四角く 切り出された 岩の かべ。石の かいだんが ずっと 上まで つづいてる。' },
+      { snd:null, text:'「止」の 字が あばれて、「止まれ」の ふだが 読めないの。あぶないの。' }
+    ],
+    out:[
+      { snd:null, text:'「止」は、足を そろえて 立ちどまる かたち。' },
+      { snd:null, text:'まっすぐ「直」ぐ 行くと あぶない ところは、「止」まる。……これで もう だいじょうぶ！' },
+      { snd:null, text:'石を 切る 人が、こう いってた。「大きな せなかの 人が、たまに 来るんだ」' }
+    ],
+    clue:'大きな せなかの 人が、たまに 来るんだ'
+  },
+  22: {
+    title:'ねふだと 番ごう',
+    in:[
+      { snd:null, text:'赤と 金いろの 門。大きな ちょうちんが ならんでる まち。' },
+      { snd:null, text:'「番」の 字が あばれて、ねふだも 番ごうも 読めないの。' }
+    ],
+    out:[
+      { snd:null, text:'「売」る 人と「買」う 人。字が あれば、話が できる。' },
+      { snd:null, text:'……あの子も 字を なかまに してる。あなたと おなじ 年ごろ。' },
+      { snd:null, text:'……でも あの子、「おぼえなきゃ」って 顔してる。……あなたは、たのしそう。' }
+    ]
+  },
+  23: {
+    title:'はとばで 会う',
+    in:[
+      { snd:null, text:'赤レンガの そうこと、大きな ふねが とまる はとば。' },
+      { snd:null, text:'「会」の 字が あばれて、待ち合わせの 場しょが 読めないの。' }
+    ],
+    out:[
+      { snd:null, text:'「会」って「合」う。それだけの ことなのに、字が ないと できないの。' },
+      { snd:null, text:'……ほら、あの ふたり、会えた！' },
+      { snd:null, text:'はとばの 人が、こう いってた。「字を おしえて まわってる 人が、この ふねで 行ったよ」' }
+    ],
+    clue:'字を おしえて まわってる 人が、この ふねで 行ったよ'
+  },
+  24: {
+    title:'おおきな せなか',
+    in:[
+      { snd:null, text:'大きな だいぶつが、しずかに すわってる。うみも すぐ そこ。' },
+      { snd:null, text:'「体」も「頭」も「首」も、ぜんぶ 石なのに……生きてるみたい。' },
+      { snd:null, text:'……大きな せなか。……ねえ。あの人の せなかも、こんな 感じ だったのかな。' }
+    ]
   }
 };
 
 /* 弾EV-4：てがかりの束（学年ごと）。ここに1行足せば2年以降も同じ仕組みで動く。
    ★いまは1年ぶんだけ。学年に束が無いときは ちず画面の「てがかり」ボタンを出さない。 */
 const CLUE_SETS = {
-  1: { from:1, to:7, title:'トウキョウの てがかり' }
+  1: { from:1, to:7, title:'トウキョウの てがかり' },
+  2: { from:9, to:23, title:'カントウの てがかり' }
 };
 
 /* ===== 弾EV-5：学年のフィナーレ（あつめた てがかりが つながる）=====
@@ -16190,6 +16579,21 @@ const GRADE_FINALE = {
        ★仕組み（who:'easy' の見せ方）は残してあるので、2年以降で使いたい学年は `easy:'…'` を1行書けばよい。 */
     last  : '……でも、その声は だれ？',                  // マナ（きり顔）。答えはここでは出さない
     banner: 'だい8わ「いちばん さいしょの まち」 おしまい'
+  },
+2: {
+    zone: 24,
+    keyword: 'おしえ',                       // ★6本のうち4本が光る（10・15・17・23／機械で数えた実測）
+    snd   : { intro:null, found:null, none:null, lines:[null,null,null], last:null },
+    intro : 'みんな、おなじ 人の 話を してた。',
+    found : '……ぜんぶ、字を おしえて まわってる 人の 話。',
+    none  : '……この 旅で 会った 人たちの はなしを、思い出してみて。',
+    lines : [
+      '大きな せなかの 人。字は おもしろいって、大きな こえで おしえるの。',
+      '……でも、その人が 来た ところで、字が あばれてる。',
+      'おしえに 来たのか。……それとも。'
+    ],
+    last  : '……あの人は、だれ？',
+    banner: 'だい16わ「おおきな せなか」 おしまい'
   }
 };
 
@@ -16346,13 +16750,88 @@ let evDoneCb=null;              // 終わったときに呼ぶもの
 let evAutoWasRunning=false;     // 始める前にオート巡回が走っていたか
 
 /* ゾーンに入ったときの入口。台本が無い／もう見たゾーンなら何もしない */
+/* ===== 弾EV-6（2026-08-18）：通りすがりの人影 =====
+   ★準也さんのご指示＝「**2年生でマローズの姿だけはだします。歩いて去っていく姿のみ。
+     3年生の疑いを強める効果**」。だから **顔は見せない・台詞は言わせない・立ち止まらせない**。
+   ★仕組みは汎用。下の PASSERBY に「ゾーン番号 → 出す人」を1行足せば、どのゾーンでも出せる。
+   ★大きさは1マスの170%（CSSの .passerby）。**通行判定には いっさい関わらない**（画面に重ねるだけ）。
+   正本＝設計書\09_計画と方針\【計画】ゾーンイベントの割り付けと伏線_20260817.md §0-2 */
+const PASSERBY = {
+  /* 例）21: { sheet:'images/sprites/maro_walk.webp', mana:'……いま、だれか いた？' }
+     ★2年の台本を書くときに、置くゾーンを決めてここに1行足す（第一候補＝21 のこぎりやま） */
+  21: { sheet:'images/sprites/maro_walk.webp', mana:'……いま、だれか いた？' }
+};
+const PB_MS       = 3600;   // 歩いて去るまでの時間
+const PB_STEP_MS  = 150;    // 足を出しかえる間隔（主人公と同じ）
+const PB_END_SC   = 0.62;   // 去ったときの大きさ（遠ざかって見せる）
+let pbTimer=null, pbStep=null, pbSeq=0, pbActive=false;
+
+function stopPasserby(){
+  if(pbTimer){ clearTimeout(pbTimer); pbTimer=null; }
+  if(pbStep){ clearInterval(pbStep); pbStep=null; }
+  pbActive=false;
+  /* ★2026-08-18に見つけた不具合＝人影の途中でワープすると heroLock が true のまま残り、
+     主人公が動かせなくなっていた。gfClose と同じ流儀で、畳むときは必ずロックを解く。
+     （正常に終わったときは このあと onDone → 会話が改めてロックするので順番は問題ない） */
+  heroLock=false;
+  const el=$('pbFigure'); if(el){ el.classList.remove('on'); el.style.display='none'; }
+}
+
+/* ゾーンに入ったとき、奥へ歩いて去っていく人影を1回だけ流す。
+   ★終わったら onDone を呼ぶ（そのあと ふつうの「事件」の会話へ続く） */
+function startPasserby(zone, onDone){
+  const def=PASSERBY[zone];
+  const el=$('pbFigure');
+  if(!def || !el || pbActive){ if(onDone) onDone(); return; }
+  const grid=$('fieldGrid');
+  const tile=grid ? (parseFloat(grid.style.getPropertyValue('--tile'))||42) : 42;
+  pbActive=true; pbSeq=fieldSeq;
+
+  el.style.backgroundImage="url('"+def.sheet+"')";
+  el.style.setProperty('--pb-tile', tile+'px');
+  el.style.setProperty('--pb-bgx','50%');        // 列2＝背面（奥を向いている）
+  el.style.setProperty('--pb-bgy','0%');
+  el.style.setProperty('--pb-bottom','34%');
+  el.style.setProperty('--pb-scale','1');
+  el.style.setProperty('--pb-opacity','1');
+  el.style.setProperty('--pb-ms', PB_MS+'ms');
+  el.style.display='block';
+  /* いったん描かせてから動きを始める（transitionが効くように） */
+  void el.offsetWidth;
+  el.classList.add('on');
+  requestAnimationFrame(()=>{
+    if(pbSeq!==fieldSeq){ stopPasserby(); return; }
+    el.style.setProperty('--pb-bottom','64%');   // 奥（画面の上）へ
+    el.style.setProperty('--pb-scale', PB_END_SC);
+  });
+
+  /* 足を出しかえる（背面はゲーム側で左右反転しない＝絵のA/Bをそのまま交互に見せる） */
+  let b=false;
+  pbStep=setInterval(()=>{
+    if(pbSeq!==fieldSeq){ stopPasserby(); return; }
+    b=!b; el.style.setProperty('--pb-bgy', b?'100%':'0%');
+  }, PB_STEP_MS);
+
+  /* 終わりぎわに消えていく → 後始末 → 続きへ */
+  pbTimer=setTimeout(()=>{
+    if(pbSeq!==fieldSeq){ stopPasserby(); return; }
+    el.style.setProperty('--pb-opacity','0');
+    pbTimer=setTimeout(()=>{
+      const ok=(pbSeq===fieldSeq);
+      stopPasserby();
+      if(ok && onDone) onDone();
+    }, 520);
+  }, PB_MS-400);
+}
+
 function maybeStartZoneEvent(zone){
   /* 弾EV-4：立ち絵つき（EV_SCENES）が無くても、ZONE_TALK に in があれば
      顔アイコンの会話で「事件」を流す。どちらも無ければ何もしない（＝いままでどおり）。 */
   const zt=ZONE_TALK[zone];
   const hasEv=!!EV_SCENES[zone];
   const hasIn=!!(zt && zt.in && zt.in.length);
-  if(!hasEv && !hasIn) return;
+  const pb=PASSERBY[zone];                       // ★弾EV-6：通りすがりの人影
+  if(!hasEv && !hasIn && !pb) return;
   if(evSeen[zone]) return;
   const seq=fieldSeq;
   setTimeout(()=>{
@@ -16361,8 +16840,25 @@ function maybeStartZoneEvent(zone){
     const fscr=$('screen-field');
     if(!fscr || !fscr.classList.contains('active')) return;
     evSeen[zone]=true; save();
-    if(hasEv) startZoneEvent(zone);
-    else      startZoneTalk(zt.in, null);
+    /* ★弾EV-6：人影がいるゾーンは、先に「歩いて去っていく姿」を見せてから会話へ。
+       ★人影のあいだ主人公は動かせない（見てもらうため）。終わったら必ず解く。 */
+    const go=()=>{
+      if(seq!==fieldSeq) return;
+      if(hasEv) startZoneEvent(zone);
+      else if(hasIn) startZoneTalk(zt.in, null);
+    };
+    if(pb){
+      heroLock=true;
+      startPasserby(zone, ()=>{
+        heroLock=false;
+        if(seq!==fieldSeq) return;
+        /* 人影のあとに言う一言（マナ）。台本が無ければ そのまま次へ */
+        if(pb.mana) startZoneTalk([{snd:pb.snd||null, text:pb.mana}], go);
+        else go();
+      });
+    }else{
+      go();
+    }
   }, EV_BANNER_WAIT_MS);
 }
 
@@ -24168,7 +24664,13 @@ var YojiFieldScene = (function(){
   function yfSoundOn(){ return (typeof soundOn==='undefined') ? true : !!soundOn; }
   function yfSheet(){ return (typeof heroSheetUrl==='function') ? heroSheetUrl() : 'images/sprites/hero.webp'; }
 
-  var MAP_URL = 'images/fullart/zone44.webp';
+  /* ★2026-08-19：ゾーンごとに使えるようにした（start の第2引数 opts で差し替える）。
+     opts を渡さなければ 下の既定＝ゾーン44 のまま＝いままでと1ビットも変わらない。
+     ★ゾーン24（熟語モン「自分」の初登場）で使う値は launchEventBossIntro を見ること。 */
+  var DEF_MAP='images/fullart/zone44.webp', DEF_CAM={x:-418, y:0},
+      DEF_B1='一心', DEF_B2='同体', DEF_VOICE='yj01';
+  var MAP_URL = DEF_MAP;
+  var BOSS1_TEXT = DEF_B1, BOSS2_TEXT = DEF_B2;
   var MANA_FACE = 'images/sprites/hakase-face.webp';
   var VOICE = 'audio/battle/', VOICE_FILE='yj01';
 
@@ -24183,7 +24685,7 @@ var YojiFieldScene = (function(){
          最初は広場に置いていたが、それは まったく別の場所だった）。
      カメラ＝camX=clamp(382/2-(14+0.5)*42, 382-1260, 0)=-418／camY=clamp(664/2-3.5*42,-176,0)=0
      イベント中はカメラを主人公に追わせない（追うと画面が揺れて芝居が読みにくい） */
-  var CAM = {x:-418, y:0};
+  var CAM = DEF_CAM;
 
   var yfActive=false, yfSeq=0, yfOnDone=null, yfRaf=null, yfT0=0, yfFrozen=false;
   var VW=382, VH=664;
@@ -24959,8 +25461,8 @@ var YojiFieldScene = (function(){
       map.style.width=(MAPW*TILE)+'px'; map.style.height=(MAPH*TILE)+'px';
       map.style.backgroundImage="url('"+MAP_URL+"')";
     }
-    var b1=$('yfBoss1Text'); if(b1) b1.textContent='一心';
-    var b2=$('yfBoss2Text'); if(b2) b2.textContent='同体';
+    var b1=$('yfBoss1Text'); if(b1) b1.textContent=BOSS1_TEXT;
+    var b2=$('yfBoss2Text'); if(b2) b2.textContent=BOSS2_TEXT;
     var sp=$('yfHeroSp'); if(sp) sp.style.backgroundImage="url('"+yfSheet()+"')";
     /* ポーズ絵は先に読みこんでおく（差し替わる瞬間に白く抜けないように）。
        着替えを着ているときは、その絵が読めるかどうかも ここで確かめておく */
@@ -24995,7 +25497,8 @@ var YojiFieldScene = (function(){
         '<div class="hakase-talk-text"></div></div>';
       host.querySelector('.hakase-talk-text').textContent=TALK_MSG;   /* 本体と同じ＝文字だけ（HTMLは入れない） */
       host.querySelector('.hakase-talk').onclick=function(ev){ ev.stopPropagation(); jumpTo(M.talkOut); };
-      if(!yfFrozen && yfSoundOn()){
+      /* ★VOICE_FILE が空のときは鳴らさない（ゾーン24はまだ声を作っていない） */
+      if(!yfFrozen && yfSoundOn() && VOICE_FILE){
         try{
           talkAudio=new Audio(VOICE+VOICE_FILE+'.mp3');
           talkAudio.onerror=function(){};
@@ -25033,8 +25536,17 @@ var YojiFieldScene = (function(){
     var my=yfSeq;
     setTimeout(function(){ if(my!==yfSeq) return; o.style.display='none'; },420);
   }
-  function start(onDone){
+  function start(onDone, opts){
     if(yfActive){ if(typeof onDone==='function') onDone(); return; }
+    /* ★2026-08-19：ゾーンごとの値を受け取る。渡されなければ ゾーン44 の既定のまま。
+       ★voice は「null を渡したら鳴らさない」ようにしたいので、undefined のときだけ既定にする。 */
+    opts = opts || {};
+    MAP_URL    = opts.map   || DEF_MAP;
+    CAM        = opts.cam   || DEF_CAM;
+    BOSS1_TEXT = opts.boss1 || DEF_B1;
+    BOSS2_TEXT = opts.boss2 || DEF_B2;
+    if(opts.msg) TALK_MSG = opts.msg;
+    VOICE_FILE = (opts.voice===undefined) ? DEF_VOICE : opts.voice;
     yfActive=true; yfFrozen=false;
     yfOnDone=(typeof onDone==='function')?onDone:null;
     yfSeq++;
