@@ -820,8 +820,11 @@
   /* 手直し弾3-15：屋内NPC。外枠は1マス固定、visual側で歩行シートの向き・足を切り替える。 */
   .interior-npc{position:absolute;width:var(--tile);height:var(--tile);left:calc(var(--ix)*var(--tile));
     top:calc(var(--iy)*var(--tile));z-index:calc(12 + var(--iy));pointer-events:none;
-    --bgx:0%;--bgy:0%;--npc-sx:1}
-  .interior-npc-visual{position:absolute;left:50%;bottom:0;width:115%;aspect-ratio:1;
+    --bgx:0%;--bgy:0%;--npc-sx:1;--npc-scale:1}
+  /* ★2026-08-22：--npc-scale で1人ずつ背たけを変えられるようにした（既定1＝これまでどおり115%）。
+     準也さんのご指示＝「大人を子どもと同じ大きさにすると、子どもより細くて頭が小さい人になってしまう。
+     大人は子どもの1.5倍くらいに」。大きさを変える流儀はマローズの .passerby（1マスの170%）と同じ考え方。 */
+  .interior-npc-visual{position:absolute;left:50%;bottom:0;width:calc(115% * var(--npc-scale,1));aspect-ratio:1;
     transform:translateX(-50%) scaleX(var(--npc-sx));transform-origin:center bottom;
     background-position:var(--bgx) var(--bgy);background-size:300% 200%;background-repeat:no-repeat;
     filter:drop-shadow(0 3px 4px rgba(0,0,0,.25));pointer-events:none}
@@ -15492,11 +15495,14 @@ function renderField(){
     });
   }
   // 弾3-15手直し：歩行シートを優先し、無ければ従来静止画像、両方無ければ上のタイル絵文字。
-  if(fieldZone<0){
+  // ★2026-08-22：条件を fieldZone<0 から <=0 に広げた（TOWN_ZONE=0 のため、町の人が出せなかった）。
+  //   INTERIOR_ACTORS は zone でふるい分けているので、増えるのは町に置いた人だけ。ほかの部屋は1ピクセルも変わらない。
+  if(fieldZone<=0){
     INTERIOR_ACTORS.filter(a=>a.zone===fieldZone&&(interiorActorSheetOK.has(a.key)||interiorActorImgOK.has(a.key))).forEach(a=>{
       const useSheet=interiorActorSheetOK.has(a.key);
       const el=document.createElement('span'); el.className='interior-npc '+(useSheet?'has-sheet':'has-static');
       el.style.setProperty('--ix',a.x); el.style.setProperty('--iy',a.y);
+      if(a.scale) el.style.setProperty('--npc-scale',a.scale);   // ★2026-08-22：大人は子どもの1.5倍
       setInteriorActorPose(el,a.dir,a.frame);
       const visual=document.createElement('span'); visual.className='interior-npc-visual';
       visual.style.backgroundImage=useSheet?"url('images/sprites/"+a.sheet+"')":"url('images/"+a.img+"')";
@@ -18366,7 +18372,29 @@ const INTERIOR_ACTORS=[
   {zone:MALL_ZONE,key:'nikuya',sheet:'nikuya-field.webp',img:'nikuya-normal.webp',emoji:'🧑‍🍳',x:3,y:3,dir:'down',frame:'a'},
   // 手直し_着替え第1弾(7/25)：ふくやさん。画像はまだ無い（Codex発注は仕上げ弾）＝読めない間はタイルの絵文字👘だけが出る
   {zone:MALL_ZONE,key:'fukuya',sheet:'npc-fukuya-field.webp',img:'npc-fukuya.webp',emoji:'👘',x:8,y:3,dir:'down',frame:'a'},
-  {zone:HOUSE1_ZONE,key:'ojisan',sheet:'npc-ojisan-field.webp',img:'npc-ojisan.webp',emoji:'👴',x:9,y:2,dir:'down',frame:'a'}
+  {zone:HOUSE1_ZONE,key:'ojisan',sheet:'npc-ojisan-field.webp',img:'npc-ojisan.webp',emoji:'👴',x:9,y:2,dir:'down',frame:'a'},
+
+  /* ===== 2026-08-22：町の人（モブ）12人 =====
+     ★準也さんのご指示＝「大人を子どもと同じ大きさにすると、子どもより細くて頭が小さい人になってしまう。
+       大人は子どもの1.5倍くらいに」。→ 子ども＝scale 1.0（主人公と同じ115%）／大人＝scale 1.5。
+     ★絵は `素材\キャラクター基準\モブ歩行シート\` が正本。立ち絵48枚（images\bust\mob_*.webp）と同じ顔ぶれ。
+     ★**通行判定には関わらない**（画面に重ねるだけ＝マローズの .passerby と同じ考え方）。
+       だからグリッドの文字は足していない＝既存101ゾーンと室内の通行は1マスも変わらない。
+     ★静止画（顔カード用）は持たせていない＝`img` なし。会話もまだ付けていない（立たせているだけ）。 */
+  {zone:TOWN_ZONE,   key:'mobOtonaMA', sheet:'npc-mob-otona-m-a.webp', x:5, y:5,  dir:'down', frame:'a', scale:1.5},
+  {zone:TOWN_ZONE,   key:'mobOtonaFA', sheet:'npc-mob-otona-f-a.webp', x:20,y:6,  dir:'down', frame:'a', scale:1.5},
+  {zone:TOWN_ZONE,   key:'mobKodomoMA',sheet:'npc-mob-kodomo-m-a.webp',x:5, y:13, dir:'down', frame:'a', scale:1.0},
+  {zone:TOWN_ZONE,   key:'mobObaaA',   sheet:'npc-mob-obaa-a.webp',    x:25,y:13, dir:'down', frame:'a', scale:1.5},
+  {zone:MALL_ZONE,   key:'mobOtonaFB', sheet:'npc-mob-otona-f-b.webp', x:5, y:6,  dir:'down', frame:'a', scale:1.5},
+  {zone:MALL_ZONE,   key:'mobKodomoFA',sheet:'npc-mob-kodomo-f-a.webp',x:13,y:5,  dir:'down', frame:'a', scale:1.0},
+  {zone:SCHOOL_ZONE, key:'mobKodomoMB',sheet:'npc-mob-kodomo-m-b.webp',x:5, y:7,  dir:'down', frame:'a', scale:1.0},
+  {zone:SCHOOL_ZONE, key:'mobKodomoFB',sheet:'npc-mob-kodomo-f-b.webp',x:14,y:5,  dir:'down', frame:'a', scale:1.0},
+  /* 駅と村は、とうちゃく地点S(7,7)のすぐ上に置く。
+     ★離れたところに置くと、入った瞬間の画面に入らず「いない」ように見える（2026-08-22に実際そうなった）。 */
+  {zone:STATION_ZONE,key:'mobOtonaMB', sheet:'npc-mob-otona-m-b.webp', x:5, y:6,  dir:'down', frame:'a', scale:1.5},
+  {zone:STATION_ZONE,key:'mobOjiiA',   sheet:'npc-mob-ojii-a.webp',    x:9, y:6,  dir:'down', frame:'a', scale:1.5},
+  {zone:MURA_ZONE,   key:'mobOjiiB',   sheet:'npc-mob-ojii-b.webp',    x:5, y:6,  dir:'down', frame:'a', scale:1.5},
+  {zone:MURA_ZONE,   key:'mobObaaB',   sheet:'npc-mob-obaa-b.webp',    x:9, y:6,  dir:'down', frame:'a', scale:1.5}
 ];
 /* 手直し弾3-15：将来の歩行イベントから、向きと歩行A/Bだけを切り替えられる共通口。 */
 function setInteriorActorPose(el,dir,frame){
@@ -18399,7 +18427,7 @@ let teacherImagesOK=false, schoolBuildingOK=false, shodoBuildingOK=false;
   INTERIOR_ACTORS.forEach(a=>{
     const redraw=()=>{ if(fieldZone===a.zone&&$('screen-field').classList.contains('active')) renderField(); };
     const sheet=new Image(); sheet.onload=()=>{ interiorActorSheetOK.add(a.key); redraw(); }; sheet.onerror=()=>{}; sheet.src='images/sprites/'+a.sheet;
-    const still=new Image(); still.onload=()=>{ interiorActorImgOK.add(a.key); redraw(); }; still.onerror=()=>{}; still.src='images/'+a.img;
+    if(a.img){ const still=new Image(); still.onload=()=>{ interiorActorImgOK.add(a.key); redraw(); }; still.onerror=()=>{}; still.src='images/'+a.img; }   // ★2026-08-22：静止画を持たない人（モブ）は読みにいかない
   });
   const files=['nikuya-counter.webp','nikuya-normal.webp','nikuya-happy.webp','nikuya-oops.webp']; let loaded=0,failed=false;
   files.forEach(file=>{ const im=new Image(); im.onload=()=>{ loaded++; if(!failed&&loaded===files.length) meatSceneOK=true; }; im.onerror=()=>{ failed=true; meatSceneOK=false; }; im.src='images/'+file; });
