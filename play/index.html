@@ -1557,6 +1557,14 @@
     display:flex;align-items:center;justify-content:center;z-index:calc(10 + var(--hy,0));font-size:17px;cursor:pointer}
   /* 手直し はかせトーク2§3-2：hakase.webpがあれば1マスに収まる透過画像・無ければ従来どおり絵文字（textContent側） */
   .npc.has-img{background-repeat:no-repeat;background-position:center bottom;background-size:contain;font-size:0}
+  /* ★2026-08-22：マナを大人と同じ背たけにする（準也さん＝「マナも大人なんで、大人に合わせて」）。
+     もとは1マスぴったり＝100%で、実測42px。主人公48.3px・子ども48.3pxより小さく、
+     大人の女性なのに子どもより小さく見えていた。
+     ★倍率は 1.50。1.725（＝町の人と同じ計算）にしたら実測83.3pxで、大人72.4pxより大きくなった。
+     マナの絵は1コマの中で人物が占める割合が大きいため。実測して1.50に合わせた（＝72.4px）。
+     足元を動かさないよう transform-origin は下端。要素の大きさ（＝マス座標）は変えないので、
+     置いてある位置・当たり判定・重なり順はこれまでどおり。 */
+  .npc.has-img#hakaseNpc{transform:scale(1.40);transform-origin:center bottom}
   /* 弾3-6§5-2：もんばん方式ゾーンのゲート前ボスマス（じゅくごモンの大きな顔・.npcと同じ--hx/--hy座標系） */
   .boss-jukugo-npc{position:absolute;width:var(--tile);height:var(--tile);left:calc(var(--hx,0)*var(--tile));top:calc(var(--hy,0)*var(--tile));
     display:flex;align-items:center;justify-content:center;z-index:calc(11 + var(--hy,0));pointer-events:none}
@@ -2019,12 +2027,13 @@
     background-position:var(--bgx,0%) var(--bgy,0%);        /* 列=向き(--bgx)・行=A/B足踏み(--bgy) */
     image-rendering:pixelated}
   /* ★弾EV-6（2026-08-18）：通りすがりの人影（マロース先生）。
-     ★大きさ＝1マスの170%（2026-08-18 準也さん決定＝「主人公が子供なので小さいので」）。
-       主人公の .hero-sprite は115%なので、約1.48倍の背たけになる。
+     ★大きさ＝1マスの210%（★2026-08-22 準也さん決定＝「マローズを210%ぐらいに。ちょっと小さすぎる」。
+       もとは170%だったが、町の人（大人）を172.5%で入れたらボスより小さく見えてしまったため）。
+       主人公の .hero-sprite は115%なので、約1.83倍の背たけになる。
      ★マス目は増やさない＝これは画面の上に重ねるだけの飾りで、通行判定には いっさい関わらない。
      ★歩行シートの使い方は .hero-sprite と同じ（300%×200%で1コマ切り出し・列=向き・行=A/B）。 */
   .passerby{position:absolute;left:50%;bottom:var(--pb-bottom,38%);
-    width:calc(var(--pb-tile,42px) * 1.70);aspect-ratio:1;
+    width:calc(var(--pb-tile,42px) * 2.10);aspect-ratio:1;
     transform:translateX(-50%) scale(var(--pb-scale,1));transform-origin:50% 100%;
     background-repeat:no-repeat;background-size:300% 200%;
     background-position:var(--pb-bgx,50%) var(--pb-bgy,0%);
@@ -18376,25 +18385,27 @@ const INTERIOR_ACTORS=[
 
   /* ===== 2026-08-22：町の人（モブ）12人 =====
      ★準也さんのご指示＝「大人を子どもと同じ大きさにすると、子どもより細くて頭が小さい人になってしまう。
-       大人は子どもの1.5倍くらいに」。→ 子ども＝scale 1.0（主人公と同じ115%）／大人＝scale 1.5。
+       大人は子どもの1.5倍くらいに」→ ★2026-08-22に**1.4倍へ変更**（「通常の大人はマナも含めて1.4倍に」）。
+       子ども＝scale 1.0（主人公と同じ115%）／大人＝scale 1.4／マナも1.40（CSSの #hakaseNpc）。
+       マローズ（ボス）は .passerby で210%＝いちばん大きい。
      ★絵は `素材\キャラクター基準\モブ歩行シート\` が正本。立ち絵48枚（images\bust\mob_*.webp）と同じ顔ぶれ。
      ★**通行判定には関わらない**（画面に重ねるだけ＝マローズの .passerby と同じ考え方）。
        だからグリッドの文字は足していない＝既存101ゾーンと室内の通行は1マスも変わらない。
      ★静止画（顔カード用）は持たせていない＝`img` なし。会話もまだ付けていない（立たせているだけ）。 */
-  {zone:TOWN_ZONE,   key:'mobOtonaMA', sheet:'npc-mob-otona-m-a.webp', x:5, y:5,  dir:'down', frame:'a', scale:1.5},
-  {zone:TOWN_ZONE,   key:'mobOtonaFA', sheet:'npc-mob-otona-f-a.webp', x:20,y:6,  dir:'down', frame:'a', scale:1.5},
+  {zone:TOWN_ZONE,   key:'mobOtonaMA', sheet:'npc-mob-otona-m-a.webp', x:5, y:5,  dir:'down', frame:'a', scale:1.4},
+  {zone:TOWN_ZONE,   key:'mobOtonaFA', sheet:'npc-mob-otona-f-a.webp', x:20,y:6,  dir:'down', frame:'a', scale:1.4},
   {zone:TOWN_ZONE,   key:'mobKodomoMA',sheet:'npc-mob-kodomo-m-a.webp',x:5, y:13, dir:'down', frame:'a', scale:1.0},
-  {zone:TOWN_ZONE,   key:'mobObaaA',   sheet:'npc-mob-obaa-a.webp',    x:25,y:13, dir:'down', frame:'a', scale:1.5},
-  {zone:MALL_ZONE,   key:'mobOtonaFB', sheet:'npc-mob-otona-f-b.webp', x:5, y:6,  dir:'down', frame:'a', scale:1.5},
+  {zone:TOWN_ZONE,   key:'mobObaaA',   sheet:'npc-mob-obaa-a.webp',    x:25,y:13, dir:'down', frame:'a', scale:1.4},
+  {zone:MALL_ZONE,   key:'mobOtonaFB', sheet:'npc-mob-otona-f-b.webp', x:5, y:6,  dir:'down', frame:'a', scale:1.4},
   {zone:MALL_ZONE,   key:'mobKodomoFA',sheet:'npc-mob-kodomo-f-a.webp',x:13,y:5,  dir:'down', frame:'a', scale:1.0},
   {zone:SCHOOL_ZONE, key:'mobKodomoMB',sheet:'npc-mob-kodomo-m-b.webp',x:5, y:7,  dir:'down', frame:'a', scale:1.0},
   {zone:SCHOOL_ZONE, key:'mobKodomoFB',sheet:'npc-mob-kodomo-f-b.webp',x:14,y:5,  dir:'down', frame:'a', scale:1.0},
   /* 駅と村は、とうちゃく地点S(7,7)のすぐ上に置く。
      ★離れたところに置くと、入った瞬間の画面に入らず「いない」ように見える（2026-08-22に実際そうなった）。 */
-  {zone:STATION_ZONE,key:'mobOtonaMB', sheet:'npc-mob-otona-m-b.webp', x:5, y:6,  dir:'down', frame:'a', scale:1.5},
-  {zone:STATION_ZONE,key:'mobOjiiA',   sheet:'npc-mob-ojii-a.webp',    x:9, y:6,  dir:'down', frame:'a', scale:1.5},
-  {zone:MURA_ZONE,   key:'mobOjiiB',   sheet:'npc-mob-ojii-b.webp',    x:5, y:6,  dir:'down', frame:'a', scale:1.5},
-  {zone:MURA_ZONE,   key:'mobObaaB',   sheet:'npc-mob-obaa-b.webp',    x:9, y:6,  dir:'down', frame:'a', scale:1.5}
+  {zone:STATION_ZONE,key:'mobOtonaMB', sheet:'npc-mob-otona-m-b.webp', x:5, y:6,  dir:'down', frame:'a', scale:1.4},
+  {zone:STATION_ZONE,key:'mobOjiiA',   sheet:'npc-mob-ojii-a.webp',    x:9, y:6,  dir:'down', frame:'a', scale:1.4},
+  {zone:MURA_ZONE,   key:'mobOjiiB',   sheet:'npc-mob-ojii-b.webp',    x:5, y:6,  dir:'down', frame:'a', scale:1.4},
+  {zone:MURA_ZONE,   key:'mobObaaB',   sheet:'npc-mob-obaa-b.webp',    x:9, y:6,  dir:'down', frame:'a', scale:1.4}
 ];
 /* 手直し弾3-15：将来の歩行イベントから、向きと歩行A/Bだけを切り替えられる共通口。 */
 function setInteriorActorPose(el,dir,frame){
