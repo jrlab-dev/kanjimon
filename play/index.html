@@ -1730,16 +1730,45 @@
   #ecPan{position:absolute;left:50%;width:var(--panw,160%);bottom:0;
     transform:translate(-50%,0);will-change:transform}
   #ecPanImg{display:block;width:100%;height:auto}
+  /* ★③近景（フィールドシーン）＝マロースが歩いて連れている／子どもが逃げる。
+     　準也さんのご指示＝「フィールドシーン（新たに設計）ここで ようやく マローズが連れて歩いている。
+     　　そうすると 子供が逃げるのも見せられる」 */
+  #ecNear{position:absolute;inset:0;z-index:3;opacity:0;transition:opacity 1.1s ease;
+    background-size:cover;background-position:50% 62%;pointer-events:none}
+  #ecNear.show{opacity:1}
+  #ecNear .nr{position:absolute;transform:translate(-50%,-100%);pointer-events:none}
+  #ecNear .nr img{display:block;width:100%;height:auto;
+    filter:drop-shadow(0 4px 10px rgba(0,0,0,.7))}
+  /* 近景の字＝大きく、はっきり */
+  #ecNear .ev-kanji{position:absolute;transform:translate(-50%,-50%) scale(var(--k,1));
+    font-weight:900;line-height:1;color:#ff3b1f;
+    -webkit-text-stroke:0.05em rgba(255,235,225,.95);
+    text-shadow:0 0 14px rgba(255,90,40,1),0 0 34px rgba(255,60,10,.85),0 3px 7px rgba(0,0,0,.9);
+    animation:evKanjiBob 2.6s ease-in-out infinite alternate}
+  /* 逃げる子ども＝手前へ走ってくる */
+  #ecNear .runaway{animation:ecRun 4.2s ease-in forwards}
+  @keyframes ecRun{
+    0%  {transform:translate(-50%,-100%) scale(1);opacity:1}
+    60% {transform:translate(-50%,-100%) translateY(120%) scale(2.1);opacity:1}
+    100%{transform:translate(-50%,-100%) translateY(260%) scale(3.2);opacity:0}
+  }
   #ecPanLine{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity 1.2s ease}
   #ecPanLine.show{opacity:1}
   /* ★2026-08-23：パンの中の字は、絵を拡大したぶん小さく見えてしまう。
      　★絵の幅（＝この帯の幅）を基準にした大きさにして、拡大に合わせて大きくする。 */
-  /* ★2026-08-23：山肌が暗いので、字は「はっきり赤く光る」ようにする（沈まないこと）。
-     　★透かし（--o）は使わず、奥の字も濃さを保つ＝小ささだけで遠さを出す。 */
+  /* ★2026-08-23（準也さんのご指示）＝引きの絵では **点としてしか見えない**のが正しい。
+     　★①引き＝小さな赤い点／②アップ＝ズームして初めて字だと分かる。 */
   #ecPanLine .ev-kanji{font-size:5.4cqw;
     color:#ff3b1f;opacity:1 !important;
     -webkit-text-stroke:0.055em rgba(255,235,225,.95);
-    text-shadow:0 0 12px rgba(255,90,40,1),0 0 30px rgba(255,60,10,.9),0 2px 6px rgba(0,0,0,.85)}
+    text-shadow:0 0 12px rgba(255,90,40,1),0 0 30px rgba(255,60,10,.9),0 2px 6px rgba(0,0,0,.85);
+    transition:font-size 1.6s ease, color 1.6s ease}
+  /* ★①引きのあいだ＝点。字の形は分からない */
+  #ecPanLine.dots .ev-kanji{font-size:1.35cqw;
+    color:#ff6a3a;-webkit-text-stroke:0;
+    text-shadow:0 0 6px rgba(255,120,60,1),0 0 14px rgba(255,80,20,.95)}
+  /* ★②アップ＝帯ごと寄る（点が字になる） */
+  #ecPan{transition:transform 1.9s cubic-bezier(.33,.05,.25,1)}
   #ecPan{container-type:inline-size}
   /* 背景の一枚絵＝ゆっくり寄る（絵がまだ無いあいだは仮の空でも動きが分かる） */
   /* ★2026-08-23：縦画面（390×844）に 横長の絵（1536×1024）を入れると 左右が大きく切れる。
@@ -4008,6 +4037,7 @@
       <div id="ecPanLine"></div>
     </div>
   </div>
+  <div id="ecNear"></div>
   <div id="ecBg"></div>
   <div id="ecLine"></div>
   <img id="ecKasa" src="images/bust/maros-back.webp" alt="">
@@ -17836,6 +17866,29 @@ const EV_PAN_SCENES = {
     kasaAt:0.995, kasaW:'2.6%'
   }
 };
+/* ★2026-08-23：近景のフィールドシーン（三段目）。
+   　準也さんのご指示＝「フィールドシーン（新たに設計）ここで ようやく マローズが連れて歩いている。
+   　　そうすると 子供が逃げるのも見せられる」
+   ★人・字は絵ではなく、いまある素材を置いて作る（絵を足さない）。 */
+const EV_NEAR_SCENES = {
+  fujiNear: {
+    bg:'images/fullart/ev-fuji-mikaeri.webp',   /* 登山道の近景（頂上を描かない絵） */
+    /* マロース＝道の奥へ歩いていく後ろ姿 */
+    maros:{ img:'images/bust/maros-back.webp', x:'52%', y:'54%', w:'17%' },
+    /* ★連れている字。★回を重ねるごとに増やす（§「連れる数」） */
+    kanji:{ chars:'隊列伝健努達徒単', n:9,
+            /* 道に沿って、マロースの後ろ（手前）へ下りてくる */
+            pts:[[0.52,0.58],[0.55,0.64],[0.50,0.70],[0.53,0.76],[0.48,0.82],
+                 [0.52,0.88],[0.46,0.94],[0.51,1.00],[0.44,1.06]],
+            near:'12.5cqw', far:'4.2cqw' },
+    /* 逃げる子ども＝手前へ走ってくる（いまある町の人の絵を使う） */
+    /* ★歩行シート（768×512の6コマ）をそのまま出すと6人分が並んでしまう。
+       　★正面のコマ1つだけを切り出したもの（kid-front-*.webp）を使う。 */
+    kids:[ { img:'images/sprites/kid-front-m-a.webp', x:'26%', y:'72%', w:'11%', delay:0 },
+           { img:'images/sprites/kid-front-f-a.webp', x:'72%', y:'76%', w:'13%', delay:.30 },
+           { img:'images/sprites/kid-front-m-b.webp', x:'40%', y:'80%', w:'12%', delay:.55 } ]
+  }
+};
 const EV_PATH_IMG = {
   fuji: { w:1536, h:1024, pos:[0.50,0.30], pts:[[0.4561,0.9648], [0.5027,0.8984], [0.4677,0.8359], [0.4583,0.7695], [0.5191,0.7070], [0.5591,0.6406], [0.4647,0.5781], [0.5525,0.5117], [0.4916,0.4453], [0.4917,0.3828], [0.5300,0.3164], [0.4748,0.2539], [0.4603,0.1875], [0.5870,0.1250], [0.7003,0.0586]] }
 };
@@ -17957,25 +18010,29 @@ const EV_CUT_SCENES = {
      ★マナは全部知っている（AIだから画像は何まいも見た）。でも実物を前にして驚く。
        これがイージーとの差＝イージーは6年まで一度も驚かない。 */
   fuji52: {
-    /* ★2026-08-23：氷の城と同じ「見上げパン」。縦長の絵1枚を 下端から上へ7秒かけて動かす。
-       　準也さんのご指示＝「富士山は下から見上げる画像が良い。氷の城のように下から見上げる感じに」
-       ★この絵1枚に 鳥居 → つづら折りの道 → 雪の頂上 が入っているので、
-       　感動のカットと 字の隊列を 同じ絵でまかなえる＝雪の量が食いちがう問題が起きない。 */
+    /* ★2026-08-23：三段の見せ方（準也さんのご指示）
+       　①**引き**（見上げパン）＝道の上に 小さな赤い点。「なにか いる」だけ
+       　②**アップ**（ズーム）＝点が **字だった** と分かる
+       　③**近景**（フィールドシーン）＝★マロースが歩いて連れている／★子どもが逃げる
+       ★引きの絵で字が読めてしまうのは 縮尺が合っていない（これが前の間違い）。 */
     pan:'fujiPan',
-    kasa:{ x:'50%', y:'20%', w:'0%' },   /* パンの中に笠を置くので、こちらは使わない */
+    kasa:{ x:'50%', y:'20%', w:'0%' },
     cuts:[
-      /* ★ここはカメラが下から上へ動いている＝見上げていく */
+      /* ===== ①引き＝カメラが下から上へ（7秒）。ここは富士山だけを見せる ===== */
       { who:'マナ',      snd:'evs52_1',  text:'……知ってる。3776メートル。' },
       { who:'マナ',      snd:'evs52_2',  text:'写真も、何まいも 見た。形も、色も、ぜんぶ。' },
       { who:'マナ',      snd:'evs52_3',  text:'……でも。' },
       { who:'マナ',      snd:'evs52_4',  text:'……こんなに 大きいなんて、知らなかった。' },
-      { who:'マナ',      snd:'evs52_5',  text:'ここから てっぺんまで、道が ずっと つづいてるの。' },
+      /* ★ここで道に「点」が見えはじめる（まだ何か分からない） */
+      { who:'マナ',      snd:'evs52_5',  panLine:true, text:'ここから てっぺんまで、道が ずっと つづいてるの。' },
       { who:'マナ',      snd:'evs52_6',  text:'……あれ？' },
-      /* ★ここで字の隊列が現れる（道の上・絵と一緒に動く） */
-      { who:'マナ',      snd:'evs52_7',  panLine:true, text:'……道に、字が いる。ぞろぞろ ならんでる。あんなに たくさん。' },
-      { who:'マナ',      snd:'evs52_8',  panKasa:true, text:'……先に、大きな かさ。あの人だ。' },
+      /* ===== ②アップ＝点が字だと分かる ===== */
+      { who:'マナ',      snd:'evs52_7',  zoom:true, text:'……道に、字が いる。ぞろぞろ ならんでる。あんなに たくさん。' },
+      /* ===== ③近景（フィールドシーン）＝マロースが連れて歩いている ===== */
+      { who:'マナ',      snd:'evs52_8',  near:'fujiNear', text:'……先に、大きな かさ。あの人だ。' },
       { who:'マナ',      snd:'evs52_9',  text:'子どもたちが いる。あの人、近づいて……' },
-      { who:'マナ',      snd:'evs52_10', text:'……にげた。子どもたちが、みんな にげちゃった。' },
+      /* ★ここで子どもが逃げる */
+      { who:'マナ',      snd:'evs52_10', kidsRun:true, text:'……にげた。子どもたちが、みんな にげちゃった。' },
       { who:'マロース',  snd:null, maros:true, text:'……まだ、たりない。' },
       { who:'マナ',      snd:'evs52_11', text:'……上って行く。字も、ついて行く。' }
     ]
@@ -18056,6 +18113,8 @@ var EvCutScene = (function(){
     img.src=def.img;
     panPutLine(def);
     panPutKasa(def);
+    /* ★はじめは点（引きの絵では点としてしか見えないのが正しい） */
+    var pl0=$('ecPanLine'); if(pl0) pl0.classList.add('dots');
     /* 下端が見えている状態から始める */
     pan.style.transition='none';
     pan.style.transform='translate(-50%,0)';
@@ -18084,10 +18143,83 @@ var EvCutScene = (function(){
     if(img.complete && img.naturalWidth) go(); else img.onload=go;
   }
 
+  /* ★②アップ＝帯ごと寄って、点が字になる */
+  function panZoomIn(){
+    var pan=$('ecPan'), line=$('ecPanLine');
+    if(!pan) return;
+    panStop();                                   // カメラの上下移動は止める
+    var cur=pan.style.transform || 'translate(-50%,0)';
+    var m=cur.match(/translate\(-50%,\s*([\-\d.]+)px\)/);
+    var y=m?parseFloat(m[1]):0;
+    /* いま見ているところを中心に、1.7倍まで寄る */
+    pan.style.transformOrigin='50% '+(y+ (($('ecPanWrap')||{clientHeight:844}).clientHeight*0.42))+'px';
+    pan.style.transform='translate(-50%,'+y+'px) scale(1.7)';
+    if(line) line.classList.remove('dots');      // ★点 → 字になる
+  }
+
+  /* ★③近景＝フィールドシーン（マロースが連れて歩く／子どもが逃げる） */
+  function nearShow(name){
+    var d=EV_NEAR_SCENES[name]; if(!d) return;
+    var el=$('ecNear'); if(!el) return;
+    el.innerHTML='';
+    el.style.backgroundImage="url('"+d.bg+"')";
+    /* 字（マロースの後ろに連なる） */
+    if(d.kanji){
+      var k=d.kanji;
+      for(var i=0;i<k.n;i++){
+        var t=(k.n===1)?0:(i/(k.n-1));
+        var pi=Math.min(k.pts.length-1, i);
+        var sp=document.createElement('span');
+        sp.className='ev-kanji';
+        sp.textContent=k.chars.charAt(i%k.chars.length);
+        sp.style.left=(k.pts[pi][0]*100)+'%';
+        sp.style.top=(k.pts[pi][1]*100)+'%';
+        sp.style.fontSize='calc('+k.far+' + ('+k.near+' - '+k.far+') * '+t.toFixed(3)+')';
+        sp.style.animationDelay=(i*0.12).toFixed(2)+'s';
+        el.appendChild(sp);
+      }
+    }
+    /* ★子どもたち＝はじめは立っている（マロースのほうを見ている）。
+       　準也さんのご指示＝「そうすると 子供が逃げるのも見せられる」 */
+    if(d.kids){
+      d.kids.forEach(function(kd,ix){
+        var w=document.createElement('div'); w.className='nr kid'; w.dataset.kid=ix;
+        w.style.cssText='left:'+kd.x+';top:'+kd.y+';width:'+kd.w;
+        var im=document.createElement('img'); im.src=kd.img; w.appendChild(im);
+        el.appendChild(w);
+      });
+    }
+    /* マロース */
+    if(d.maros){
+      var mw=document.createElement('div'); mw.className='nr';
+      mw.style.cssText='left:'+d.maros.x+';top:'+d.maros.y+';width:'+d.maros.w;
+      var mi=document.createElement('img'); mi.src=d.maros.img; mw.appendChild(mi);
+      el.appendChild(mw);
+    }
+    el.classList.add('show');
+  }
+  /* 子どもが逃げる（近景の上で走らせる） */
+  function nearRunKids(name){
+    var el=$('ecNear'); if(!el) return;
+    var d=EV_NEAR_SCENES[name];
+    el.querySelectorAll('.kid').forEach(function(w,ix){
+      var dl=(d&&d.kids&&d.kids[ix]&&d.kids[ix].delay)||0;
+      w.style.animationDelay=dl+'s';
+      w.classList.add('runaway');
+    });
+  }
+  function nearHide(){
+    var el=$('ecNear'); if(!el) return;
+    el.classList.remove('show'); el.innerHTML=''; el.style.backgroundImage='';
+  }
+
   function panShowLine(){ var el=$('ecPanLine'); if(el) el.classList.add('show'); }
   function panShowKasa(){ var k=$('ecPanKasa'); if(k) k.style.opacity='0.96'; }
   function panEnd(){
     panStop(); panDef=null;
+    nearHide();
+    var p0=$('ecPan');
+    if(p0){ p0.style.transformOrigin=''; }
     var wrap=$('ecPanWrap'); if(wrap){ wrap.style.display='none'; }
     var el=$('ecPanLine'); if(el){ el.innerHTML=''; el.classList.remove('show'); }
   }
@@ -18141,7 +18273,10 @@ var EvCutScene = (function(){
     var c=cuts[step], mySeq=seq;
     /* ★2026-08-23：カットの途中で絵を切り替えられるようにした（きれいな富士山 → 登山口） */
     if(c.bg!==undefined) evPaintBg(el('ecBg'), c.bg);
-    if(c.panLine) panShowLine();      /* ★パンの絵の上の隊列を出す */
+    if(c.panLine) panShowLine();      /* ★パンの絵の上の隊列を出す（はじめは点） */
+    if(c.zoom)    panZoomIn();        /* ★②アップ＝点が字になる */
+    if(c.near)    nearShow(c.near);   /* ★③近景＝マロースが連れて歩く */
+    if(c.kidsRun) nearRunKids(c.near || 'fujiNear');   /* ★子どもが逃げる */
     if(c.panKasa) panShowKasa();      /* ★パンの絵の上の笠を出す */
     if(c.line!==undefined) kanjiLineInto(el('ecLine'), c.line);
     if(c.kasa==='in')   el('ecKasa').classList.add('show');
