@@ -7068,28 +7068,27 @@ const ZONES=[
    "TTTTT,,,,,,,,,,,,,,,,,,,TTTTTT"
   ]},
   { name:'ちちぶ', scene:'s-forest', grid:[
-    /* 第22弾：一枚絵(images/fullart/zone10.webp)に合わせた横長30×20（フェーズDの型・分離監査体制で作成）。
-       旧マップは過去弾設計書に残存。検証：verify_grid.js（行長30×20・各記号1個・BFS全到達・歩ける259/600）＋拡大クロップ全数監査。 */
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTR,,,,TTT>TTR,,,,TTTTTTT",
-    "TTTTT,,,,AT,,,..,,,R,,,TTRTTTT",
-    "TTT,R,,T,,TT,,.,,,,R,,,,TT,TTT",
-    "TTT,,T,,,R,B,T.,,,,,TT,,TT,RTT",
-    "TTT,,T,,,,,,TT.,,T,,,,E,,,,TTT",
-    "TTT,,,,RR,C,TR.,TT,,,,,TT,,TTT",
-    "TTT,T,,,,TT,D,.,R,,,,,TR,,,TTT",
-    "TTTTR,,,T,,,,,.,,,,T,,,,,,,TTT",
-    "TTR,,,T,,,,,RT.,,,T,,,,,,,TTTT",
-    "TT,,,,TT,,,RR,.,TT,,,,,,,,,TTT",
-    "TTT,,J,,,,T,,,.,R,,G,,TRR,,TTT",
-    "TTTTT,,,,TT,I,.,,,,,,,RRR,RTTT",
-    "TTTTR,,,T,,,,T.,,,,R,,,,,,TTTT",
-    "TTTT,,,,TH,,T,.,,,TRT,,,FTTTTT",
-    "TTTTTT,,T,,,T,.,,,,,,TTTTTTTTT",
-    "TTTTTTTTT,,,,T.TTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTSTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"] },
+   "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+   "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+   "TTTTTTTRTTTTTTTTTTRTTTTTTTTTTT",
+   "TTTTTTTTT,,,TT.>,TT,,,,TTRTTTT",
+   "TTTTRTTT,,,,,T.J,,,,,,,TTTTTTT",
+   "TTTTTTT,,,D,,,.,,,,,E,,,TTTRTT",
+   "TTTTT,,,,,,,,,.,,,,,,,,,,TTTTT",
+   "TTTT,,,,,,,,,,.,,,,,,,,F,,TTTT",
+   "T,,,,,,,,,,,,,.,,,,,,,,,,,,TTT",
+   "T,,,,C,,,,,,,,.,,,,,,,,,,,,,,T",
+   "T,,,,,,,,,,,,I.,,,,,,,,,,,,,,,",
+   "T,,,,,,,,,,,,,.,,,,,,,,,,,,,,,",
+   "T,,,,,,,,A,,,,.,,,,H,,,,,,,G,,",
+   "T,B,,,,,,,TT,,.,,,,,,,RR,,,,,,",
+   "T,,,,,,,,,,,,,.,,,,,,,,,,,,,,,",
+   "T,TTTTT,,,,,,,.,,,,,,,,,,TTTTT",
+   "TTTTTTT,,,,,,,.,,,,,,,,,,TTTTT",
+   "TTTTTTT,,,,,,,.,,,,,,,,,,TTTTT",
+   "TTTTTTTT,,,,,,,,,,,,,,,,,TTTTT",
+   "TTTTTT,,,,,,,,,S,,,,,,,,,,,,,,"
+  ]},
   { name:'みょうぎさん', scene:'s-mountain', grid:[
     /* 第22弾：一枚絵(images/fullart/zone11.webp)に合わせた横長30×20（フェーズDの型・分離監査体制で作成）。
        旧マップは過去弾設計書に残存。検証：verify_grid.js（行長30×20・各記号1個・BFS全到達・歩ける167/600）＋拡大クロップ全数監査。 */
@@ -14632,6 +14631,12 @@ const ZONE_OBJECTS={
     {img:'いしどうろう.webp', x:11.966, y:6.835, w:1.013, h:2.051, flip:false},
     {img:'いしどうろう.webp', x:17.022, y:6.856, w:1.013, h:2.051, flip:false},
     {img:'ベンチ.webp', x:20.022, y:8.618, w:2.0, h:1.435, flip:false},
+  ],
+  /* ★ここは 83_配置データをゲームに入れる.py が書きます（手で直さない）。
+     元データ＝障害物配置ツールの「💾 保存する」で出た zone10_配置データ.json */
+  10:[
+    {img:'いわ.webp', x:10.078, y:12.164, w:1.922, h:1.721, flip:false},
+    {img:'大仏寺_祈願札掛け.webp', x:21.713, y:11.492, w:2.525, h:2.589, flip:false},
   ],
   /* ★2026-08-17：ゾーン2の「試しの木」を消した（弾OB-1の目視確認に使った1本）。
      道のまん中に立っていて不自然なのに、そのまま公開してしまっていた（8/16の公開 e8c7633）。
