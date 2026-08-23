@@ -17781,7 +17781,7 @@ const EV_BG = {
      　ここで「わあ」と思ってもらう。★縦画面で切れないよう、山が中央に来る絵にしてある。 */
   fujiBeauty: { img:'images/fullart/ev-fuji-beauty.webp', pos:'50% 62%',
             fallback:'linear-gradient(180deg,#2f7fd0 0%,#8fc4ea 40%,#dbe9f2 58%,#7fb36a 78%,#4f8f3f 100%)' },
-  fuji  : { img:'images/fullart/ev-fuji-mikaeri.webp', pos:'68% 40%',
+  fuji  : { img:'images/fullart/ev-fuji-mikaeri.webp', pos:'50% 30%',
             fallback:'linear-gradient(180deg,#bfe3f5 0%,#eaf4fa 42%,#cfd6da 58%,#6b6560 74%,#3b3733 100%)' },
   nagara: { img:'images/fullart/ev-nagara-yoru.webp', pos:'42% 52%',
             fallback:'linear-gradient(180deg,#0b1730 0%,#16264a 45%,#1b3358 62%,#0e1c33 100%)' }
@@ -17790,7 +17790,7 @@ const EV_BG = {
    　読み取った道具＝_一時\_富士の道を絵から測る_20260823.py（確認画像で道に乗っているのを見た）
    　下（手前）→ 上（奥）の順。 */
 const EV_PATH_IMG = {
-  fuji: { w:1536, h:1024, pos:[0.68,0.40], pts:[[0.6600,0.9648], [0.6853,0.9062], [0.6918,0.8516], [0.7186,0.7930], [0.6951,0.7344], [0.7147,0.6758], [0.7882,0.6211], [0.6940,0.5625], [0.7140,0.5039], [0.6866,0.4492], [0.6950,0.3906], [0.6818,0.3320], [0.6536,0.2734], [0.6166,0.2188], [0.6007,0.1602]] }
+  fuji: { w:1536, h:1024, pos:[0.50,0.30], pts:[[0.4561,0.9648], [0.5027,0.8984], [0.4677,0.8359], [0.4583,0.7695], [0.5191,0.7070], [0.5591,0.6406], [0.4647,0.5781], [0.5525,0.5117], [0.4916,0.4453], [0.4917,0.3828], [0.5300,0.3164], [0.4748,0.2539], [0.4603,0.1875], [0.5870,0.1250], [0.7003,0.0586]] }
 };
 /* ★絵の中の位置（u,v）を、画面の中の位置（％）に直す。
    　背景は background-size:cover ＝ はみ出したぶんが左右（または上下）に切り取られる。
@@ -17814,7 +17814,7 @@ const EV_LINE = {
      　usePath を持つものは、path() ではなく道の点をたどる（画面の大きさが変わっても道の上に乗る）。 */
   climb: { chars:'隊列伝健努達徒単', n:13, light:false, usePath:'fuji',
            near:0.72, far:0.18,        // 手前の字の大きさ／奥の字の大きさ
-           from:0.14, to:0.93 },       // ★手前は画面からはみ出すので少し切る
+           from:0.06, to:0.90 },       // ★手前と奥を少し切って、画面に収める
   /* 長良川＝川を流れていく明かりの列（まだ字に見えていない状態） */
   lights:{ chars:'●●●●●●●●', n:11, light:true,
            path:function(t){
@@ -17913,7 +17913,7 @@ const EV_CUT_SCENES = {
     bg:'fujiBeauty',        /* ★はじめは「きれいな富士山」。途中で登山口の絵に切り替える */
     /* ★2026-08-23：笠の男は「絵の道の先」に置く（列のいちばん奥のさらに先）。
        　at＝道のどこか（0＝手前・1＝山頂）。絵の座標から計算するので、画面の大きさが変わってもずれない。 */
-    kasaOnPath:{ path:'fuji', at:0.98, w:'6.5%' },
+    kasaOnPath:{ path:'fuji', at:0.97, w:'7%' },
     cuts:[
       /* ★ここは「きれいな富士山」の絵のまま＝感動のカット */
       { who:'マナ',      snd:'evs52_1',  text:'……知ってる。3776メートル。' },
@@ -17973,12 +17973,18 @@ var EvCutScene = (function(){
       /* ★2026-08-23：kasaOnPath があれば、絵の中の道の先に置く（画面の％ではなく絵に合わせる） */
       if(d.kasaOnPath && EV_PATH_IMG[d.kasaOnPath.path]){
         var def=EV_PATH_IMG[d.kasaOnPath.path];
-        var r=d.kasaOnPath.at, fi=r*(def.pts.length-1);
-        var i0=Math.floor(fi), i1=Math.min(def.pts.length-1,i0+1), f=fi-i0;
-        var u=def.pts[i0][0]+(def.pts[i1][0]-def.pts[i0][0])*f;
-        var v=def.pts[i0][1]+(def.pts[i1][1]-def.pts[i0][1])*f;
-        var sc=imgToScreen(el('ecBg'), def, u, v);
-        kp={ x:sc.x.toFixed(2)+'%', y:sc.y.toFixed(2)+'%', w:d.kasaOnPath.w };
+        /* ★2026-08-23：道の先が画面の外に出ることがある（縦画面で上下も切り取られるため）。
+           　★画面に収まる いちばん奥の点を探して、そこに置く（隅で見切れないように）。 */
+        var pick=null;
+        for(var q=d.kasaOnPath.at; q>=0.30; q-=0.02){
+          var fi=q*(def.pts.length-1);
+          var i0=Math.floor(fi), i1=Math.min(def.pts.length-1,i0+1), f=fi-i0;
+          var u=def.pts[i0][0]+(def.pts[i1][0]-def.pts[i0][0])*f;
+          var v=def.pts[i0][1]+(def.pts[i1][1]-def.pts[i0][1])*f;
+          var sc=imgToScreen(el('ecBg'), def, u, v);
+          if(sc.x>12 && sc.x<88 && sc.y>16 && sc.y<70){ pick=sc; break; }
+        }
+        if(pick) kp={ x:pick.x.toFixed(2)+'%', y:pick.y.toFixed(2)+'%', w:d.kasaOnPath.w };
       }
       k.style.setProperty('--kx',kp.x); k.style.setProperty('--ky',kp.y); k.style.setProperty('--kw',kp.w);
     }
