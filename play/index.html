@@ -1733,8 +1733,12 @@
   /* ★③近景（フィールドシーン）＝マロースが歩いて連れている／子どもが逃げる。
      　準也さんのご指示＝「フィールドシーン（新たに設計）ここで ようやく マローズが連れて歩いている。
      　　そうすると 子供が逃げるのも見せられる」 */
-  #ecNear{position:absolute;inset:0;z-index:3;opacity:0;transition:opacity 1.1s ease;
-    background-size:cover;background-position:50% 62%;pointer-events:none}
+  /* ★2026-08-23：イベントシーンの中（z-index 3）でも、立ち絵の後ろ（画面いっぱい）でも使う。
+     　立ち絵から呼ぶときは #ecOverlay を出さないので、position:fixed で画面に直接出す。 */
+  #ecNear{position:fixed;top:0;bottom:0;left:50%;transform:translateX(-50%);
+    width:min(100vw,480px);z-index:9991;opacity:0;transition:opacity 1.1s ease;
+    background-size:cover;background-position:50% 62%;pointer-events:none;display:none}
+  #ecNear.show{display:block;opacity:1}
   #ecNear.show{opacity:1}
   #ecNear .nr{position:absolute;transform:translate(-50%,-100%);pointer-events:none}
   #ecNear .nr img{display:block;width:100%;height:auto;
@@ -1800,7 +1804,7 @@
   /* 去っていく＝さらに小さく、上へ */
   #ecKasa.away{transform:translate(-50%,-100%) translateY(-34px) scale(.62);opacity:.5}
   /* 台詞の窓＝立ち絵のときより大きく、画面いっぱいに近い（格上） */
-  #ecBox{position:absolute;left:14px;right:14px;bottom:62px;z-index:7;
+  #ecBox{position:absolute;left:14px;right:14px;bottom:62px;z-index:9993;
     background:rgba(10,12,26,.86);border:2px solid rgba(255,255,255,.26);
     border-radius:14px;padding:16px 18px 18px;min-height:88px;
     box-shadow:0 10px 30px rgba(0,0,0,.6)}
@@ -1809,7 +1813,7 @@
   #ecText.ec-maros{color:#cfd8e6;letter-spacing:.06em}
   #ecNext{position:absolute;right:14px;bottom:6px;color:#fff;opacity:.7;font-size:13px;
     animation:evBob 1s ease-in-out infinite}
-  .ec-skip{position:absolute;right:10px;top:52px;z-index:9;
+  .ec-skip{position:absolute;right:10px;top:52px;z-index:9993;
     background:rgba(0,0,0,.55);color:#fff;border:1px solid rgba(255,255,255,.35);
     border-radius:99px;padding:6px 14px;font-size:12px;font-weight:800;font-family:inherit;cursor:pointer}
   .ship-scene-overlay{position:fixed;top:0;bottom:0;left:50%;transform:translateX(-50%);
@@ -16469,6 +16473,15 @@ const EV_SCENES = {
      正本＝設計書\09_計画と方針\【台本】4年チュウブの20話_20260822.md
      ★この学年の芯＝マロースを「犯人だ」と確信させる（準也さんのご指示）。白い要素は置かない。
      ★イージーは いちばん親切に見せる（内面は6年まで動かさない）。 */
+  /* ===== 3年40 うどんの さと（2026-08-23・ずっと残っていた宿題）=====
+     ★立ち絵 →【イベントシーン】→ 立ち絵 の三段構え（4年52と同じ格）。
+     　設計＝【計画】3年カンサイの20話_20260820.md §2-2「この学年の山場」なので、格上で見せる。 */
+  40: [
+    { who:'mana',  dark:false, snd:null, text:'……あ。子どもたちが、大きな 人を かこんでる。' },
+    { scene:'udon40' },
+    { who:'manaK', dark:false, snd:null, text:'……あの人、おわない。' },
+    { who:'manaK', dark:false, snd:null, text:'……ただ、立ってる。' }
+  ],
   47: [
     { who:'mana',  dark:false, snd:'ev47_1', text:'海の むこうに、しまが ぽつんと ういてる。……あそこまで、どうやって 行くの？' },
     { who:'mana',  dark:false, snd:'ev47_2', text:'時こく表の 字が あばれてて、船が 出ないの。……あ。' },
@@ -17040,9 +17053,10 @@ const ZONE_TALK = {
   },
   40: {
     title:'まだ 生きている',
+    /* ★2026-08-23：この話の「事件」は EV_SCENES[40]（立ち絵→イベントシーン→立ち絵）が担当する。
+       　★in は「だしの におい」の1行だけ＝場所の匂いを先に見せてから山場へ。 */
     in:[
-      { snd:'zt40i1', text:'おなかが 鳴っちゃった。……だしの におい。' },
-      { snd:'zt40i2', text:'……あ。子どもたちが、大きな 人を かこんでる。' }
+      { snd:'zt40i1', text:'おなかが 鳴っちゃった。……だしの におい。' }
     ],
     out:[
       { snd:'zt40o1', text:'「この字は、まだ 生きている」……そう、聞こえた。' },
@@ -17871,6 +17885,19 @@ const EV_PAN_SCENES = {
    　　そうすると 子供が逃げるのも見せられる」
    ★人・字は絵ではなく、いまある素材を置いて作る（絵を足さない）。 */
 const EV_NEAR_SCENES = {
+  /* ★2026-08-23：3年40「うどんの さと」の山場（設計＝3年の§2-2・ずっと残っていた宿題）。
+     ★4年52と同じ「近景」の仕組みを使う。絵は1枚も足していない。
+     ⚠️★**ここでは字を連れていない。**3年は「いつも先にいた」まで。
+     　　「連れている」を見せるのは4年から（順番を崩すと4年の確信が弱くなる）。 */
+  udonNear: {
+    bg:'images/fullart/zone40.webp',
+    /* 笠の男＝子どもたちに向かって立っている（追わない・ただ立っている） */
+    maros:{ img:'images/bust/maros-back.webp', x:'50%', y:'62%', w:'20%' },
+    /* ★字は連れていない（kanji を持たせない） */
+    kids:[ { img:'images/sprites/kid-scared-m-a.webp', x:'30%', y:'78%', w:'13%', delay:0 },
+           { img:'images/sprites/kid-scared-f-a.webp', x:'70%', y:'82%', w:'15%', delay:.28 },
+           { img:'images/sprites/kid-scared-m-b.webp', x:'46%', y:'86%', w:'14%', delay:.52 } ]
+  },
   fujiNear: {
     bg:'images/fullart/ev-fuji-mikaeri.webp',   /* 登山道の近景（頂上を描かない絵） */
     /* マロース＝道の奥へ歩いていく後ろ姿 */
@@ -18007,6 +18034,19 @@ function evSetLine(name){ kanjiLineInto($('evLine'), name); }
    ・作りは 船シーン（ShipScene）と同じ流儀＝全画面・とばすボタン・世代番号ガード
    =================================================================== */
 const EV_CUT_SCENES = {
+  /* ★2026-08-23：3年40「うどんの さと」の山場（設計＝3年の§2-2「筋の通った勘違い」）。
+     　見えるのは この順番＝①男が子どもに大きな声で教えている ②言っていることは正しいのに
+     　こわく聞こえる ③子どもが逃げる ④★男は追わない（自分の目で見る）→⑤町の字があばれる
+     ⚠️★**3年では字を連れていない。**「連れている」を見せるのは4年から（順番を崩さない）。 */
+  udon40: {
+    near0:'udonNear',        /* ★はじめから近景を出す（パンは使わない＝3年はまだ「大きさ」の話ではない） */
+    kasa:{ x:'50%', y:'20%', w:'0%' },
+    cuts:[
+      { who:'マナ',     snd:null, text:'なにか、言ってる。……大きな こえ。' },
+      { who:'マロース', snd:null, maros:true, text:'……この字は、まだ 生きている。' },
+      { who:'マナ',     snd:null, kidsRun:true, near:'udonNear', text:'……にげた。子どもたちが、みんな。' }
+    ]
+  },
   /* ★ゾーン52＝山梨・富士山の吉田口登山道。
      ★マナは全部知っている（AIだから画像は何まいも見た）。でも実物を前にして驚く。
        これがイージーとの差＝イージーは6年まで一度も驚かない。 */
@@ -18202,7 +18242,7 @@ var EvCutScene = (function(){
   /* 子どもが逃げる（近景の上で走らせる） */
   function nearRunKids(name){
     var el=$('ecNear'); if(!el) return;
-    var d=EV_NEAR_SCENES[name];
+    var d=name?EV_NEAR_SCENES[name]:null;
     el.querySelectorAll('.kid').forEach(function(w,ix){
       var dl=(d&&d.kids&&d.kids[ix]&&d.kids[ix].delay)||0;
       w.style.animationDelay=dl+'s';
@@ -18235,6 +18275,7 @@ var EvCutScene = (function(){
     /* ★パンを使うシーンなら、縦長の絵で見上げパンを始める */
     panEnd();
     if(d.pan){ panStart(d.pan); }
+    if(d.near0){ nearShow(d.near0); }   /* ★はじめから近景を出すシーン（3年40） */
     /* 背景（絵がまだ無ければ仮の空＝動きだけ先に確かめられる） */
     evPaintBg(el('ecBg'), d.pan ? null : d.bg);
     kanjiLineInto(el('ecLine'), null);
@@ -18314,7 +18355,10 @@ var EvCutScene = (function(){
     if(cb) cb();
   }
 
-  return { start:start, tap:tap, skip:skip, isActive:function(){ return active; } };
+  return { start:start, tap:tap, skip:skip, isActive:function(){ return active; },
+           /* ★2026-08-23：立ち絵の会話からも近景を出せるようにする（3年40の山場で使う）。
+              　イベントシーン（格上）を出すほどではないが、絵と人は見せたい場面用。 */
+           near:nearShow, nearKids:nearRunKids, nearOff:nearHide };
 })();
 
 function evAdvance(){
@@ -18354,6 +18398,10 @@ function evAdvance(){
   /* ★2026-08-23：一枚絵の背景と 字の隊列（書いてある行だけ切り替える＝書いていない行は前のまま） */
   if(s.bg   !== undefined) evSetBg(s.bg);
   if(s.line !== undefined) evSetLine(s.line);
+  /* ★立ち絵の会話からも「近景」を出せるようにした（3年40の山場）。
+     　★イベントシーン（格上・全画面）ではなく、立ち絵の後ろに絵と人を出す使い方。 */
+  if(s.near)    EvCutScene.near(s.near);
+  if(s.kidsRun) EvCutScene.nearKids(s.near || null);
   $('evText').textContent=s.text;
   $('evText').className=(s.who==='easy')?'ev-easy':'';    // イージーが喋るときだけ文字色を変える
   /* ★弾VO-2（2026-08-17）：この行の声を鳴らす（置き場所は audio\battle\）。
@@ -18371,6 +18419,7 @@ function evFinish(){
   $('evLeft').classList.add('hide'); $('evRight').classList.add('hide');
   $('evText').textContent=''; $('evText').className='';
   evSetBg(null); evSetLine(null);   // ★2026-08-23：背景と隊列も片づける
+  if(typeof EvCutScene!=='undefined' && EvCutScene.nearOff) EvCutScene.nearOff();
   const cb=evDoneCb;
   evDoneCb=null; evScript=null; evStep=-1;
   if(evSeq!==fieldSeq) return;   // ワープ等で離脱済みなら以降は何もしない（hakaseTalkOnceと同じ誤発火防止）
