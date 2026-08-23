@@ -13285,11 +13285,22 @@ function launchEventTwinBossIntro(zone){
          ここでの hakaseTalkOnce は呼ばない。 */
       if(zone===44 && typeof YojiFieldScene!=='undefined'){
         bgmStop();                              // 氷の城と同じ＝シーンの前にフィールド曲を断つ
-        YojiFieldScene.start(()=>{
-          const scr0=$('screen-field');
-          if(!scr0 || !scr0.classList.contains('active')) return;   // 離脱していたら始めない
-          launchTwinBossBattle(zone);
-        });
+        /* ★2026-08-24：3年44の出口（設計＝3年の§2-4・準也さんのご発案）。
+           　★出口の方へ去っていく背中 →（追う）→ そこで四字熟語モンが現れる。
+           　★見え方＝「あの人が、これを 呼んだのか」。説明は一切しない。
+           ⚠️★四字熟語モンの演出（YojiFieldScene）は1文字も変えていない。前に足しただけ。 */
+        const toYoji=()=>{
+          YojiFieldScene.start(()=>{
+            const scr0=$('screen-field');
+            if(!scr0 || !scr0.classList.contains('active')) return;   // 離脱していたら始めない
+            launchTwinBossBattle(zone);
+          });
+        };
+        if(typeof EvCutScene!=='undefined' && EV_CUT_SCENES && EV_CUT_SCENES.nangoku44){
+          EvCutScene.start('nangoku44', toYoji);
+        }else{
+          toYoji();
+        }
         return;
       }
       const line = yojiTwinIntroLine(zone);   // 弾5-6§3：ゾーン別のはかせ一言（44は原文で回帰保証）
@@ -17889,6 +17900,15 @@ const EV_NEAR_SCENES = {
      ★4年52と同じ「近景」の仕組みを使う。絵は1枚も足していない。
      ⚠️★**ここでは字を連れていない。**3年は「いつも先にいた」まで。
      　　「連れている」を見せるのは4年から（順番を崩すと4年の確信が弱くなる）。 */
+  /* ★2026-08-24：3年44「なんごくの まち」の出口（設計＝3年の§2-4・準也さんのご発案）。
+     　★出口の方へ去っていく背中 →（追う）→ 四字熟語モンが現れる（既存の演出）
+     　★見え方＝「あの人が、これを 呼んだのか」。説明はしない。 */
+  nangokuNear: {
+    bg:'images/fullart/zone44.webp',
+    /* ★遠く（出口のほう）へ去っていく＝小さく置く */
+    maros:{ img:'images/bust/maros-back.webp', x:'52%', y:'42%', w:'12%' }
+    /* ★字は連れていない（3年なので）。★子どももいない（もう夜・町のはずれ） */
+  },
   udonNear: {
     bg:'images/fullart/zone40.webp',
     /* 笠の男＝子どもたちに向かって立っている（追わない・ただ立っている） */
@@ -18038,6 +18058,16 @@ const EV_CUT_SCENES = {
      　見えるのは この順番＝①男が子どもに大きな声で教えている ②言っていることは正しいのに
      　こわく聞こえる ③子どもが逃げる ④★男は追わない（自分の目で見る）→⑤町の字があばれる
      ⚠️★**3年では字を連れていない。**「連れている」を見せるのは4年から（順番を崩さない）。 */
+  /* ★2026-08-24：3年44の出口。★短い＝3行だけ。説明しないのが効く。 */
+  nangoku44: {
+    near0:'nangokuNear',
+    kasa:{ x:'50%', y:'20%', w:'0%' },
+    cuts:[
+      { who:'マナ', snd:null, text:'……あ。' },
+      { who:'マナ', snd:null, text:'出口の ほうに、あの せなか。' },
+      { who:'マナ', snd:null, text:'……行っちゃう。追いかけよう！' }
+    ]
+  },
   udon40: {
     near0:'udonNear',        /* ★はじめから近景を出す（パンは使わない＝3年はまだ「大きさ」の話ではない） */
     kasa:{ x:'50%', y:'20%', w:'0%' },
@@ -18202,6 +18232,10 @@ var EvCutScene = (function(){
   function nearShow(name){
     var d=EV_NEAR_SCENES[name]; if(!d) return;
     var el=$('ecNear'); if(!el) return;
+    /* ★2026-08-24：すでに同じ近景が出ているなら作り直さない。
+       　作り直すと、立っている子どもが消えて「逃げる」が空振りする（実機で見つけた）。 */
+    if(el.classList.contains('show') && el.dataset.near===name) return;
+    el.dataset.near=name;
     el.innerHTML='';
     el.style.backgroundImage="url('"+d.bg+"')";
     /* 字（マロースの後ろに連なる） */
@@ -18251,7 +18285,7 @@ var EvCutScene = (function(){
   }
   function nearHide(){
     var el=$('ecNear'); if(!el) return;
-    el.classList.remove('show'); el.innerHTML=''; el.style.backgroundImage='';
+    el.classList.remove('show'); el.innerHTML=''; el.style.backgroundImage=''; el.dataset.near='';
   }
 
   function panShowLine(){ var el=$('ecPanLine'); if(el) el.classList.add('show'); }
