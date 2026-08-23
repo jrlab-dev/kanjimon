@@ -1720,6 +1720,27 @@
     width:min(100vw,480px);z-index:9990;display:none;background:#000;overflow:hidden;
     font-family:inherit;-webkit-user-select:none;user-select:none;cursor:pointer}
   .ec-overlay.show{display:block}
+  /* ★2026-08-23：見上げパン（氷の城と同じ作り）。
+     　縦長の絵を「幅いっぱい」に置き、下端から上へ translateY で動かす。
+     　★字の隊列も この帯の中に入れる＝絵と一緒に動くので、ずっと道の上に乗ったまま。 */
+  #ecPanWrap{position:absolute;inset:0;overflow:hidden;z-index:2}
+  /* ★2026-08-23：縦長の絵（1:1.5）を そのまま幅いっぱいに置くと、縦画面（1:2.16）より短くて
+     　上に黒い帯が出てしまう。★幅を広げて（＝拡大して）縦に伸ばし、動かせる余地を作る。
+     　幅を何％にするかは JS で計算して入れる（--panw）。 */
+  #ecPan{position:absolute;left:50%;width:var(--panw,160%);bottom:0;
+    transform:translate(-50%,0);will-change:transform}
+  #ecPanImg{display:block;width:100%;height:auto}
+  #ecPanLine{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity 1.2s ease}
+  #ecPanLine.show{opacity:1}
+  /* ★2026-08-23：パンの中の字は、絵を拡大したぶん小さく見えてしまう。
+     　★絵の幅（＝この帯の幅）を基準にした大きさにして、拡大に合わせて大きくする。 */
+  /* ★2026-08-23：山肌が暗いので、字は「はっきり赤く光る」ようにする（沈まないこと）。
+     　★透かし（--o）は使わず、奥の字も濃さを保つ＝小ささだけで遠さを出す。 */
+  #ecPanLine .ev-kanji{font-size:5.4cqw;
+    color:#ff3b1f;opacity:1 !important;
+    -webkit-text-stroke:0.055em rgba(255,235,225,.95);
+    text-shadow:0 0 12px rgba(255,90,40,1),0 0 30px rgba(255,60,10,.9),0 2px 6px rgba(0,0,0,.85)}
+  #ecPan{container-type:inline-size}
   /* 背景の一枚絵＝ゆっくり寄る（絵がまだ無いあいだは仮の空でも動きが分かる） */
   /* ★2026-08-23：縦画面（390×844）に 横長の絵（1536×1024）を入れると 左右が大きく切れる。
      　どこを見せるかは シーンごとに変える（--bgpos）＝実機の写真で合わせた。 */
@@ -3977,6 +3998,13 @@
      img に src は書かない（空srcはページ自身を読みに行くため）。JS側でEV_CHARAの絵を入れる。 -->
 <!-- ★2026-08-23：イベントシーン（立ち絵より格上）。船・新幹線と同じ position:fixed の全画面。 -->
 <div class="ec-overlay" id="ecOverlay" onclick="EvCutScene.tap()">
+  <!-- ★見上げパン用（縦長の絵＋その上に乗る字の隊列）。使わないシーンでは出さない -->
+  <div id="ecPanWrap" style="display:none">
+    <div id="ecPan">
+      <img id="ecPanImg" alt="">
+      <div id="ecPanLine"></div>
+    </div>
+  </div>
   <div id="ecBg"></div>
   <div id="ecLine"></div>
   <img id="ecKasa" src="images/bust/maros-back.webp" alt="">
@@ -17789,6 +17817,22 @@ const EV_BG = {
 /* ★2026-08-23：絵の中の「道」の位置（0〜1）。★目分量ではなく、絵から機械で読み取った値。
    　読み取った道具＝_一時\_富士の道を絵から測る_20260823.py（確認画像で道に乗っているのを見た）
    　下（手前）→ 上（奥）の順。 */
+/* ★2026-08-23：見上げパン用の縦長の絵。
+   　pan＝下端から上端まで何秒かけて動かすか（氷の城は7秒）。
+   　lineFrom/lineTo＝道のどこからどこまでに字を並べるか（0＝下・1＝上）。 */
+const EV_PAN_SCENES = {
+  fujiPan: {
+    img:'images/fullart/ev-fuji-pan.webp', w:1024, h:1536,
+    sec:7.0,
+    /* ★絵の中の道（0〜1）。★目分量ではなく、絵から機械で読み取った（_富士の道を測る_縦長.py）。
+       　下（鳥居の下）→ 上（雪の始まるあたり）の順。 */
+    pts:[[0.5063,0.9746], [0.5628,0.9329], [0.6426,0.8887], [0.4996,0.8470], [0.4747,0.8053], [0.4680,0.7637], [0.5353,0.7194], [0.4837,0.6777], [0.4430,0.6361], [0.4226,0.5918], [0.5165,0.5501], [0.5311,0.5085], [0.5676,0.4668], [0.5390,0.4225], [0.4754,0.3652]],
+    /* ★パンが終わったとき画面に見えているのは 絵の上のほう。★そこに合わせて並べる（下は流れ去っている） */
+    chars:'隊列伝健努達徒単', n:8, from:0.60, to:1.00,
+    near:0.95, far:0.40,
+    kasaAt:0.995, kasaW:'2.6%'
+  }
+};
 const EV_PATH_IMG = {
   fuji: { w:1536, h:1024, pos:[0.50,0.30], pts:[[0.4561,0.9648], [0.5027,0.8984], [0.4677,0.8359], [0.4583,0.7695], [0.5191,0.7070], [0.5591,0.6406], [0.4647,0.5781], [0.5525,0.5117], [0.4916,0.4453], [0.4917,0.3828], [0.5300,0.3164], [0.4748,0.2539], [0.4603,0.1875], [0.5870,0.1250], [0.7003,0.0586]] }
 };
@@ -17910,29 +17954,29 @@ const EV_CUT_SCENES = {
      ★マナは全部知っている（AIだから画像は何まいも見た）。でも実物を前にして驚く。
        これがイージーとの差＝イージーは6年まで一度も驚かない。 */
   fuji52: {
-    bg:'fujiBeauty',        /* ★はじめは「きれいな富士山」。途中で登山口の絵に切り替える */
-    /* ★2026-08-23：笠の男は「絵の道の先」に置く（列のいちばん奥のさらに先）。
-       　at＝道のどこか（0＝手前・1＝山頂）。絵の座標から計算するので、画面の大きさが変わってもずれない。 */
-    kasaOnPath:{ path:'fuji', at:0.97, w:'7%' },
+    /* ★2026-08-23：氷の城と同じ「見上げパン」。縦長の絵1枚を 下端から上へ7秒かけて動かす。
+       　準也さんのご指示＝「富士山は下から見上げる画像が良い。氷の城のように下から見上げる感じに」
+       ★この絵1枚に 鳥居 → つづら折りの道 → 雪の頂上 が入っているので、
+       　感動のカットと 字の隊列を 同じ絵でまかなえる＝雪の量が食いちがう問題が起きない。 */
+    pan:'fujiPan',
+    kasa:{ x:'50%', y:'20%', w:'0%' },   /* パンの中に笠を置くので、こちらは使わない */
     cuts:[
-      /* ★ここは「きれいな富士山」の絵のまま＝感動のカット */
+      /* ★ここはカメラが下から上へ動いている＝見上げていく */
       { who:'マナ',      snd:'evs52_1',  text:'……知ってる。3776メートル。' },
       { who:'マナ',      snd:'evs52_2',  text:'写真も、何まいも 見た。形も、色も、ぜんぶ。' },
       { who:'マナ',      snd:'evs52_3',  text:'……でも。' },
       { who:'マナ',      snd:'evs52_4',  text:'……こんなに 大きいなんて、知らなかった。' },
-      /* ★★ここで登山口の絵へ切り替える（目を落とす＝道が見える） */
-      { who:'マナ',      snd:'evs52_5',  bg:'fuji', text:'ここから てっぺんまで、道が ずっと つづいてるの。' },
+      { who:'マナ',      snd:'evs52_5',  text:'ここから てっぺんまで、道が ずっと つづいてるの。' },
       { who:'マナ',      snd:'evs52_6',  text:'……あれ？' },
-      /* ★ここで字の隊列が現れる */
-      { who:'マナ',      snd:'evs52_7',  line:'climb', text:'……道に、字が いる。ぞろぞろ ならんでる。あんなに たくさん。' },
-      { who:'マナ',      snd:'evs52_8',  kasa:'in', text:'……先に、大きな かさ。あの人だ。' },
+      /* ★ここで字の隊列が現れる（道の上・絵と一緒に動く） */
+      { who:'マナ',      snd:'evs52_7',  panLine:true, text:'……道に、字が いる。ぞろぞろ ならんでる。あんなに たくさん。' },
+      { who:'マナ',      snd:'evs52_8',  panKasa:true, text:'……先に、大きな かさ。あの人だ。' },
       { who:'マナ',      snd:'evs52_9',  text:'子どもたちが いる。あの人、近づいて……' },
       { who:'マナ',      snd:'evs52_10', text:'……にげた。子どもたちが、みんな にげちゃった。' },
       { who:'マロース',  snd:null, maros:true, text:'……まだ、たりない。' },
-      { who:'マナ',      snd:'evs52_11', kasa:'away', text:'……上って行く。字も、ついて行く。' }
+      { who:'マナ',      snd:'evs52_11', text:'……上って行く。字も、ついて行く。' }
     ]
   },
-  /* ★ゾーン57＝岐阜・長良川。★絵を差し替えるのではなく、同じ画面のまま あかりが1つずつ字に変わる。 */
   nagara57: {
     bg:'nagara',
     /* ★こちらは列が右上へ伸びるので、先は右のほう（EV_LINE.lights の t=1 に合わせた） */
@@ -17956,6 +18000,95 @@ var EvCutScene = (function(){
   function el(id){ return document.getElementById(id); }
   function clearTimer(){ if(timer){ clearTimeout(timer); timer=null; } }
 
+  /* ★2026-08-23：見上げパン（氷の城と同じ作り）。
+     　縦長の絵を幅いっぱいに置き、下端（translateY 0）から上端へ動かす。 */
+  var panDef=null, panRaf=null, panT0=0, panDist=0, panSec=0;
+
+  function panStop(){ if(panRaf){ cancelAnimationFrame(panRaf); panRaf=null; } }
+
+  /* 字の隊列を、縦長の絵の中の道に並べる（帯の中なので絵と一緒に動く） */
+  function panPutLine(def){
+    var el=$('ecPanLine'); if(!el) return;
+    el.innerHTML='';
+    for(var i=0;i<def.n;i++){
+      var t=(def.n===1)?0:(i/(def.n-1));
+      var r=def.from+(def.to-def.from)*t;
+      var fi=r*(def.pts.length-1);
+      var i0=Math.floor(fi), i1=Math.min(def.pts.length-1,i0+1), f=fi-i0;
+      var u=def.pts[i0][0]+(def.pts[i1][0]-def.pts[i0][0])*f;
+      var v=def.pts[i0][1]+(def.pts[i1][1]-def.pts[i0][1])*f;
+      var sp=document.createElement('span');
+      sp.className='ev-kanji';
+      sp.textContent=def.chars.charAt(i%def.chars.length);
+      sp.style.left=(u*100)+'%'; sp.style.top=(v*100)+'%';
+      sp.style.setProperty('--k',(def.near+(def.far-def.near)*t).toFixed(3));
+      sp.style.setProperty('--o',(1-t*0.45).toFixed(3));
+      sp.style.animationDelay=(i*0.13).toFixed(2)+'s';
+      el.appendChild(sp);
+    }
+  }
+
+  /* 笠の男を 道の先に（帯の中に入れる＝絵と一緒に動く） */
+  function panPutKasa(def){
+    var el=$('ecPanLine'); if(!el) return;
+    var fi=def.kasaAt*(def.pts.length-1);
+    var i0=Math.floor(fi), i1=Math.min(def.pts.length-1,i0+1), f=fi-i0;
+    var u=def.pts[i0][0]+(def.pts[i1][0]-def.pts[i0][0])*f;
+    var v=def.pts[i0][1]+(def.pts[i1][1]-def.pts[i0][1])*f;
+    var img=document.createElement('img');
+    img.id='ecPanKasa';
+    img.src='images/bust/maros-back.webp';
+    img.style.cssText='position:absolute;left:'+(u*100)+'%;top:'+(v*100)+'%;'+
+      'width:'+def.kasaW+';transform:translate(-50%,-100%);opacity:0;'+
+      'transition:opacity 1.2s ease;pointer-events:none;'+
+      'filter:drop-shadow(0 3px 10px rgba(0,0,0,.7))';
+    el.appendChild(img);
+  }
+
+  function panStart(name){
+    var def=EV_PAN_SCENES[name]; if(!def) return;
+    panDef=def;
+    var wrap=$('ecPanWrap'), pan=$('ecPan'), img=$('ecPanImg');
+    wrap.style.display='';
+    img.src=def.img;
+    panPutLine(def);
+    panPutKasa(def);
+    /* 下端が見えている状態から始める */
+    pan.style.transition='none';
+    pan.style.transform='translate(-50%,0)';
+    var go=function(){
+      var w=wrap.clientWidth||390, h=wrap.clientHeight||844;
+      /* ★絵の高さが 画面の「1.55倍」になるように幅を広げる＝ちゃんと動くパンになる */
+      var wantH=h*1.55;
+      var needW=wantH*(def.w/def.h);
+      var pct=Math.max(100, Math.round(needW/w*100));
+      pan.style.setProperty('--panw', pct+'%');
+      var ih=(w*pct/100)*(def.h/def.w);    // 実際に置いたときの絵の高さ
+      panDist=Math.max(0, Math.round(ih-h));
+      panSec=def.sec||7.0;
+      panT0=performance.now();
+      panStop();
+      var step=function(now){
+        if(!panDef) return;
+        var p=Math.min(1,(now-panT0)/(panSec*1000));
+        /* ゆっくり → 少し速く → 最後はゆっくり止まる（氷の城と同じ息づかい） */
+        var e=p<0.5 ? 2*p*p : 1-Math.pow(-2*p+2,2)/2;
+        pan.style.transform='translate(-50%,'+(e*panDist)+'px)';
+        if(p<1) panRaf=requestAnimationFrame(step); else panRaf=null;
+      };
+      panRaf=requestAnimationFrame(step);
+    };
+    if(img.complete && img.naturalWidth) go(); else img.onload=go;
+  }
+
+  function panShowLine(){ var el=$('ecPanLine'); if(el) el.classList.add('show'); }
+  function panShowKasa(){ var k=$('ecPanKasa'); if(k) k.style.opacity='0.96'; }
+  function panEnd(){
+    panStop(); panDef=null;
+    var wrap=$('ecPanWrap'); if(wrap){ wrap.style.display='none'; }
+    var el=$('ecPanLine'); if(el){ el.innerHTML=''; el.classList.remove('show'); }
+  }
+
   function start(name, done){
     var d=EV_CUT_SCENES[name];
     if(!d){ if(done) done(); return; }
@@ -17963,8 +18096,11 @@ var EvCutScene = (function(){
     active=true; cuts=d.cuts; onDone=done||null; step=-1; seq++;
     var mySeq=seq;
     var ov=el('ecOverlay');
+    /* ★パンを使うシーンなら、縦長の絵で見上げパンを始める */
+    panEnd();
+    if(d.pan){ panStart(d.pan); }
     /* 背景（絵がまだ無ければ仮の空＝動きだけ先に確かめられる） */
-    evPaintBg(el('ecBg'), d.bg);
+    evPaintBg(el('ecBg'), d.pan ? null : d.bg);
     kanjiLineInto(el('ecLine'), null);
     var k=el('ecKasa');
     if(k){
@@ -18002,6 +18138,8 @@ var EvCutScene = (function(){
     var c=cuts[step], mySeq=seq;
     /* ★2026-08-23：カットの途中で絵を切り替えられるようにした（きれいな富士山 → 登山口） */
     if(c.bg!==undefined) evPaintBg(el('ecBg'), c.bg);
+    if(c.panLine) panShowLine();      /* ★パンの絵の上の隊列を出す */
+    if(c.panKasa) panShowKasa();      /* ★パンの絵の上の笠を出す */
     if(c.line!==undefined) kanjiLineInto(el('ecLine'), c.line);
     if(c.kasa==='in')   el('ecKasa').classList.add('show');
     if(c.kasa==='away') el('ecKasa').classList.add('away');
@@ -18025,6 +18163,7 @@ var EvCutScene = (function(){
     if(!active) return;
     clearTimer();
     active=false; seq++;
+    panEnd();
     if(typeof stopBattleHakaseVoice==='function') stopBattleHakaseVoice();
     var ov=el('ecOverlay');
     ov.classList.remove('show');
