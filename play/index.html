@@ -17882,11 +17882,12 @@ const EV_NEAR_SCENES = {
                  [0.52,0.88],[0.46,0.94],[0.51,1.00],[0.44,1.06]],
             near:'12.5cqw', far:'4.2cqw' },
     /* 逃げる子ども＝手前へ走ってくる（いまある町の人の絵を使う） */
-    /* ★歩行シート（768×512の6コマ）をそのまま出すと6人分が並んでしまう。
-       　★正面のコマ1つだけを切り出したもの（kid-front-*.webp）を使う。 */
-    kids:[ { img:'images/sprites/kid-front-m-a.webp', x:'26%', y:'72%', w:'11%', delay:0 },
-           { img:'images/sprites/kid-front-f-a.webp', x:'72%', y:'76%', w:'13%', delay:.30 },
-           { img:'images/sprites/kid-front-m-b.webp', x:'40%', y:'80%', w:'12%', delay:.55 } ]
+    /* ★2026-08-23：★**こわがった顔で走ってくる子ども**を新しく描いた（kid-scared-*.webp）。
+       　それまでは町の人の絵を流用していたので、逃げる場面なのに笑っていた。
+       　★同じ子・同じ服のまま、顔だけを変えている（見本を渡してCodexに描かせた）。 */
+    kids:[ { img:'images/sprites/kid-scared-m-a.webp', x:'26%', y:'72%', w:'11%', delay:0 },
+           { img:'images/sprites/kid-scared-f-a.webp', x:'72%', y:'76%', w:'13%', delay:.30 },
+           { img:'images/sprites/kid-scared-m-b.webp', x:'40%', y:'80%', w:'12%', delay:.55 } ]
   }
 };
 const EV_PATH_IMG = {
