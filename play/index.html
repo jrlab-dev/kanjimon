@@ -1321,8 +1321,17 @@
   .tile.t-path{background:linear-gradient(180deg,var(--path-a),var(--path-b));color:transparent}
   .tile.t-grass{background:linear-gradient(180deg,var(--grass-a),var(--grass-b));color:transparent}
   .tile.t-start{background:linear-gradient(180deg,#fde68a,#fbbf24);color:#7c4a03}
-  .tile.t-gate{background:linear-gradient(180deg,#475569,#334155);color:#fbbf24}
-  .tile.t-gate.open{background:linear-gradient(180deg,#fef9c3,#facc15);color:#7c4a03;animation:gateGlow 1.2s ease-in-out infinite}
+  /* ★2026-08-23 準也さんのご指摘＝「ゲートって透明にできないですかね。なんかその変なのが
+     出ちゃってて、今の表示の仕方がすごく良くない」（一枚絵の上に灰色の板と🚧が乗って絵を隠していた）。
+     タイルセット画像を持つゾーンは1だけで、残り101ゾーンはこの絵文字フォールバックに落ちていた。
+     → 閉じているゲートは何も描かない（通れない壁のマスも同じく何も描いていないので、それに合わせる）。
+       開いたら、行き先が分かるように、四角い板ではなく“にじむ光”で示す。
+     ⚠️画像があるゾーンは has-img が付いて下の行が勝ち、今までどおり門の絵が出る。 */
+  .tile.t-gate{background:transparent;color:transparent}
+  /* ★2026-08-23：gateGlow（内側に白い影）は四角い縁が見えてしまうので、
+     画像なしのゲートは「濃さの明滅」だけにする（縁が出ない）。 */
+  .tile.t-gate.open{background:radial-gradient(circle,rgba(255,247,190,.60) 0%,rgba(250,204,21,.22) 62%,transparent 100%);color:#7c4a03;animation:gateGlowSoft 1.4s ease-in-out infinite}
+  @keyframes gateGlowSoft{0%,100%{opacity:.72}50%{opacity:1}}
   .tile.t-gate.open.has-img{background:none;animation:gateGlowImg 1.2s ease-in-out infinite}   /* 手直し みがき§1：画像使用時は四角い発光板でなく門の形（透明部分）に沿ったdrop-shadow点滅に差し替え */
   .tile.t-spot{background:linear-gradient(180deg,#ffffff,#fef3c7);color:#7c4a03}
   .tile.t-spot.got{background:linear-gradient(180deg,#fef9c3,#fde68a)}
@@ -1704,6 +1713,53 @@
    ★本体に入れるときはこのCSS/DOM/JSをそのまま移植できるように書いている。
 =========================================================== */
   /* ---- オーバーレイ（#appと同じ幅・中央。パソコンで見切れない＝改善メモ_0725 指摘B） ---- */
+  /* ===== ★2026-08-23：イベントシーン（立ち絵より格上の見せ場）=====
+     準也さんのご指示＝「立ち絵からイベントシーンに入って、また立ち絵に戻って、フィールド」
+     ★船・新幹線と同じ扱い＝position:fixed で画面ぜんぶを覆う（立ち絵は #app の中に収まる）。 */
+  .ec-overlay{position:fixed;top:0;bottom:0;left:50%;transform:translateX(-50%);
+    width:min(100vw,480px);z-index:9990;display:none;background:#000;overflow:hidden;
+    font-family:inherit;-webkit-user-select:none;user-select:none;cursor:pointer}
+  .ec-overlay.show{display:block}
+  /* 背景の一枚絵＝ゆっくり寄る（絵がまだ無いあいだは仮の空でも動きが分かる） */
+  #ecBg{position:absolute;inset:0;background-size:cover;background-position:center;
+    opacity:0;transition:opacity 1.1s ease;transform:scale(1.10);
+    animation:ecZoom 24s ease-out forwards}
+  #ecBg.show{opacity:1}
+  @keyframes ecZoom{from{transform:scale(1.10)}to{transform:scale(1.00)}}
+  /* 上下の帯＝映画のような画面にする（見せ場だと一目で分かる） */
+  #ecBarTop,#ecBarBottom{position:absolute;left:0;right:0;height:44px;background:#000;z-index:6;
+    transition:height .8s ease}
+  #ecBarTop{top:0} #ecBarBottom{bottom:0}
+  /* 下だけ うっすら暗くして 文字を読みやすくする */
+  #ecVeil{position:absolute;inset:0;z-index:3;pointer-events:none;
+    background:linear-gradient(180deg,rgba(6,8,18,0) 42%,rgba(6,8,18,.55) 76%,rgba(6,8,18,.82) 100%)}
+  /* 字の隊列 */
+  #ecLine{position:absolute;inset:0;z-index:4;pointer-events:none;opacity:0;transition:opacity 1.4s ease}
+  #ecLine.show{opacity:1}
+  /* 列の先の 笠の男（後ろ姿） */
+  /* ★列のいちばん先（＝奥・小さい）に置く。EV_LINE.climb の t=1 が だいたい (52%,20%) なので、そこに合わせる。
+     　★2026-08-23：はじめ左上に出て見切れていたので、位置を出しなおした（実機の写真で確認）。 */
+  #ecKasa{position:absolute;left:var(--kx,52%);top:var(--ky,19%);width:var(--kw,15%);z-index:5;
+    transform:translate(-50%,-100%) scale(1);transform-origin:bottom center;
+    opacity:0;transition:opacity 1.2s ease, transform 3.2s ease;
+    max-width:96px;pointer-events:none;
+    filter:drop-shadow(0 3px 10px rgba(0,0,0,.7))}
+  #ecKasa.show{opacity:.96}
+  /* 去っていく＝さらに小さく、上へ */
+  #ecKasa.away{transform:translate(-50%,-100%) translateY(-34px) scale(.62);opacity:.5}
+  /* 台詞の窓＝立ち絵のときより大きく、画面いっぱいに近い（格上） */
+  #ecBox{position:absolute;left:14px;right:14px;bottom:62px;z-index:7;
+    background:rgba(10,12,26,.86);border:2px solid rgba(255,255,255,.26);
+    border-radius:14px;padding:16px 18px 18px;min-height:88px;
+    box-shadow:0 10px 30px rgba(0,0,0,.6)}
+  #ecWho{font-size:12px;letter-spacing:.08em;color:#9fb4d8;font-weight:800;margin-bottom:6px}
+  #ecText{color:#fff;font-size:19px;line-height:1.66;font-weight:700}
+  #ecText.ec-maros{color:#cfd8e6;letter-spacing:.06em}
+  #ecNext{position:absolute;right:14px;bottom:6px;color:#fff;opacity:.7;font-size:13px;
+    animation:evBob 1s ease-in-out infinite}
+  .ec-skip{position:absolute;right:10px;top:52px;z-index:9;
+    background:rgba(0,0,0,.55);color:#fff;border:1px solid rgba(255,255,255,.35);
+    border-radius:99px;padding:6px 14px;font-size:12px;font-weight:800;font-family:inherit;cursor:pointer}
   .ship-scene-overlay{position:fixed;top:0;bottom:0;left:50%;transform:translateX(-50%);
     width:min(100vw,480px);z-index:9999;display:none;background:#000;overflow:hidden;
     font-family:inherit;-webkit-user-select:none;user-select:none}
@@ -3083,9 +3139,33 @@
   #evOverlay{position:absolute;inset:0;display:none;z-index:80;overflow:hidden;cursor:pointer;
     -webkit-user-select:none;user-select:none}
   #evOverlay.show{display:block}
+  /* ★2026-08-23：4年のイベントシーン用に足したもの（一枚絵の背景と、字の隊列）。
+     　どちらも EV_SCENES の行に bg / line が書いてあるときだけ出る＝既存の台本は今までどおり。 */
+  #evBg{position:absolute;inset:0;background-size:cover;background-position:center;
+    opacity:0;transition:opacity .8s ease;
+    transform:scale(1.06);animation:evBgSlow 18s ease-out forwards}
+  #evBg.show{opacity:1}
+  @keyframes evBgSlow{from{transform:scale(1.06)}to{transform:scale(1.00)}}
+  /* 字の隊列＝1文字ずつが山道／川を進んでいく。遠いほど小さく・薄い */
+  #evLine{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity 1.1s ease}
+  #evLine.show{opacity:1}
+  /* ★シーン側（#ecLine）でも同じ見た目にする＝下の .ev-kanji は両方に効く */
+  .ev-kanji{position:absolute;transform:translate(-50%,-50%) scale(var(--k,1));
+    font-weight:900;font-family:inherit;line-height:1;
+    color:#e05a3a;text-shadow:0 0 10px rgba(255,120,60,.85),0 2px 3px rgba(0,0,0,.6);
+    opacity:var(--o,1);font-size:38px;
+    animation:evKanjiBob 2.6s ease-in-out infinite alternate}
+  .ev-kanji.lightmode{color:#ffcf7a;text-shadow:0 0 14px rgba(255,190,90,.95),0 0 30px rgba(255,150,40,.55)}
+  @keyframes evKanjiBob{from{margin-top:0}to{margin-top:-4px}}
+  /* 列がゆっくり進む（下から上へ・川なら手前から奥へ）＝新幹線シーンのパララックスと同じ考え方 */
+  #evLine.move .ev-kanji{animation:evKanjiBob 2.6s ease-in-out infinite alternate, evKanjiGo 9s linear infinite}
+  @keyframes evKanjiGo{from{}to{}}
   /* 暗幕＝ふだんは薄く、山場（dark）で濃くする */
   #evVeil{position:absolute;inset:0;background:#0a0d1c;opacity:.30;transition:opacity .9s ease}
   #evOverlay.dark #evVeil{opacity:.80}
+  /* ★2026-08-23：一枚絵を出しているときは暗幕を薄くする（絵が沈むため）。dark の行だけは濃いまま */
+  #evOverlay.hasbg #evVeil{opacity:.10}
+  #evOverlay.hasbg.dark #evVeil{opacity:.62}
   /* 立ち絵（--sz＝キャラごとの大きさ。JS側でEV_CHARA.sizeを入れる） */
   .ev-chara{position:absolute;bottom:118px;width:calc(46vw * var(--sz,1));max-width:calc(196px * var(--sz,1));
     height:auto;transition:filter .35s ease, transform .35s ease, opacity .45s ease;
@@ -3893,7 +3973,21 @@
      専用div・専用CSS接頭辞(ev-)。#fieldWrapの外＝画面全体に重なる位置に置くのでカメラのtransformの
      影響を受けない（先例=sjOverlay/nmOverlay。この並びは実際のDOMではbodyの直下になる）。
      img に src は書かない（空srcはページ自身を読みに行くため）。JS側でEV_CHARAの絵を入れる。 -->
+<!-- ★2026-08-23：イベントシーン（立ち絵より格上）。船・新幹線と同じ position:fixed の全画面。 -->
+<div class="ec-overlay" id="ecOverlay" onclick="EvCutScene.tap()">
+  <div id="ecBg"></div>
+  <div id="ecLine"></div>
+  <img id="ecKasa" src="images/bust/maros-back.webp" alt="">
+  <div id="ecVeil"></div>
+  <div id="ecBarTop"></div>
+  <div id="ecBarBottom"></div>
+  <button class="ec-skip" id="ecSkip" type="button" onclick="event.stopPropagation();EvCutScene.skip()">▶ とばす</button>
+  <div id="ecBox"><div id="ecWho"></div><div id="ecText"></div><div id="ecNext">▼</div></div>
+</div>
+
 <div id="evOverlay" onclick="evAdvance()">
+  <div id="evBg"></div>
+  <div id="evLine"></div>
   <div id="evVeil"></div>
   <img id="evLeft" class="ev-chara hide" alt="">
   <img id="evRight" class="ev-chara hide" alt="">
@@ -6952,28 +7046,27 @@ const ZONES=[
   ]},
   /* 第18弾§2：小2カントウ16ゾーンの grid（第14弾§付録Aスクリプトを実装フォルダ内で再実行し、全16ゾーンerr=0を確認してから転記） */
   { name:'かわごえ', scene:'s-cream', grid:[
-    /* 第22弾：一枚絵(images/fullart/zone9.webp)に合わせた横長30×20（フェーズDの型・分離監査体制で作成）。
-       旧マップは過去弾設計書に残存。検証：verify_grid.js（行長30×20・各記号1個・BFS全到達・歩ける229/600）＋拡大クロップ全数監査。 */
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT>TTTTTTTTTTTTTTT",
-    "TTTTTTTT,,,,TT.,TTTTTTT,TTTTTT",
-    "TTTTTTT,,A,,T,.TTTTTTTT,TTTTTT",
-    "TTTTT,,RTT,,,,.TTTTTTTT,,,TTTT",
-    "TTT,,,,,,,,TTT.,,TTTTTT,,,TTTT",
-    "TTT,T,,,B,,TTT.,,,,,,,,TT,,TTT",
-    "TTT,TR,,,,,T,,.,TT,,,,,,,,,TTT",
-    "TTT,,T,TTT,,,,.,,,,,,RT,,,TTTT",
-    "TTTT,,,RR,,,,C.,,,TTT,,,,,TTTT",
-    "TTTT,,,,D,,,TT.,,TTTTT,,,,TTTT",
-    "TTTT,,,,,,,,RR.,TTTTT,,,,,TTTT",
-    "TTTT,TTT,,,,,,.,TT,,G,,TT,,TTT",
-    "TTTT,,,,,,TT,E.,TT,,,H,,,,,TTT",
-    "TTT,,T,,TTTT,,.,,,TT,,,,,,TTTT",
-    "TTTTTT,,,,,,,,.,,,TT,,I,,TTTTT",
-    "TTTTTTTTT,,,TF.,,,,,J,,TTTTTTT",
-    "TTTTTTTTTTTTTT.T,,TTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT.T,,TTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTSTTTTTTTTTTTTTTT"] },
+   "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+   "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+   "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+   "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+   "TTTTTTTRTTTTTTTTTTTTTTTTTTTTTT",
+   "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+   "TTTTT,,,,,,,,,>>,,,,,,,,,,TTTT",
+   "TTTTTR,C,,,,,,.,,,,,,,H,,TTTTT",
+   "TTTTTT,,,,,,T,.,,T,,,,,,TTTTTT",
+   "TTTTT,,,,,,,D,.,,G,,TT,,TTTTTT",
+   "TTTT,,,S,,,,,,.,,,,,,,,,,TTTTT",
+   "TTTT,,,,,,E,,,.,,,,F,,,,,,TTTT",
+   "TTTT,,,,,,,,,,.,,,,,,,,,,,TTTT",
+   "TTT,B,,,,,,,,,TT,,,,,,,,I,,TTT",
+   "TT,,,,,,,,,,,,.,,,,,,,,,,,,TTT",
+   "TTTTT,,,,,A,,,.,,,,J,,,,,TTTTT",
+   "TTTTT,,,,,,,,,.,,,,,,,,,TTTTTT",
+   "TTTTTTTTTT,,,,.,,,,,TTTTTTTTTT",
+   "TTTTTTTTTT,,,,.,,,,TTTTTTTTTTT",
+   "TTTTT,,,,,,,,,,,,,,,,,,,TTTTTT"
+  ]},
   { name:'ちちぶ', scene:'s-forest', grid:[
     /* 第22弾：一枚絵(images/fullart/zone10.webp)に合わせた横長30×20（フェーズDの型・分離監査体制で作成）。
        旧マップは過去弾設計書に残存。検証：verify_grid.js（行長30×20・各記号1個・BFS全到達・歩ける259/600）＋拡大クロップ全数監査。 */
@@ -14532,6 +14625,14 @@ const ZONE_CAM_Y={41:0.78, 3:0.72};   /* 弾SD-1：ゾーン3も主人公を下�
      部品を置いただけでは通れなくならない。**根元の1マスだけを T に塗る**のがコツ。
    ★登録の無いゾーンは、いままでと1ピクセルも変わらない。 */
 const ZONE_OBJECTS={
+  /* ★ここは 83_配置データをゲームに入れる.py が書きます（手で直さない）。
+     元データ＝障害物配置ツールの「💾 保存する」で出た zone9_配置データ.json */
+  9:[
+    {img:'どうぞう.webp', x:14.049, y:10.877, w:1.88, h:3.082, flip:false},
+    {img:'いしどうろう.webp', x:11.966, y:6.835, w:1.013, h:2.051, flip:false},
+    {img:'いしどうろう.webp', x:17.022, y:6.856, w:1.013, h:2.051, flip:false},
+    {img:'ベンチ.webp', x:20.022, y:8.618, w:2.0, h:1.435, flip:false},
+  ],
   /* ★2026-08-17：ゾーン2の「試しの木」を消した（弾OB-1の目視確認に使った1本）。
      道のまん中に立っていて不自然なのに、そのまま公開してしまっていた（8/16の公開 e8c7633）。
      ★これから部品を置くときは、準也さんが ツール\障害物配置ツール.html で配置し、
@@ -15302,8 +15403,9 @@ function renderField(){
         if(tsOK){
           const gf=gateOpen?(tsOK.gateOpen?'gate-open':null):(tsOK.gateClosed?'gate-closed':null);
           if(gf){ tile.style.background="url('"+tsBase+gf+".webp') center/100% 100% no-repeat"; cls+=' has-img'; txt=''; }   /* 手直し みがき§3：同上（§1のゲート点滅CSSがhas-imgを参照するため必須） */
-          else txt=gateOpen?'➔':'🚧';
-        }else txt=gateOpen?'➔':'🚧';
+          /* ★2026-08-23：閉じているゲートの🚧をやめた（絵の上に置くと変に目立つ）。開いたときだけ➔を出す。 */
+          else txt=gateOpen?'➔':'';
+        }else txt=gateOpen?'➔':'';
       }
       else if(fieldZone===TOWN_ZONE && (ch==='L'||ch==='D'||ch==='Y'||ch==='H'||ch==='M'||ch==='K'||ch==='G'||ch==='F'||ch==='N'||ch==='O'||ch==='P'||ch==='Q'||ch==='V')){
         // 弾3-12/3-13：町の建物いりぐち・掲示板（A-L分岐＝zoneCharIdxはindex -1で壊れるため先に分岐する）
@@ -16241,20 +16343,20 @@ const EV_SCENES = {
     { who:'manaK', dark:false, snd:'ev05_7', text:'……ううん。わたしたちは いくよ。' }
   ],
 14: [
-    { who:'mana',  dark:false, snd:null, text:'ここは 岩を 切り出した あとの、地下の 大きな ひろま。' },
-    { who:'mana',  dark:false, snd:null, text:'「時」の 字が あばれてる。見学の 時間が 読めなくて、こまってる 人が いるの。……あ。' },
-    { who:'easy',  dark:true,  snd:null, text:'だいじょうぶ。ぼくが 読んで あげる。「午前」10時「半」だよ。' },
-    { who:'easy',  dark:true,  snd:null, text:'たのしい ことを するために 来たんでしょ。むずかしいことは、ぼくが やるから。' },
-    { who:'mana',  dark:false, snd:null, text:'……ありがとう。ほんとうに たすかるの。' },
-    { who:'manaK', dark:false, snd:null, text:'…………。' },
+    { who:'mana',  dark:false, snd:'ev14_1', text:'ここは 岩を 切り出した あとの、地下の 大きな ひろま。' },
+    { who:'mana',  dark:false, snd:'ev14_2', text:'「時」の 字が あばれてる。見学の 時間が 読めなくて、こまってる 人が いるの。……あ。' },
+    { who:'easy',  dark:true,  snd:'ev14_3', text:'だいじょうぶ。ぼくが 読んで あげる。「午前」10時「半」だよ。' },
+    { who:'easy',  dark:true,  snd:'ev14_4', text:'たのしい ことを するために 来たんでしょ。むずかしいことは、ぼくが やるから。' },
+    { who:'mana',  dark:false, snd:'ev14_5', text:'……ありがとう。ほんとうに たすかるの。' },
+    { who:'manaK', dark:false, snd:'ev14_7', text:'…………。' },
     { who:'manaK', dark:false, snd:null, text:'……でも あなたは、じぶんで 読んでみて。そのほうが、たのしいから。' }
   ],
 17: [
-    { who:'mana',  dark:false, snd:null, text:'白い けんきゅうじょが ならぶ まち。「考」える 人の まち。' },
-    { who:'mana',  dark:false, snd:null, text:'……わたしも、ここで しらべものを してるの。見せて あげる。' },
-    { who:'mana',  dark:false, snd:null, text:'字が あばれた ところに、大きな せなかの 人が 来てるの。……ぜんぶ。' },
-    { who:'manaK', dark:false, snd:null, text:'……その人が 来たから あばれたのか。あばれたから 来たのか。' },
-    { who:'manaK', dark:false, snd:null, text:'それが、まだ わからないの。だから まだ、なにも 言えない。' }
+    { who:'mana',  dark:false, snd:'ev17_1', text:'白い けんきゅうじょが ならぶ まち。「考」える 人の まち。' },
+    { who:'mana',  dark:false, snd:'ev17_2', text:'……わたしも、ここで しらべものを してるの。見せて あげる。' },
+    { who:'mana',  dark:false, snd:'ev17_3', text:'字が あばれた ところに、大きな せなかの 人が 来てるの。……ぜんぶ。' },
+    { who:'manaK', dark:false, snd:'ev17_4', text:'……その人が 来たから あばれたのか。あばれたから 来たのか。' },
+    { who:'manaK', dark:false, snd:'ev17_5', text:'それが、まだ わからないの。だから まだ、なにも 言えない。' }
   ],
   /* ===== 4年 チュウブ（2026-08-22）=====
      正本＝設計書\09_計画と方針\【台本】4年チュウブの20話_20260822.md
@@ -16266,8 +16368,8 @@ const EV_SCENES = {
     { who:'easy',  dark:true,  snd:'ev47_3', text:'やあ。つぎの 船は 午後 三時だよ。ぼくが しらべておいた。' },
     { who:'easy',  dark:true,  snd:'ev47_4', text:'こういうのは、ぼくの ほうが 早いからね。' },
     { who:'mana',  dark:false, snd:'ev47_5', text:'……ありがとう。あなたが いると、ほんとうに 早いね。' },
-    { who:'manaK', dark:false, snd:'ev47_7', text:'…………。' },
-    { who:'mana',  dark:false, snd:null, text:'……でも、あの 字は まだ あばれてる。行こう。' }
+    { who:'manaK', dark:false, snd:null, text:'…………。' },
+    { who:'mana',  dark:false, snd:'ev47_7', text:'……でも、あの 字は まだ あばれてる。行こう。' }
   ],
   /* ★★この学年の山場。準也さんのご発案＝
        「たくさんの漢字モンを引き連れて子供に近づく。子供は怖くて逃げる。そして去っていく。
@@ -16275,15 +16377,17 @@ const EV_SCENES = {
      ★「まだ、たりない」＝抑える活動も布教活動も足りない、という彼自身の言葉（5年で反転する）。
      ★彼が4年で発する唯一の言葉。言ったあとは何も言わない。追わない。 */
   52: [
-    { who:'mana',  dark:false, snd:'ev52_1', text:'いよいよ のぼり口。……あれ。あそこに、人が いる。' },
-    { who:'mana',  dark:false, snd:'ev52_2', text:'……大きい。かさを かぶってる。……あの人だ。' },
-    { who:'manaK', dark:false, snd:'ev52_3', text:'……うしろ。字が、ぞろぞろ ならんでる。……あんなに たくさん。' },
-    { who:'mana',  dark:false, snd:'ev52_4', text:'子どもたちが いる。あの人、近づいて……' },
-    { who:'manaK', dark:false, snd:'ev52_5', text:'……にげた。子どもたちが、みんな にげちゃった。' },
-    { who:'maros', dark:true,  snd:'ev52_7', text:'……まだ、たりない。' },
-    { who:'manaK', dark:false, snd:'ev52_8', text:'……いま、なんて 言ったの。' },
-    { who:'mana',  dark:false, snd:'ev52_9', text:'……上って行く。字も、ついて行く。' },
-    { who:'mana',  dark:false, snd:null, text:'追いかけよう！' }
+    /* ★2026-08-23：三段構え＝**立ち絵 →【イベントシーン】→ 立ち絵 → フィールド**
+       　準也さんのご指示＝「イベントシーンなので立ち絵よりランクが上。
+       　　立ち絵からイベントシーンに入って、また立ち絵に戻って、フィールド」
+       ★シーンの中身は EV_CUT_SCENES.fuji52（全画面・とばすボタンつき）。 */
+    { who:'mana',  dark:false, snd:'ev52_1', text:'いよいよ のぼり口。……あ。' },
+    { who:'mana',  dark:false, snd:'ev52_2', text:'見て。あれが、日本で 一番 高い 山。' },
+    /* ★★ここでイベントシーンへ（富士山を見上げる → 隊列 → マロースの一言） */
+    { scene:'fuji52' },
+    /* ★立ち絵に戻る */
+    { who:'manaK', dark:false, snd:'ev52_3', text:'……いま、なんて 言ったの。' },
+    { who:'mana',  dark:false, snd:'ev52_4', text:'追いかけよう！' }
   ],
   /* ★★イージーが子どもたちを連れて、字を静めて回る（2026-08-22 準也さんのご指摘）。
      ★イージーを100％よく見せる。マナはここでは曇らせない（曇るのは60）。
@@ -16307,13 +16411,14 @@ const EV_SCENES = {
   ],
   /* ★長良川のかがり火。いちばん美しくて、いちばん怖い場面。マナは説明しない。 */
   57: [
+    /* ★2026-08-23：52と同じ三段構え。
+       ★シーンの中身は EV_CUT_SCENES.nagara57
+       　＝絵を差し替えるのではなく、同じ画面のまま **あかりが1つずつ字に変わる**。 */
     { who:'mana',  dark:false, snd:'ev57_1', text:'夜。しろから、川が 見おろせる。' },
-    { who:'mana',  dark:false, snd:'ev57_2', text:'……見て。あかりが、一れつに ならんで、ゆっくり 動いてる。' },
-    { who:'mana',  dark:false, snd:'ev57_3', text:'きれい……。昔から、この 川では 「灯」を つかって「漁」を するんだって。' },
-    { who:'manaK', dark:false, snd:'ev57_4', text:'……ちがう。' },
-    { who:'manaK', dark:false, snd:'ev57_5', text:'……あれ、火じゃ ない。' },
-    { who:'manaK', dark:false, snd:'ev57_6', text:'……ぜんぶ、字。' },
-    { who:'manaK', dark:false, snd:'ev57_7', text:'……列の 一番 先に、大きな かさが 一つ。' }
+    /* ★★ここでイベントシーンへ */
+    { scene:'nagara57' },
+    /* ★立ち絵に戻る */
+    { who:'manaK', dark:false, snd:'ev57_2', text:'……あの人が 行った 先。……上流。' }
   ],
 };
 /* ===== 弾EV-4：1ゾーン＝1話（事件 → 解決 → てがかり）=====
@@ -16448,96 +16553,96 @@ const ZONE_TALK = {
 9: {
     title:'くらの まちの 名ふだ',
     in:[
-      { snd:null, text:'おもい とびらの くらが ならぶ まち。いま とっても にぎやかなの。' },
-      { snd:null, text:'……でも ひとり、こまってる 人が いる。「家」の 字が あばれて、名ふだが よめないんだって。' }
+      { snd:'zt09i1', text:'おもい とびらの くらが ならぶ まち。いま とっても にぎやかなの。' },
+      { snd:'zt09i2', text:'……でも ひとり、こまってる 人が いる。「家」の 字が あばれて、名ふだが よめないんだって。' }
     ],
     out:[
-      { snd:null, text:'「家」は、やねの 下に みんなが いる ということ。' },
-      { snd:null, text:'「親」は、木の上から 子どもを 見まもる 人。……ほら、とどいた！' },
-      { snd:null, text:'とどけものの 人が「たすかったよ」って。……ね。よめると、うれしいでしょ。' }
+      { snd:'zt09o1', text:'「家」は、やねの 下に みんなが いる ということ。' },
+      { snd:'zt09o2', text:'「親」は、木の上から 子どもを 見まもる 人。……ほら、とどいた！' },
+      { snd:'zt09o3', text:'とどけものの 人が「たすかったよ」って。……ね。よめると、うれしいでしょ。' }
     ]
   },
   10: {
     title:'やまの ちいさな 学校',
     in:[
-      { snd:null, text:'やまあいの まち。川の 音が する ちいさな 学校が あるの。' },
-      { snd:null, text:'「教室」の 字が あばれて、だれも 中に 入れないんだって。' }
+      { snd:'zt10i1', text:'やまあいの まち。川の 音が する ちいさな 学校が あるの。' },
+      { snd:'zt10i2', text:'「教室」の 字が あばれて、だれも 中に 入れないんだって。' }
     ],
     out:[
-      { snd:null, text:'「図」も「書」いたものも、ぜんぶ この 学校に ある。' },
-      { snd:null, text:'「国語」の 本を ひらいたら……ほら、ひとり 入ってきた！' },
-      { snd:null, text:'先生が、こう いってた。「字は おもしろいって おしえて くれた 人が いたの。……大きな こえで、ずっと」' }
+      { snd:'zt10o1', text:'「図」も「書」いたものも、ぜんぶ この 学校に ある。' },
+      { snd:'zt10o2', text:'「国語」の 本を ひらいたら……ほら、ひとり 入ってきた！' },
+      { snd:'zt10o3', text:'先生が、こう いってた。「字は おもしろいって おしえて くれた 人が いたの。……大きな こえで、ずっと」' }
     ],
     clue:'字は おもしろいって おしえて くれた 人が いたの'
   },
   11: {
     title:'わかれみち',
     in:[
-      { snd:null, text:'するどく とがった 岩の 山。みちが 二つに わかれてる。' },
-      { snd:null, text:'「谷」の 字が あばれて、立てふだが よめないの。……あ。' }
+      { snd:'zt11i1', text:'するどく とがった 岩の 山。みちが 二つに わかれてる。' },
+      { snd:'zt11i2', text:'「谷」の 字が あばれて、立てふだが よめないの。……あ。' }
     ],
     out:[
-      { snd:null, text:'あの子が、先に 教えてあげてた。……ほんとうに、あんぜんな ほうを。' },
-      { snd:null, text:'「谷」は 山と 山の あいだ。「高」い ほうが、こっちの みち。' },
-      { snd:null, text:'……ね。じぶんで よめたね。' }
+      { snd:'zt11o1', text:'あの子が、先に 教えてあげてた。……ほんとうに、あんぜんな ほうを。' },
+      { snd:'zt11o2', text:'「谷」は 山と 山の あいだ。「高」い ほうが、こっちの みち。' },
+      { snd:'zt11o3', text:'……ね。じぶんで よめたね。' }
     ]
   },
   12: {
     title:'かいこの ごはん',
     in:[
-      { snd:null, text:'あかレンガの 大きな こうじょうと、ひろい くわばたけ。糸を つくる まち。' },
-      { snd:null, text:'「園」の 字が あばれて、かいこの はっぱと 人の たべものが まざっちゃったの。' }
+      { snd:'zt12i1', text:'あかレンガの 大きな こうじょうと、ひろい くわばたけ。糸を つくる まち。' },
+      { snd:'zt12i2', text:'「園」の 字が あばれて、かいこの はっぱと 人の たべものが まざっちゃったの。' }
     ],
     out:[
-      { snd:null, text:'「麦」も「米」も、人の ごはん。かいこが たべるのは、くわの はっぱだけ。' },
-      { snd:null, text:'見た目じゃ わからない。……でも 字なら わかる。ほら、わけられた！' },
-      { snd:null, text:'……ねえ。この さきに、もっと 大きいのが いるみたい。' }
+      { snd:'zt12o1', text:'「麦」も「米」も、人の ごはん。かいこが たべるのは、くわの はっぱだけ。' },
+      { snd:'zt12o2', text:'見た目じゃ わからない。……でも 字なら わかる。ほら、わけられた！' },
+      { snd:'zt12o3', text:'……ねえ。この さきに、もっと 大きいのが いるみたい。' }
     ]
   },
   13: {
     title:'あたらしい 看板',
     in:[
-      { snd:null, text:'しゅいろの 門が ならぶ 古い おてら。かんこうの 人で いっぱい。' },
-      { snd:null, text:'「門」の 字が あばれて、どこから 入るのか わからない 人が いるの。' }
+      { snd:'zt13i1', text:'しゅいろの 門が ならぶ 古い おてら。かんこうの 人で いっぱい。' },
+      { snd:'zt13i2', text:'「門」の 字が あばれて、どこから 入るのか わからない 人が いるの。' }
     ],
     out:[
-      { snd:null, text:'「古」い ものと「今」の ものが、ならんでる まち。' },
-      { snd:null, text:'「新」しい かんばんは え ばかり。……でも 古い もんの 字は よめる。こっちが 入口！' },
-      { snd:null, text:'……あの まるい マーク、どこにでも あるね。べんりに なったって、みんな よろこんでる。' }
+      { snd:'zt13o1', text:'「古」い ものと「今」の ものが、ならんでる まち。' },
+      { snd:'zt13o2', text:'「新」しい かんばんは え ばかり。……でも 古い もんの 字は よめる。こっちが 入口！' },
+      { snd:'zt13o3', text:'……あの まるい マーク、どこにでも あるね。べんりに なったって、みんな よろこんでる。' }
     ]
   },
   14: {
     title:'いしの ひろま',
     /* ★in は持たせない＝EV_SCENES[14]（立ち絵つき）が「事件」を担当する */
     out:[
-      { snd:null, text:'「午前」と「午後」、それに「半」。……よめたら、時間が わかる。' },
-      { snd:null, text:'ほら。……あの人たち、地下の 入口で あえたよ！' },
-      { snd:null, text:'……ね。じぶんで よめると、ちょっと じまん できるでしょ。' }
+      { snd:'zt14o1', text:'「午前」と「午後」、それに「半」。……よめたら、時間が わかる。' },
+      { snd:'zt14o2', text:'ほら。……あの人たち、地下の 入口で あえたよ！' },
+      { snd:'zt14o3', text:'……ね。じぶんで よめると、ちょっと じまん できるでしょ。' }
     ]
   },
   15: {
     title:'ふとい 道と ほそい 道',
     in:[
-      { snd:null, text:'なだらかな こうげんの みち。あきには もみじが 赤く なるところ。' },
-      { snd:null, text:'絵地図の「線」が あばれて、太いのと 細いの、どっちが みちか わからないの。' }
+      { snd:'zt15i1', text:'なだらかな こうげんの みち。あきには もみじが 赤く なるところ。' },
+      { snd:'zt15i2', text:'絵地図の「線」が あばれて、太いのと 細いの、どっちが みちか わからないの。' }
     ],
     out:[
-      { snd:null, text:'「太」い ほうが 大きな みち。「細」いのは こみち。' },
-      { snd:null, text:'色も 見て。「黄」は はたけ、「黒」は 森。……これで まよわない！' },
-      { snd:null, text:'あんないじょの 人が、こう いってた。「線の いみを かみに 書いて、おしえて いった 人が いてね」' }
+      { snd:'zt15o1', text:'「太」い ほうが 大きな みち。「細」いのは こみち。' },
+      { snd:'zt15o2', text:'色も 見て。「黄」は はたけ、「黒」は 森。……これで まよわない！' },
+      { snd:'zt15o3', text:'あんないじょの 人が、こう いってた。「線の いみを かみに 書いて、おしえて いった 人が いてね」' }
     ],
     clue:'線の いみを かみに 書いて、おしえて いった 人が いてね'
   },
   16: {
     title:'うみの とりい',
     in:[
-      { snd:null, text:'なみの なかの 岩の うえに、とりいが 立ってる。' },
-      { snd:null, text:'「近」の 字が あばれて、いつ 近づいて いいのか わからないの。あぶないの。' }
+      { snd:'zt16i1', text:'なみの なかの 岩の うえに、とりいが 立ってる。' },
+      { snd:'zt16i2', text:'「近」の 字が あばれて、いつ 近づいて いいのか わからないの。あぶないの。' }
     ],
     out:[
-      { snd:null, text:'「近」づいて いいのは、なみが ひいた とき。' },
-      { snd:null, text:'「遠」くから 見る 日と、「近」くまで いける 日。……書いてあった！' },
-      { snd:null, text:'みやの 人が「これで あんしんだ」って。……よかったね。' }
+      { snd:'zt16o1', text:'「近」づいて いいのは、なみが ひいた とき。' },
+      { snd:'zt16o2', text:'「遠」くから 見る 日と、「近」くまで いける 日。……書いてあった！' },
+      { snd:'zt16o3', text:'みやの 人が「これで あんしんだ」って。……よかったね。' }
     ]
   },
   17: {
@@ -16546,93 +16651,93 @@ const ZONE_TALK = {
        「物語の本筋イベント時は、無理にフィールドや漢字の話にこじ付けると薄くなる」
        ★in は持たせない＝EV_SCENES[17]（立ち絵つき）が担当する */
     out:[
-      { snd:null, text:'「理」は、ものの すじみち。「知」って、「考」えて、はじめて わかる。' },
-      { snd:null, text:'……いま わたしが してるのも、それ。' },
-      { snd:null, text:'けんきゅうじょの 人が、こう いってた。「その人なら 知ってるかも。字を おしえて まわってる 人」' }
+      { snd:'zt17o1', text:'「理」は、ものの すじみち。「知」って、「考」えて、はじめて わかる。' },
+      { snd:'zt17o2', text:'……いま わたしが してるのも、それ。' },
+      { snd:'zt17o3', text:'けんきゅうじょの 人が、こう いってた。「その人なら 知ってるかも。字を おしえて まわってる 人」' }
     ],
     clue:'字を おしえて まわってる 人'
   },
   18: {
     title:'みずうみの ほう',
     in:[
-      { snd:null, text:'うみみたいに ひろい みずうみ。白い ほの ふねが うかんでる。' },
-      { snd:null, text:'「北」の 字が あばれて、みちしるべが よめないの。ぐるぐる 回ってる 人が いる。' }
+      { snd:'zt18i1', text:'うみみたいに ひろい みずうみ。白い ほの ふねが うかんでる。' },
+      { snd:'zt18i2', text:'「北」の 字が あばれて、みちしるべが よめないの。ぐるぐる 回ってる 人が いる。' }
     ],
     out:[
-      { snd:null, text:'「北」が わかれば、「東」も「西」も「南」も わかる。' },
-      { snd:null, text:'ほの ふねは「方」を 見て すすむの。……ほら、もどってきた！' },
-      { snd:null, text:'ちいさな子が うれしそうに いってた。「ぼく、道は わからないよ。でも あの子が いるから」' }
+      { snd:'zt18o1', text:'「北」が わかれば、「東」も「西」も「南」も わかる。' },
+      { snd:'zt18o2', text:'ほの ふねは「方」を 見て すすむの。……ほら、もどってきた！' },
+      { snd:'zt18o3', text:'ちいさな子が うれしそうに いってた。「ぼく、道は わからないよ。でも あの子が いるから」' }
     ]
   },
   19: {
     title:'いちばん きれいな とき',
     in:[
-      { snd:null, text:'花ばたけが いちめんに ひろがって、その むこうに うみが 見える。' },
-      { snd:null, text:'「春」の 字が あばれて、見ごろの ふだが よめないの。' }
+      { snd:'zt19i1', text:'花ばたけが いちめんに ひろがって、その むこうに うみが 見える。' },
+      { snd:'zt19i2', text:'「春」の 字が あばれて、見ごろの ふだが よめないの。' }
     ],
     out:[
-      { snd:null, text:'「春」に さく 花と、「夏」に さく 花。ふだに 書いてあった！' },
-      { snd:null, text:'「晴」れた 日の「昼」。……いま、いちばん きれいな とき。' },
-      { snd:null, text:'……ねえ。うみの むこうから、大きいのの けはいが するの。' }
+      { snd:'zt19o1', text:'「春」に さく 花と、「夏」に さく 花。ふだに 書いてあった！' },
+      { snd:'zt19o2', text:'「晴」れた 日の「昼」。……いま、いちばん きれいな とき。' },
+      { snd:'zt19o3', text:'……ねえ。うみの むこうから、大きいのの けはいが するの。' }
     ]
   },
   20: {
     title:'よむのと きくのは',
     in:[
-      { snd:null, text:'大きな とうの おてら。ながい いしだんの さんどうが つづいてる。' },
-      { snd:null, text:'ここは 字が おおいから、こまってる 人も おおいの。「読」の 字が あばれてる。' }
+      { snd:'zt20i1', text:'大きな とうの おてら。ながい いしだんの さんどうが つづいてる。' },
+      { snd:'zt20i2', text:'ここは 字が おおいから、こまってる 人も おおいの。「読」の 字が あばれてる。' }
     ],
     out:[
-      { snd:null, text:'「読」むのと「聞」くのは、ちがうの。……「心」に のこるのは、どっち？' },
-      { snd:null, text:'（じぶんで 読んでみる）……そう。それが「読」む ということ。' },
-      { snd:null, text:'いしだんの 人が、こう いってた。「まえに、字の たのしさを ずっと 話してく 人が いてね。……ながかった」' }
+      { snd:'zt20o1', text:'「読」むのと「聞」くのは、ちがうの。……「心」に のこるのは、どっち？' },
+      { snd:'zt20o2', text:'（じぶんで 読んでみる）……そう。それが「読」む ということ。' },
+      { snd:'zt20o3', text:'いしだんの 人が、こう いってた。「まえに、字の たのしさを ずっと 話してく 人が いてね。……ながかった」' }
     ],
     clue:'字の たのしさを ずっと 話してく 人が いてね'
   },
   21: {
     title:'とまれの ふだ',
     in:[
-      { snd:null, text:'四角く 切り出された 岩の かべ。石の かいだんが ずっと 上まで つづいてる。' },
-      { snd:null, text:'「止」の 字が あばれて、「止まれ」の ふだが 読めないの。あぶないの。' }
+      { snd:'zt21i1', text:'四角く 切り出された 岩の かべ。石の かいだんが ずっと 上まで つづいてる。' },
+      { snd:'zt21i2', text:'「止」の 字が あばれて、「止まれ」の ふだが 読めないの。あぶないの。' }
     ],
     out:[
-      { snd:null, text:'「止」は、足を そろえて 立ちどまる かたち。' },
-      { snd:null, text:'まっすぐ「直」ぐ 行くと あぶない ところは、「止」まる。……これで もう だいじょうぶ！' },
-      { snd:null, text:'石を 切る 人が、こう いってた。「大きな せなかの 人が、たまに 来るんだ」' }
+      { snd:'zt21o1', text:'「止」は、足を そろえて 立ちどまる かたち。' },
+      { snd:'zt21o2', text:'まっすぐ「直」ぐ 行くと あぶない ところは、「止」まる。……これで もう だいじょうぶ！' },
+      { snd:'zt21o3', text:'石を 切る 人が、こう いってた。「大きな せなかの 人が、たまに 来るんだ」' }
     ],
     clue:'大きな せなかの 人が、たまに 来るんだ'
   },
   22: {
     title:'ねふだと 番ごう',
     in:[
-      { snd:null, text:'赤と 金いろの 門。大きな ちょうちんが ならんでる まち。' },
-      { snd:null, text:'「番」の 字が あばれて、ねふだも 番ごうも 読めないの。' }
+      { snd:'zt22i1', text:'赤と 金いろの 門。大きな ちょうちんが ならんでる まち。' },
+      { snd:'zt22i2', text:'「番」の 字が あばれて、ねふだも 番ごうも 読めないの。' }
     ],
     out:[
-      { snd:null, text:'「売」る 人と「買」う 人。字が あれば、話が できる。' },
-      { snd:null, text:'……あの子も 字を なかまに してる。あなたと おなじ 年ごろ。' },
-      { snd:null, text:'……でも あの子、「おぼえなきゃ」って かおしてる。……あなたは、たのしそう。' }
+      { snd:'zt22o1', text:'「売」る 人と「買」う 人。字が あれば、話が できる。' },
+      { snd:'zt22o2', text:'……あの子も 字を なかまに してる。あなたと おなじ 年ごろ。' },
+      { snd:'zt22o3', text:'……でも あの子、「おぼえなきゃ」って かおしてる。……あなたは、たのしそう。' }
     ]
   },
   23: {
     title:'はとばで 会う',
     in:[
-      { snd:null, text:'赤レンガの そうこと、大きな ふねが とまる はとば。' },
-      { snd:null, text:'「会」の 字が あばれて、まちあわせの 場しょが 読めないの。' }
+      { snd:'zt23i1', text:'赤レンガの そうこと、大きな ふねが とまる はとば。' },
+      { snd:'zt23i2', text:'「会」の 字が あばれて、まちあわせの 場しょが 読めないの。' }
     ],
     out:[
-      { snd:null, text:'「会」って「合」う。それだけの ことなのに、字が ないと できないの。' },
-      { snd:null, text:'……ほら、あの ふたり、会えた！' },
-      { snd:null, text:'はとばの 人が、こう いってた。「字を おしえて まわってる 人が、この ふねで 行ったよ」' }
+      { snd:'zt23o1', text:'「会」って「合」う。それだけの ことなのに、字が ないと できないの。' },
+      { snd:'zt23o2', text:'……ほら、あの ふたり、会えた！' },
+      { snd:'zt23o3', text:'はとばの 人が、こう いってた。「字を おしえて まわってる 人が、この ふねで 行ったよ」' }
     ],
     clue:'字を おしえて まわってる 人が、この ふねで 行ったよ'
   },
   24: {
     title:'おおきな せなか',
     in:[
-      { snd:null, text:'大きな だいぶつが、しずかに すわってる。うみも すぐ そこ。' },
-      { snd:null, text:'「体」も「頭」も「首」も、ぜんぶ 石なのに……生きてるみたい。' },
-      { snd:null, text:'……大きな せなか。……ねえ。あの人の せなかも、こんな 感じ だったのかな。' }
+      { snd:'zt24i1', text:'大きな だいぶつが、しずかに すわってる。うみも すぐ そこ。' },
+      { snd:'zt24i2', text:'「体」も「頭」も「首」も、ぜんぶ 石なのに……生きてるみたい。' },
+      { snd:'zt24i3', text:'……大きな せなか。……ねえ。あの人の せなかも、こんな 感じ だったのかな。' }
     ]
   },
 /* ===== 3年 カンサイ・シコク（ゾーン25〜44）2026-08-20 =====
@@ -16643,245 +16748,245 @@ const ZONE_TALK = {
   25: {
     title:'じゅんばんに、ひろがってる',
     in:[
-      { snd:null, text:'……ついた。ここが カンサイの 入り口。' },
-      { snd:null, text:'……ねえ、気づいた？ はじめは トウキョウ。つぎに カントウ。そして 今、カンサイ。' },
-      { snd:null, text:'じゅんばんに、ひろがってる。……それに、じゅくごモンが たくさん 出はじめてるみたい。' }
+      { snd:'zt25i1', text:'……ついた。ここが カンサイの 入り口。' },
+      { snd:'zt25i2', text:'……ねえ、気づいた？ はじめは トウキョウ。つぎに カントウ。そして 今、カンサイ。' },
+      { snd:'zt25i3', text:'じゅんばんに、ひろがってる。……それに、じゅくごモンが たくさん 出はじめてるみたい。' }
     ],
     out:[
-      { snd:null, text:'千年 前から、みんなが この かいだんを のぼったの。' },
-      { snd:null, text:'……字が 読めると、何を おねがいしたのかも わかる。' },
-      { snd:null, text:'さあ、行こう。カンサイは、ひろいよ。' }
+      { snd:'zt25o1', text:'千年 前から、みんなが この かいだんを のぼったの。' },
+      { snd:'zt25o2', text:'……字が 読めると、何を おねがいしたのかも わかる。' },
+      { snd:'zt25o3', text:'さあ、行こう。カンサイは、ひろいよ。' }
     ]
   },
   26: {
     title:'にんじゃの まきもの',
     in:[
-      { snd:null, text:'木が ざわっと 鳴った。……今、だれか 通らなかった？' },
-      { snd:null, text:'まきものの 字が、ぜんぶ 反対むきなの。……だれも 読めないんだって。' }
+      { snd:'zt26i1', text:'木が ざわっと 鳴った。……今、だれか 通らなかった？' },
+      { snd:'zt26i2', text:'まきものの 字が、ぜんぶ 反対むきなの。……だれも 読めないんだって。' }
     ],
     out:[
-      { snd:null, text:'「反」は、ひっくり かえすこと。「転」は、ころがして むきを かえること。' },
-      { snd:null, text:'水に うつしてみたら……ほら、読めた！' },
-      { snd:null, text:'にんじゃの おじいさんが、こう いってた。「よく 気づいた。「反」と「転」は、にんじゃの 一の わざだ」' }
+      { snd:'zt26o1', text:'「反」は、ひっくり かえすこと。「転」は、ころがして むきを かえること。' },
+      { snd:'zt26o2', text:'水に うつしてみたら……ほら、読めた！' },
+      { snd:'zt26o3', text:'にんじゃの おじいさんが、こう いってた。「よく 気づいた。「反」と「転」は、にんじゃの 一の わざだ」' }
     ]
   },
   27: {
     title:'みずうみの 立てふだ',
     in:[
-      { snd:null, text:'ここ、うみじゃないの。みずうみ。……日本で 一番 大きいんだって。' },
-      { snd:null, text:'およいで いい ところの 立てふだが 読めなくて、みんな 岸で まってるの。' }
+      { snd:'zt27i1', text:'ここ、うみじゃないの。みずうみ。……日本で 一番 大きいんだって。' },
+      { snd:'zt27i2', text:'およいで いい ところの 立てふだが 読めなくて、みんな 岸で まってるの。' }
     ],
     out:[
-      { snd:null, text:'「深」い ところと、あさい ところ。「岸」の ちかくなら、「泳」いでも 大じょうぶ。' },
-      { snd:null, text:'子どもたちが、いっせいに 水へ とびこんだ！' },
-      { snd:null, text:'……ねえ。あの 大きな 人、だれだろう。こっちを 見て、行っちゃった。' }
+      { snd:'zt27o1', text:'「深」い ところと、あさい ところ。「岸」の ちかくなら、「泳」いでも 大じょうぶ。' },
+      { snd:'zt27o2', text:'子どもたちが、いっせいに 水へ とびこんだ！' },
+      { snd:'zt27o3', text:'……ねえ。あの 大きな 人、だれだろう。こっちを 見て、行っちゃった。' }
     ],
     clue:'大きな 人が、字が あばれる 先に 立ってた'
   },
   28: {
     title:'千年 まえの しるし',
     in:[
-      { snd:null, text:'石の あとが、まっすぐ ならんでる。……ここに 大きな たてものが あったのね。' },
-      { snd:null, text:'ふるい 立てふだの 年ごうが 読めなくて、いつの ものか わからないの。' }
+      { snd:'zt28i1', text:'石の あとが、まっすぐ ならんでる。……ここに 大きな たてものが あったのね。' },
+      { snd:'zt28i2', text:'ふるい 立てふだの 年ごうが 読めなくて、いつの ものか わからないの。' }
     ],
     out:[
-      { snd:null, text:'「昔」は、かさなった 日々。「号」は、名前の しるし。' },
-      { snd:null, text:'まん中の「央」に 立ったら、ここが みやこの まん中だって わかった。' },
-      { snd:null, text:'おじいさんが、こう いってた。「千年 前の 字が、今も 読める。……すごい ことだよ」' }
+      { snd:'zt28o1', text:'「昔」は、かさなった 日々。「号」は、名前の しるし。' },
+      { snd:'zt28o2', text:'まん中の「央」に 立ったら、ここが みやこの まん中だって わかった。' },
+      { snd:'zt28o3', text:'おじいさんが、こう いってた。「千年 前の 字が、今も 読める。……すごい ことだよ」' }
     ]
   },
   29: {
     title:'にわの 道じゅん',
     in:[
-      { snd:null, text:'足のうらが あたたかい。……下を、おゆが ながれてるのかな。' },
-      { snd:null, text:'にわの 道あんないが 読めなくて、みんな ぐるぐる まわってるの。' }
+      { snd:'zt29i1', text:'足のうらが あたたかい。……下を、おゆが ながれてるのかな。' },
+      { snd:'zt29i2', text:'にわの 道あんないが 読めなくて、みんな ぐるぐる まわってるの。' }
     ],
     out:[
-      { snd:null, text:'「坂」を のぼって、「橋」を わたる。それが この「庭」の 道じゅん。' },
-      { snd:null, text:'にわしさんが、ほっとした 顔を した。' },
-      { snd:null, text:'……道が わかると、けしきが よく 見えるね。' }
+      { snd:'zt29o1', text:'「坂」を のぼって、「橋」を わたる。それが この「庭」の 道じゅん。' },
+      { snd:'zt29o2', text:'にわしさんが、ほっとした 顔を した。' },
+      { snd:'zt29o3', text:'……道が わかると、けしきが よく 見えるね。' }
     ]
   },
   30: {
     title:'ふでの ちゅうもん',
     in:[
-      { snd:null, text:'とんとん、とんとん。……あちこちから、手の 音が する。' },
-      { snd:null, text:'ちゅうもん帳の 字が あばれて、ちがう ふでを 作りそうなんだって。' }
+      { snd:'zt30i1', text:'とんとん、とんとん。……あちこちから、手の 音が する。' },
+      { snd:'zt30i2', text:'ちゅうもん帳の 字が あばれて、ちがう ふでを 作りそうなんだって。' }
     ],
     out:[
-      { snd:null, text:'「筆」の ふとさは、「帳」めんに 書いてある。「具」は、道ぐの こと。' },
-      { snd:null, text:'しょくにんさんが、正しい ふでを 手に とった。' },
-      { snd:null, text:'こう いってた。「字が 読めないと、手が 止まる。……たすかったよ」' }
+      { snd:'zt30o1', text:'「筆」の ふとさは、「帳」めんに 書いてある。「具」は、道ぐの こと。' },
+      { snd:'zt30o2', text:'しょくにんさんが、正しい ふでを 手に とった。' },
+      { snd:'zt30o3', text:'こう いってた。「字が 読めないと、手が 止まる。……たすかったよ」' }
     ]
   },
   31: {
     title:'とまった にもつ',
     in:[
-      { snd:null, text:'声が すごい。「まいど！」「おおきに！」……みんな 元気ね。' },
-      { snd:null, text:'おくり先の 区が 読めなくて、にもつが 止まってるの。' }
+      { snd:'zt31i1', text:'声が すごい。「まいど！」「おおきに！」……みんな 元気ね。' },
+      { snd:'zt31i2', text:'おくり先の 区が 読めなくて、にもつが 止まってるの。' }
     ],
     out:[
-      { snd:null, text:'「送」る 人と、「受」ける 人。「区」は、町の わけかた。' },
-      { snd:null, text:'にもつが、いっせいに うごきだした！' },
-      { snd:null, text:'はこびやさんが、こう いってた。「にもつが 止まる 先に、あの人が 来てたよ」' }
+      { snd:'zt31o1', text:'「送」る 人と、「受」ける 人。「区」は、町の わけかた。' },
+      { snd:'zt31o2', text:'にもつが、いっせいに うごきだした！' },
+      { snd:'zt31o3', text:'はこびやさんが、こう いってた。「にもつが 止まる 先に、あの人が 来てたよ」' }
     ],
     clue:'にもつが 止まる 先に、あの人が 来てたよ'
   },
   32: {
     title:'だれの しろ',
     in:[
-      { snd:null, text:'見あげても、てっぺんが 見えない。……石が 一つずつ、うちより 大きい。' },
-      { snd:null, text:'なん代目の あるじか、書きつけが 読めないんだって。' }
+      { snd:'zt32i1', text:'見あげても、てっぺんが 見えない。……石が 一つずつ、うちより 大きい。' },
+      { snd:'zt32i2', text:'なん代目の あるじか、書きつけが 読めないんだって。' }
     ],
     out:[
-      { snd:null, text:'この しろを「守」った 人。「主」は あるじ。「代」は、うけつぐ こと。' },
-      { snd:null, text:'……三代目まで、名前が ちゃんと つながってた。' },
-      { snd:null, text:'あんない人が、こう いってた。「読めなければ、だれの しろか わからなかった」' }
+      { snd:'zt32o1', text:'この しろを「守」った 人。「主」は あるじ。「代」は、うけつぐ こと。' },
+      { snd:'zt32o2', text:'……三代目まで、名前が ちゃんと つながってた。' },
+      { snd:'zt32o3', text:'あんない人が、こう いってた。「読めなければ、だれの しろか わからなかった」' }
     ]
   },
   33: {
     title:'まつりの まいご',
     in:[
-      { snd:null, text:'ぴーひゃら、ぴーひゃら。……人が どんどん ふえていく。' },
-      { snd:null, text:'まいごの 子が いるの。よび出しの 立てふだが 読めなくて。' }
+      { snd:'zt33i1', text:'ぴーひゃら、ぴーひゃら。……人が どんどん ふえていく。' },
+      { snd:'zt33i2', text:'まいごの 子が いるの。よび出しの 立てふだが 読めなくて。' }
     ],
     out:[
-      { snd:null, text:'人が「集」まる ところ。「笛」の おとの する ほう。' },
-      { snd:null, text:'「助」けて、と 書いた 紙を かかげたら……お母さんが 走ってきた！' },
-      { snd:null, text:'……あ。人ごみの むこう。あたま 一つ 大きな せなかが、また。' }
+      { snd:'zt33o1', text:'人が「集」まる ところ。「笛」の おとの する ほう。' },
+      { snd:'zt33o2', text:'「助」けて、と 書いた 紙を かかげたら……お母さんが 走ってきた！' },
+      { snd:'zt33o3', text:'……あ。人ごみの むこう。あたま 一つ 大きな せなかが、また。' }
     ],
     clue:'みんなが さわぐ 先に、あの人は もう 走ってた'
   },
   34: {
     title:'しろい かべの しろ',
     in:[
-      { snd:null, text:'まぶしくて、目を ほそめちゃう。……鳥が 羽を ひろげたみたいな 形。' },
-      { snd:null, text:'なん階まで のぼれるか、あんないが 読めないの。' }
+      { snd:'zt34i1', text:'まぶしくて、目を ほそめちゃう。……鳥が 羽を ひろげたみたいな 形。' },
+      { snd:'zt34i2', text:'なん階まで のぼれるか、あんないが 読めないの。' }
     ],
     out:[
-      { snd:null, text:'「階」は かさなり。「表」は おもて。「面」は、かべの こと。' },
-      { snd:null, text:'六階まで のぼれた。一番 上から、町が ぜんぶ 見えた！' },
-      { snd:null, text:'……しろい かべが、まぶしいね。' }
+      { snd:'zt34o1', text:'「階」は かさなり。「表」は おもて。「面」は、かべの こと。' },
+      { snd:'zt34o2', text:'六階まで のぼれた。一番 上から、町が ぜんぶ 見えた！' },
+      { snd:'zt34o3', text:'……しろい かべが、まぶしいね。' }
     ]
   },
   35: {
     title:'とおい 国の 人',
     in:[
-      { snd:null, text:'いろんな ことばが 聞こえる。……ここ、日本じゃないみたい。' },
-      { snd:null, text:'とおい 国から 来た 人が、日本の 字を 読めなくて こまってるの。' }
+      { snd:'zt35i1', text:'いろんな ことばが 聞こえる。……ここ、日本じゃないみたい。' },
+      { snd:'zt35i2', text:'とおい 国から 来た 人が、日本の 字を 読めなくて こまってるの。' }
     ],
     out:[
-      { snd:null, text:'「漢」字は、絵から できた 字。だから、見れば 少し わかる。' },
-      { snd:null, text:'「着」いた にもつの 名前を 絵で つたえたら……つうじた！' },
-      { snd:null, text:'その人が、こう いってた。「船が 着く 先に、大きな 人が まってた」' }
+      { snd:'zt35o1', text:'「漢」字は、絵から できた 字。だから、見れば 少し わかる。' },
+      { snd:'zt35o2', text:'「着」いた にもつの 名前を 絵で つたえたら……つうじた！' },
+      { snd:'zt35o3', text:'その人が、こう いってた。「船が 着く 先に、大きな 人が まってた」' }
     ],
     clue:'船が 着く 先に、大きな 人が まってた'
   },
   36: {
     title:'一字ずつ',
     in:[
-      { snd:null, text:'首が いたくなるくらい、上を 見た。……手のひらだけで、わたしより 大きい。' },
-      { snd:null, text:'うつしの 紙の 字が あばれて、書きうつしが すすまないんだって。' }
+      { snd:'zt36i1', text:'首が いたくなるくらい、上を 見た。……手のひらだけで、わたしより 大きい。' },
+      { snd:'zt36i2', text:'うつしの 紙の 字が あばれて、書きうつしが すすまないんだって。' }
     ],
     out:[
-      { snd:null, text:'「写」すのは、そのままに すること。「身」を ただして、「始」めから。' },
-      { snd:null, text:'おぼうさんの ふでが、すうっと うごきだした。' },
-      { snd:null, text:'こう いってた。「一字ずつ 書くとね、字が 生きものに 見えてくる」' }
+      { snd:'zt36o1', text:'「写」すのは、そのままに すること。「身」を ただして、「始」めから。' },
+      { snd:'zt36o2', text:'おぼうさんの ふでが、すうっと うごきだした。' },
+      { snd:'zt36o3', text:'こう いってた。「一字ずつ 書くとね、字が 生きものに 見えてくる」' }
     ]
   },
   37: {
     title:'土の 下の 字',
     in:[
-      { snd:null, text:'なんにも ない はらっぱ。……のはずなのに。' },
-      { snd:null, text:'マナが しゃがみこんで、土を じっと 見てる。……こんな 顔、はじめて 見た。' }
+      { snd:'zt37i1', text:'なんにも ない はらっぱ。……のはずなのに。' },
+      { snd:'zt37i2', text:'マナが しゃがみこんで、土を じっと 見てる。……こんな 顔、はじめて 見た。' }
     ],
     out:[
-      { snd:null, text:'ここから、千年 前の 字が ほり出されたの。' },
-      { snd:null, text:'だれかが 書いて、だれかが 読んだ。……だから、今も のこってる。' },
-      { snd:null, text:'……あの おか。かさが 一つ、見えた 気が した。' }
+      { snd:'zt37o1', text:'ここから、千年 前の 字が ほり出されたの。' },
+      { snd:'zt37o2', text:'だれかが 書いて、だれかが 読んだ。……だから、今も のこってる。' },
+      { snd:'zt37o3', text:'……あの おか。かさが 一つ、見えた 気が した。' }
     ]
   },
   38: {
     title:'みかんの ゆくえ',
     in:[
-      { snd:null, text:'あまい においが する。……木に、オレンジ色の みが いっぱい。' },
-      { snd:null, text:'くばり先の 道が 読めなくて、みかんが あまってるの。' }
+      { snd:'zt38i1', text:'あまい においが する。……木に、オレンジ色の みが いっぱい。' },
+      { snd:'zt38i2', text:'くばり先の 道が 読めなくて、みかんが あまってるの。' }
     ],
     out:[
-      { snd:null, text:'「農」家の 人が「配」る 先。「路」は、道の こと。' },
-      { snd:null, text:'道が わかったら、みかんは ぜんぶ はこばれていった。' },
-      { snd:null, text:'おばあさんが、こう いってた。「山の 字が あばれる 先に、あの人が 上って行った」' }
+      { snd:'zt38o1', text:'「農」家の 人が「配」る 先。「路」は、道の こと。' },
+      { snd:'zt38o2', text:'道が わかったら、みかんは ぜんぶ はこばれていった。' },
+      { snd:'zt38o3', text:'おばあさんが、こう いってた。「山の 字が あばれる 先に、あの人が 上って行った」' }
     ],
     clue:'山の 字が あばれる 先に、あの人が 上って行った'
   },
   39: {
     title:'しおの 時こく',
     in:[
-      { snd:null, text:'海が、ぐるぐる まわってる。……こんなの 見たこと ない。' },
-      { snd:null, text:'わたって いい 時こくが 読めなくて、だれも うごけないの。' }
+      { snd:'zt39i1', text:'海が、ぐるぐる まわってる。……こんなの 見たこと ない。' },
+      { snd:'zt39i2', text:'わたって いい 時こくが 読めなくて、だれも うごけないの。' }
     ],
     out:[
-      { snd:null, text:'「調」べると、しおの「急」な 時間が わかる。「終」わりの 時こくも。' },
-      { snd:null, text:'しおが しずかに なった。いまなら わたれる！' },
-      { snd:null, text:'……うずが、ゆっくり きえていく。' }
+      { snd:'zt39o1', text:'「調」べると、しおの「急」な 時間が わかる。「終」わりの 時こくも。' },
+      { snd:'zt39o2', text:'しおが しずかに なった。いまなら わたれる！' },
+      { snd:'zt39o3', text:'……うずが、ゆっくり きえていく。' }
     ]
   },
   40: {
     title:'まだ 生きている',
     in:[
-      { snd:null, text:'おなかが 鳴っちゃった。……だしの におい。' },
-      { snd:null, text:'……あ。子どもたちが、大きな 人を かこんでる。' }
+      { snd:'zt40i1', text:'おなかが 鳴っちゃった。……だしの におい。' },
+      { snd:'zt40i2', text:'……あ。子どもたちが、大きな 人を かこんでる。' }
     ],
     out:[
-      { snd:null, text:'「この字は、まだ 生きている」……そう、聞こえた。' },
-      { snd:null, text:'子どもたちが、いっせいに にげた。……あの人は、おわなかった。ただ 立ってた。' },
-      { snd:null, text:'そのあと、この 町の 字が あばれはじめた。うどんやさんが、こう いってた。「あの人が 来た 先に、子どもが 字を こわがった。……そのあと、字が あばれた」' }
+      { snd:'zt40o1', text:'「この字は、まだ 生きている」……そう、聞こえた。' },
+      { snd:'zt40o2', text:'子どもたちが、いっせいに にげた。……あの人は、おわなかった。ただ 立ってた。' },
+      { snd:'zt40o3', text:'そのあと、この 町の 字が あばれはじめた。うどんやさんが、こう いってた。「あの人が 来た 先に、子どもが 字を こわがった。……そのあと、字が あばれた」' }
     ],
     clue:'あの人が 来た 先に、子どもが 字を こわがった'
   },
   41: {
     title:'はしの むこうの 医院',
     in:[
-      { snd:null, text:'どこまで つづくんだろう、この はし。……しまから しまへ、ずっと。' },
-      { snd:null, text:'きゅうな びょう人が 出たのに、医院の 場しょが 読めないの。' }
+      { snd:'zt41i1', text:'どこまで つづくんだろう、この はし。……しまから しまへ、ずっと。' },
+      { snd:'zt41i2', text:'きゅうな びょう人が 出たのに、医院の 場しょが 読めないの。' }
     ],
     out:[
-      { snd:null, text:'「医」は、けがや びょうきを なおす 人。「院」は、大きな たてもの。' },
-      { snd:null, text:'はしの むこうに 医院が あった。……まにあった！' },
-      { snd:null, text:'おいしゃさんが、こう いってた。「字が 読めることが、いのちを たすけることも ある」' }
+      { snd:'zt41o1', text:'「医」は、けがや びょうきを なおす 人。「院」は、大きな たてもの。' },
+      { snd:'zt41o2', text:'はしの むこうに 医院が あった。……まにあった！' },
+      { snd:'zt41o3', text:'おいしゃさんが、こう いってた。「字が 読めることが、いのちを たすけることも ある」' }
     ]
   },
   42: {
     title:'ゆげの むこうの やど',
     in:[
-      { snd:null, text:'あちこちから、白い けむり。……ぜんぶ おふろなの？' },
-      { snd:null, text:'やどの 名前が 読めなくて、どこに とまるか わからないの。' }
+      { snd:'zt42i1', text:'あちこちから、白い けむり。……ぜんぶ おふろなの？' },
+      { snd:'zt42i2', text:'やどの 名前が 読めなくて、どこに とまるか わからないの。' }
     ],
     out:[
-      { snd:null, text:'「宿」の 名まえ。「定」まった へや。番頭さんと「談」して、ぶじに きまった。' },
-      { snd:null, text:'ゆげの むこうで、みんなが わらってる。' },
-      { snd:null, text:'番頭さんが、こう いってた。「なまえは 知らない。先に 来て、先に 行く 人だよ」' }
+      { snd:'zt42o1', text:'「宿」の 名まえ。「定」まった へや。番頭さんと「談」して、ぶじに きまった。' },
+      { snd:'zt42o2', text:'ゆげの むこうで、みんなが わらってる。' },
+      { snd:'zt42o3', text:'番頭さんが、こう いってた。「なまえは 知らない。先に 来て、先に 行く 人だよ」' }
     ],
     clue:'なまえは 知らない。先に 来て、先に 行く 人'
   },
   43: {
     title:'すれちがい',
     in:[
-      { snd:null, text:'水の 色が、さっきまでと ぜんぜん ちがう。……こい あお。' },
-      { snd:null, text:'ふなつき場に、人が ならんでる。……あの せなかも。' }
+      { snd:'zt43i1', text:'水の 色が、さっきまでと ぜんぜん ちがう。……こい あお。' },
+      { snd:'zt43i2', text:'ふなつき場に、人が ならんでる。……あの せなかも。' }
     ],
     out:[
-      { snd:null, text:'……すれちがった。かさの 下から、目が 合った。' },
-      { snd:null, text:'……青い 目だった。遠い 国から 来た 人なのかな。' },
-      { snd:null, text:'何も 言わなかった。ただ、行ってしまった。' },
-      { snd:null, text:'……マナが、ずっと だまってる。' }
+      { snd:'zt43o1', text:'……すれちがった。かさの 下から、目が 合った。' },
+      { snd:'zt43o2', text:'……青い 目だった。遠い 国から 来た 人なのかな。' },
+      { snd:'zt43o3', text:'何も 言わなかった。ただ、行ってしまった。' },
+      { snd:'zt43o4', text:'……マナが、ずっと だまってる。' }
     ]
   },
   44: {
     title:'さいごの まち',
     in:[
-      { snd:null, text:'あつい！ ……木の かたちまで、南の 国みたい。' },
-      { snd:null, text:'……カンサイと シコクの、さいごの 町。' }
+      { snd:'zt44i1', text:'あつい！ ……木の かたちまで、南の 国みたい。' },
+      { snd:'zt44i2', text:'……カンサイと シコクの、さいごの 町。' }
     ]
   },
   /* ===== 4年 チュウブ 20話（2026-08-22）=====
@@ -17163,7 +17268,8 @@ const GRADE_FINALE = {
 2: {
     zone: 24,
     keyword: 'おしえ',                       // ★6本のうち4本が光る（10・15・17・23／機械で数えた実測）
-    snd   : { intro:null, found:null, none:null, lines:[null,null,null], last:null },
+    snd   : { intro:'gf2_intro', found:'gf2_found', none:'gf2_none',
+              lines:['gf2_l1','gf2_l2','gf2_l3'], last:'gf2_last' },
     intro : 'みんな、おなじ 人の 話を してた。',
     found : '……ぜんぶ、字を おしえて まわってる 人の 話。',
     none  : '……この 旅で 会った 人たちの はなしを、思い出してみて。',
@@ -17181,7 +17287,8 @@ const GRADE_FINALE = {
                                                「先」は1年のゾーン8（えどじょう）で習う字＝子どもは読める。
                                                1年の答え（いちばん「先」に字が読まれなくなった）と同じ字で、
                                                5年の反転（誰よりも「先」に気づいて動いていた）でも同じ字になる。 */
-    snd   : { intro:null, found:null, none:null, lines:[null,null,null], last:null },
+    snd   : { intro:'gf3_intro', found:'gf3_found', none:'gf3_none',
+              lines:['gf3_l1','gf3_l2','gf3_l3'], last:'gf3_last' },
     intro : 'カンサイと シコクを、ぜんぶ 歩いたね。',
     found : '……ぜんぶに、おなじ 字が 入ってる。',
     none  : '……この 旅で 会った 人たちの はなしを、思い出してみて。',
@@ -17618,11 +17725,218 @@ function evPutChara(el, c){
 }
 
 /* タップで次へ（自動送りにしない）。最後まで行ったら閉じる */
+/* ★2026-08-23：4年のイベントシーン。
+   ・EV_BG   … 名前 → 背景の絵（まだ描けていないものは null＝仮の空と山をCSSで出す）
+   ・EV_LINE … 名前 → 字の隊列の並べ方
+   ★字は画像ではなく文字なので、絵を1枚も足さずに「連なって進む列」が作れる。 */
+const EV_BG = {
+  fuji  : { img:'images/fullart/ev-fuji-mikaeri.webp',
+            fallback:'linear-gradient(180deg,#bfe3f5 0%,#eaf4fa 42%,#cfd6da 58%,#6b6560 74%,#3b3733 100%)' },
+  nagara: { img:'images/fullart/ev-nagara-yoru.webp',
+            fallback:'linear-gradient(180deg,#0b1730 0%,#16264a 45%,#1b3358 62%,#0e1c33 100%)' }
+};
+/* 隊列の並べ方。n＝出す字の数／path(t)＝0（手前）〜1（奥）で位置を返す */
+const EV_LINE = {
+  /* 富士＝つづら折りを登っていく。上へ行くほど中央へ寄り、小さく薄くなる */
+  climb: { chars:'隊列伝健努達徒単', n:15, light:false,
+           path:function(t){
+             return { x:52 + Math.sin(t*Math.PI*3.0)*27*(1-t*0.9),
+                      y:78 - t*58,
+                      k:0.86 - t*0.72,
+                      o:1 - t*0.5 };
+           } },
+  /* 長良川＝川を流れていく明かりの列（まだ字に見えていない状態） */
+  lights:{ chars:'●●●●●●●●', n:11, light:true,
+           path:function(t){
+             return { x:6 + t*90,
+                      y:64 - Math.sin(t*Math.PI*0.75)*7 - t*10,
+                      k:0.85 - t*0.6,
+                      o:1 - t*0.4 };
+           } },
+  /* ★同じ位置のまま、明かりが1文字ずつ「字」に変わる＝準也さんの「あれっ！？」 */
+  toKanji:{ chars:'灯漁清列兵争戦選', n:11, light:true,
+           path:function(t){
+             return { x:6 + t*90,
+                      y:64 - Math.sin(t*Math.PI*0.75)*7 - t*10,
+                      k:0.85 - t*0.6,
+                      o:1 - t*0.4 };
+           } }
+};
+/* ★背景を塗る（立ち絵の #evBg と イベントシーンの #ecBg で共用）。
+   　絵がまだ無いあいだは 仮の空（CSSのグラデーション）にして、動きだけ先に確かめられるようにする。 */
+function evPaintBg(el, name){
+  if(!el) return;
+  if(!name){ el.classList.remove('show'); el.style.backgroundImage=''; el.style.background=''; return; }
+  const d=EV_BG[name]; if(!d) return;
+  const im=new Image();
+  im.onload =()=>{ el.style.background=''; el.style.backgroundImage="url('"+d.img+"')"; el.classList.add('show'); };
+  im.onerror=()=>{ el.style.backgroundImage=''; el.style.background=d.fallback; el.classList.add('show'); };
+  im.src=d.img;
+  el.style.animation='none'; void el.offsetWidth; el.style.animation='';   // ゆっくり寄るのをやり直す
+}
+/* ★字の隊列を並べる（立ち絵の #evLine と イベントシーンの #ecLine で共用）。
+   　★字は画像ではなく文字なので、絵を1枚も足さずに「連なって進む列」が作れる。 */
+function kanjiLineInto(el, name){
+  if(!el) return;
+  if(!name){ el.classList.remove('show'); el.innerHTML=''; return; }
+  const d=EV_LINE[name]; if(!d) return;
+  el.innerHTML='';
+  for(let i=0;i<d.n;i++){
+    const t=(d.n===1)?0:(i/(d.n-1));
+    const p=d.path(t);
+    const sp=document.createElement('span');
+    sp.className='ev-kanji'+(d.light?' lightmode':'');
+    sp.textContent=d.chars.charAt(i%d.chars.length);
+    sp.style.left=p.x+'%'; sp.style.top=p.y+'%';
+    sp.style.setProperty('--k',p.k.toFixed(3));
+    sp.style.setProperty('--o',p.o.toFixed(3));
+    sp.style.animationDelay=(i*0.13).toFixed(2)+'s';
+    el.appendChild(sp);
+  }
+  el.classList.add('show');
+}
+function evSetBg(name){
+  const ov=$('evOverlay');
+  if(ov) ov.classList.toggle('hasbg', !!name);
+  evPaintBg($('evBg'), name);
+}
+function evSetLine(name){ kanjiLineInto($('evLine'), name); }
+/* ===================================================================
+   ★2026-08-23：イベントシーン（立ち絵より格上の見せ場）
+   準也さんのご指示＝「立ち絵からイベントシーンに入って、また立ち絵に戻って、フィールド」
+   ・EV_SCENES の行に { scene:'fuji52' } と書くと、そこでこのシーンに入る
+   ・終わると立ち絵の会話に戻って、続きが流れる
+   ・作りは 船シーン（ShipScene）と同じ流儀＝全画面・とばすボタン・世代番号ガード
+   =================================================================== */
+const EV_CUT_SCENES = {
+  /* ★ゾーン52＝山梨・富士山の吉田口登山道。
+     ★マナは全部知っている（AIだから画像は何まいも見た）。でも実物を前にして驚く。
+       これがイージーとの差＝イージーは6年まで一度も驚かない。 */
+  fuji52: {
+    bg:'fuji',
+    /* ★笠の男を置く場所＝EV_LINE.climb の列の先（t=1）に合わせた。実機の写真で位置を確かめている */
+    kasa:{ x:'52%', y:'19%', w:'15%' },
+    cuts:[
+      { who:'マナ',      snd:'evs52_1',  text:'……知ってる。3776メートル。' },
+      { who:'マナ',      snd:'evs52_2',  text:'写真も、何まいも 見た。形も、色も、ぜんぶ。' },
+      { who:'マナ',      snd:'evs52_3',  text:'……でも。' },
+      { who:'マナ',      snd:'evs52_4',  text:'……こんなに 大きいなんて、知らなかった。' },
+      { who:'マナ',      snd:'evs52_5',  text:'ここから てっぺんまで、道が ずっと つづいてるの。' },
+      { who:'マナ',      snd:'evs52_6',  text:'……あれ？' },
+      /* ★ここで字の隊列が現れる */
+      { who:'マナ',      snd:'evs52_7',  line:'climb', text:'……道に、字が いる。ぞろぞろ ならんでる。あんなに たくさん。' },
+      { who:'マナ',      snd:'evs52_8',  kasa:'in', text:'……先に、大きな かさ。あの人だ。' },
+      { who:'マナ',      snd:'evs52_9',  text:'子どもたちが いる。あの人、近づいて……' },
+      { who:'マナ',      snd:'evs52_10', text:'……にげた。子どもたちが、みんな にげちゃった。' },
+      { who:'マロース',  snd:null, maros:true, text:'……まだ、たりない。' },
+      { who:'マナ',      snd:'evs52_11', kasa:'away', text:'……上って行く。字も、ついて行く。' }
+    ]
+  },
+  /* ★ゾーン57＝岐阜・長良川。★絵を差し替えるのではなく、同じ画面のまま あかりが1つずつ字に変わる。 */
+  nagara57: {
+    bg:'nagara',
+    /* ★こちらは列が右上へ伸びるので、先は右のほう（EV_LINE.lights の t=1 に合わせた） */
+    kasa:{ x:'90%', y:'50%', w:'11%' },
+    cuts:[
+      { who:'マナ', snd:'evs57_1', line:'lights', text:'……見て。あかりが、一れつに ならんで、ゆっくり 動いてる。' },
+      { who:'マナ', snd:'evs57_2', text:'きれい……。昔から、この 川では「灯」を つかって「漁」を するんだって。' },
+      { who:'マナ', snd:'evs57_3', text:'……ちがう。' },
+      { who:'マナ', snd:'evs57_4', text:'……あれ、火じゃ ない。' },
+      /* ★ここで あかりが 字に変わる */
+      { who:'マナ', snd:'evs57_5', line:'toKanji', text:'……ぜんぶ、字。' },
+      { who:'マナ', snd:'evs57_6', kasa:'in', text:'……列の 一番 先に、大きな かさが 一つ。' }
+    ]
+  }
+};
+
+var EvCutScene = (function(){
+  'use strict';
+  var active=false, seq=0, step=-1, cuts=null, onDone=null, timer=null;
+
+  function el(id){ return document.getElementById(id); }
+  function clearTimer(){ if(timer){ clearTimeout(timer); timer=null; } }
+
+  function start(name, done){
+    var d=EV_CUT_SCENES[name];
+    if(!d){ if(done) done(); return; }
+    if(active) return;
+    active=true; cuts=d.cuts; onDone=done||null; step=-1; seq++;
+    var mySeq=seq;
+    var ov=el('ecOverlay');
+    /* 背景（絵がまだ無ければ仮の空＝動きだけ先に確かめられる） */
+    evPaintBg(el('ecBg'), d.bg);
+    kanjiLineInto(el('ecLine'), null);
+    var k=el('ecKasa');
+    if(k){
+      k.classList.remove('show','away');
+      var kp=d.kasa||{x:'52%',y:'19%',w:'15%'};
+      k.style.setProperty('--kx',kp.x); k.style.setProperty('--ky',kp.y); k.style.setProperty('--kw',kp.w);
+    }
+    ov.classList.add('show');
+    /* 立ち絵の声が鳴っていたら止める（重ならないように） */
+    if(typeof stopBattleHakaseVoice==='function') stopBattleHakaseVoice();
+    setTimeout(function(){ if(seq===mySeq && active) next(); }, 900);   // 絵を見せる ひと呼吸
+  }
+
+  function next(){
+    clearTimer();
+    step++;
+    if(!active) return;
+    if(step>=cuts.length){ finish(); return; }
+    var c=cuts[step], mySeq=seq;
+    if(c.line!==undefined) kanjiLineInto(el('ecLine'), c.line);
+    if(c.kasa==='in')   el('ecKasa').classList.add('show');
+    if(c.kasa==='away') el('ecKasa').classList.add('away');
+    el('ecWho').textContent=c.who||'';
+    el('ecText').textContent=c.text||'';
+    el('ecText').className=c.maros?'ec-maros':'';
+    if(c.snd && typeof playBattleHakaseVoice==='function') playBattleHakaseVoice(c.snd);
+    /* 文字数で自動送り（本体と同じ式＝1文字0.35秒＋1秒・最低4秒・上限10秒）。タップでも進む */
+    var ms=Math.min(Math.max((c.text||'').length*350+1000, 4000), 10000);
+    timer=setTimeout(function(){ if(seq===mySeq && active) next(); }, ms);
+  }
+
+  function tap(){ if(active) next(); }
+
+  function skip(){
+    if(!active) return;
+    finish();
+  }
+
+  function finish(){
+    if(!active) return;
+    clearTimer();
+    active=false; seq++;
+    if(typeof stopBattleHakaseVoice==='function') stopBattleHakaseVoice();
+    var ov=el('ecOverlay');
+    ov.classList.remove('show');
+    kanjiLineInto(el('ecLine'), null);
+    var b=el('ecBg'); if(b){ b.classList.remove('show'); b.style.backgroundImage=''; b.style.background=''; }
+    var k=el('ecKasa'); if(k){ k.classList.remove('show','away'); }
+    el('ecText').textContent=''; el('ecWho').textContent='';
+    var cb=onDone; onDone=null; cuts=null; step=-1;
+    if(cb) cb();
+  }
+
+  return { start:start, tap:tap, skip:skip, isActive:function(){ return active; } };
+})();
+
 function evAdvance(){
   if(!evActive) return;
   evStep++;
   if(evStep>=evScript.length){ evFinish(); return; }
   const s=evScript[evStep];
+  /* ★2026-08-23：{ scene:'fuji52' } の行＝ここでイベントシーンに入る。
+     　終わったら立ち絵の会話に戻って、続きが流れる（＝準也さんのご指示の並び）。 */
+  if(s && s.scene){
+    const back=evSeq;
+    EvCutScene.start(s.scene, ()=>{
+      if(back!==fieldSeq && back!==evSeq) return;   // ワープ等で離脱していたら戻らない
+      if(!evActive) return;
+      evAdvance();
+    });
+    return;
+  }
   const c=EV_CHARA[s.who];
   if(!c){ evFinish(); return; }
   const ov=$('evOverlay'), L=$('evLeft'), R=$('evRight');
@@ -17641,6 +17955,9 @@ function evAdvance(){
     if(L.getAttribute('src')) L.classList.add('off');     // 左は残したまま暗くする
     else L.classList.add('hide');                         // まだ一度も出ていないなら出さない
   }
+  /* ★2026-08-23：一枚絵の背景と 字の隊列（書いてある行だけ切り替える＝書いていない行は前のまま） */
+  if(s.bg   !== undefined) evSetBg(s.bg);
+  if(s.line !== undefined) evSetLine(s.line);
   $('evText').textContent=s.text;
   $('evText').className=(s.who==='easy')?'ev-easy':'';    // イージーが喋るときだけ文字色を変える
   /* ★弾VO-2（2026-08-17）：この行の声を鳴らす（置き場所は audio\battle\）。
@@ -17657,6 +17974,7 @@ function evFinish(){
   ov.classList.remove('show','dark');
   $('evLeft').classList.add('hide'); $('evRight').classList.add('hide');
   $('evText').textContent=''; $('evText').className='';
+  evSetBg(null); evSetLine(null);   // ★2026-08-23：背景と隊列も片づける
   const cb=evDoneCb;
   evDoneCb=null; evScript=null; evStep=-1;
   if(evSeq!==fieldSeq) return;   // ワープ等で離脱済みなら以降は何もしない（hakaseTalkOnceと同じ誤発火防止）
