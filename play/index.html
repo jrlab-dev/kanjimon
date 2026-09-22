@@ -18646,7 +18646,8 @@ function scheduleHakaseAdvance(msg, fseq, isLast, onFinish, sndId){
   const tryAdvance=()=>{ if(mseq!==hakaseMsgSeq || done) return; if(charDone && ttsDone) finish(); };
   const charMs=Math.max(msg.length*HAKASE_MSG_MS_PER_CHAR + HAKASE_MSG_MS_BASE, HAKASE_MSG_MS_MIN);
   setTimeout(()=>{ if(mseq!==hakaseMsgSeq) return; charDone=true; tryAdvance(); },charMs);
-  setTimeout(()=>{ if(mseq!==hakaseMsgSeq) return; finish(); },HAKASE_MAX_MS);   // 手直し はかせみため§4：表示時間の上限（ゲート無視で強制finish）
+  const recordedMaxMs=sndId==='bh23'?11600:HAKASE_MAX_MS;
+  setTimeout(()=>{ if(mseq!==hakaseMsgSeq) return; finish(); },recordedMaxMs);   // 手直し はかせみため§4：表示時間の上限（ゲート無視で強制finish）
   if(sndId){
     playBattleHakaseVoice(sndId);
     ttsDone=true;   // 録音ボイスがある行はTTSを鳴らさない＝文字数式のゲートだけで進む
@@ -24911,8 +24912,8 @@ function gatePlay(onDone){
      正面画像が無くても画像追加なしで済む。背景は当面 gate.webp 流用。
    ★会話は bh84「ようこそトットリへ！」を統合（onDone側での二重発言を避ける）。
    ========================================================================== */
-const GATE_ARRIVAL_DUR=9.0;
-const ARRIVAL_TALK={at:2.6, dur:5.4, voice:'audio/battle/bh84.mp3',
+const GATE_ARRIVAL_DUR=9.6;
+const ARRIVAL_TALK={at:2.6, dur:6.4, voice:'audio/battle/bh84.mp3',
   msg:'ついたわね！<br>ようこそ トットリへ！ にほんいち おおきな すなの おか、さきゅうが あるところよ！'};
 function gatePlayArrival(onDone){
   const my=seq;                                    // 世代ガード（gatePlay と同じ）
