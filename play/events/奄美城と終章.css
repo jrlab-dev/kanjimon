@@ -1,0 +1,36 @@
+#aySteps{position:absolute;left:38%;top:24%;width:24%;display:flex;flex-direction:column-reverse;align-items:center;gap:2px;pointer-events:none}#aySteps i{display:block;width:100%;height:12px;background:linear-gradient(#fff1b3,#ce982b);border:1px solid #a7792a;border-radius:3px;opacity:.12;transform:translateX(-16px);transition:opacity .5s,transform .5s}#aySteps i.built{opacity:.85;transform:none}#aySteps i:nth-child(2){width:85%}#aySteps i:nth-child(3){width:70%}#aySteps i:nth-child(4){width:55%}#aySteps i:nth-child(5){width:40%}#aySteps.rebuild i{animation:ayBuild 1.7s ease both}@keyframes ayBuild{40%{transform:translateX(15px)}100%{transform:none}}
+#ayGear{position:absolute;right:8%;top:26%;font-size:64px;color:#967030b0;animation:ayGear 12s linear infinite;pointer-events:none}#ayGear.slow{animation-duration:35s}@keyframes ayGear{to{transform:rotate(360deg)}}
+#ayAlmost{position:absolute;left:62%;top:39%;padding:5px 12px;background:#fff;color:#3b4e68;border-radius:14px;font-weight:900}
+#ayWindows{position:absolute;left:10%;top:22%;right:10%;display:flex;justify-content:space-between;pointer-events:none}#ayWindows i{width:20%;aspect-ratio:.55;border-radius:50% 50% 6px 6px;background:#d7e9ff22;border:1px solid #eee5}#ayWindows.children i:after{content:'';display:block;width:100%;height:100%;background:var(--cast) 100% 50%/200% 100% no-repeat;filter:brightness(.15);opacity:.65;animation:ayChildFade 2.8s both}#ayWindows.children i:nth-child(2):after{animation-delay:.2s}#ayWindows.children i:nth-child(3):after{animation-delay:.4s}#ayWindows.children i:nth-child(4):after{animation-delay:.6s}@keyframes ayChildFade{0%,100%{opacity:0}30%,70%{opacity:.65}}
+#ayDoorWrap{position:absolute;left:50%;top:25%;transform:translateX(-50%);pointer-events:auto}#ayDoor{border:2px solid #fff;border-radius:14px;background:#204565e8;color:#fff;font-size:1rem;font-weight:900;padding:12px 20px;white-space:nowrap;cursor:pointer}
+#ayFocus{position:absolute;left:15%;right:15%;top:21%;height:28%;display:flex;justify-content:center;background:radial-gradient(ellipse,#fff9,transparent 70%);pointer-events:none}#ayFocus .ay-focus-sprite{width:55%;aspect-ratio:1;background-size:300% 200%;background-position:0 0;background-repeat:no-repeat}#ayFocus.both .ay-focus-sprite{width:48%}
+
+.ay-focus-easy{width:35%;object-fit:contain}#ayFocus.both .ay-focus-easy{width:42%}
+#amamiLateRoot.final-stage{background:#10251e}#amamiLateRoot.beach-stage{background:url('../images/fullart/amami-ending-beach.png') center/cover}
+#aySplit{position:absolute;top:4%;left:50%;transform:translateX(-50%);width:min(94%,calc(100dvh - 230px));aspect-ratio:1;overflow:hidden;border-radius:12px;background:#13261e;isolation:isolate}
+#aySplit .ay-pane{position:absolute;inset:0;background-size:200% 200%;background-position:50% 100%;color:white}
+#aySplit .ay-pane:nth-child(1){clip-path:polygon(50% 50%,13.67% 0,86.33% 0)}
+#aySplit .ay-pane:nth-child(2){clip-path:polygon(50% 50%,86.33% 0,100% 0,100% 66.25%)}
+#aySplit .ay-pane:nth-child(3){clip-path:polygon(50% 50%,100% 66.25%,100% 100%,50% 100%);background-position:20% 20%}
+#aySplit .ay-pane:nth-child(4){clip-path:polygon(50% 50%,50% 100%,0 100%,0 66.25%);background-position:50% 20%}
+#aySplit .ay-pane:nth-child(5){clip-path:polygon(50% 50%,0 66.25%,0 0%,13.67% 0)}
+#aySplit b{position:absolute;left:42%;top:1%;background:#183f30e8;padding:0 4px;border:1px solid #ead795;font-size:clamp(9px,2.8vw,12px)}
+#aySplit .ay-copy-easy{position:absolute;width:10%;height:auto;left:51%;top:6%;background:none;filter:drop-shadow(0 3px 1px #0002)}
+#aySplit .ay-main-child{position:absolute;width:7%;height:13%;left:43%;top:22%;background-size:300% 200%;background-position:50% 0;background-repeat:no-repeat}
+#aySplit .ay-new-child{position:absolute;width:9%;height:17%;background-size:200% 100%;background-position:100% 50%;background-repeat:no-repeat}
+#aySplit .ay-pane:nth-child(2) .ay-copy-easy{left:81%;top:17%}#aySplit .ay-pane:nth-child(2) .ay-new-child{left:79%;top:32%}
+#aySplit .ay-pane:nth-child(3) .ay-copy-easy{left:77%;top:64%}#aySplit .ay-pane:nth-child(3) .ay-new-child{left:69%;top:78%}
+#aySplit .ay-pane:nth-child(4) .ay-copy-easy{left:28%;top:64%}#aySplit .ay-pane:nth-child(4) .ay-new-child{left:19%;top:78%}
+#aySplit .ay-pane:nth-child(5) .ay-copy-easy{left:7%;top:17%}#aySplit .ay-pane:nth-child(5) .ay-new-child{left:11%;top:31%;height:20%}
+#aySplit small{display:none}#aySplit .responded .ay-new-child{animation:ayAnswerStep .8s ease both}@keyframes ayAnswerStep{45%{transform:translateY(-4px)}100%{transform:translateY(-2px)}}
+#ayJoy{position:absolute;bottom:13%;left:5%;right:5%;padding:12px;text-align:center;background:#18392bed;border:2px solid #ecdfa3;border-radius:12px;font-size:1rem;color:#fff}
+#ayFinalChoices{position:absolute;left:4%;right:4%;bottom:3%;padding:10px;background:#fffdf1;color:#17324b;border:3px solid #cfdfed;border-radius:18px;pointer-events:auto;text-align:center}
+#ayFinalChoices p{font-size:.95rem;font-weight:900;margin:0 0 7px}#ayFinalChoices button{display:block;width:100%;min-height:44px;margin:4px 0;padding:6px;border:1px solid #a8c0d2;background:#eef7ff;color:#193d5b;border-radius:9px;font-size:.94rem;font-weight:900;cursor:pointer}#ayFinalChoices button.chosen{background:#b9f2bd}
+#ayLastFrame{position:absolute;left:0;right:0;top:12%;aspect-ratio:1.18;pointer-events:none}
+#ayLastFrame .ay-beach-hero{position:absolute;left:36%;top:61%;width:8%;height:15%;background-position:50% 0;background-size:300% 200%;background-repeat:no-repeat}
+#aySmile{position:absolute;left:33%;top:48%;width:14%;height:25%;object-fit:contain;opacity:0;transition:opacity .4s}#aySmile.show{opacity:1}
+#ayEndEasy{position:absolute;left:52%;top:40%;width:16%;aspect-ratio:1}#ayEndEasy>.easy3d-frame,#ayFinalGlint{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}#ayFinalGlint[hidden]{display:none}
+#ayBlack{position:absolute;inset:0;background:#000;z-index:30}
+body.amami-late-mode .amami-easy .interior-npc-visual{filter:none}
+@media(max-height:620px){#ayFinalChoices{padding:6px;bottom:1%}#ayFinalChoices button{margin:2px 0}#aySplit{top:2%;width:min(94%,calc(100dvh - 224px))}#ayLastFrame{top:8%}}
+@media(prefers-reduced-motion:reduce){#ayGear,#aySteps.rebuild i,#ayWindows.children i:after,#aySplit .responded .ay-new-child{animation:none}#aySmile{transition:none}}

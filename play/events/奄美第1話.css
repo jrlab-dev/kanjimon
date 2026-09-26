@@ -1,0 +1,34 @@
+#amamiEpisode1Root{position:fixed;inset:0;z-index:268;display:none;pointer-events:none;color:#fff;font-family:'Zen Maru Gothic',sans-serif}
+#amamiEpisode1Root.active{display:block}
+#aseChapter{position:absolute;left:50%;top:max(68px,10%);transform:translate(-50%,-8px);z-index:7;min-width:min(84%,350px);padding:10px 18px;border-radius:16px;background:rgba(16,35,52,.86);border:2px solid rgba(255,255,255,.86);box-shadow:0 6px 18px rgba(0,0,0,.28);text-align:center;opacity:0;transition:opacity .35s ease,transform .35s ease}
+#aseChapter.show{opacity:1;transform:translate(-50%,0)}
+#aseChapter small{display:block;color:#9ce8ff;font-weight:900;font-size:.78rem;letter-spacing:.08em}
+#aseChapter b{display:block;margin-top:2px;font-size:clamp(1.15rem,5vw,1.55rem);font-weight:900;white-space:nowrap}
+#aseProgress{position:absolute;left:50%;top:max(54px,7%);transform:translateX(-50%);z-index:7;display:none;padding:6px 14px;border-radius:999px;background:rgba(13,45,65,.84);border:2px solid rgba(255,255,255,.82);box-shadow:0 4px 12px rgba(0,0,0,.24);font-weight:900;font-size:.9rem;white-space:nowrap}
+#aseProgress.show{display:block;animation:asePop .24s ease-out}
+@keyframes asePop{from{opacity:0;transform:translate(-50%,-7px)}to{opacity:1;transform:translate(-50%,0)}}
+#aseTalk{position:absolute;left:3%;bottom:max(18px,3.5%);width:94%;z-index:9;display:none;align-items:center;gap:11px;padding:10px 18px 24px 10px;border-radius:18px;background:rgba(0,0,0,.84);border:3px solid rgba(255,255,255,.9);box-shadow:0 5px 18px rgba(0,0,0,.35);pointer-events:auto;cursor:pointer}
+#aseTalk.show{display:flex;animation:aseTalkIn .2s ease-out both}
+@keyframes aseTalkIn{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
+#aseFace{width:clamp(72px,22vw,112px);aspect-ratio:1;flex:0 0 auto;object-fit:cover;object-position:center top;border-radius:14px;border:2px solid rgba(255,255,255,.8);background:#fff}
+#aseTalk>div{min-width:0;text-align:left}
+#aseWho{display:block;color:#ffea66;font-size:clamp(.82rem,3.4vw,1rem);font-weight:900;margin-bottom:3px}
+#aseText{font-size:clamp(1rem,4.4vw,1.2rem);font-weight:900;line-height:1.48;overflow-wrap:anywhere}
+#aseNext{position:absolute;right:12px;bottom:4px;font-size:.78rem;opacity:.28;transition:opacity .15s}
+#aseNext.ready{opacity:.9;animation:aseNext 1s ease-in-out infinite}
+@keyframes aseNext{50%{transform:translateY(3px)}}
+.ase-field-enemy{position:absolute;left:calc(var(--ase-x)*var(--tile));top:calc(var(--ase-y)*var(--tile));width:calc(1.45*var(--tile));height:calc(1.45*var(--tile));transform:translate(-22%,-28%);z-index:32;display:flex;align-items:center;justify-content:center;pointer-events:none;filter:drop-shadow(0 5px 5px rgba(0,0,0,.3));animation:aseEnemyFloat 1.8s ease-in-out infinite}
+.ase-field-enemy .ase-word{font-size:clamp(27px,9vw,46px);font-weight:900;letter-spacing:-.06em;color:#172554;-webkit-text-stroke:2px #fff;text-shadow:0 3px 0 #fbbf24,0 5px 8px rgba(0,0,0,.25)}
+.ase-field-enemy .ase-face{position:absolute;left:50%;top:56%;transform:translate(-50%,-50%);font-size:.78rem;color:#172554;letter-spacing:.05em}
+.ase-field-enemy.arrive{animation:aseEnemyArrive .5s ease-out both,aseEnemyFloat 1.8s .5s ease-in-out infinite}
+@keyframes aseEnemyArrive{from{opacity:0;transform:translate(-22%,-60%) scale(.55)}to{opacity:1;transform:translate(-22%,-28%) scale(1)}}
+@keyframes aseEnemyFloat{50%{margin-top:-6px}}
+.amami-easy.ase-tilt .interior-npc-visual{transform:rotate(-8deg);transform-origin:center bottom;transition:transform .3s ease}
+body.amami-episode1-mode #fieldControls,body.amami-episode1-mode #fieldModeBadge,body.amami-episode1-mode #fieldZoneName{pointer-events:none}
+body.amami-episode1-mode .field-h .btn,body.amami-episode1-mode .field-h .map-btn{visibility:hidden}
+#screen-battle.amami-episode1-battle{background-image:url('../images/battle-tate/amami-ashitoku-v1.png');background-position:99.07% 68.93%;background-size:auto 105.36%}
+#screen-battle.amami-episode1-battle .battle-coins{display:none}
+#screen-battle.amami-episode1-battle .enemy-info .tbadge{background:#fff7cf;color:#6b4b00;border:2px solid #f4c84b}
+@media (min-width:481px){#amamiEpisode1Root{left:50%;right:auto;width:480px;transform:translateX(-50%)}}
+@media (max-height:620px){#aseTalk{bottom:8px;padding-top:7px;padding-bottom:21px}#aseFace{width:68px}#aseText{font-size:.96rem;line-height:1.42}#aseChapter{top:52px}}
+@media (prefers-reduced-motion:reduce){#aseNext.ready,.ase-field-enemy,.ase-field-enemy.arrive{animation:none}}

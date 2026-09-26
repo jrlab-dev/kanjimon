@@ -1,0 +1,95 @@
+/* 表示整理だけ。縮尺はすべて本体クラスと --tile が決める。 */
+body.nd-field-harness{background:#07121e;overflow:hidden}
+body.nd-field-harness #app{min-height:100vh}
+body.nd-field-harness #screen-field{padding-bottom:0}
+body.nd-field-harness .field-h>button,body.nd-field-harness .field-info,body.nd-field-harness .field-tip,
+body.nd-field-harness .dpad,body.nd-field-harness #fieldPanSkip,body.nd-field-harness #autoBadge{visibility:hidden!important}
+body.nd-field-harness .field-h{position:relative}
+.nd-harness-label{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:11px;font-weight:900;white-space:nowrap;color:#173044}
+.nd-event-spot{position:absolute!important;width:var(--tile);height:var(--tile);z-index:55;background:transparent!important;display:flex;align-items:center;justify-content:center;overflow:visible}
+.nd-field-actor{pointer-events:none}
+
+/* 独立イベントでも本編の画面寸法・カメラ・--tile を保つ。 */
+body.nd-event-mode{background:#07121e;overflow:hidden}
+body.nd-event-mode #app{min-height:100dvh}
+body.nd-event-mode #screen-field{padding-bottom:0}
+body.nd-event-mode .field-h>button,body.nd-event-mode .field-info,body.nd-event-mode .field-tip,
+body.nd-event-mode .dpad,body.nd-event-mode #fieldPanSkip,body.nd-event-mode #autoBadge,
+body.nd-field-harness .field-h>button,body.nd-field-harness .field-info,body.nd-field-harness .field-tip,
+body.nd-field-harness .dpad,body.nd-field-harness #fieldPanSkip,body.nd-field-harness #autoBadge{visibility:hidden!important}
+body.nd-event-mode .field-h,body.nd-field-harness .field-h{position:relative}
+.nd-base-hidden{visibility:hidden!important}
+.nd-event-spot{position:absolute!important;width:var(--tile);height:var(--tile);z-index:55;background:transparent!important;display:flex;align-items:center;justify-content:center;overflow:visible;pointer-events:none}
+.nd-event-spot.nd-frozen .spot-char{filter:saturate(.55) brightness(1.35) drop-shadow(0 0 7px #9de5ff)}
+.nd-event-spot.nd-frozen .icd-ice-shell{z-index:3;pointer-events:none}
+.nd-event-spot.nd-frozen .spot-char{position:relative;z-index:2}
+.nd-field-actor{pointer-events:none}
+#fieldGrid .nd-field-mana,#fieldGrid .nd-field-adult,#fieldGrid .nd-field-maros{transition-property:left,top;transition-timing-function:linear}
+#fieldGrid .fuji52-story-mana.nd-field-mana{animation:none!important;background:none!important}
+#fieldGrid .nd-mana-sprite,#fieldGrid .nd-maros-sprite{position:absolute;inset:0;display:block;transform-origin:center bottom;transform:scaleX(1);pointer-events:none}
+#fieldGrid .nd-mana-sprite{background:url('../images/mana-back-a.webp') center/contain no-repeat}
+#fieldGrid .nd-field-mana.nd-walking .nd-mana-sprite{animation:ndMirrorWalk .64s steps(1,end) infinite}
+#fieldGrid .nagoya63-segment-maros.nd-field-maros{animation:none!important;background:none!important}
+#fieldGrid .nd-maros-sprite{background:url('../images/sprites/maros-walk-face-20260920.png') 0% 0%/200% 100% no-repeat}
+#fieldGrid .nd-field-maros.nd-walking .nd-maros-sprite{animation:ndMirrorWalk .64s steps(1,end) infinite}
+@keyframes ndMirrorWalk{0%,49%{transform:scaleX(1)}50%,100%{transform:scaleX(-1)}}
+
+#ndEventRoot{position:fixed;inset:0;left:50%;transform:translateX(-50%);width:min(100vw,480px);z-index:9990;pointer-events:none;font-family:inherit}
+#ndIceFlash{position:absolute;inset:0;z-index:3;opacity:0;pointer-events:none;background:radial-gradient(circle at 50% 38%,#fff 0 26%,rgba(220,250,255,.98) 44%,rgba(101,220,255,.9) 70%,rgba(255,255,255,.15) 100%);mix-blend-mode:screen}
+#ndIceFlash.show{animation:ndIceFlash .7s ease-out both}
+@keyframes ndIceFlash{0%{opacity:0}8%{opacity:1}30%{opacity:.94}100%{opacity:0}}
+#ndPreviewControls{position:fixed;z-index:10020;left:50%;top:7px;transform:translateX(-50%);display:flex;flex-wrap:nowrap;align-items:center;gap:4px;padding:5px 6px;border-radius:9px;background:rgba(3,16,28,.9);color:#fff;font:700 10px/1.2 system-ui,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.35);white-space:nowrap;max-width:calc(100vw - 8px)}
+#ndPreviewControls select,#ndPreviewControls button{font:inherit;color:#fff;background:#17364f;border:1px solid #7796ac;border-radius:5px;padding:5px 7px}#ndStatus{min-width:70px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#ndPlace{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:4;color:#fff;background:rgba(5,22,36,.78);border:2px solid rgba(255,255,255,.85);border-radius:999px;padding:5px 15px;font-weight:900;font-size:clamp(12px,3.5vw,16px);letter-spacing:.08em;text-shadow:0 2px 3px #000;white-space:nowrap}
+#ndMapRegion{position:absolute;z-index:9995;left:50%;top:17%;transform:translate(-50%,-50%);padding:9px 22px;border:2px solid rgba(255,255,255,.92);border-radius:999px;background:rgba(4,16,27,.88);color:#fff;font-size:clamp(18px,6vw,28px);font-weight:900;letter-spacing:.12em;text-shadow:0 2px 4px #000;white-space:nowrap;opacity:0}
+#ndMapRegion.show{animation:ndRegionThenZoom .95s ease forwards}
+@keyframes ndRegionThenZoom{0%,58%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(.96)}}
+#ndIncoming{position:absolute;z-index:6;left:50%;top:19%;transform:translateX(-50%);display:none;align-items:center;gap:9px;padding:10px 16px;border:2px solid #9de5ff;border-radius:13px;background:rgba(4,25,42,.94);color:#fff;box-shadow:0 0 18px rgba(88,205,255,.55);font-size:clamp(14px,4vw,18px);white-space:nowrap}
+#ndIncoming.show{display:flex;animation:ndIncomingPulse .7s ease-in-out infinite alternate}
+#ndIncoming span{color:#63dbff;text-shadow:0 0 8px #63dbff}
+@keyframes ndIncomingPulse{from{transform:translateX(-50%) scale(.98);box-shadow:0 0 8px rgba(88,205,255,.35)}to{transform:translateX(-50%) scale(1.03);box-shadow:0 0 22px rgba(88,205,255,.72)}}
+#fieldGrid .fuji52-story-mana.nd-field-mana.nd-notice{animation:ndManaNotice .65s ease-out both!important}
+#fieldGrid .fuji52-story-mana.nd-field-mana.nd-notice .nd-mana-sprite{background-image:url('../images/sprites/hakase.webp');transform:scaleX(1);animation:none}
+#fieldGrid .nd-mana-attention{position:absolute;z-index:2;left:50%;top:-34%;transform:translateX(-50%);color:#ffe34f;font:1000 1.2em/1 system-ui,sans-serif;font-size:calc(var(--tile)*1.05);font-style:normal;text-shadow:0 2px 2px #000,0 0 8px #fff;animation:ndAttentionPop .7s ease-out both}
+@keyframes ndAttentionPop{0%{opacity:0;transform:translate(-50%,8px) scale(.35)}45%{opacity:1;transform:translate(-50%,-8px) scale(1.22)}100%{opacity:1;transform:translate(-50%,0) scale(1)}}
+@keyframes ndManaNotice{0%{transform:translate(-50%,-100%) scale(1)}45%{transform:translate(-50%,-110%) scale(1.07)}100%{transform:translate(-50%,-100%) scale(1)}}
+#ndTalk{position:absolute;left:2.5%;right:2.5%;bottom:max(12px,env(safe-area-inset-bottom));display:none;align-items:center;gap:10px;min-height:116px;padding:9px 12px;background:rgba(4,16,27,.92);color:#fff;border:3px solid rgba(255,255,255,.9);border-radius:17px;box-shadow:0 4px 14px rgba(0,0,0,.35);pointer-events:auto}
+#ndTalk.show{display:flex;animation:ndTalkIn .2s ease-out}
+@keyframes ndTalkIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+#ndFace{width:78px;height:78px;flex:0 0 78px;object-fit:contain;object-position:center bottom;background:#fff5d7;border-radius:13px}
+#ndTalk>div{min-width:0;flex:1}#ndWho{display:block;color:#ffe68b;font-size:.82rem;margin-bottom:3px}#ndText{font-weight:900;font-size:clamp(.9rem,3.8vw,1.05rem);line-height:1.52;margin:0;overflow-wrap:anywhere}#ndNext{display:block;text-align:right;margin-top:3px;color:#a9b8c5;opacity:.5;font-size:.7rem}#ndNext.ready{opacity:1;color:#fff}
+
+/* 地図の実DOMと本編ズームは残し、地方名以外の個別地名・番号・線・操作UIを隠す。 */
+body.nd-map-mode #worldmapOverlay{z-index:9980;background:#07121e}
+body.nd-map-mode #worldmapOverlay.show{animation:none!important}
+body.nd-map-mode #ndPlace{display:none}
+body.nd-map-mode #worldmapOverlay .wm-badge,body.nd-map-mode #worldmapOverlay .wm-mark,
+body.nd-map-mode #worldmapOverlay #wmPaths,body.nd-map-mode #worldmapOverlay .wm-btnbar,
+body.nd-map-mode #worldmapOverlay .wm-chip,body.nd-map-mode #worldmapOverlay #wmSkipBtn{display:none!important}
+body.nd-map-mode #worldmapOverlay .wm-node{display:none!important;pointer-events:none}
+body.nd-map-mode #worldmapOverlay .panel{width:min(100vw,71vh,480px);animation:none!important}
+body.nd-map-mode #worldmapOverlay .wm-viewport{border-radius:0;box-shadow:none}
+
+/* 南国S0〜S3。既存の船構図を保ち、穏やかなエメラルドグリーンの海へ替える。 */
+body.nd-ship-mode #spSnow{display:none!important}
+body.nd-ship-mode #spClouds{display:none!important}
+body.nd-ship-mode #spBgMt{top:0;-webkit-mask-image:none;mask-image:none}
+body.nd-ship-mode #spSeaFar{display:none!important}
+body.nd-ship-mode #spBgSky{background:linear-gradient(180deg,#55c7ef 0%,#b4ecf7 35%,#e8fbff 49%,#64e0d0 51%,#22c9bd 73%,#0c91aa 100%)}
+body.nd-ship-mode #spSeaFill{top:44%;background:linear-gradient(180deg,rgba(101,228,210,0) 0%,rgba(101,228,210,.96) 6%,#45dac8 20%,#25c8bf 45%,#13aeb9 72%,#087f9f 100%)}
+body.nd-ship-mode #spSeaFill::after{background:repeating-linear-gradient(178deg,rgba(255,255,255,0) 0 48px,rgba(235,255,251,.20) 48px 51px,rgba(255,255,255,0) 51px 106px);animation:ndCalmSwell 6.8s linear infinite}
+body.nd-ship-mode #spWavesFar,body.nd-ship-mode #spWavesMid,body.nd-ship-mode #spWaves{background-image:none!important;filter:none!important;mask-image:none!important;-webkit-mask-image:none!important}
+body.nd-ship-mode #spWavesFar{background:repeating-linear-gradient(176deg,transparent 0 42px,rgba(255,255,255,.30) 42px 44px,transparent 44px 88px);opacity:.18!important;animation:ndCalmGlintFar 8s linear infinite!important}
+body.nd-ship-mode #spWavesMid{background:repeating-linear-gradient(177deg,transparent 0 58px,rgba(231,255,252,.24) 58px 61px,transparent 61px 124px);opacity:.16!important;animation:ndCalmGlintMid 9.5s linear infinite!important}
+body.nd-ship-mode #spWaves{background:repeating-linear-gradient(178deg,transparent 0 76px,rgba(255,255,255,.22) 76px 79px,transparent 79px 158px);opacity:.14!important;animation:ndCalmGlintNear 11s linear infinite!important}
+body.nd-ship-mode #spShipSide.run{animation:ndShipCalmBob 5.8s ease-in-out infinite!important}
+body.nd-ship-mode #shipSceneStage.sp-roll{animation:ndShipCalmRoll 6.4s ease-in-out infinite!important}
+@keyframes ndCalmSwell{from{background-position:0 0}to{background-position:0 106px}}
+@keyframes ndCalmGlintFar{from{background-position:0 0}to{background-position:170px 0}}
+@keyframes ndCalmGlintMid{from{background-position:0 0}to{background-position:220px 0}}
+@keyframes ndCalmGlintNear{from{background-position:0 0}to{background-position:280px 0}}
+@keyframes ndShipCalmBob{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-2px) rotate(-.12deg)}}
+@keyframes ndShipCalmRoll{0%,100%{transform:rotate(0deg)}50%{transform:rotate(.12deg)}}
+body.nd-ship-mode #shipSceneSkipBtn,body.nd-ship-mode #spTalk{display:none!important}
+
+@media(max-width:350px){#ndTalk{min-height:104px;padding:7px 9px;gap:7px}#ndFace{width:64px;height:64px;flex-basis:64px}#ndText{font-size:.86rem;line-height:1.42}}
