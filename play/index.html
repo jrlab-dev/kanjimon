@@ -3745,6 +3745,8 @@ body.ice-dungeon #fieldInfo{display:none}
 <script src="events/1年重要会話.js" defer></script>
 <link rel="stylesheet" href="events/宇都宮会話.css">
 <script src="events/宇都宮会話.js" defer></script>
+<link rel="stylesheet" href="events/鋸山会話.css">
+<script src="events/鋸山会話.js" defer></script>
 <link rel="stylesheet" href="events/奄美第4話.css">
 <script src="events/奄美第4話.js" defer></script>
 <link rel="stylesheet" href="events/奄美第5-8話.css">
@@ -11385,6 +11387,7 @@ const $=id=>document.getElementById(id);
 function showScreen(id){
   window.GradeOneStory?.beforeScreen(id);
   window.UtsunomiyaStory?.beforeScreen(id);
+  window.NokogiriStory?.beforeScreen(id);
   window.NihonbashiScene?.beforeScreen(id);
   window.AmamiWalk?.beforeScreen(id);
   window.AmamiEnding?.beforeScreen(id);
@@ -28138,7 +28141,7 @@ const PASSERBY = {
   75: { sheet:'images/sprites/maro_walk.webp', phase:'out' }, // 祭りの灯が戻った出口だけ
   /* 例）21: { sheet:'images/sprites/maro_walk.webp', mana:'……いま、だれか いた？' }
      ★2年の台本を書くときに、置くゾーンを決めてここに1行足す（第一候補＝21 のこぎりやま） */
-  21: { sheet:'images/sprites/maro_walk.webp', mana:'……いま、だれか いた？' },
+  21: { sheet:'images/sprites/maro_walk.webp', mana:'……いま、だれか いた？', snd:'pb21_mana_notice' },
   /* ★2026-08-20：3年。笠の男が通る回（設計＝【計画】3年カンサイの20話_20260820.md §2）。
      27＝初登場（湖のほとり）／33＝祭りの人ごみ。43のすれちがいは台詞で見せるのでここには置かない。 */
   27: { sheet:'images/sprites/maro_walk.webp', mana:'……あの 大きな せなか。どこかで 見た 気が する。' },
@@ -28150,6 +28153,7 @@ const PB_END_SC   = 0.62;   // 去ったときの大きさ（遠ざかって見�
 let pbTimer=null, pbStep=null, pbSeq=0, pbActive=false;
 
 function stopPasserby(){
+  window.NokogiriStory?.abort();
   if(pbTimer){ clearTimeout(pbTimer); pbTimer=null; }
   if(pbStep){ clearInterval(pbStep); pbStep=null; }
   pbActive=false;
@@ -28166,6 +28170,7 @@ function startPasserby(zone, onDone){
   const def=PASSERBY[zone];
   const el=$('pbFigure');
   if(!def || !el || pbActive){ if(onDone) onDone(); return; }
+  if(window.NokogiriStory?.start(zone,onDone))return;
   const grid=$('fieldGrid');
   const tile=grid ? (parseFloat(grid.style.getPropertyValue('--tile'))||42) : 42;
   pbActive=true; pbSeq=fieldSeq;
@@ -28311,14 +28316,16 @@ function startZoneTalk(lines, onDone){
   heroLock=true;                      // ★stopAutoExplore の後に立てる
   const nihonbashiCut=window.NihonbashiScene?.open(lines);
   const importantCut=window.GradeOneStory?.openTalk(lines);
+  const nokogiriCut=window.NokogiriStory?.openTalk(lines);
   let i=0;
   const step=()=>{
     // ワープ・タイトルへ離脱していたら、後始末だけして終わる（onDoneは呼ばない＝誤発火防止）
     if(ownPasserby){stopPasserby();ownPasserby=false;}
-    if(seq!==fieldSeq){ nihonbashiCut?.close();importantCut?.close();ztActive=false; return; }
+    if(seq!==fieldSeq){ nihonbashiCut?.close();importantCut?.close();nokogiriCut?.close();ztActive=false; return; }
     if(i>=lines.length){
       nihonbashiCut?.close();
       importantCut?.close();
+      nokogiriCut?.close();
       ztActive=false; heroLock=false;
       if(onDone) onDone();
       return;
@@ -28327,6 +28334,7 @@ function startZoneTalk(lines, onDone){
     hakaseTalkOnce(ln.text, step, ln.snd||undefined);
     nihonbashiCut?.line(i-1);
     importantCut?.line(i-1);
+    nokogiriCut?.line(i-1);
     if(ln.passerby){ownPasserby=true;startPasserby(ln.passerby,()=>{if(seq===fieldSeq&&ztActive)heroLock=true;});}
   };
   step();
@@ -30572,6 +30580,7 @@ function renderWorldMap(regionOverride){
 function warpZone(z){
   window.GradeOneStory?.abort();
   window.UtsunomiyaStory?.abort();
+  window.NokogiriStory?.abort();
   window.NihonbashiScene?.abort();
   if(z===84&&cleared.has(83)&&!iceDungeon.complete){closeWorldMap();iceDungeonStop();fieldZone=83;const p=zoneStartOf(83);setFieldStandardPosition(83,p.x,p.y);showScreen('screen-field');renderField();startIce83Ending();return;}
 
