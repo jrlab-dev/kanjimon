@@ -2,6 +2,36 @@
 (function(global){
  'use strict';
  const $=id=>document.getElementById(id);
+ // 第6話だけの実録環境音。BGMと独立し、会話のカットや回答では頭に戻さない。
+ const coastAudio=(()=>{
+  let active=null;const stats={requests:0,failures:0,starts:0};
+  function pause(a){if(!a.source)return;a.offset=(a.offset+a.ctx.currentTime-a.startedAt)%a.buffer.duration;a.source.stop();a.source.disconnect();a.source=null;a.gain.gain.cancelScheduledValues(a.ctx.currentTime);a.gain.gain.value=0;}
+  function stop(){const a=active;if(!a)return;active=null;a.ctl.abort();clearTimeout(a.timeout);clearInterval(a.timer);a.observer.disconnect();document.removeEventListener('visibilitychange',a.sync);global.removeEventListener('pointerdown',a.sync);global.removeEventListener('pagehide',a.stop);a.ctx?.removeEventListener('statechange',a.sync);pause(a);a.gain?.disconnect();a.buffer=null;}
+  function start(){
+   stop();const a={ctl:new AbortController(),buffer:null,source:null,ctx:null,gain:null,offset:0,loading:false,failed:false,entered:false,volume:0};active=a;
+   const alive=()=>active===a;
+   a.stop=()=>{if(alive())stop();};
+   a.sync=()=>{
+    if(!alive())return;
+    const inside=$('screen-field')?.classList.contains('active')||$('screen-battle')?.classList.contains('active');
+    if(inside)a.entered=true;else if(a.entered){a.stop();return;}
+    if(!inside||!soundOn||document.hidden){pause(a);return;}
+    if(a.failed)return;
+    if(!a.ctx){ensureAudio();a.ctx=audioCtx;if(!a.ctx){a.failed=true;return;}a.gain=a.ctx.createGain();a.gain.gain.value=0;a.gain.connect(a.ctx.destination);a.ctx.addEventListener('statechange',a.sync);}
+    if(a.ctx.state!=='running'){pause(a);return;}
+    if(!a.buffer){
+     if(a.loading)return;a.loading=true;stats.requests++;a.timeout=setTimeout(()=>a.ctl.abort(),12000);
+     fetch('audio/amami/honohoshi-waves.mp3',{signal:a.ctl.signal}).then(r=>{if(!r.ok)throw Error('wave');return r.arrayBuffer();}).then(data=>{if(!alive())return null;return a.ctx.decodeAudioData(data);}).then(buffer=>{if(!alive()||!buffer)return;clearTimeout(a.timeout);a.buffer=buffer;a.loading=false;a.sync();}).catch(()=>{if(alive()){clearTimeout(a.timeout);a.loading=false;a.failed=true;stats.failures++;}});return;
+    }
+    const volume=(global.AmamiVoice?.busy||bgmDuckCount>0)?0.14:0.32;
+    if(!a.source){const source=a.ctx.createBufferSource();source.buffer=a.buffer;source.loop=true;source.connect(a.gain);a.source=source;a.startedAt=a.ctx.currentTime;source.start(0,a.offset);a.gain.gain.cancelScheduledValues(a.ctx.currentTime);a.gain.gain.setValueAtTime(0,a.ctx.currentTime);a.gain.gain.linearRampToValueAtTime(volume,a.ctx.currentTime+.8);a.volume=volume;stats.starts++;}
+    else if(volume!==a.volume){a.gain.gain.cancelScheduledValues(a.ctx.currentTime);a.gain.gain.setTargetAtTime(volume,a.ctx.currentTime,.12);a.volume=volume;}
+   };
+   a.observer=new MutationObserver(a.sync);a.observer.observe(document.body,{attributes:true,attributeFilter:['class']});if($('soundBtn'))a.observer.observe($('soundBtn'),{childList:true,subtree:true});for(const id of ['screen-field','screen-battle','screen-title'])if($(id))a.observer.observe($(id),{attributes:true,attributeFilter:['class']});
+   a.timer=setInterval(a.sync,100);document.addEventListener('visibilitychange',a.sync);global.addEventListener('pointerdown',a.sync,{passive:true});global.addEventListener('pagehide',a.stop);a.sync();return a.stop;
+  }
+  return{start,stop,stats,get active(){return !!active;},get playing(){return !!active?.source;},get volume(){return active?.source?active.volume:0;},get position(){return active?.buffer?(active.offset+(active.source?active.ctx.currentTime-active.startedAt:0))%active.buffer.duration:0;},get decodedBytes(){return active?.buffer?active.buffer.length*active.buffer.numberOfChannels*4:0;}};
+ })();
  const CONFIG={
   5:{name:'住用マングローブ',title:'組み合わせを作る',field:'amami-main-05-sumiyo-mangrove.png',battle:'amami-sumiyo-v2.png',pos:'81.20% 89.34%',size:'auto 150.51%',mid:4,entry:['こんどは、二つずつ。','合う ことばを 見つけて。'],ending:['ちがう 組み合わせも、つくれる。','……つぎも、あるよ。']},
   6:{name:'ホノホシ海岸',title:'つぎ、これも',field:'amami-main-06-honohoshi.png',battle:'amami-honohoshi-v1.png',pos:'100% 100%',size:'auto 105.36%',mid:4,entry:['波が くるたび、一つ。','……ぼくが 順番を かえたよ。'],ending:['つぎ、これも！','……まだ、つづける？']},
@@ -17,6 +47,7 @@
  }
  function createView(episode){
   const c=CONFIG[episode];let root=null,easy=null,generation=0,timers=[],ready=false,lines=[],nextLine=0,afterTalk=null;
+  const stopCoast=episode===6?coastAudio.start():null;
   const state=()=>amamiFinal['episode'+episode];
   function finish(done){const g=generation;AmamiMotion.after(()=>{if(g===generation)done?.();});}
   function later(fn,ms){const g=generation,id=setTimeout(()=>{timers=timers.filter(t=>t!==id);if(g===generation)fn();},ms);timers.push(id);}
@@ -30,7 +61,7 @@
    cut.querySelector('.ay-shoulder').src=heroImage('back');
    cut.querySelectorAll('.ay-word-pair span').forEach((n,i)=>{n.textContent=word.slice(i*2,i*2+2);});
    for(const img of cut.querySelectorAll('img'))img.addEventListener('error',()=>{if(cut.isConnected)closeCut();},{once:true});
-   cut.querySelector('button').addEventListener('click',e=>{e.stopPropagation();hide();global.showScreen('screen-title');});
+   cut.querySelector('button').addEventListener('click',e=>{e.stopPropagation();destroy();global.showScreen('screen-title');});
    root.prepend(cut);root.classList.add('cinematic');root.dataset.beat=complete?'assembled':'introduce';
    global.AmamiStoryUI.sizeConversation(cut,'ay');
    if(complete)later(()=>cut.querySelector('.ay-word-pair')?.classList.add('assembled'),700);
@@ -53,7 +84,7 @@
    cut.querySelector('.ay-shoulder').src=heroImage('back');
    if(word){const row=document.createElement('div');row.className='ay-sea-word'+(wave?' answer-wave':'');row.setAttribute('aria-label','読み終えた言葉');const card=document.createElement('span');card.textContent=word;row.appendChild(card);if(wave){const ripple=document.createElement('i');ripple.setAttribute('aria-hidden','true');ripple.style.animationPlayState='paused';row.appendChild(ripple);}cut.appendChild(row);}
    for(const img of cut.querySelectorAll('img'))img.addEventListener('error',()=>{if(cut.isConnected)closeCut();},{once:true});
-   cut.querySelector('button').addEventListener('click',e=>{e.stopPropagation();hide();global.showScreen('screen-title');});
+   cut.querySelector('button').addEventListener('click',e=>{e.stopPropagation();destroy();global.showScreen('screen-title');});
    root.prepend(cut);root.classList.add('cinematic');global.AmamiStoryUI.sizeConversation(cut,'ay');return cut.querySelector('.ay-close-easy');
   }
   function base(background=c.field,label=c.name){
@@ -106,10 +137,11 @@
    later(()=>{if(episode===8)AmamiMotion.after(()=>global.AmamiStoryUI.crisisCut(root,done));else finish(done);},2300);
   }),episode===8?1950:(episode===5?1450:850));}
   function hide(){clear();document.body.classList.remove('amami-late-mode');}
-  return {entry:AmamiMotion.fieldEvent(entry),encounter:AmamiMotion.fieldEvent(encounter),mid:AmamiMotion.fieldEvent(mid),retry:AmamiMotion.fieldEvent(retry),ending:AmamiMotion.fieldEvent(ending),afterWord:AmamiMotion.fieldEvent(afterWord),hide,destroy:hide,scene:{base,later,talk,moveHero,moveEasy,pair,finish,lockInput(ms){const target=root;target.dataset.inputLocked='true';later(()=>delete target.dataset.inputLocked,ms);}}};
+  function destroy(){hide();stopCoast?.();}
+  return {entry:AmamiMotion.fieldEvent(entry),encounter:AmamiMotion.fieldEvent(encounter),mid:AmamiMotion.fieldEvent(mid),retry:AmamiMotion.fieldEvent(retry),ending:AmamiMotion.fieldEvent(ending),afterWord:AmamiMotion.fieldEvent(afterWord),hide,destroy,scene:{base,later,talk,moveHero,moveEasy,pair,finish,lockInput(ms){const target=root;target.dataset.inputLocked='true';later(()=>delete target.dataset.inputLocked,ms);}}};
  }
  let view=null,current=5;
- const api={battle:null,config:CONFIG,definition};
+ const api={battle:null,config:CONFIG,definition,coastAudio};
  const state=()=>amamiFinal['episode'+current];
  function clearBattle(){spawnSeq++;api.battle=null;$('ayBattleGear')?.remove();isTwinBoss=false;twinBossZoneCur=null;fieldBattleFromAuto=false;battleSource='quick';const s=$('screen-battle');s.classList.remove('amami-late-battle');s.style.backgroundImage='';s.style.backgroundSize='';s.style.backgroundPosition='';}
  api.start=function(episode){
