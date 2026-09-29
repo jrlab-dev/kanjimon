@@ -58,7 +58,7 @@ body.amami-late-mode .field-object{visibility:hidden}
 #ayCastleLight.show{opacity:1}
 #ayBattleGear{position:absolute;left:5%;top:8%;font-size:40px;color:#c99b48a0;pointer-events:none;animation:ayGear 35s linear infinite}
 /* 第5話の会話のみ。体格は奄美入口.cssの共通測定に合わせる。 */
-#amamiLateRoot[data-episode="5"].cinematic{display:flex;flex-direction:column;background:#123e37;pointer-events:auto;isolation:isolate;padding-bottom:env(safe-area-inset-bottom,0px)}
+#amamiLateRoot:is([data-episode="5"],[data-episode="6"]).cinematic{display:flex;flex-direction:column;background:#123e37;pointer-events:auto;isolation:isolate;padding-bottom:env(safe-area-inset-bottom,0px)}
 .ay-cinema{position:relative;flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;padding-top:64px}
 .ay-cinema-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 54%}
 .ay-cut-location{position:absolute;top:22px;left:16px;right:138px;z-index:3;font-size:12px;letter-spacing:.02em;color:#fff;text-shadow:0 2px 5px #123;font-weight:900}
@@ -76,3 +76,10 @@ body.amami-late-mode .field-object{visibility:hidden}
 #amamiLateRoot.cinematic #ayChapter{top:76px;pointer-events:none}
 @media(max-height:500px){.ay-cinema{padding-top:42px}.ay-cut-location{top:15px;font-size:11px}.ay-cut-close{top:3px;min-height:36px}.ay-word-pair{margin-bottom:4px}.ay-word-pair span{padding:2px 12px;font-size:18px}#amamiLateRoot.cinematic #ayTalk{min-height:112px;padding:8px 14px 23px;margin-bottom:6px}#amamiLateRoot.cinematic #ayTalk b{margin-bottom:2px;font-size:12px}#amamiLateRoot.cinematic #ayText{font-size:14px;line-height:1.4}#amamiLateRoot.cinematic #ayChapter{top:48px;padding:4px 12px}}
 @media(prefers-reduced-motion:reduce){.ay-word-pair{transition:none}}
+/* 第6話：波紋は言葉の行に収め、人物の足元とは重ねない。 */
+#amamiLateRoot[data-episode="6"].cinematic,#amamiLateRoot[data-episode="6"].cinematic #ayTalk{background:#163e55}
+.ay-sea-word{position:relative;flex:none;display:flex;justify-content:center;align-items:flex-start;min-height:68px;margin:0 12px 8px;overflow:hidden}
+.ay-sea-word span{position:relative;z-index:1;padding:5px 14px;background:#fff5dc;color:#283e31;border:2px solid #cdaa64;border-radius:10px;font-weight:900;font-size:clamp(22px,6vw,28px);letter-spacing:.12em;white-space:nowrap}
+.ay-sea-word i{position:absolute;bottom:1px;left:20%;width:60%;height:22px;border:3px solid #effcff;border-radius:50%;background:#8cdfff55;animation:ayRipple 1.6s ease-out both}
+@media(max-height:500px){.ay-sea-word{min-height:42px;margin-bottom:4px}.ay-sea-word span{font-size:18px;padding:2px 12px}.ay-sea-word i{height:13px}}
+@media(prefers-reduced-motion:reduce){.ay-sea-word i{animation:none}}
