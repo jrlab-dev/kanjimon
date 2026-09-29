@@ -3747,6 +3747,8 @@ body.ice-dungeon #fieldInfo{display:none}
 <script src="events/宇都宮会話.js" defer></script>
 <link rel="stylesheet" href="events/鋸山会話.css">
 <script src="events/鋸山会話.js" defer></script>
+<link rel="stylesheet" href="events/みやこあと会話.css">
+<script src="events/みやこあと会話.js" defer></script>
 <link rel="stylesheet" href="events/奄美第4話.css">
 <script src="events/奄美第4話.js" defer></script>
 <link rel="stylesheet" href="events/奄美第5-8話.css">
@@ -11392,6 +11394,7 @@ function showScreen(id){
   window.GradeOneStory?.beforeScreen(id);
   window.UtsunomiyaStory?.beforeScreen(id);
   window.NokogiriStory?.beforeScreen(id);
+  window.MiyakoStory?.beforeScreen(id);
   window.NihonbashiScene?.beforeScreen(id);
   window.AmamiWalk?.beforeScreen(id);
   window.AmamiEnding?.beforeScreen(id);
@@ -28320,7 +28323,7 @@ function startZoneTalk(lines, onDone){
   heroLock=true;                      // ★stopAutoExplore の後に立てる
   const nihonbashiCut=window.NihonbashiScene?.open(lines);
   const importantCut=window.GradeOneStory?.openTalk(lines);
-  const nokogiriCut=window.NokogiriStory?.openTalk(lines);
+  const nokogiriCut=window.NokogiriStory?.openTalk(lines)||window.MiyakoStory?.openTalk(lines);
   let i=0;
   const step=()=>{
     // ワープ・タイトルへ離脱していたら、後始末だけして終わる（onDoneは呼ばない＝誤発火防止）
@@ -28335,6 +28338,7 @@ function startZoneTalk(lines, onDone){
       return;
     }
     const ln=lines[i++];
+    if(nokogiriCut?.playLine?.(i-1,ln,step)) return;
     hakaseTalkOnce(ln.text, step, ln.snd||undefined);
     nihonbashiCut?.line(i-1);
     importantCut?.line(i-1);
@@ -30585,6 +30589,7 @@ function warpZone(z){
   window.GradeOneStory?.abort();
   window.UtsunomiyaStory?.abort();
   window.NokogiriStory?.abort();
+  window.MiyakoStory?.abort();
   window.NihonbashiScene?.abort();
   if(z===84&&cleared.has(83)&&!iceDungeon.complete){closeWorldMap();iceDungeonStop();fieldZone=83;const p=zoneStartOf(83);setFieldStandardPosition(83,p.x,p.y);showScreen('screen-field');renderField();startIce83Ending();return;}
 

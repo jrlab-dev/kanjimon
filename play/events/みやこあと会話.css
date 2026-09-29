@@ -1,0 +1,50 @@
+#miyakoStory{position:fixed;inset:0;z-index:280;width:min(100%,480px);margin:auto;display:flex;flex-direction:column;background:#656958;color:#fff;visibility:hidden;isolation:isolate;font-family:'Zen Maru Gothic',sans-serif;padding-bottom:env(safe-area-inset-bottom,0px)}
+#miyakoStory.ready{visibility:visible}
+#miyakoStory:before{content:"";position:fixed;inset:0;z-index:-1;background:#233c49}
+#miyakoStory .my-view{position:relative;flex:1;min-height:0;overflow:hidden;container-type:size}
+#miyakoStory .my-art{position:absolute;left:50%;top:50%;width:max(100cqw,66.6667cqh);height:max(150cqw,100cqh);transform:translate(-50%,-50%);transition:transform .5s}
+#miyakoStory .my-bg{display:block;width:100%;height:100%}
+#miyakoStory .my-view:after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(#24271944,transparent 20%,transparent 84%,#656958)}
+#miyakoStory .my-location{position:absolute;left:14px;top:18px;max-width:calc(100% - 150px);z-index:4;font-size:12px;line-height:1.35;text-shadow:0 2px 4px #123}
+#miyakoStory .my-close{position:absolute;right:66px;top:10px;z-index:5;border:1px solid #fff9;border-radius:24px;background:#3d4638dd;color:white;font:inherit;font-size:12px;min-width:62px;min-height:44px;cursor:pointer}
+#miyakoStory .my-stage{position:absolute;inset:48% 0 0;container-type:size;--body:min(55cqw,83cqh);--mana-height:calc(var(--body) / var(--mana-fill,1));--hero-height:calc(var(--body) / 1.5 / var(--hero-fill,1));--easy-height:calc(var(--body) / 1.5 * 1.25 / var(--easy-fill,1))}
+#miyakoStory .my-stage img{position:absolute;width:auto;max-width:none;transform:translateX(-50%);filter:drop-shadow(0 5px 3px #292b2744);transition:opacity .28s}
+#miyakoStory .my-hero{height:var(--hero-height);bottom:calc(8cqh - var(--hero-height) * var(--hero-pad,0));left:29%}
+#miyakoStory .my-mana{height:var(--mana-height);bottom:calc(8cqh - var(--mana-height) * var(--mana-pad,0));left:69%}
+#miyakoStory .my-dialog{position:relative;flex:none;min-height:192px;margin:0 12px 12px;padding:36px 17px 27px;border:1px solid #c8c6a7;border-radius:14px;background:#354936;box-shadow:0 5px 18px #0016;cursor:pointer}
+#miyakoStory .my-speaker{position:absolute;top:10px;left:17px;color:#ffe1a2;font-size:13px}
+#miyakoStory .my-dialog:after{content:'▼ つづく';position:absolute;bottom:7px;right:12px;font-size:12px;color:#e3e8d7}
+#miyakoStory #evBox{position:static;inset:auto!important;transform:none!important;animation:none;opacity:1;width:auto;max-width:none;min-height:0;margin:0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;display:block;text-align:left}
+#miyakoStory #evText{font-size:clamp(16px,4.4vw,20px);font-weight:900;line-height:1.6;color:#fff;overflow-wrap:anywhere}
+#miyakoStory #evText.ev-easy{color:#fff0ad}
+#miyakoStory #evNext{display:none}
+@media(prefers-reduced-motion:reduce){#miyakoStory *{animation:none!important;transition:none!important}}
+
+
+#miyakoStory .my-art{transition:none}
+#miyakoStory .my-stage{inset:48% 0 0}
+#miyakoStory #hakaseTalkWin{position:static!important;inset:auto!important;width:100%!important;max-width:none!important;margin:0!important;padding:0!important;transform:none!important;background:none!important;border:0!important;box-shadow:none!important;animation:none!important}
+#miyakoStory #hakaseTalkWin .hakase-talk-face{display:none!important}
+#miyakoStory #hakaseTalkWin .hakase-talk-text{font-size:clamp(16px,4.4vw,20px);font-weight:900;line-height:1.6;color:white;overflow-wrap:anywhere}
+#miyakoStory #hakaseTalkWin .hakase-talk-next{display:none}
+
+/* 27は広い湖岸の道。足元と姿勢の比率は絵座標で指定。 */
+#miyakoStory .my-stage{inset:0;--base:min(32cqw,32cqh);--hero-height:calc(var(--base) * 1.7 / var(--hero-fill,1));--mana-height:calc(var(--base) * 1.5 / var(--mana-fill,1))}
+#miyakoStory .my-hero{left:23%;bottom:calc(-8cqh - var(--hero-height) * var(--hero-pad,0));z-index:2}
+#miyakoStory .my-mana{left:72%;bottom:calc(16cqh - var(--mana-height) * var(--mana-pad,0));z-index:1}
+#miyakoStory .my-view:after{background:linear-gradient(#24271922,transparent 20%,transparent 84%,#656958)}
+
+/* 3行目だけ丘の裏から登り、振り返って下る。下側を丘で遮蔽する。 */
+#miyakoStory .my-art{top:0;transform:translateX(-50%);transition:none}
+#miyakoStory .my-hat{position:absolute;left:52%;top:27%;width:8.57%;aspect-ratio:1;transform:translate(-50%,-93.75%);clip-path:inset(0 0 6.25% 0);visibility:hidden;pointer-events:none}
+#miyakoStory.ready[data-beat="hill"] .my-hat{visibility:visible}
+#miyakoStory .my-traveler{position:absolute;inset:0;transform:translateY(100%);transform-origin:50% 93.75%}
+#miyakoStory .my-front{position:absolute;left:50%;bottom:var(--front-bottom);height:var(--front-height);width:auto;max-width:none;transform:translateX(-50%)}
+#miyakoStory .my-back{position:absolute;inset:0;visibility:hidden;background-image:url(../images/sprites/maro-back-walk3.webp);background-size:300% 100%;background-position:50% 0%;background-repeat:no-repeat}
+#miyakoStory .my-dialog{background:#4b4937;border-color:#d3c6a1}
+#miyakoStory{background:#75725c}
+#miyakoStory:before{background:#343d36}
+#miyakoStory .my-view:after{background:linear-gradient(#363c3322,transparent 20%,transparent 84%,#75725c)}
+@media(max-height:500px){#miyakoStory{width:min(100%,760px);flex-direction:row}#miyakoStory .my-dialog{width:39%;min-height:0;margin:52px 12px 12px 0;padding:38px 15px 28px}#miyakoStory #hakaseTalkWin .hakase-talk-text{font-size:16px;line-height:1.5}#miyakoStory .my-close{right:12px}}
+
+#miyakoStory.my-sequencing .my-dialog:after{content:""}
