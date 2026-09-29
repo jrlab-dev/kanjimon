@@ -4243,8 +4243,12 @@ body.ice-dungeon #fieldInfo{display:none}
         <button class="btn btn-ghost" style="font-size:.85rem;padding:8px 14px" onclick="startFromZone(56)">りんごばたけ（56）</button>
         <button class="btn btn-ghost" style="font-size:.85rem;padding:8px 14px" onclick="startFromZone(76)">ふね（76→77）</button>
         <button class="btn btn-ghost" style="font-size:.85rem;padding:8px 14px" onclick="startFromZone(83)">ひこうき（83→84）</button>
-        <button class="btn btn-ghost" style="font-size:.85rem;padding:8px 14px" onclick="startAmamiEpisodeOneTest()">アマミ第1話</button>
-        <button class="btn btn-ghost" style="font-size:.85rem;padding:8px 14px" onclick="startAmamiEpisodeTwoTest()">アマミ第2話</button>
+        <div style="width:100%;border-top:1px solid #eee;padding-top:12px">
+          <label for="amamiTestChapter" style="display:block;font-size:.85rem;font-weight:900">アマミ 全12話・エンディング</label>
+          <select id="amamiTestChapter" style="width:100%;min-height:44px;font-size:1rem;margin-top:8px"><option value="1">アマミ第1話</option><option value="2">アマミ第2話</option><option value="3">アマミ第3話</option><option value="4">アマミ第4話</option><option value="5">アマミ第5話</option><option value="6">アマミ第6話</option><option value="7">アマミ第7話</option><option value="8">アマミ第8話</option><option value="9">アマミ第9話</option><option value="10">アマミ第10話</option><option value="11">アマミ第11話</option><option value="12">アマミ第12話</option><option value="13">アマミ エンディング</option></select>
+          <button class="btn btn-ghost" onclick="startAmamiEpisodeTest(Number(document.getElementById('amamiTestChapter').value))">えらんだ話から はじめる</button>
+          <small style="display:block;font-size:.72rem;color:#666">テスト用です。保存データを選んだ話の開始状態に置きかえます。</small>
+        </div>
       </div>
     </div>
     <!-- テスト設定ページへ（弾6-1e）：きめこまかな テスト設定ができる べつのページへ -->
@@ -34089,21 +34093,19 @@ function startFromZone(z){
   try{ localStorage.setItem(SAVE_KEY, JSON.stringify(makeZoneStartSave(z))); }catch(e){}
   location.reload();
 }
-function startAmamiEpisodeOneTest(){
-  const d=makeZoneStartSave(102);
-  d.cleared=Array.from({length:102},(_,i)=>i+1);d.unlocked=102;d.zone102FinalPhase=2;d.zone102CertificateReceived=true;d.allClearCelebrated=true;
-  d.nationalDepartureSeen=true;d.amamiArrivalSeen=true;d.amamiFinal=newAmamiFinal();d.sound=false;
-  try{localStorage.setItem(SAVE_KEY,JSON.stringify(d));}catch(e){}
-  location.reload();
-}
-function startAmamiEpisodeTwoTest(){
+function startAmamiEpisodeTest(n){
+  if(!Number.isInteger(n)||n<1||n>13)return;
   const d=makeZoneStartSave(102),af=newAmamiFinal();
   d.cleared=Array.from({length:102},(_,i)=>i+1);d.unlocked=102;d.zone102FinalPhase=2;d.zone102CertificateReceived=true;d.allClearCelebrated=true;
-  af.phase='done';af.mainIndex=AMAMI_EP1_WORDS.length;af.entrySeen=true;af.midSeen=true;af.episode1Done=true;
+  if(n>1)Object.assign(af,{phase:'done',mainIndex:AMAMI_EP1_WORDS.length,entrySeen:true,midSeen:true,episode1Done:true});
+  for(let i=2;i<n;i++)Object.assign(af['episode'+i],{done:true,phase:'done',mainIndex:i<5?AMAMI_EP1_WORDS.length:AMAMI_LATE_WORDS[i].length,entrySeen:true,midSeen:true});
+  af.episode=Math.min(n,12);
   d.nationalDepartureSeen=true;d.amamiArrivalSeen=true;d.amamiFinal=af;d.sound=false;
-  try{localStorage.setItem(SAVE_KEY,JSON.stringify(d));}catch(e){}
+  try{localStorage.setItem(SAVE_KEY,JSON.stringify(d));}catch(e){return;}
   location.reload();
 }
+function startAmamiEpisodeOneTest(){startAmamiEpisodeTest(1);}
+function startAmamiEpisodeTwoTest(){startAmamiEpisodeTest(2);}
 
 /* テスト設定ページ（デバッグ用セーブ状態エディタ・弾6-1e）
    makeZoneStartSave の自動推論（cleared/caught/jukugo/演出seen）をベースに、
