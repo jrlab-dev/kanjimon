@@ -1,0 +1,34 @@
+#utsunomiyaStory{position:fixed;inset:0;z-index:280;width:min(100%,480px);margin:auto;display:flex;flex-direction:column;background:#3c3a30;color:#fff;visibility:hidden;isolation:isolate;font-family:'Zen Maru Gothic',sans-serif;padding-bottom:env(safe-area-inset-bottom,0px)}
+#utsunomiyaStory.ready{visibility:visible}
+#utsunomiyaStory:before{content:"";position:fixed;inset:0;z-index:-1;background:#292b27}
+#utsunomiyaStory .uq-view{position:relative;flex:1;min-height:0;overflow:hidden;container-type:size}
+#utsunomiyaStory .uq-art{position:absolute;left:50%;top:50%;width:max(100cqw,66.6667cqh);height:max(150cqw,100cqh);transform:translate(-50%,-50%);transition:transform .5s}
+#utsunomiyaStory .uq-bg{display:block;width:100%;height:100%}
+#utsunomiyaStory[data-beat="place"] .uq-art{transform:translate(-50%,-50%) scale(1.08)}
+#utsunomiyaStory .uq-view:after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(#24271944,transparent 20%,transparent 84%,#3c3a30)}
+#utsunomiyaStory .uq-location{position:absolute;left:14px;top:18px;max-width:calc(100% - 150px);z-index:4;font-size:12px;line-height:1.35;text-shadow:0 2px 4px #123}
+#utsunomiyaStory .uq-close{position:absolute;right:66px;top:10px;z-index:5;border:1px solid #fff9;border-radius:24px;background:#3d4638dd;color:white;font:inherit;font-size:12px;min-width:62px;min-height:44px;cursor:pointer}
+#utsunomiyaStory .uq-stage{position:absolute;inset:45% 0 0;container-type:size;--body:min(55cqw,83cqh);--mana-height:calc(var(--body) / var(--mana-fill,1));--hero-height:calc(var(--body) / 1.5 / var(--hero-fill,1));--easy-height:calc(var(--body) / 1.5 * 1.25 / var(--easy-fill,1))}
+#utsunomiyaStory .uq-stage img{position:absolute;width:auto;max-width:none;transform:translateX(-50%);filter:drop-shadow(0 5px 3px #292b2744);transition:opacity .28s}
+#utsunomiyaStory .uq-hero{height:var(--hero-height);bottom:calc(8cqh - var(--hero-height) * var(--hero-pad,0));left:18%}
+#utsunomiyaStory .uq-mana{height:var(--mana-height);bottom:calc(8cqh - var(--mana-height) * var(--mana-pad,0));left:49%}
+#utsunomiyaStory .uq-easy{height:var(--easy-height);bottom:calc(8cqh - var(--easy-height) * var(--easy-pad,0));left:81%}
+#utsunomiyaStory[data-beat="place"] .uq-stage{visibility:hidden}
+#utsunomiyaStory[data-beat="place"] .uq-easy,#utsunomiyaStory[data-beat="sign"] .uq-easy{opacity:0}
+#utsunomiyaStory .uq-board{position:absolute;left:15%;top:19%;width:70%;border:4px solid #755e37;border-radius:6px;background:linear-gradient(115deg,#fff2cf,#e4ce9f);box-shadow:0 5px 12px #25221e66;padding:6px 12px 12px;color:#3d382c;z-index:2;text-align:center;transition:transform .45s;transform-origin:center top}
+#utsunomiyaStory .uq-board:before,#utsunomiyaStory .uq-board:after{content:"";position:absolute;bottom:100%;width:3px;height:45cqh;background:#6d5d43;z-index:-1}
+#utsunomiyaStory .uq-board:before{left:4%}#utsunomiyaStory .uq-board:after{right:4%}
+#utsunomiyaStory .uq-board small{font-size:12px;letter-spacing:.2em;display:block;border-bottom:1px solid #b9a57e;margin-bottom:5px}
+#utsunomiyaStory .uq-board div{display:flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap;font-size:clamp(20px,6vw,30px);font-weight:900}
+#utsunomiyaStory .uq-board i{display:block;width:1.05em;height:1.05em;border:2px dashed #8b7550;background:#c7b28544}
+#utsunomiyaStory[data-beat="place"] .uq-board{visibility:hidden}
+#utsunomiyaStory[data-beat="sign"] .uq-board{transform:scale(1.08)}
+#utsunomiyaStory .uq-dialog{position:relative;flex:none;min-height:192px;margin:0 12px 12px;padding:36px 17px 27px;border:1px solid #c8c6a7;border-radius:14px;background:#343e35;box-shadow:0 5px 18px #0016;cursor:pointer}
+#utsunomiyaStory .uq-speaker{position:absolute;top:10px;left:17px;color:#ffe1a2;font-size:13px}
+#utsunomiyaStory .uq-dialog:after{content:'▼ つづく';position:absolute;bottom:7px;right:12px;font-size:12px;color:#e3e8d7}
+#utsunomiyaStory #evBox{position:static;inset:auto!important;transform:none!important;animation:none;opacity:1;width:auto;max-width:none;min-height:0;margin:0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;display:block;text-align:left}
+#utsunomiyaStory #evText{font-size:clamp(16px,4.4vw,20px);font-weight:900;line-height:1.6;color:#fff;overflow-wrap:anywhere}
+#utsunomiyaStory #evText.ev-easy{color:#fff0ad}
+#utsunomiyaStory #evNext{display:none}
+@media(max-height:500px){#utsunomiyaStory{width:min(100%,760px);flex-direction:row}#utsunomiyaStory .uq-dialog{width:39%;min-height:0;margin:52px 12px 12px 0;padding:38px 15px 28px}#utsunomiyaStory #evText{font-size:16px;line-height:1.5}#utsunomiyaStory .uq-close{right:12px}#utsunomiyaStory .uq-board{top:18%;left:23%;width:54%;padding:4px 8px 7px}#utsunomiyaStory .uq-board div{font-size:23px}#utsunomiyaStory .uq-board small{font-size:11px}}
+@media(prefers-reduced-motion:reduce){#utsunomiyaStory *{animation:none!important;transition:none!important}}

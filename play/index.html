@@ -3743,6 +3743,8 @@ body.ice-dungeon #fieldInfo{display:none}
 <script src="events/日本橋会話.js" defer></script>
 <link rel="stylesheet" href="events/1年重要会話.css">
 <script src="events/1年重要会話.js" defer></script>
+<link rel="stylesheet" href="events/宇都宮会話.css">
+<script src="events/宇都宮会話.js" defer></script>
 <link rel="stylesheet" href="events/奄美第4話.css">
 <script src="events/奄美第4話.js" defer></script>
 <link rel="stylesheet" href="events/奄美第5-8話.css">
@@ -11382,6 +11384,7 @@ COSTUMES.filter(cs=>cs.suffix).forEach(cs=>['boy','girl'].forEach(ch=>{
 const $=id=>document.getElementById(id);
 function showScreen(id){
   window.GradeOneStory?.beforeScreen(id);
+  window.UtsunomiyaStory?.beforeScreen(id);
   window.NihonbashiScene?.beforeScreen(id);
   window.AmamiWalk?.beforeScreen(id);
   window.AmamiEnding?.beforeScreen(id);
@@ -28438,8 +28441,8 @@ function startZoneEvent(zone, onDone, phase='in'){
     const grid=$('fieldGrid');
     if(grid){grid.classList.add('nagoya63-spots-pending');grid.querySelectorAll('.t-spot').forEach(n=>{n.style.animation='';n.style.transformOrigin='';});}
   }
-  const preloadChara=zone===5?[...new Set(script.map(s=>s.portrait||s.who))]:Object.keys(EV_CHARA);
-  for(const k of preloadChara){ if(EV_CHARA[k]){const im=new Image(); im.src=EV_CHARA[k].img;} } // 浅草は登場する人物だけ
+  const preloadChara=[5,14].includes(zone)?[...new Set(script.map(s=>s.portrait||s.who))]:Object.keys(EV_CHARA);
+  for(const k of preloadChara){ if(EV_CHARA[k]){const im=new Image(); im.src=EV_CHARA[k].img;} } // 浅草・宇都宮は登場する人物だけ
   evActive=true; evZone=zone; evPhase=phase; evScript=script; evStep=-1; evDoneCb=onDone||null; evSeq=fieldSeq;
   setInawashiroLetter(null); setNamahageStory(null); setLighthouseStory(null); setTsugaruStory(null); setSapporoStory(null); setWetlandStory(null); setIceHallStory(null); setHakataStory(null);
   evAutoWasRunning=zone!==83&&isAutoZone(fieldZone);
@@ -28456,6 +28459,7 @@ function startZoneEvent(zone, onDone, phase='in'){
   L0.className='ev-chara hide'; R0.className='ev-chara hide';
   ov.classList.add('show');
   window.GradeOneStory?.openEvent(zone,phase);
+  window.UtsunomiyaStory?.openEvent(zone,phase);
   evAdvance();
 }
 
@@ -29756,6 +29760,7 @@ function evAdvance(){
   if(s.kidsRun) EvCutScene.nearKids(s.near || null);
   $('evText').textContent=s.text;
   window.GradeOneStory?.eventLine(evStep,s);
+  window.UtsunomiyaStory?.eventLine(evStep,s);
   if(evZone===83)layoutIce83();
   if(evZone===92||evZone===94||evZone===97||evZone===98||evZone===99||evZone===100||evZone===101)layoutDazaifu92();
   $('evText').className=(s.who==='easy')?'ev-easy':'';    // イージーが喋るときだけ文字色を変える
@@ -29769,6 +29774,7 @@ function evAdvance(){
 function evFinish(completed=true){
   if(!evActive) return;
   window.GradeOneStory?.finishEvent();
+  window.UtsunomiyaStory?.finishEvent();
   evActive=false;
   if(fuji52StoryCameraState) cancelFuji52StoryCamera();
   if(nagoya63StoryState) cancelNagoya63StoryCamera();
@@ -30565,6 +30571,7 @@ function renderWorldMap(regionOverride){
 }
 function warpZone(z){
   window.GradeOneStory?.abort();
+  window.UtsunomiyaStory?.abort();
   window.NihonbashiScene?.abort();
   if(z===84&&cleared.has(83)&&!iceDungeon.complete){closeWorldMap();iceDungeonStop();fieldZone=83;const p=zoneStartOf(83);setFieldStandardPosition(83,p.x,p.y);showScreen('screen-field');renderField();startIce83Ending();return;}
 
