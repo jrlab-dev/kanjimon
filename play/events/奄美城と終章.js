@@ -14,57 +14,65 @@
   const add=(id,html,cls='')=>{const el=document.createElement('div');el.id=id;el.className=cls;el.innerHTML=html;$('amamiLateRoot').appendChild(el);return el;};
   const heroSheet=()=>heroChar==='girl'?'hero-girl.webp':'hero.webp';
   function decor(){
-   if(episode===9){const count=state().mainIndex;add('aySteps',Array.from({length:5},(_,i)=>'<i class="'+(i<count?'built':'')+'"></i>').join(''));}
+   if(episode===9){const f=global.__ND_FIELD;global.AmamiBlocks.create($('fieldGrid'),{step:state().mainIndex,roof:state().castleRoofPlaced,field:true,point:{x:f.cx+.5,y:f.cy-1},later:s.later});}
    if(episode===10)add('ayGear','⚙');
-   if(episode===11)add('ayWindows',['traveler','historian','inventor','older'].map(name=>'<i style="--cast:url(images/amami-cast/'+name+'.png)"></i>').join(''));
+   if(episode===11)add('ayWindows',['traveler','historian','inventor','older'].map(name=>'<i style="--cast:url('+new URL('images/amami-cast/'+name+'.png',document.baseURI).href+')"></i>').join(''));
   }
-  function normalEntry(done){s.base();decor();AmamiMotion.play($('amamiEasy'),episode===9?'07':'01');$('ayChapter').classList.add('show');s.later(()=>$('ayChapter').classList.remove('show'),1400);s.later(()=>s.talk(c.entry,done),1700);}
+  function normalEntry(done){const f=s.base();decor();document.querySelector('#ayChapter b').textContent=global.AmamiStory?.chapters?.[episode]?.title||c.title;AmamiMotion.play($('amamiEasy'),episode===9?'07':'01');$('ayChapter').classList.add('show');s.later(()=>$('ayChapter').classList.remove('show'),1400);
+   if(episode===9){s.moveHero(f.cx-.4,f.cy+.7,750);s.later(()=>{document.querySelector('.acb-field')?.remove();const cut=global.AmamiBlocks.create($('amamiLateRoot'),{step:state().mainIndex,roof:state().castleRoofPlaced,later:s.later});cut.focus();s.later(()=>s.talk(global.AmamiStoryUI.rows(9,'entry'),()=>{cut.close();decor();s.finish(done);}),900);},1800);}
+   else s.later(()=>s.talk(global.AmamiStoryUI.rows(episode,'entry',c.entry),done),1700);
+  }
+  function afterWord(done){
+   if(episode===10){s.base();decor();$('ayGear').classList.add('answer-turn');s.later(()=>s.finish(done),1100);return;}
+   if(episode!==9){done();return;}s.base();const step=state().mainIndex;
+   const cut=global.AmamiBlocks.create($('amamiLateRoot'),{step:Math.max(0,step-1),later:s.later});cut.focus();
+   const ids=global.AmamiBlocks.parts.filter(p=>p.step===step).map(p=>p.id);
+   s.later(()=>cut.place(ids,()=>{if(step===1)s.talk(global.AmamiStoryUI.rows(9,'first'),()=>s.finish(done));else s.later(()=>s.finish(done),600);}),600);
+  }
   function entry(done){
    if(episode!==9||state().castleDoorSeen){normalEntry(done);return;}
    const f=s.base('amami-main-08-toy-castle.png','おもちゃの城');
    const choiceMotion=AmamiMotion.play($('amamiEasy'),'10');
-   s.later(()=>s.talk(['ここで おわっても いいよ。'],()=>{
+   s.moveHero(f.cx-.2,f.cy+1.15,950);
+   const pan=add('ayCastlePan','');s.later(()=>pan.classList.add('look-up'),1450);s.later(()=>pan.classList.add('look-back'),6650);s.later(()=>{pan.remove();s.talk(global.AmamiStoryUI.castle(['ここで おわっても いいよ。']),()=>{
     const el=add('ayDoorWrap','<button id="ayDoor" type="button">扉に ふれる</button>');
-    $('ayDoor').addEventListener('click',e=>{e.stopPropagation();choiceMotion.choose();el.remove();s.moveHero(f.cx,f.cy-2.6,1500);s.later(()=>s.moveEasy(f.cx+1.15,f.cy-2.6,900),650);s.later(()=>s.talk(['……うん。ぼくも、いく。'],()=>{state().castleDoorSeen=true;save();normalEntry(done);}),1700);},{once:true});
-   }),1000);
+    $('ayDoor').addEventListener('click',e=>{e.stopPropagation();choiceMotion.choose();el.remove();s.moveHero(f.cx,f.cy+.2,1500);s.later(()=>s.moveEasy(f.cx+1.15,f.cy+.2,900),650);s.later(()=>{state().castleDoorSeen=true;save();normalEntry(done);},1700);},{once:true});
+   });},8100);
   }
   function focus(word){const both=word==='一心同体',who=state().mainIndex%2?'hero':'easy';const child='<span class="ay-focus-sprite" style="background-image:url(images/sprites/'+heroSheet()+')"></span>';const robot='<img class="ay-focus-easy" src="images/easy-motion/poster.png" alt="イージー">';const el=add('ayFocus',(who==='hero'?child:robot)+(both?(who==='hero'?robot:child):''));el.classList.toggle('both',both);}
   function encounter(word,label,done){const f=s.base();decor();$('ayProgress').textContent=label;s.pair(word,f);if(episode===12)focus(word);s.later(()=>s.moveHero(f.cx,f.cy+.6,650),400);s.later(done,episode===12?1800:1400);}
   function mid(done){const f=s.base();decor();$('ayProgress').textContent='2／5語';
-   if(episode===9){$('aySteps').classList.add('rebuild');AmamiMotion.play($('amamiEasy'),'07');}
-   if(episode===10){global.AmamiVoice.play('む……',add('ayAlmost','む……'));AmamiMotion.play($('amamiEasy'),'06');s.later(()=>$('ayAlmost')?.remove(),1100);$('ayGear').classList.add('slow');}
+   if(episode===9){AmamiMotion.play($('amamiEasy'),'07');}
+   if(episode===10){AmamiMotion.play($('amamiEasy'),'06');$('ayGear').classList.add('slow');}
    if(episode===11){$('ayWindows').classList.add('children');}
    if(episode===12){focus('大願成就');}
-   s.later(()=>s.finish(done),2400);
+   s.later(()=>s.talk(global.AmamiStoryUI.rows(episode,'mid'),()=>s.finish(done)),2400);
   }
-  function ending(done){const f=s.base();decor();AmamiMotion.play($('amamiEasy'),episode===10?'06':'01');s.later(()=>s.talk(c.ending,()=>{
-   if(episode===12){epilogue(done);return;}
+  function ending(done){const f=s.base();decor();AmamiMotion.play($('amamiEasy'),episode===10?'06':'01');
+   const rows=global.AmamiStoryUI.rows(episode,'ending',c.ending);
+   const afterWords=()=>{
+   if(episode===12){s.finish(done);return;}
    s.moveEasy(f.cx+1.35,f.cy-1.6,1100);s.later(()=>{const easy=$('amamiEasy');if(easy)setInteriorActorPose(easy,'down','a');},1150);s.later(()=>s.moveHero(f.cx,f.cy-1.6,1300),600);s.later(()=>s.finish(done),2250);
-  }),900);}
-  function epilogue(done){
-   s.base();$('amamiLateRoot').classList.add('final-stage');$('fieldHero').style.visibility='hidden';$('amamiEasy').style.visibility='hidden';const answers=[false,false,false,false,false];let settled=false;
-   const panels=[['amami-toy-castle-floor4.png',null],['zone47.webp','traveler'],['zone78.webp','historian'],['amami-toy-castle-floor3.png','inventor'],['amami-main-03-naze-town.png','older']];
-   const split=add('aySplit',panels.map((p,i)=>'<section class="ay-pane" style="background-image:url(images/fullart/'+p[0]+')">'+(i===0?'<b>あなた</b><span class="ay-main-child" style="background-image:url(images/sprites/'+heroSheet()+')"></span>':'<span class="ay-new-child" style="background-image:url(images/amami-cast/'+p[1]+'.png)"></span>')+'<img class="ay-copy-easy easy3d-frame" src="images/easy-motion/poster.png" alt="イージー"><small id="ayAnswer'+i+'"></small></section>').join(''));
-   AmamiMotion.play([...split.querySelectorAll('.easy3d-frame')],'01');
-   add('ayFinalChoices','<p>「一心同体」は なんて よむ？</p><button type="button">いっしんどうたい</button><button type="button">いっしんとうたい</button><button type="button">いちしんどうたい</button>');
-   function joy(){if(!$("ayJoy")){const el=add("ayJoy","イージー　……たのしいな");global.AmamiVoice.play('……たのしいな',el);}}
-   function beachAfterVoice(){global.AmamiVoice.after(()=>{if(split.isConnected)finalBeach(done);});}
-   function check(){if(settled||!answers.every(Boolean)||!split.isConnected)return;settled=true;$('ayFinalChoices').remove();split.classList.add('together');const motion=AmamiMotion.play([...split.querySelectorAll('.easy3d-frame')],'11',{onFrame(n){if(n>=52)joy();if(n>=52)split.querySelectorAll('small').forEach(el=>el.textContent='……たのしいな');}});motion.done.then(r=>{if(!r.cancelled&&split.isConnected){if(r.fallback){joy();split.querySelectorAll('small').forEach(el=>el.textContent='……たのしいな');s.later(beachAfterVoice,1800);}else beachAfterVoice();}});}
-   $('ayFinalChoices').addEventListener('click',e=>{if(e.target.tagName!=='BUTTON'||answers[0])return;const correct=e.target.textContent==='いっしんどうたい';if(!correct){$('ayFinalChoices').querySelector('p').textContent='「いっしんどうたい」と よむよ。';return;}answers[0]=true;$('ayAnswer0').textContent='いっしんどうたい';e.target.classList.add('chosen');$('ayFinalChoices').querySelectorAll('button').forEach(n=>n.disabled=true);check();});
-   [1200,2300,3400,4500].forEach((ms,i)=>s.later(()=>{answers[i+1]=true;split.children[i+1].classList.add('responded');check();},ms));
+   };
+   if(episode===9){
+    document.querySelector('.acb-field')?.remove();
+    const cut=global.AmamiBlocks.create($('amamiLateRoot'),{step:5,roof:state().castleRoofPlaced,later:s.later});cut.focus();
+    const linger=()=>{cut.setWide();s.later(()=>s.talk(global.AmamiStoryUI.rows(9,'after'),()=>{cut.close();decor();afterWords();}),2000);};
+    if(state().castleRoofPlaced){linger();return;}
+    s.later(()=>{cut.suggestRoof();s.talk(rows,()=>cut.place(['C2'],linger,()=>{state().castleRoofPlaced=true;save();}));},900);
+   }else if(episode===11){const windows=$('ayWindows');windows.classList.add('portraits');[...windows.children].forEach((n,i)=>{const easy=document.createElement('img');easy.src='images/easy-motion/poster.png';easy.alt='その子と向き合うイージー';n.appendChild(easy);s.later(()=>{windows.querySelector('.watching')?.classList.remove('watching');n.classList.add('watching');},i*850);});s.later(()=>s.talk(rows,afterWords),3500);}
+   else s.later(()=>s.talk(rows,afterWords),900);
   }
-  function finalBeach(done){
-   s.base('amami-ending-beach.png','奄美');$('amamiLateRoot').classList.add('beach-stage');$('fieldHero').style.visibility='hidden';$('amamiEasy').style.visibility='hidden';
-   const last=add('ayLastFrame','<span class="ay-beach-hero" style="background-image:url(images/sprites/'+heroSheet()+')"></span><img id="aySmile" src="images/battle-tate/hero-victory-'+(heroChar==='girl'?'girl':'boy')+'.webp" alt="無言で笑う主人公"><span id="ayEndEasy"><img class="easy3d-frame" src="images/easy-motion/poster.png" alt="イージー"><img id="ayFinalGlint" src="images/easy-motion/final-eye-glint.png" alt="" hidden></span>');
-   AmamiMotion.play($('ayEndEasy'),'01');let completed=false;
-   bgmStop();
-   if(soundOn){finalAudio=new Audio('audio/op/op1_s0_easy.mp3');endingAudio=finalAudio;finalAudio.play().catch(()=>{});}
-   s.talk([FINAL_LINE],()=>{if(finalAudio){finalAudio.pause();finalAudio=null;endingAudio=null;}last.querySelector('.ay-beach-hero').hidden=true;$('aySmile').classList.add('show');s.later(()=>{const motion=AmamiMotion.play($('ayEndEasy'),'12',{final:true,onFrame(n,c){const final=n===c.frames-1;$('ayFinalGlint').hidden=!final;$('ayEndEasy').classList.toggle('grounded',final);}});motion.done.then(r=>{if(r.cancelled||!last.isConnected||completed)return;completed=true;add('ayBlack','');s.later(()=>{if(last.isConnected){$('fieldHero').style.visibility='';done();}},900);});},600);});
-   /* 既存音声の実ファイルは約5.8秒。文章を読む間も含め7.4秒を確保する。 */
-   s.lockInput(7400);$('ayTalk').style.pointerEvents='none';s.later(()=>{$('ayTalk').style.pointerEvents='auto';},7400);
+  function epilogue(done){
+   s.base();$('amamiLateRoot').classList.add('final-stage');$('fieldHero').style.visibility='hidden';$('amamiEasy').style.visibility='hidden';
+   const panels=[['amami-toy-castle-floor4.png',null],['zone47.webp','traveler'],['zone78.webp','historian'],['amami-toy-castle-floor3.png','inventor'],['amami-main-03-naze-town.png','older']];
+   const split=add('aySplit',panels.map((p,i)=>'<section class="ay-pane" style="background-image:url(images/fullart/'+p[0]+')">'+(i===0?'<b>あなた</b><span class="ay-main-child" style="background-image:url(images/sprites/'+heroSheet()+')"></span>':'<span class="ay-new-child" style="background-image:url(images/amami-cast/'+p[1]+'.png)"></span>')+'<img class="ay-copy-easy easy3d-frame" src="images/easy-motion/poster.png" alt="イージー"></section>').join(''));
+   const copies=[...split.querySelectorAll('.easy3d-frame')];AmamiMotion.play(copies,'01');
+   [650,1350,2050,2750,3450].forEach((ms,i)=>s.later(()=>{if(split.isConnected)split.children[i].classList.add('responded');},ms));
+   s.later(()=>{if(!split.isConnected)return;split.classList.add('together');const motion=AmamiMotion.play(copies,'11');motion.done.then(r=>{if(r.cancelled||!split.isConnected)return;const el=add('ayJoy','イージー　……たのしいな');global.AmamiVoice.play('……たのしいな',el);global.AmamiVoice.after(()=>{if(split.isConnected)s.later(done,650);});});},3900);
   }
   function destroy(){AmamiMotion.stop();if(finalAudio){finalAudio.pause();finalAudio=null;endingAudio=null;}const h=$('fieldHero');if(h)h.style.visibility='';basic.destroy();}
-  return {entry:AmamiMotion.fieldEvent(entry),encounter:AmamiMotion.fieldEvent(encounter),mid:AmamiMotion.fieldEvent(mid),ending:AmamiMotion.fieldEvent(ending),epilogue:AmamiMotion.fieldEvent(epilogue),retry:basic.retry,hide:basic.hide,destroy};
+  return {entry:AmamiMotion.fieldEvent(entry),encounter:AmamiMotion.fieldEvent(encounter),mid:AmamiMotion.fieldEvent(mid),ending:AmamiMotion.fieldEvent(ending),afterWord:AmamiMotion.fieldEvent(afterWord),epilogue:AmamiMotion.fieldEvent(epilogue),retry:basic.retry,hide:basic.hide,destroy};
  }
  global.AmamiCastle={createView,finalLine:FINAL_LINE,onSoundToggle(){global.AmamiVoice.onSoundToggle();if(endingAudio){if(!soundOn)endingAudio.pause();else endingAudio.play().catch(()=>{});}}};
 })(window);

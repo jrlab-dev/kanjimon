@@ -113,15 +113,12 @@
     function auto(name,ms,fn){setCut(name);hideTalk();fn&&fn();const g=generation;later(()=>global.AmamiMotion.after(()=>{if(g===generation)run();}),ms);}
     function showMap(){root.classList.add('active');const map=q('#amamiMap',root);map.classList.remove('show');void map.offsetWidth;map.classList.add('show');}
     function line(i){
-      const row=LINES[i],g=generation;
-      setCut(row[0]);state.line=i;hideTalk();
+      const row=global.AmamiStoryUI.arrival(LINES)[i],g=generation;
+      setCut(row.id);state.line=i;hideTalk();
       const box=q('#amamiTalk',root);
-      q('#amamiFace',root).src=EASY_FACE;
-      q('#amamiWho',root).textContent=row[1];
-      q('#amamiText',root).textContent=row[2];
-      box.classList.add('show');global.AmamiVoice.play(row[2],box);
+      global.AmamiStoryUI.display(row,box,q('#amamiFace',root),q('#amamiWho',root),q('#amamiText',root));
       if(easy&&i<2)global.AmamiMotion.play(easy,i===0?'04':'14');
-      later(()=>{if(g===generation){ready=true;state.ready=true;q('#amamiNext',root).classList.add('ready');}},Math.max(900,row[2].length*65),g);
+      later(()=>{if(g===generation){ready=true;state.ready=true;q('#amamiNext',root).classList.add('ready');}},Math.max(900,row.text.length*65),g);
     }
     function finish(){
       global.AmamiMotion.endEventCamera();
@@ -149,7 +146,7 @@
     }
     function next(){if(!running||!ready||global.AmamiMotion.busy||global.AmamiVoice.busy)return false;ready=false;state.ready=false;q('#amamiNext',root)?.classList.remove('ready');run();return true;}
     root.addEventListener('click',next);
-    return{state,start,restart:start,next,stop(){generation++;running=false;cleanup();state.running=false;},destroy(){generation++;running=false;cleanup();root.remove();},get lines(){return LINES;}};
+    return{state,start,restart:start,next,stop(){generation++;running=false;cleanup();state.running=false;},destroy(){generation++;running=false;cleanup();root.remove();},get lines(){return global.AmamiStoryUI.arrival(LINES);}};
   }
   global.AmamiArrival={create,lines:LINES,placeEasy,heroWalkFrame};
 })(window);

@@ -32,3 +32,25 @@ body.amami-episode1-mode .field-h .btn,body.amami-episode1-mode .field-h .map-bt
 @media (min-width:481px){#amamiEpisode1Root{left:50%;right:auto;width:480px;transform:translateX(-50%)}}
 @media (max-height:620px){#aseTalk{bottom:8px;padding-top:7px;padding-bottom:21px}#aseFace{width:68px}#aseText{font-size:.96rem;line-height:1.42}#aseChapter{top:52px}}
 @media (prefers-reduced-motion:reduce){#aseNext.ready,.ase-field-enemy,.ase-field-enemy.arrive{animation:none}}
+
+/* 会話だけを目線の高さへ。可変長の台詞が人物領域を押し縮める。 */
+#amamiEpisode1Root.cinematic{display:flex;flex-direction:column;background:#113d51;pointer-events:auto;isolation:isolate;padding-bottom:env(safe-area-inset-bottom,0px)}
+.ase-cinema{position:relative;flex:1;min-height:0;overflow:hidden}
+.ase-cinema-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 54%}
+.ase-cinema:after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(#082b4933,transparent 25%,transparent 78%,#113d51)}
+.ase-cut-location{position:absolute;top:22px;left:18px;z-index:3;font-size:13px;letter-spacing:.14em;text-shadow:0 2px 5px #123;font-weight:900}
+.ase-cut-close{position:absolute;top:12px;right:66px;z-index:8;min-width:64px;min-height:44px;border:1px solid #ffffff70;border-radius:22px;background:#173e59b3;color:white;font:inherit;font-size:12px;cursor:pointer}
+.ase-cinema-stage{position:absolute;inset:64px 0 0;overflow:hidden}
+#amamiEpisode1Root .ase-close-easy{position:absolute;filter:drop-shadow(0 12px 10px #1234);transition:opacity .25s}
+.ase-shoulder{position:absolute;z-index:2;transition:opacity .25s}
+.ase-close-hero{position:absolute;left:50%;top:4%;width:auto;max-width:none;height:160%;object-fit:contain;opacity:0;transition:opacity .25s;transform:translateX(-50%)}
+#amamiEpisode1Root[data-shot="hero"] .ase-close-hero{opacity:1;transform:translateX(-50%)}
+#amamiEpisode1Root[data-shot="hero"] :is(.ase-close-easy,.ase-shoulder){opacity:0}
+#amamiEpisode1Root.cinematic #aseTalk{position:relative;left:auto;bottom:auto;flex:none;width:calc(100% - 24px);margin:0 12px 12px;padding:16px 18px 30px;background:#102f40;border:1px solid #afd6df;border-radius:14px;box-shadow:0 5px 18px #0016}
+#amamiEpisode1Root.cinematic #aseTalk.show{display:block}
+#amamiEpisode1Root.cinematic #aseFace{display:none}
+#amamiEpisode1Root.cinematic #aseText{font-size:clamp(16px,4.4vw,20px);line-height:1.65;margin:0}
+#amamiEpisode1Root.cinematic #aseWho{color:#ffdc83;margin-bottom:7px}
+#amamiEpisode1Root.cinematic #aseChapter{top:76px;pointer-events:none}
+@media(max-height:500px){.ase-cinema-stage{inset:42px 0 0}.ase-cut-location{top:16px;font-size:11px}.ase-cut-close{top:3px;right:60px;min-height:36px}#amamiEpisode1Root.cinematic #aseTalk{padding:8px 14px 23px;margin-bottom:6px}#amamiEpisode1Root.cinematic #aseWho{margin-bottom:2px;font-size:12px}#amamiEpisode1Root.cinematic #aseText{font-size:14px;line-height:1.4}#amamiEpisode1Root.cinematic #aseChapter{top:48px;padding:4px 12px}}
+@media(prefers-reduced-motion:reduce){.ase-close-hero,.ase-close-easy,.ase-shoulder{transition:none}}

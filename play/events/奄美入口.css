@@ -22,3 +22,7 @@ body.amami-arrival-mode #fieldControls,body.amami-arrival-mode #fieldModeBadge,b
 @media (min-width:481px){#amamiArrivalRoot{left:50%;right:auto;width:480px;transform:translateX(-50%)}}
 @media (max-height:620px){#amamiTalk{bottom:8px;padding-top:7px;padding-bottom:21px}#amamiFace{width:68px}#amamiText{font-size:.96rem;line-height:1.42}}
 @media (prefers-reduced-motion:reduce){#amamiMap img,#amamiNext.ready{animation:none}}
+/* 同じ距離の会話二人。A02既定比1.25。posterの実画素は高さ310/448、下余白70/448。 */
+:is(#amamiEpisode1Root,#amamiEpisode2Root,#amamiEpisode3Root,#amamiEpisode4Root,#amamiLateRoot[data-episode="5"]) .amami-dialog-stage{container-type:size;--peer-body:min(72cqw,82cqh);--listener-fill:.987;--listener-pad:.006;--peer-height:calc(var(--peer-body) * 448 / 310);--listener-height:calc(var(--peer-body) / 1.25 / var(--listener-fill))}
+:is(#amamiEpisode1Root,#amamiEpisode2Root,#amamiEpisode3Root,#amamiEpisode4Root,#amamiLateRoot[data-episode="5"]) .amami-dialog-stage .amami-dialog-peer{left:70%;top:auto;bottom:calc(8cqh - var(--peer-height) * 70 / 448);height:var(--peer-height);width:auto;max-width:none;object-fit:contain;transform:translate(calc(-50% + var(--motion-x,0%)),var(--motion-y,0%))}
+:is(#amamiEpisode1Root,#amamiEpisode2Root,#amamiEpisode3Root,#amamiEpisode4Root,#amamiLateRoot[data-episode="5"]) .amami-dialog-stage .amami-dialog-listener{left:24%;top:auto;bottom:calc(8cqh - var(--listener-height) * var(--listener-pad));height:var(--listener-height);width:auto;max-width:none;object-fit:contain;transform:translateX(-50%);filter:drop-shadow(0 6px 4px #1234)}

@@ -38,3 +38,34 @@ body.amami-episode3-mode .field-h .btn,body.amami-episode3-mode .field-h .map-bt
 @media (prefers-reduced-motion:reduce){#asnNext.ready,.asn-field-enemy,.asn-field-enemy.arrive,#asnWave i{animation:none}}
 
 body.amami-episode3-mode .dpad,body.amami-episode3-mode .dpad button{visibility:hidden!important;pointer-events:none!important}
+
+/* 会話だけを目線の高さへ。可変長の台詞が人物領域を押し縮める。 */
+#amamiEpisode3Root.cinematic{display:flex;flex-direction:column;background:#113d51;pointer-events:auto;isolation:isolate;padding-bottom:env(safe-area-inset-bottom,0px)}
+.asn-cinema{position:relative;flex:1;min-height:0;overflow:hidden}
+.asn-cinema-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 54%}
+.asn-cinema:after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(#082b4933,transparent 25%,transparent 78%,#113d51)}
+.asn-cut-location{position:absolute;top:22px;left:18px;z-index:3;font-size:13px;letter-spacing:.14em;text-shadow:0 2px 5px #123;font-weight:900}
+.asn-cut-close{position:absolute;top:12px;right:66px;z-index:8;min-width:64px;min-height:44px;border:1px solid #ffffff70;border-radius:22px;background:#173e59b3;color:white;font:inherit;font-size:12px;cursor:pointer}
+.asn-cinema-stage{position:absolute;inset:64px 0 0;overflow:hidden}
+#amamiEpisode3Root .asn-close-easy{position:absolute;filter:drop-shadow(0 12px 10px #1234);transition:opacity .25s}
+.asn-shoulder{position:absolute;z-index:2;transition:opacity .25s}
+.asn-close-hero{position:absolute;left:50%;top:4%;width:auto;max-width:none;height:160%;object-fit:contain;opacity:0;transition:opacity .25s;transform:translateX(-50%)}
+#amamiEpisode3Root[data-shot="hero"] .asn-close-hero{opacity:1;transform:translateX(-50%)}
+#amamiEpisode3Root[data-shot="hero"] :is(.asn-close-easy,.asn-shoulder){opacity:0}
+#amamiEpisode3Root.cinematic #asnTalk{position:relative;left:auto;bottom:auto;flex:none;width:calc(100% - 24px);margin:0 12px 12px;padding:16px 18px 30px;background:#102f40;border:1px solid #afd6df;border-radius:14px;box-shadow:0 5px 18px #0016}
+#amamiEpisode3Root.cinematic #asnTalk.show{display:block}
+#amamiEpisode3Root.cinematic #asnTalk{min-height:calc(3 * clamp(16px,4.4vw,20px) * 1.65 + 80px)}
+@media(max-height:500px){#amamiEpisode3Root.cinematic #asnTalk{min-height:112px}}
+#amamiEpisode3Root.cinematic #asnFace{display:none}
+#amamiEpisode3Root.cinematic #asnText{font-size:clamp(16px,4.4vw,20px);line-height:1.65;margin:0}
+#amamiEpisode3Root.cinematic #asnWho{color:#ffdc83;margin-bottom:7px}
+#amamiEpisode3Root.cinematic #asnChapter{top:76px;pointer-events:none}
+@media(max-height:500px){.asn-cinema-stage{inset:42px 0 0}.asn-cut-location{top:16px;font-size:11px}.asn-cut-close{top:3px;right:60px;min-height:36px}#amamiEpisode3Root.cinematic #asnTalk{padding:8px 14px 23px;margin-bottom:6px}#amamiEpisode3Root.cinematic #asnWho{margin-bottom:2px;font-size:12px}#amamiEpisode3Root.cinematic #asnText{font-size:14px;line-height:1.4}#amamiEpisode3Root.cinematic #asnChapter{top:48px;padding:4px 12px}}
+@media(prefers-reduced-motion:reduce){.asn-close-hero,.asn-close-easy,.asn-shoulder{transition:none}}
+/* 答えを言いかける → 主人公が一歩出て止まる → 相手の番を待つ。 */
+#amamiEpisode3Root .amami-dialog-stage .amami-dialog-peer{transform-origin:50% 84.375%;transition:transform .3s,opacity .25s}
+#amamiEpisode3Root[data-beat="offer"] .amami-dialog-stage .amami-dialog-peer{transform:translate(calc(-50% + var(--motion-x,0%)),var(--motion-y,0%)) rotate(-3deg)}
+#amamiEpisode3Root[data-beat="stop"] .amami-dialog-stage .amami-dialog-listener{animation:asnStepStop .48s ease-out both}
+#amamiEpisode3Root[data-beat="wait"] .amami-dialog-stage .amami-dialog-listener{transform:translateX(calc(-50% + 8px))}
+@keyframes asnStepStop{0%{transform:translateX(-50%)}45%{transform:translate(calc(-50% + 5px),-2px)}100%{transform:translateX(calc(-50% + 8px))}}
+@media(prefers-reduced-motion:reduce){#amamiEpisode3Root .amami-dialog-stage .amami-dialog-peer{transition:none}#amamiEpisode3Root[data-beat="stop"] .amami-dialog-stage .amami-dialog-listener{animation:none;transform:translateX(calc(-50% + 8px))}}

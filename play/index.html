@@ -224,16 +224,14 @@
   .t-みず{background:#38bdf8}.t-ひ{background:#f87171}.t-き{background:#4ade80}.t-岩{background:#9ca3af}.t-かみなり{background:#facc15}.t-ふつう{background:#374151}
 
   /* ===== タイトル画面 ===== */
-  .title-hero{position:relative;isolation:isolate;overflow:hidden;min-height:310px;
-    background:url('images/title/title-hero-field.webp') center/cover no-repeat;
-    border-radius:24px;padding:32px 18px 24px;text-align:center;color:#fff;
+  .title-hero{position:relative;isolation:isolate;overflow:hidden;
+    background:#eaf6ff;
+    border-radius:24px;padding:16px 0 10px;text-align:center;color:#fff;
     box-shadow:0 8px 24px rgba(32,107,160,.3);margin-bottom:20px;
     display:flex;flex-direction:column;justify-content:flex-start;align-items:center}
-  .title-hero::before{content:'';position:absolute;inset:0;z-index:-1;
-    background:linear-gradient(180deg,rgba(15,80,150,.46) 0%,rgba(15,80,150,.06) 44%,rgba(10,55,30,.20) 100%)}
-  .title-hero[data-hero="jukugo"]::before{
-    background:linear-gradient(180deg,rgba(0,0,0,.40) 0%,rgba(0,0,0,.06) 44%,rgba(0,0,0,.34) 100%)}
-  .title-hero h1{font-size:2.7rem;font-weight:900;line-height:1.05;letter-spacing:1px}
+  .title-art{flex:none;width:100%;aspect-ratio:3/2;margin-top:10px;
+    background:url('images/title/title-hero-field.webp?v=20260927') center/cover no-repeat}
+  .title-hero h1{font-size:2.35rem;font-weight:900;line-height:1.05;letter-spacing:1px}
   .title-hero h1 .c1{color:#ff7a7a}
   .title-hero h1 .c2{color:#ffc34d}
   .title-hero h1 .c3{color:#6dd58c}
@@ -245,10 +243,8 @@
   .title-hero h1 .rpg{color:#ffd84d;font-size:.6em;letter-spacing:3px;display:inline-block;margin-top:2px;
     text-shadow:0 0 2px #fff,2px 2px 0 #7a4f00,-2px -2px 0 #7a4f00,2px -2px 0 #7a4f00,-2px 2px 0 #7a4f00,
       0 4px 9px rgba(0,0,0,.55)}
-  .title-hero .sub{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);
-    width:max-content;max-width:calc(100% - 20px);font-size:.92rem;opacity:1;font-weight:900;
-    padding:5px 10px;border-radius:50px;background:rgba(20,70,75,.72);white-space:nowrap;
-    text-shadow:0 1px 3px rgba(0,0,0,.75)}
+  .title-hero .sub{width:calc(100% - 20px);margin-top:10px;font-size:.82rem;line-height:1.55;opacity:1;font-weight:900;
+    padding:5px 10px;border-radius:12px;background:#e0f0e5;color:#204f43;white-space:normal}
   .title-hero .mascot{display:none}
   @keyframes hop{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-8px) rotate(3deg)}}
   .get-count{background:#fff;border:3px dashed var(--orange);border-radius:18px;
@@ -3735,18 +3731,28 @@ body.ice-dungeon #fieldInfo{display:none}
 <link rel="stylesheet" href="events/イージー演技.css">
 <script src="events/奄美音声台帳.js" defer></script>
 <script src="events/奄美音声.js" defer></script>
+<script src="events/奄美物語台本.js" defer></script>
+<script src="events/奄美会話.js" defer></script>
 <script src="events/イージー演技.js" defer></script>
 <script src="events/奄美入口.js" defer></script>
 <script src="events/奄美第1話.js" defer></script>
 <script src="events/奄美第2話.js" defer></script>
 <link rel="stylesheet" href="events/奄美第3話.css">
 <script src="events/奄美第3話.js" defer></script>
+<link rel="stylesheet" href="events/日本橋会話.css">
+<script src="events/日本橋会話.js" defer></script>
+<link rel="stylesheet" href="events/1年重要会話.css">
+<script src="events/1年重要会話.js" defer></script>
 <link rel="stylesheet" href="events/奄美第4話.css">
 <script src="events/奄美第4話.js" defer></script>
 <link rel="stylesheet" href="events/奄美第5-8話.css">
 <script src="events/奄美第5-8話.js" defer></script>
 <link rel="stylesheet" href="events/奄美城と終章.css">
+<link rel="stylesheet" href="events/奄美積み木.css">
+<script src="events/奄美積み木.js" defer></script>
 <script src="events/奄美城と終章.js" defer></script>
+<link rel="stylesheet" href="events/奄美終章.css">
+<script src="events/奄美終章.js" defer></script>
 <link rel="stylesheet" href="events/奄美歩行.css">
 <script src="events/奄美通行データ.js" defer></script>
 <script src="events/奄美歩行.js" defer></script>
@@ -3761,12 +3767,14 @@ body.ice-dungeon #fieldInfo{display:none}
     <div class="title-hero">
       <div class="mascot">⚔️👹✨</div>
       <h1 id="titleLogo" style="user-select:none;-webkit-user-select:none" onclick="onTitleTap()"><span class="c1">か</span><span class="c2">ん</span><span class="c3">じ</span><span class="c4">モ</span><span class="c5">ン</span><br><span class="rpg">RPG</span></h1>
+      <div class="title-art" aria-hidden="true"></div>
       <div class="sub">よみかたを えらんで かんじもんを ゲットしよう！</div>
     </div>
     <div class="get-count" id="titleCount"></div>
     <button class="hero-change-btn" id="heroChangeBtn" onclick="openHeroSelectFromTitle()" style="display:none">しゅじんこうを かえる</button>
     <div class="title-btns">
       <button class="btn btn-primary" id="amamiContinueBtn" style="display:none;background:linear-gradient(135deg,#0ea5e9,#0369a1)" onclick="startAmamiContinuation()">アマミの つづき</button>
+      <button class="btn btn-primary" id="amamiEndingReviewBtn" style="display:none;background:linear-gradient(135deg,#d97706,#9a3412)" onclick="reviewAmamiEnding()">あたらしい けつまつを みる</button>
       <button class="btn btn-primary" style="font-size:1.45rem;padding:22px;line-height:1.25" onclick="goField()">フィールドで あそぶ</button>
       <button class="btn btn-yellow" onclick="goStages()">クイックバトル</button>
       <button class="btn btn-ghost" onclick="goZukan()">ずかん</button>
@@ -10112,6 +10120,7 @@ const AMAMI_LATE_WORDS={
 function readAmamiLateProgress(src,words){
   const out=readAmamiEpisodeProgress(src,words);src=src&&typeof src==='object'?src:{};
   out.partIndex=src.partIndex===1?1:0;out.retryMasks={};out.castleDoorSeen=src.castleDoorSeen===true;
+  out.castleRoofPlaced=src.castleRoofPlaced===true||out.done;
   for(const w of out.retryWords){const m=src.retryMasks&&src.retryMasks[w];out.retryMasks[w]=[1,2,3].includes(m)?m:3;}
   return out;
 }
@@ -10126,7 +10135,7 @@ function readAmamiEpisodeProgress(src,words){
   if(out.done)out.phase='done';else if(out.phase==='done')out.phase='ending';
   return out;
 }
-function newAmamiFinal(){const out={episode:1,phase:'entry',mainIndex:0,retryWords:[],retryIndex:0,entrySeen:false,midSeen:false,episode1Done:false,episode2:newAmamiEpisodeProgress(),episode3:newAmamiEpisodeProgress(),episode4:newAmamiEpisodeProgress()};for(const n of [5,6,7,8,9,10,11,12])out['episode'+n]=readAmamiLateProgress({},AMAMI_LATE_WORDS[n]);return out;}
+function newAmamiFinal(){const out={episode:1,phase:'entry',mainIndex:0,retryWords:[],retryIndex:0,entrySeen:false,midSeen:false,episode1Done:false,episode2:newAmamiEpisodeProgress(),episode3:newAmamiEpisodeProgress(),episode4:newAmamiEpisodeProgress(),story:{version:2,phase:'split',legacy:false}};for(const n of [5,6,7,8,9,10,11,12])out['episode'+n]=readAmamiLateProgress({},AMAMI_LATE_WORDS[n]);return out;}
 function readAmamiFinalSave(d){
   const src=d&&typeof d.amamiFinal==='object'&&d.amamiFinal?d.amamiFinal:{},out=newAmamiFinal(),phases=new Set(['entry','main','retry','ending','done']);
   out.mainIndex=Math.max(0,Math.min(AMAMI_EP1_WORDS.length,Number.isInteger(src.mainIndex)?src.mainIndex:0));
@@ -10140,6 +10149,9 @@ function readAmamiFinalSave(d){
   out.episode3=readAmamiEpisodeProgress(src.episode3,AMAMI_EP3_WORDS);
   out.episode4=readAmamiEpisodeProgress(src.episode4,AMAMI_EP4_WORDS);
   for(const n of [5,6,7,8,9,10,11,12])out['episode'+n]=readAmamiLateProgress(src['episode'+n],AMAMI_LATE_WORDS[n]);
+  const storyPhases=new Set(['split','E1','E2','E3','E4','E5','E6','E7','E8','done']);
+  if(src.story?.version===2&&storyPhases.has(src.story.phase))out.story={version:2,phase:src.story.phase,legacy:src.story.legacy===true};
+  else if(out.episode12.done)out.story={version:2,phase:'done',legacy:true};
   // load()はdeferスクリプトより先。ここで型と範囲を復元し、地面の検証は歩行開始時に行う。
   out.walk={version:1,positions:{}};
   if(src.walk?.version===1)for(const id of ['1','2','3','4','5','6','7','8','9','10','11','12','castle','port','falls','ship']){
@@ -11369,7 +11381,12 @@ COSTUMES.filter(cs=>cs.suffix).forEach(cs=>['boy','girl'].forEach(ch=>{
 ================================ */
 const $=id=>document.getElementById(id);
 function showScreen(id){
+  window.GradeOneStory?.beforeScreen(id);
+  window.NihonbashiScene?.beforeScreen(id);
   window.AmamiWalk?.beforeScreen(id);
+  window.AmamiEnding?.beforeScreen(id);
+  // 全国協力・奄美の演出を離れたら、通常探索の操作欄を再び表示する。
+  if(id!=='screen-field'&&id!=='screen-battle')document.body.classList.remove('nd-event-mode');
   // 102の未完了会話・フィナーレは、タイトル等へ離脱した瞬間に世代ごと無効化する。
   if(id!=='screen-field'&&id!=='screen-battle'&&typeof fieldZone!=='undefined'&&fieldZone===102){
     fieldSeq++;hakaseMsgSeq++;hakaseTapTrigger=null;
@@ -11440,16 +11457,17 @@ function updateTitle(){
   if(hcb) hcb.style.display = heroSelectAvailable() ? '' : 'none';
   const acb=$('amamiContinueBtn');
   if(acb){
-    const canContinue=amamiArrivalSeen&&!amamiFinal.episode12.done;
+    const canContinue=amamiArrivalSeen&&(!amamiFinal.episode12.done||amamiFinal.story?.phase!=='done');
     acb.style.display=canContinue?'':'none';
     if(canContinue){
       if(!amamiFinal.episode1Done)acb.textContent=amamiFinal.entrySeen?'アマミの つづき':'アマミ 第1話へ';
       else if(!amamiFinal.episode2.done)acb.textContent=amamiFinal.episode2.entrySeen?'アマミの つづき':'アマミ 第2話へ';
       else if(!amamiFinal.episode3.done)acb.textContent=amamiFinal.episode3.entrySeen?'アマミの つづき':'アマミ 第3話へ';
       else if(!amamiFinal.episode4.done)acb.textContent=amamiFinal.episode4.entrySeen?'アマミの つづき':'アマミ 第4話へ';
-      else {const n=[5,6,7,8,9,10,11,12].find(n=>!amamiFinal['episode'+n].done);acb.textContent=amamiFinal['episode'+n].entrySeen?'アマミの つづき':'アマミ 第'+n+'話へ';}
+      else {const n=[5,6,7,8,9,10,11,12].find(n=>!amamiFinal['episode'+n].done);acb.textContent=n?(amamiFinal['episode'+n].entrySeen?'アマミの つづき':'アマミ 第'+n+'話へ'):'アマミの けつまつへ';}
     }
   }
+  const arb=$('amamiEndingReviewBtn');if(arb)arb.style.display=amamiFinal.episode12.done&&amamiFinal.story?.phase==='done'?'':'none';
 }
 function setDifficulty(d){
   difficulty=d; save(); updateTitle();
@@ -28288,18 +28306,24 @@ function startZoneTalk(lines, onDone){
   let ownPasserby=false;
   if(wasAuto) stopAutoExplore();
   heroLock=true;                      // ★stopAutoExplore の後に立てる
+  const nihonbashiCut=window.NihonbashiScene?.open(lines);
+  const importantCut=window.GradeOneStory?.openTalk(lines);
   let i=0;
   const step=()=>{
     // ワープ・タイトルへ離脱していたら、後始末だけして終わる（onDoneは呼ばない＝誤発火防止）
     if(ownPasserby){stopPasserby();ownPasserby=false;}
-    if(seq!==fieldSeq){ ztActive=false; return; }
+    if(seq!==fieldSeq){ nihonbashiCut?.close();importantCut?.close();ztActive=false; return; }
     if(i>=lines.length){
+      nihonbashiCut?.close();
+      importantCut?.close();
       ztActive=false; heroLock=false;
       if(onDone) onDone();
       return;
     }
     const ln=lines[i++];
     hakaseTalkOnce(ln.text, step, ln.snd||undefined);
+    nihonbashiCut?.line(i-1);
+    importantCut?.line(i-1);
     if(ln.passerby){ownPasserby=true;startPasserby(ln.passerby,()=>{if(seq===fieldSeq&&ztActive)heroLock=true;});}
   };
   step();
@@ -28414,7 +28438,8 @@ function startZoneEvent(zone, onDone, phase='in'){
     const grid=$('fieldGrid');
     if(grid){grid.classList.add('nagoya63-spots-pending');grid.querySelectorAll('.t-spot').forEach(n=>{n.style.animation='';n.style.transformOrigin='';});}
   }
-  for(const k in EV_CHARA){ const im=new Image(); im.src=EV_CHARA[k].img; }   // 表情の切り替えでちらつかせない
+  const preloadChara=zone===5?[...new Set(script.map(s=>s.portrait||s.who))]:Object.keys(EV_CHARA);
+  for(const k of preloadChara){ if(EV_CHARA[k]){const im=new Image(); im.src=EV_CHARA[k].img;} } // 浅草は登場する人物だけ
   evActive=true; evZone=zone; evPhase=phase; evScript=script; evStep=-1; evDoneCb=onDone||null; evSeq=fieldSeq;
   setInawashiroLetter(null); setNamahageStory(null); setLighthouseStory(null); setTsugaruStory(null); setSapporoStory(null); setWetlandStory(null); setIceHallStory(null); setHakataStory(null);
   evAutoWasRunning=zone!==83&&isAutoZone(fieldZone);
@@ -28430,6 +28455,7 @@ function startZoneEvent(zone, onDone, phase='in'){
   L0.removeAttribute('src'); R0.removeAttribute('src');
   L0.className='ev-chara hide'; R0.className='ev-chara hide';
   ov.classList.add('show');
+  window.GradeOneStory?.openEvent(zone,phase);
   evAdvance();
 }
 
@@ -29729,6 +29755,7 @@ function evAdvance(){
   if(s.near)    EvCutScene.near(s.near);
   if(s.kidsRun) EvCutScene.nearKids(s.near || null);
   $('evText').textContent=s.text;
+  window.GradeOneStory?.eventLine(evStep,s);
   if(evZone===83)layoutIce83();
   if(evZone===92||evZone===94||evZone===97||evZone===98||evZone===99||evZone===100||evZone===101)layoutDazaifu92();
   $('evText').className=(s.who==='easy')?'ev-easy':'';    // イージーが喋るときだけ文字色を変える
@@ -29741,6 +29768,7 @@ function evAdvance(){
 /* 閉じてもとに戻す */
 function evFinish(completed=true){
   if(!evActive) return;
+  window.GradeOneStory?.finishEvent();
   evActive=false;
   if(fuji52StoryCameraState) cancelFuji52StoryCamera();
   if(nagoya63StoryState) cancelNagoya63StoryCamera();
@@ -29832,7 +29860,7 @@ function hideBattleHakase(){
    #fieldWrap直下＝カメラtransformの影響を受けない（体験監査 重大-2の流儀）。顔はhakase-face.webpがあれば表示、無ければ🧑‍🔬 */
 function showHakaseTalkWindow(msg){
   const wrap=$('fieldWrap'); if(!wrap) return;
-  const old=wrap.querySelector('.hakase-talk'); if(old) old.remove();
+  const old=$('hakaseTalkWin'); if(old) old.remove();
   const win=document.createElement('div'); win.className='hakase-talk'; win.id='hakaseTalkWin';
   const face=document.createElement('div'); face.className='hakase-talk-face'+(hakaseFaceImgOK?' has-img':'');
   if(hakaseFaceImgOK) face.style.backgroundImage="url('images/sprites/hakase-face.webp')";
@@ -29861,7 +29889,7 @@ function positionHakaseTalkWindow(win, wrap){
   win.style.top = Math.round(top)+'px';
 }
 function hideHakaseTalkWindow(){
-  const wrap=$('fieldWrap'); const old=wrap&&wrap.querySelector('.hakase-talk'); if(old) old.remove();
+  const old=$('hakaseTalkWin'); if(old) old.remove();
 }
 /* 手直し はかせトーク2§1-4：タップで先送り（連打しても順番どおり・二重発火しない＝
    hakaseTapTriggerは「今出ているセリフの先送り関数」を指し、消費すると即null化。次のセリフが実際に
@@ -30536,6 +30564,8 @@ function renderWorldMap(regionOverride){
   wmPlayIntroZoom(scale, centerCoord.x, centerCoord.y);
 }
 function warpZone(z){
+  window.GradeOneStory?.abort();
+  window.NihonbashiScene?.abort();
   if(z===84&&cleared.has(83)&&!iceDungeon.complete){closeWorldMap();iceDungeonStop();fieldZone=83;const p=zoneStartOf(83);setFieldStandardPosition(83,p.x,p.y);showScreen('screen-field');renderField();startIce83Ending();return;}
 
   // 83の結末のあと、地図で84を選んでも初回は飛行機の案内へつなぐ。
@@ -33533,7 +33563,12 @@ function startAmamiContinuation(){
   if(!amamiFinal.episode3.done){startAmamiEpisodeThree();return;}
   if(!amamiFinal.episode4.done){startAmamiEpisodeFour();return;}
   for(const n of [5,6,7,8,9,10,11,12])if(!amamiFinal['episode'+n].done){if(window.AmamiLate)AmamiLate.start(n);return;}
+  if(amamiFinal.story?.phase!=='done'&&window.AmamiEnding){AmamiEnding.start();return;}
   showScreen('screen-title');
+}
+function reviewAmamiEnding(){
+  if(!amamiFinal.episode12.done||!window.AmamiEnding)return;
+  amamiFinal.story={version:2,phase:'split',legacy:false};save();AmamiEnding.start();
 }
 function startAmamiEpisodeOne(){
   if(!amamiArrivalSeen){startAmamiArrival();return;}
@@ -35726,11 +35761,12 @@ $('soundBtn').textContent=soundOn?'🔊':'🔇';
     {key:'sea-girl',file:'title-hero-sea-girl.webp'},
     {key:'castle-girl',file:'title-hero-castle-girl.webp'},
     {key:'friends',file:'title-hero-friends.webp'},
+    {key:'friends-normal',file:'title-hero-friends-normal.webp'},
     {key:'field',file:'title-hero-field.webp'}
   ];
   const roll=Math.random();
-  const i=roll<0.15?0:roll<0.30?1:roll<0.45?2:roll<0.60?3:4;
-  hero.style.backgroundImage="url('images/title/"+HEROES[i].file+"')";
+  const i=roll<0.15?0:roll<0.30?1:roll<0.45?2:roll<0.60?3:roll<0.75?4:5;
+  hero.querySelector('.title-art').style.backgroundImage="url('images/title/"+HEROES[i].file+"?v=20260928')";
   hero.dataset.hero=HEROES[i].key;
 })();
 bindFieldControls();   // 第4弾：フィールドの十字ボタン・スワイプ操作バインド

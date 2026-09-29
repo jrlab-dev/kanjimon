@@ -1,0 +1,99 @@
+#amamiEndingRoot{position:fixed;inset:0;z-index:270;pointer-events:none;color:#fff;font-family:'Zen Maru Gothic',sans-serif}
+@media(min-width:481px){#amamiEndingRoot{left:50%;right:auto;width:480px;transform:translateX(-50%)}}
+#aenTalk{position:absolute;left:3%;bottom:max(18px,3.5%);width:94%;z-index:9;display:none;align-items:center;gap:11px;padding:10px 18px 24px 10px;border-radius:18px;background:rgba(0,0,0,.86);border:3px solid rgba(255,255,255,.9);box-shadow:0 5px 18px #0006;pointer-events:auto;cursor:pointer}
+#aenTalk.show{display:flex}
+#aenTalk img{width:clamp(72px,22vw,112px);aspect-ratio:1;flex:0 0 auto;object-fit:cover;object-position:center top;border-radius:14px;border:2px solid #fffd;background:#fff}
+#aenTalk>div{min-width:0;text-align:left}#aenWho{display:block;color:#ffea66;font-size:clamp(.82rem,3.4vw,1rem);font-weight:900;margin-bottom:3px}
+#aenText{font-size:clamp(1rem,4.4vw,1.2rem);font-weight:900;line-height:1.48;overflow-wrap:anywhere}
+#aenNext{position:absolute;right:12px;bottom:4px;font-size:.78rem;opacity:.28}#aenNext.ready{opacity:.9}
+#aenQuit{position:absolute;right:8px;top:70px;z-index:15;pointer-events:auto;padding:7px 13px;min-height:40px;border:1px solid #fff9;border-radius:10px;background:#123c57eb;color:white;font-weight:900}
+body.amami-ending-mode .dpad,body.amami-ending-mode .dpad button,body.amami-ending-mode #fieldControls,body.amami-ending-mode #fieldModeBadge{visibility:hidden!important;pointer-events:none!important}
+body.amami-ending-mode .field-object{visibility:hidden}
+body.amami-ending-mode .tile.t-gate{visibility:hidden!important}
+body.amami-ending-mode:has(#amamiEndingRoot[data-scene="sailing"]) #fieldWrap{visibility:hidden}
+.aen-easy{opacity:1;transition:left .6s ease,top .6s ease,opacity .55s ease}.aen-easy.grounded{filter:drop-shadow(0 6px 3px #14220d99)}
+/* 救援に来たイージーはマナたちより手前。人数全員に同じ前面順を適用する。 */
+#fieldGrid .aen-easy{z-index:100}
+.aen-easy>.easy3d-frame,#aenFinalEasy>.easy3d-frame{transform-origin:50% 78%;animation:aenEasyPlay 2.8s ease-in-out infinite;animation-delay:var(--aen-delay,0s)}
+@keyframes aenEasyPlay{0%,100%{transform:translate(var(--motion-x,0%),var(--motion-y,0%)) rotate(0)}16%{transform:translate(var(--motion-x,0%),var(--motion-y,0%)) translateY(-5px) rotate(-9deg)}30%{transform:translate(var(--motion-x,0%),var(--motion-y,0%)) rotate(7deg)}45%{transform:translate(var(--motion-x,0%),var(--motion-y,0%)) translateY(-8px) rotate(-5deg)}61%{transform:translate(var(--motion-x,0%),var(--motion-y,0%)) rotate(8deg)}77%{transform:translate(var(--motion-x,0%),var(--motion-y,0%)) translateY(-3px) rotate(-3deg)}}
+.aen-monster-reading{position:absolute;transform:translate(-50%,4px);z-index:80;padding:2px 4px;border-radius:6px;background:#103b55e8;color:#fff9b9;font-size:clamp(10px,2.7vw,12px);font-weight:900;line-height:1.05;white-space:nowrap;box-shadow:0 2px 5px #0006;opacity:0;transition:opacity .15s,transform .15s;pointer-events:none}
+.aen-monster-reading.show{opacity:1;transform:translate(-50%,0)}
+.nd-event-spot .face.sleeping::after{top:-.8em;right:-.55em;font-size:clamp(15px,4.5vw,20px);font-weight:1000;color:#17304b;-webkit-text-stroke:.5px #fff;text-shadow:0 1px 2px #fff,0 0 3px #fff;animation:aenZzz 2.5s ease-in-out infinite}
+@keyframes aenZzz{0%,100%{opacity:.85;transform:translateY(0)}50%{opacity:1;transform:translateY(-3px)}}
+.aen-easy .aen-glint{display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:contain;z-index:5}.aen-easy .aen-glint.show{display:block}
+.aen-child{position:absolute;left:calc(var(--ax)*var(--tile));top:calc(var(--ay)*var(--tile));height:calc(1.05*var(--tile));width:auto;z-index:37;object-fit:contain;transform:translate(-50%,-100%);filter:drop-shadow(0 4px 3px #0005)}
+.aen-child.has-phone{height:calc(3.1*var(--tile));transform:translate(-50%,-66%)}
+.aen-child.reading{animation:aenRead 2.2s ease-in-out both}@keyframes aenRead{35%{transform:translate(-50%,-57%) rotate(-4deg)}100%{transform:translate(-50%,-55%) rotate(0)}}
+.aen-child.has-phone.reading{animation:aenPhoneRead 2.2s ease-in-out both}@keyframes aenPhoneRead{35%{transform:translate(-50%,-68%) rotate(-2deg)}100%{transform:translate(-50%,-66%) rotate(0)}}
+.aen-child.retreat{animation:aenChildRetreat .55s ease-out both}@keyframes aenChildRetreat{to{transform:translate(calc(-50% + 7px),-100%)}}
+#aenMontage{position:absolute;left:5%;right:5%;top:8%;height:58%;overflow:hidden;border-radius:15px;display:none;box-shadow:0 10px 35px #0009}
+#aenMontage.show{display:block}#aenMontage img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .65s}#aenMontage img.on{opacity:1}
+#aenPhone{position:absolute;left:50%;top:40%;width:29%;aspect-ratio:.53;transform:translate(-50%,-35%) scale(.7);opacity:0;z-index:6;border:7px solid #162230;border-radius:24px;box-shadow:0 10px 25px #0009;overflow:hidden;background:#162230;transition:opacity .6s,transform .6s;pointer-events:none}
+#aenPhone.show{opacity:1;transform:translate(-50%,-35%) scale(1)}#aenPhone.handoff{left:52%;top:43%;width:18%;transform:translate(-50%,-35%) scale(.8)}
+#aenPhone .aen-screen{width:100%;height:100%;border-radius:15px;background:url('../images/title/title-hero-field.webp') center/cover;position:relative}
+#aenPhone .aen-title{position:absolute;top:11%;left:0;right:0;text-align:center;font-size:clamp(.75rem,3.4vw,1.15rem);font-weight:1000;color:#ffed64;text-shadow:1px 2px 2px #15305a,0 0 4px white}
+#aenPhone .aen-title small{display:block;color:#fff;font-size:.62em}
+#amamiEndingRoot[data-phase="E7"] #aenPhone{display:none}
+#amamiEndingRoot[data-phase="E7"] #aenPhone.handoff{display:block;left:68%;top:max(120px,17%);width:20%;border-width:4px;border-radius:13px;transform:translate(-50%,-35%);z-index:7}
+#amamiEndingRoot[data-phase="E7"] #aenPhone .aen-title{font-size:12px;top:8%}
+.aen-hero-copy{display:block;transform:scale(2.7);transform-origin:50% 100%;filter:drop-shadow(0 3px 2px #1236)}
+.aen-observer{position:absolute;left:28%;top:25%;z-index:4;pointer-events:none}
+.aen-making-reader{position:absolute;left:30%;bottom:4%;opacity:0;transition:opacity .35s;z-index:2}
+.aen-making-reader.show{opacity:1}
+.aen-making-reading{position:absolute;left:25px;bottom:37px;width:max-content;padding:6px 10px;border-radius:12px;background:#fffff2;color:#203e5b;font-size:17px;font-weight:900;box-shadow:0 2px 7px #1234}
+#aenE7Pair{position:absolute;inset:0;z-index:6;pointer-events:none}
+#aenE7Easy{position:absolute;left:-4%;bottom:31%;width:69%;height:52%;object-fit:contain;filter:drop-shadow(0 7px 5px #0006)}
+#aenE7Child{position:absolute;right:2%;bottom:33%;width:35%;height:43%;object-fit:contain;filter:drop-shadow(0 6px 4px #0006);transform-origin:50% 85%;transition:transform .45s ease,filter .45s ease}
+#aenE7Child.calming{transform:translateY(-3px) scale(1.03);filter:drop-shadow(0 6px 4px #0006) brightness(1.05)}
+#aenHandoff{position:absolute;left:4%;right:4%;top:12%;width:92%;height:65%;object-fit:contain;filter:drop-shadow(0 8px 7px #0005);pointer-events:none}
+#amamiEndingRoot[data-phase="E7"] #aenHandoff{animation:aenHandoffBreath 3s ease-in-out infinite}
+#aenHandoff.receiving{animation:aenHandoffReceive .55s ease-out both}@keyframes aenHandoffReceive{50%{transform:translateY(-5px) scale(1.025)}100%{transform:none}}
+@keyframes aenHandoffBreath{50%{transform:translateY(-2px)}}
+#aenFinalPair{position:absolute;inset:0;z-index:6;pointer-events:none}
+#aenFinalEasy{position:absolute;left:-4%;bottom:37%;width:73%;aspect-ratio:1;filter:drop-shadow(0 5px 4px #0005)}
+#aenFinalEasy.grounded{filter:drop-shadow(0 7px 3px #112c2199)}
+#aenFinalEasy img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+#aenFinalEasy .aen-glint{display:none;z-index:2}#aenFinalEasy .aen-glint.show{display:block}
+#aenFinalChild{position:absolute;right:-4%;bottom:37%;height:36%;width:auto;object-fit:contain;filter:drop-shadow(0 5px 4px #0005)}
+#aenFinalChild.tapping{transform-origin:50% 52%;animation:aenChildTap 1.6s ease-in-out both}
+@keyframes aenChildTap{0%,100%{transform:none}30%,62%{transform:translateY(2px) rotate(-1.2deg)}43%,75%{transform:translateY(-1px) rotate(0)}}
+#aenTap{position:absolute;left:66%;top:45%;width:18px;height:18px;border:2px solid #fff9bd;border-radius:50%;box-shadow:0 0 14px #fff47c;opacity:0;transform:translate(-50%,-50%) scale(.35);animation:aenTapPulse 1.6s ease-out both;pointer-events:none}
+@keyframes aenTapPulse{0%,25%,50%,100%{opacity:0;transform:translate(-50%,-50%) scale(.3)}33%,64%{opacity:.9;transform:translate(-50%,-50%) scale(1.1)}43%,76%{opacity:0;transform:translate(-50%,-50%) scale(1.9)}}
+#aenFinalChild.reading{animation:aenFinalRead 2.2s ease-in-out both}@keyframes aenFinalRead{35%{transform:translateY(-2%) rotate(-1deg)}100%{transform:none}}
+.aen-picture{position:absolute;pointer-events:none;z-index:5;object-fit:contain;opacity:0;transition:opacity .6s}
+.aen-picture.show{opacity:1}
+.aen-memory-frame{position:absolute;left:11%;right:11%;top:13%;height:54%;z-index:5;display:grid;place-items:center;overflow:hidden;border:3px solid #fffde5cc;border-radius:28px;background:radial-gradient(ellipse,#f9ffffdc 0%,#c9e8f3bd 44%,#e1f9ff65 75%);box-shadow:0 0 36px #fffbdcae,inset 0 0 30px #fff;opacity:0;transform:scale(.96);transition:opacity .45s,transform .45s;pointer-events:none}
+.aen-memory-frame.show{opacity:1;transform:scale(1)}
+.aen-memory-frame img{height:88%;width:80%;object-fit:contain;object-position:center;mask-image:linear-gradient(#000 0 65%,transparent 100%);filter:brightness(1.14) saturate(.78)}
+.aen-voyage-scene{position:absolute;z-index:4;overflow:hidden;border-radius:14px;background:#0874b1 url('../images/fullart/ship-view-okinawa-20260920.png') center bottom/auto 120% no-repeat}
+.aen-voyage{left:8%;top:auto;bottom:8%;width:84%;height:auto;filter:drop-shadow(0 8px 12px #0007)}
+.aen-time-pause{position:absolute;inset:0;z-index:8;display:grid;place-items:center;background:#102334;animation:aenTimeFade 1.5s ease forwards;pointer-events:none}
+.aen-time-pause span{font-size:clamp(1rem,4.6vw,1.4rem);font-weight:900;letter-spacing:.12em;color:#fff5d2;text-shadow:0 2px 5px #000}
+#aenOpening{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;padding:24px;background:#000;color:#fff;text-align:center;font-family:'Zen Maru Gothic',sans-serif}
+#aenOpeningText{max-width:min(520px,90vw)}
+#aenOpeningQuit{position:absolute;right:12px;top:12px;padding:8px 12px;border:1px solid #777;border-radius:8px;background:#202020;color:#fff;font:900 .8rem 'Zen Maru Gothic',sans-serif;cursor:pointer}
+@keyframes aenTimeFade{0%,55%{opacity:1}100%{opacity:0}}
+#aenReadGlow{position:absolute;left:53%;top:47%;width:13%;aspect-ratio:1;border-radius:50%;background:#fef9c399;box-shadow:0 0 22px #fef08a;opacity:0;transition:opacity .7s;pointer-events:none}#aenReadGlow.show{opacity:1}
+.amami-crisis-cut{position:fixed;inset:0;left:50%;right:auto;transform:translateX(-50%);width:min(100vw,480px);z-index:269;overflow:hidden;pointer-events:none;background:#071a2b}
+.amami-crisis-cut section{position:absolute;inset:0;background-size:cover;background-position:center;transition:opacity .35s}
+.amami-crisis-tokyo{background-image:url('../images/fullart/zone1.webp')}
+.amami-crisis-hokkaido{background-image:url('../images/fullart/zone83.webp');opacity:0}
+.amami-crisis-cut.second .amami-crisis-tokyo{opacity:0}.amami-crisis-cut.second .amami-crisis-hokkaido{opacity:1}
+.amami-crisis-cut img,.amami-crisis-cut i,.amami-crisis-cut .monster{position:absolute;filter:drop-shadow(0 5px 5px #0008)}
+.amami-crisis-cut .mana{width:23%;height:42%;left:17%;bottom:17%;object-fit:contain}
+.amami-crisis-cut .adult{width:20%;aspect-ratio:1;right:18%;bottom:17%;background:url('../images/sprites/npc-mob-otona-f-a.webp') 0 0/300% 200% no-repeat}
+.amami-crisis-cut .maroz{width:24%;aspect-ratio:1;right:16%;bottom:17%;background:url('../images/sprites/maros-walk-face-20260920.png') 0 0/200% 100% no-repeat}
+.amami-crisis-cut .monster{top:23%;font-weight:900;font-size:clamp(37px,14vw,65px);line-height:1;color:#34536a;-webkit-text-stroke:2px #f4fbff;text-shadow:0 3px 8px #0009}
+.amami-crisis-cut .monster.one{left:48%}.amami-crisis-cut .monster.two{left:70%;top:32%}
+@media(max-height:620px){#aenTalk{bottom:8px;padding-top:7px;padding-bottom:21px}#aenTalk img{width:68px}#aenText{font-size:.96rem;line-height:1.42}#aenHandoff{top:4%;height:70%}}
+@media(max-height:720px){#aenFinalEasy{bottom:31%}#aenFinalChild{bottom:34%;height:47%}}
+@media(max-height:720px){#aenTap{left:64%;top:42%}}
+@media(prefers-reduced-motion:reduce){.aen-child.reading,#aenFinalChild.tapping,#aenHandoff,.aen-easy>.easy3d-frame,#aenFinalEasy>.easy3d-frame{animation:none!important}#aenMontage img,#aenPhone,.aen-easy{transition:none}}
+#aenMakingWords{position:absolute;left:10%;top:27%;width:80%;height:22%;display:flex;align-items:center;justify-content:space-between;gap:18%;z-index:8;transition:gap .8s,transform .9s,opacity .6s;pointer-events:none}
+#aenMakingWords span{background:#fff5da;border:3px solid #fff;border-radius:13px;padding:12px;color:#203e5b;font-size:clamp(24px,7vw,35px);font-weight:900;white-space:nowrap;box-shadow:0 4px 10px #1235}
+#aenMakingWords.together{gap:0;justify-content:center}
+#aenMakingWords.chosen span{border-color:#ffda56;box-shadow:0 0 20px #ffe99ca0}
+#aenMakingWords.into-phone{transform:translateY(45px) scale(.35);opacity:0}
+.aen-making-hand{position:absolute;width:35%;aspect-ratio:1.38;bottom:-25%;left:4%;background:url('../images/amami-blocks/hands.png') 26.75% 55.87%/351.68% 246.67% no-repeat;clip-path:polygon(20% 0,100% 0,100% 100%,30% 100%,0 65%,0 30%);opacity:0;transition:opacity .3s,transform .5s}
+#aenMakingWords.chosen .aen-making-hand{opacity:1;transform:translate(12%,-15%)}
+#aenMakingWords.read .aen-making-hand{opacity:0}

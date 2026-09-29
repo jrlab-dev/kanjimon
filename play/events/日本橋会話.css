@@ -1,0 +1,37 @@
+#nihonbashiScene{position:fixed;inset:0;z-index:280;width:min(100%,480px);margin:auto;background:#183e46;color:#fff;display:flex;flex-direction:column;visibility:hidden;font-family:'Zen Maru Gothic',sans-serif;isolation:isolate;padding-bottom:env(safe-area-inset-bottom,0px)}
+#nihonbashiScene.ready{visibility:visible}
+#nihonbashiScene:before{content:"";position:fixed;inset:0;z-index:-1;background:#102c35}
+#nihonbashiScene .nh-view{position:relative;flex:1;min-height:0;overflow:hidden}
+#nihonbashiScene .nh-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:53% 52%}
+#nihonbashiScene .nh-view:after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(#1232,transparent 23%,transparent 84%,#183e46)}
+#nihonbashiScene .nh-location{position:absolute;top:22px;left:18px;z-index:5;font-size:14px;letter-spacing:.13em;text-shadow:0 2px 4px #123}
+#nihonbashiScene .nh-close{position:absolute;z-index:8;top:12px;right:68px;min-height:44px;min-width:62px;border:1px solid #fff8;border-radius:24px;background:#173e59c9;color:white;font:inherit;font-size:12px;cursor:pointer}
+#nihonbashiScene .nh-stage{position:absolute;inset:30% 0 0;container-type:size;--mana-body:min(68cqw,83cqh);--mana-height:calc(var(--mana-body) / var(--mana-fill,1));--hero-height:calc(var(--mana-body) / 1.5 / var(--hero-fill,1))}
+#nihonbashiScene .nh-stage img{position:absolute;width:auto;max-width:none;object-fit:contain;transform:translateX(-50%);filter:drop-shadow(0 6px 4px #1234);transition:opacity .25s}
+#nihonbashiScene .nh-hero{left:25%;height:var(--hero-height);bottom:calc(8cqh - var(--hero-height) * var(--hero-pad,0));z-index:2}
+#nihonbashiScene .nh-mana{left:73%;height:var(--mana-height);bottom:calc(8cqh - var(--mana-height) * var(--mana-pad,0))}
+#nihonbashiScene .nh-sign{position:absolute;z-index:3;left:7%;top:19%;width:42%;aspect-ratio:1;filter:drop-shadow(0 4px 3px #3c2b1b55);transition:top .4s,left .4s,transform .4s}
+#nihonbashiScene .nh-sign-art{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+#nihonbashiScene .nh-board{position:absolute;inset:32% 25% 34% 24%;z-index:2;display:flex;justify-content:space-evenly;align-items:center;color:#382d25;font-weight:900;font-size:clamp(20px,6vw,29px)}
+#nihonbashiScene .nh-board span{opacity:0}
+#nihonbashiScene .nh-unread{position:absolute;left:16%;right:16%;top:35%;height:30%;opacity:.35;background:repeating-linear-gradient(105deg,transparent 0,transparent 7px,#776348 8px,#776348 10px,transparent 11px,transparent 16px);filter:blur(2px)}
+#nihonbashiScene[data-phase="out"] .nh-unread{display:none}
+#nihonbashiScene[data-phase="out"] .nh-board span{opacity:1}
+#nihonbashiScene[data-beat="read"] .nh-sign{left:50%;top:25%;transform:translateX(-50%) scale(1.6)}
+#nihonbashiScene[data-beat="read"] .nh-stage img{opacity:0}
+#nihonbashiScene[data-beat="read"] .nh-board span{animation:nhRead .32s both}
+#nihonbashiScene[data-beat="read"] .nh-board span:nth-child(2){animation-delay:.35s}
+#nihonbashiScene[data-beat="read"] .nh-board span:nth-child(3){animation-delay:.7s}
+#nihonbashiScene[data-beat="understand"] .nh-board span:first-child{color:#714c0b;text-shadow:0 0 9px #fff7b0}
+#nihonbashiScene[data-beat="understand"] .nh-hero{animation:nhNod .65s ease-in-out}
+@keyframes nhRead{from{opacity:0;filter:blur(3px);transform:translateY(3px)}to{opacity:1;filter:none;transform:none}}
+@keyframes nhNod{50%{transform:translate(-50%,2px)}}
+@media(min-height:501px) and (max-height:620px){#nihonbashiScene .nh-sign{top:16%}}
+#nihonbashiScene .nh-talk-slot{flex:none;min-height:192px;margin:0 12px 12px}
+#nihonbashiScene #hakaseTalkWin{position:relative;inset:auto!important;transform:none!important;animation:none;opacity:1;margin:0;display:flex;align-items:flex-start;gap:10px;width:100%;min-height:192px;padding:35px 17px 26px;border:1px solid #afcfd3;border-radius:14px;background:#143541;box-shadow:0 5px 18px #0016;text-align:left;cursor:pointer}
+#nihonbashiScene #hakaseTalkWin:before{content:'マナ';position:absolute;top:10px;left:17px;color:#ffe1a2;font-size:13px;font-weight:900}
+#nihonbashiScene #hakaseTalkWin:after{content:'▼ つづく';position:absolute;bottom:7px;right:12px;font-size:12px;color:#d3e5e9}
+#nihonbashiScene .hakase-talk-face{display:none}
+#nihonbashiScene .hakase-talk-text{font-size:clamp(16px,4.4vw,20px);line-height:1.6;font-weight:900;overflow-wrap:anywhere}
+@media(max-height:500px){#nihonbashiScene .nh-talk-slot{min-height:119px;margin-bottom:6px}#nihonbashiScene #hakaseTalkWin{min-height:119px;padding:26px 15px 20px}#nihonbashiScene #hakaseTalkWin:before{top:5px}#nihonbashiScene .hakase-talk-text{font-size:14px;line-height:1.4}#nihonbashiScene .nh-stage{inset:23% 0 0}#nihonbashiScene .nh-hero{left:42%}#nihonbashiScene .nh-sign{top:23%;width:26%}#nihonbashiScene .nh-board{font-size:18px}#nihonbashiScene .nh-location{top:13px;font-size:12px}#nihonbashiScene .nh-close{top:4px;min-height:36px}}
+@media(prefers-reduced-motion:reduce){#nihonbashiScene *{animation:none!important;transition:none!important}}

@@ -48,3 +48,31 @@ body.amami-late-mode .field-object{visibility:hidden}
 #ayWater{position:absolute;left:12%;top:53%;width:76%;height:60px;display:none;pointer-events:none}#ayWater.show{display:block}#ayWater i{position:absolute;left:10%;width:35%;height:30px;border:2px solid #c2f5ff99;border-radius:50%;animation:ayRipple 1.2s ease-out both}#ayWater i+i{left:55%;animation-delay:.15s}@keyframes ayRipple{from{scale:.3;opacity:0}40%{opacity:1}to{scale:1.4;opacity:0}}
 #ayGlow{position:absolute;left:25%;top:20%;width:50%;height:26%;background:radial-gradient(ellipse,#fff4b950,transparent 70%);opacity:0;transition:opacity 1.5s}#ayGlow.show{opacity:1}
 @media(prefers-reduced-motion:reduce){.ay-field-word,#ayWater i{animation-duration:.01ms}}
+.ay-word-complete{letter-spacing:.05em;padding:6px 12px;border-radius:12px;background:#fff6dbea;border:2px solid #fff}
+.ay-delayed-word{animation:ayWord .5s both}
+#ayWater.answer-wave{top:44%;height:90px}
+#ayWater.answer-wave i{width:60%;height:55px;left:20%}
+#ayCastleLight{position:absolute;left:calc(var(--castle-x)*var(--tile));top:calc(var(--castle-y)*var(--tile));width:calc(7*var(--tile));height:calc(4.67*var(--tile));transform:translateX(-50%);background:url('../images/fullart/amami-main-08-toy-castle.png') center top/100% 100%;mask-image:linear-gradient(#000 80%,transparent);opacity:0;transition:opacity .9s;pointer-events:none;z-index:7}
+#fieldGrid:has(>#ayCastleLight)>#fieldHero{z-index:100}
+#fieldGrid:has(>#ayCastleLight)>.amami-easy{z-index:101}
+#ayCastleLight.show{opacity:1}
+#ayBattleGear{position:absolute;left:5%;top:8%;font-size:40px;color:#c99b48a0;pointer-events:none;animation:ayGear 35s linear infinite}
+/* 第5話の会話のみ。体格は奄美入口.cssの共通測定に合わせる。 */
+#amamiLateRoot[data-episode="5"].cinematic{display:flex;flex-direction:column;background:#123e37;pointer-events:auto;isolation:isolate;padding-bottom:env(safe-area-inset-bottom,0px)}
+.ay-cinema{position:relative;flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;padding-top:64px}
+.ay-cinema-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 54%}
+.ay-cut-location{position:absolute;top:22px;left:16px;right:138px;z-index:3;font-size:12px;letter-spacing:.02em;color:#fff;text-shadow:0 2px 5px #123;font-weight:900}
+.ay-cut-close{position:absolute;top:12px;right:66px;z-index:8;min-width:64px;min-height:44px;border:1px solid #ffffff70;border-radius:22px;background:#173e59d9;color:#fff;font:inherit;font-size:12px;cursor:pointer}
+.ay-cinema-stage{position:relative;flex:1;min-height:0;overflow:hidden}
+#amamiLateRoot .ay-close-easy,.ay-shoulder{position:absolute;filter:drop-shadow(0 6px 4px #1234)}
+.ay-word-pair{position:relative;flex:none;z-index:3;display:flex;justify-content:center;gap:20px;margin:0 12px 10px;transition:gap .5s}
+.ay-word-pair span{display:block;padding:5px 14px;background:#fff5dc;color:#283e31;border:2px solid #cdaa64;border-radius:10px;font-weight:900;font-size:clamp(22px,6vw,28px);letter-spacing:.12em;box-shadow:0 2px 5px #1235;white-space:nowrap}
+.ay-word-pair.assembled{gap:0}.ay-word-pair.assembled span:first-child{border-right:0;border-radius:10px 0 0 10px;padding-right:0}.ay-word-pair.assembled span:last-child{border-left:0;border-radius:0 10px 10px 0;padding-left:0}
+#amamiLateRoot.cinematic #ayTalk{position:relative;left:auto;bottom:auto;flex:none;width:calc(100% - 24px);margin:0 12px 12px;padding:16px 18px 30px;background:#123e37;border:1px solid #b6d9be;border-radius:14px;min-height:calc(3 * clamp(16px,4.4vw,20px) * 1.65 + 80px)}
+#amamiLateRoot.cinematic #ayTalk.show{display:block}
+#amamiLateRoot.cinematic #ayTalk>img{display:none}
+#amamiLateRoot.cinematic #ayText{font-size:clamp(16px,4.4vw,20px);line-height:1.65;margin:0}
+#amamiLateRoot.cinematic #ayTalk b{color:#ffdc83;margin-bottom:7px}
+#amamiLateRoot.cinematic #ayChapter{top:76px;pointer-events:none}
+@media(max-height:500px){.ay-cinema{padding-top:42px}.ay-cut-location{top:15px;font-size:11px}.ay-cut-close{top:3px;min-height:36px}.ay-word-pair{margin-bottom:4px}.ay-word-pair span{padding:2px 12px;font-size:18px}#amamiLateRoot.cinematic #ayTalk{min-height:112px;padding:8px 14px 23px;margin-bottom:6px}#amamiLateRoot.cinematic #ayTalk b{margin-bottom:2px;font-size:12px}#amamiLateRoot.cinematic #ayText{font-size:14px;line-height:1.4}#amamiLateRoot.cinematic #ayChapter{top:48px;padding:4px 12px}}
+@media(prefers-reduced-motion:reduce){.ay-word-pair{transition:none}}

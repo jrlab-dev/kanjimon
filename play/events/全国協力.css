@@ -18,6 +18,10 @@ body.nd-event-mode .dpad,body.nd-event-mode #fieldPanSkip,body.nd-event-mode #au
 body.nd-field-harness .field-h>button,body.nd-field-harness .field-info,body.nd-field-harness .field-tip,
 body.nd-field-harness .dpad,body.nd-field-harness #fieldPanSkip,body.nd-field-harness #autoBadge{visibility:hidden!important}
 body.nd-event-mode .field-h,body.nd-field-harness .field-h{position:relative}
+/* 精密通行の斜めボタンは子自身が visible を指定するため、演出中は子も隠す。 */
+body.nd-event-mode .dpad button{visibility:hidden!important;pointer-events:none!important}
+/* 隠した通常ボタンの幅に押されず、地名を音声ボタンの左側へ収める。 */
+body.nd-event-mode #fieldZoneName{position:absolute;left:8px;right:64px;top:50%;transform:translateY(-50%);margin:0;width:auto;max-width:none;text-align:left;font-size:14px}
 .nd-base-hidden{visibility:hidden!important}
 .nd-event-spot{position:absolute!important;width:var(--tile);height:var(--tile);z-index:55;background:transparent!important;display:flex;align-items:center;justify-content:center;overflow:visible;pointer-events:none}
 .nd-event-spot.nd-frozen .spot-char{filter:saturate(.55) brightness(1.35) drop-shadow(0 0 7px #9de5ff)}

@@ -20,11 +20,35 @@
   const state=()=>amamiFinal['episode'+episode];
   function finish(done){const g=generation;AmamiMotion.after(()=>{if(g===generation)done?.();});}
   function later(fn,ms){const g=generation,id=setTimeout(()=>{timers=timers.filter(t=>t!==id);if(g===generation)fn();},ms);timers.push(id);}
-  function clear(){global.AmamiVoice.stop();AmamiMotion.stop();generation++;timers.forEach(clearTimeout);timers=[];document.querySelectorAll('.ay-field-word,.amami-easy').forEach(n=>n.remove());root?.remove();easy=null;ready=false;}
+  function clear(){global.AmamiVoice.stop();AmamiMotion.stop();generation++;timers.forEach(clearTimeout);timers=[];document.querySelectorAll('.ay-field-word,.amami-easy,#aySteps,.acb-field,#ayCastleLight').forEach(n=>n.remove());root?.remove();easy=null;ready=false;}
+  function closeCut(){const cut=root?.querySelector('.ay-cinema');if(!cut)return;AmamiMotion.stop();cut.remove();root.classList.remove('cinematic');delete root.dataset.beat;}
+  function heroImage(pose){return 'images/battle-tate/hero-'+pose+'-'+(heroChar==='girl'?'girl':'boy')+(typeof costumeSuffix==='function'?costumeSuffix():'')+'.webp';}
+  function openCut(word,complete=false){
+   if(episode!==5)return;AmamiMotion.stop();
+   const cut=document.createElement('div');cut.className='ay-cinema';
+   cut.innerHTML='<img class="ay-cinema-bg" src="images/fullart/amami-sumiyo-conversation.webp" alt="住用のマングローブに囲まれた木道"><div class="ay-cut-location">アマミ・住用マングローブ</div><button class="ay-cut-close" type="button" aria-label="会話を中断してタイトルへ戻る">とじる</button><div class="ay-cinema-stage"><img class="ay-shoulder" alt="言葉を見て話を聞く主人公"><img class="ay-close-easy easy3d-frame" src="images/easy-motion/poster.png" alt="イージー"></div><div class="ay-word-pair" aria-label="二文字ずつで一つの四字熟語"><span></span><span></span></div>';
+   cut.querySelector('.ay-shoulder').src=heroImage('back');
+   cut.querySelectorAll('.ay-word-pair span').forEach((n,i)=>{n.textContent=word.slice(i*2,i*2+2);});
+   for(const img of cut.querySelectorAll('img'))img.addEventListener('error',()=>{if(cut.isConnected)closeCut();},{once:true});
+   cut.querySelector('button').addEventListener('click',e=>{e.stopPropagation();hide();global.showScreen('screen-title');});
+   root.prepend(cut);root.classList.add('cinematic');root.dataset.beat=complete?'assembled':'introduce';
+   global.AmamiStoryUI.sizeConversation(cut,'ay');
+   if(complete)later(()=>cut.querySelector('.ay-word-pair')?.classList.add('assembled'),700);
+  }
+  function cutLine(row){
+   if(episode!==5)return;const cut=root.querySelector('.ay-cinema');if(!cut)return;
+   const peer=cut.querySelector('.ay-close-easy');
+   if(row.id==='C05a')AmamiMotion.play(peer,'07');
+   if(row.id==='C05b')AmamiMotion.play(peer,'12');
+   if(row.id==='C05c'){
+    root.dataset.beat='joy';const hero=cut.querySelector('.ay-shoulder');hero.alt='次もやろうと喜ぶ主人公';
+    delete cut.querySelector('.ay-cinema-stage').dataset.sized;hero.src=heroImage('victory');global.AmamiStoryUI.sizeConversation(cut,'ay');AmamiMotion.play(peer,'01');
+   }
+  }
   function base(background=c.field,label=c.name){
    clear();const f=NationalDeparture.showField(102,{gender:heroChar,hero:true,label,adults:0,mana:false,monsters:0,background,point:{x:15,y:6}});
    document.body.classList.add('amami-late-mode');
-   root=document.createElement('div');root.id='amamiLateRoot';
+   root=document.createElement('div');root.id='amamiLateRoot';root.dataset.episode=episode;
    root.innerHTML='<div id="ayChapter"><small>第'+episode+'話</small><b></b></div><div id="ayProgress"></div><div id="ayWater"><i></i><i></i></div><div id="ayGlow"></div><div id="ayTalk"><img src="images/bust/easy.webp" alt="イージー"><div><b>イージー</b><p id="ayText"></p><small id="ayNext">▼ つづく</small></div></div>';
    root.querySelector('#ayChapter b').textContent=c.title;document.body.appendChild(root);root.addEventListener('click',()=>{if(ready&&!root.dataset.inputLocked&&!AmamiMotion.busy&&!global.AmamiVoice.busy)showLine();});
    const h=$('fieldHero');h.style.transition='none';h.style.setProperty('--hx',f.cx);h.style.setProperty('--hy',f.cy+1.55);setHeroFacing(0,-1);
@@ -32,39 +56,49 @@
   }
   function moveHero(x,y,ms=850){const h=$('fieldHero');setHeroFacing(Math.sign(x-Number(h.style.getPropertyValue('--hx'))),Math.sign(y-Number(h.style.getPropertyValue('--hy'))));h.style.transition=`left ${ms}ms linear,top ${ms}ms linear`;h.style.setProperty('--hx',x);h.style.setProperty('--hy',y);const sp=h.querySelector('.hero-sprite');for(let t=0;t<ms;t+=140)later(()=>{global.AmamiArrival.heroWalkFrame(sp,!!(t%280));},t);later(()=>{global.AmamiArrival.heroWalkFrame(sp,false);},ms);}
   function moveEasy(x,y,ms=850,dir='up'){if(!easy||AmamiMotion.ownsMove(easy))return;return AmamiMotion.walk(easy,{x,y},ms);}
-  function showLine(){global.AmamiVoice.stop();ready=false;if(nextLine>=lines.length){$('ayTalk').classList.remove('show');const cb=afterTalk;afterTalk=null;if(cb)cb();return;}$('ayText').textContent=lines[nextLine++];$('ayTalk').classList.add('show');if($('ayText').textContent!==global.AmamiCastle?.finalLine)global.AmamiVoice.play($('ayText').textContent,$('ayTalk'));$('ayNext').classList.remove('ready');later(()=>{ready=true;$('ayNext').classList.add('ready');},520);}
+  function showLine(){global.AmamiVoice.stop();ready=false;if(nextLine>=lines.length){$('ayTalk').classList.remove('show');const cb=afterTalk;afterTalk=null;if(cb)cb();return;}const box=$('ayTalk'),row=lines[nextLine++];global.AmamiStoryUI.display(row,box,box.querySelector('img'),box.querySelector('b'),$('ayText'));if(episode===5&&row.speaker==='hero')box.querySelector('img').src=heroImage('victory');cutLine(row);$('ayNext').classList.remove('ready');later(()=>{ready=true;$('ayNext').classList.add('ready');},520);}
   function talk(texts,done){lines=texts;nextLine=0;afterTalk=done;showLine();}
   function pair(word,f){const nodes=[];[word.slice(0,2),word.slice(2)].forEach((w,i)=>{const n=document.createElement('span');n.className='ay-field-word';AmamiMotion.fieldMonster(n,w);n.style.setProperty('--ax',f.cx+(i?1.5:-.6));n.style.setProperty('--ay',f.cy-2.5);n.style.animationDelay=i*180+'ms';$('fieldGrid').appendChild(n);nodes.push(n);});return nodes;}
   function water(){if(episode<=6)$('ayWater').classList.add('show');}
-  function entry(done){const f=base();if(episode===5||episode===7)AmamiMotion.play(easy,'07');if(episode===8)AmamiMotion.play(easy,'09');$('ayChapter').classList.add('show');later(()=>$('ayChapter').classList.remove('show'),1400);
-   if(episode===8){moveEasy(f.cx+1.35,f.cy-.6,850);later(()=>setInteriorActorPose(easy,'down','a'),900);later(()=>moveHero(f.cx,f.cy+.2,1000),1250);later(()=>finish(done),2700);}
-   else later(()=>talk(c.entry,done),1700);
+  function entry(done){const f=base();root.querySelector('#ayChapter b').textContent=global.AmamiStory?.chapters?.[episode]?.title||c.title;if(episode===5||episode===7)AmamiMotion.play(easy,'07');if(episode===8)AmamiMotion.play(easy,'09');$('ayChapter').classList.add('show');later(()=>$('ayChapter').classList.remove('show'),1400);
+   if(episode===5)openCut(AMAMI_LATE_WORDS[5][0]);
+   if(episode===8){moveEasy(f.cx+1.35,f.cy-.6,850);later(()=>setInteriorActorPose(easy,'down','a'),900);later(()=>moveHero(f.cx,f.cy+.2,1000),1250);later(()=>talk(global.AmamiStoryUI.rows(episode,'entry',c.entry),()=>finish(done)),2700);}
+   else later(()=>talk(global.AmamiStoryUI.rows(episode,'entry',c.entry),()=>{closeCut();done?.();}),1700);
   }
-  function encounter(word,label,done){const f=base();$('ayProgress').textContent=label;water();pair(word,f);const fast=state().midSeen;
+  function encounter(word,label,done){const f=base();$('ayProgress').textContent=label;water();const wordParts=pair(word,f);const fast=state().midSeen;
+   if(episode===7&&state().mainIndex>0){wordParts[1].style.visibility='hidden';wordParts[1].style.setProperty('--ay',f.cy-3);later(()=>{wordParts[1].style.visibility='';wordParts[1].classList.add('ay-delayed-word');},480);}
+   // 最初の二組で「見る→工夫した提示を見る」を一度ずつ。再挑戦では繰り返さない。
+   const compare=episode===7&&state().phase==='main'&&state().mainIndex<2;
+   if(compare){later(()=>setHeroFacing(-1,0),400);later(()=>setHeroFacing(1,0),850);later(()=>setInteriorActorPose(easy,'left','a'),900);later(()=>setHeroFacing(0,-1),1250);later(()=>setInteriorActorPose(easy,'up','a'),1650);}
    if(episode===5)later(()=>document.querySelectorAll('.ay-field-word').forEach((n,i)=>n.style.setProperty('--ax',f.cx+(i?1.3:-.8))),380);
    if(episode===6&&fast)moveEasy(f.cx+1.35,f.cy-.8,500);
-   later(()=>moveHero(f.cx,f.cy+.6,650),fast?180:400);later(()=>finish(done),fast?1050:1500);
+   later(()=>moveHero(f.cx,f.cy+.6,650),compare?1700:(fast?180:400));later(()=>finish(done),compare?2450:(fast?1050:1500));
   }
   function mid(done){const f=base();if(episode===5||episode===7)AmamiMotion.play(easy,'07');if(episode===6)AmamiMotion.play(easy,'08');if(episode===8)AmamiMotion.play(easy,'09');$('ayProgress').textContent=c.mid+'／'+AMAMI_LATE_WORDS[episode].length+'語';
    if(episode===5||episode===7){water();const ns=pair(AMAMI_LATE_WORDS[episode][c.mid],f);later(()=>ns.forEach((n,i)=>n.style.setProperty('--ax',f.cx+(i?2:-1))),400);later(()=>ns.forEach((n,i)=>n.style.setProperty('--ax',f.cx+(i?1.2:-.2))),1100);}
    if(episode===6){water();moveEasy(f.cx+1.35,f.cy-1,650);later(()=>setInteriorActorPose(easy,'down','a'),700);later(()=>moveHero(f.cx,f.cy+.5),1200);}
    if(episode===8){moveEasy(f.cx+1.35,f.cy-.5,650);later(()=>setInteriorActorPose(easy,'down','a'),700);later(()=>moveHero(f.cx,f.cy+.4,900),1500);}
-   later(()=>finish(done),episode===8?2750:2350);
+   later(()=>talk(global.AmamiStoryUI.rows(episode,'mid'),()=>finish(done)),episode===8?2750:2350);
   }
   function retry(done){base();$('ayProgress').textContent='もういちど';later(()=>finish(done),1000);}
-  function ending(done){const f=base();if(episode===6)AmamiMotion.play(easy,'08');if(episode===8)AmamiMotion.play(easy,'09');if(episode===8)$('ayGlow').classList.add('show');later(()=>talk(c.ending,()=>{
+  function afterWord(done){if(episode!==6){done();return;}const f=base(),word=AMAMI_LATE_WORDS[6][Math.max(0,state().mainIndex-1)];const card=document.createElement('span');card.className='ay-field-word ay-word-complete';card.textContent=word;card.style.setProperty('--ax',f.cx+.4);card.style.setProperty('--ay',f.cy-1.3);$('fieldGrid').appendChild(card);$('ayWater').classList.add('show','answer-wave');AmamiMotion.play(easy,'08');later(()=>finish(done),1450);}
+  function ending(done){const f=base();if(episode===6)AmamiMotion.play(easy,'08');if(episode===8)$('ayGlow').classList.add('show');
+   if(episode===5){const words=AMAMI_LATE_WORDS[5],solved=(state().retryIndex>0?state().retryWords[state().retryIndex-1]:null)||words[Math.max(0,Math.min(words.length-1,state().mainIndex-1))];openCut(solved,true);}
+   if(episode===8){const light=document.createElement('div');light.id='ayCastleLight';light.setAttribute('aria-label','森の先に見えるおもちゃの城');light.style.setProperty('--castle-x',f.cx+1.15);light.style.setProperty('--castle-y',f.cy-1.6);$('fieldGrid').appendChild(light);later(()=>light.classList.add('show'),350);later(()=>moveHero(f.cx,f.cy+.85,600),700);later(()=>moveEasy(f.cx+1.35,f.cy+.85,600),1200);}
+   later(()=>talk(global.AmamiStoryUI.rows(episode,'ending',c.ending),()=>{
+   closeCut();
    if(episode===6){moveHero(f.cx,f.cy+.5,850);later(()=>moveEasy(f.cx+1.35,f.cy-2,1000),500);}
-   else if(episode===8){moveEasy(f.cx+1.35,f.cy+1.55,600);later(()=>{moveHero(f.cx,f.cy-.5,1300);moveEasy(f.cx+1.35,f.cy-.5,1300);},800);}
+   else if(episode===8){moveHero(f.cx,f.cy-.5,1300);moveEasy(f.cx+1.35,f.cy-.5,1300);}
    else{moveHero(f.cx,f.cy-.4,1300);later(()=>moveEasy(f.cx+1.35,f.cy-.4,1000),400);}
-   later(()=>finish(done),2300);
-  }),850);}
+   later(()=>{if(episode===8)AmamiMotion.after(()=>global.AmamiStoryUI.crisisCut(root,done));else finish(done);},2300);
+  }),episode===8?1950:(episode===5?1450:850));}
   function hide(){clear();document.body.classList.remove('amami-late-mode');}
-  return {entry:AmamiMotion.fieldEvent(entry),encounter:AmamiMotion.fieldEvent(encounter),mid:AmamiMotion.fieldEvent(mid),retry:AmamiMotion.fieldEvent(retry),ending:AmamiMotion.fieldEvent(ending),hide,destroy:hide,scene:{base,later,talk,moveHero,moveEasy,pair,finish,lockInput(ms){const target=root;target.dataset.inputLocked='true';later(()=>delete target.dataset.inputLocked,ms);}}};
+  return {entry:AmamiMotion.fieldEvent(entry),encounter:AmamiMotion.fieldEvent(encounter),mid:AmamiMotion.fieldEvent(mid),retry:AmamiMotion.fieldEvent(retry),ending:AmamiMotion.fieldEvent(ending),afterWord:AmamiMotion.fieldEvent(afterWord),hide,destroy:hide,scene:{base,later,talk,moveHero,moveEasy,pair,finish,lockInput(ms){const target=root;target.dataset.inputLocked='true';later(()=>delete target.dataset.inputLocked,ms);}}};
  }
  let view=null,current=5;
  const api={battle:null,config:CONFIG,definition};
  const state=()=>amamiFinal['episode'+current];
- function clearBattle(){spawnSeq++;api.battle=null;isTwinBoss=false;twinBossZoneCur=null;fieldBattleFromAuto=false;battleSource='quick';const s=$('screen-battle');s.classList.remove('amami-late-battle');s.style.backgroundImage='';s.style.backgroundSize='';s.style.backgroundPosition='';}
+ function clearBattle(){spawnSeq++;api.battle=null;$('ayBattleGear')?.remove();isTwinBoss=false;twinBossZoneCur=null;fieldBattleFromAuto=false;battleSource='quick';const s=$('screen-battle');s.classList.remove('amami-late-battle');s.style.backgroundImage='';s.style.backgroundSize='';s.style.backgroundPosition='';}
  api.start=function(episode){
   if(!CONFIG[episode])return;const previous=episode===5?amamiFinal.episode4:amamiFinal['episode'+(episode-1)];
   if(!previous.done){startAmamiContinuation();return;}if(amamiFinal['episode'+episode].done){showScreen('screen-title');return;}
@@ -74,7 +108,7 @@
  function next(){const s=state(),words=AMAMI_LATE_WORDS[current];
   if(s.phase==='main'&&s.mainIndex>=words.length){s.phase=s.retryWords.length?'retry':'ending';s.partIndex=0;save();if(s.phase==='retry'){view.retry(next);return;}}
   if(s.phase==='retry'&&s.retryIndex>=s.retryWords.length){s.phase='ending';save();}
-  if(s.phase==='ending'){walkAmamiExit(current,()=>view.ending(()=>{s.done=true;s.phase='done';save();view.destroy();view=null;showScreen('screen-title');}));return;}
+  if(s.phase==='ending'){walkAmamiExit(current,()=>view.ending(()=>{s.done=true;s.phase='done';save();view.destroy();view=null;if(current===12&&global.AmamiEnding)global.AmamiEnding.start();else showScreen('screen-title');}));return;}
   if(s.phase==='main'&&!s.midSeen&&s.mainIndex===CONFIG[current].mid){view.mid(()=>{s.midSeen=true;save();next();});return;}
   const word=s.phase==='retry'?s.retryWords[s.retryIndex]:words[s.mainIndex];
   walkAmamiEncounter(current,word,progress(),()=>view.encounter(word,progress(),()=>launch(word)));
@@ -89,11 +123,11 @@
   battleSource='field';fieldBattleFromAuto=true;fieldIsBoss=false;isEventBoss=false;queue=[];
   showScreen('screen-battle');$('bStageName').textContent=CONFIG[current].name;$('affHelp').style.display='none';spawnTwinBossEnemy();
  }
- api.applyVisual=function(){const c=CONFIG[current],s=$('screen-battle');s.classList.add('tate','amami-late-battle');s.style.backgroundImage=`url('images/battle-tate/${c.battle}')`;s.style.backgroundPosition=c.pos;s.style.backgroundSize=c.size;$('bScene').className='scene battle tatebg';$('bScene').style.backgroundImage='';};
+ api.applyVisual=function(){const c=CONFIG[current],s=$('screen-battle');s.classList.add('tate','amami-late-battle');s.style.backgroundImage=`url('images/battle-tate/${c.battle}')`;s.style.backgroundPosition=c.pos;s.style.backgroundSize=c.size;$('bScene').className='scene battle tatebg';$('bScene').style.backgroundImage='';if(current===10&&!$('ayBattleGear')){const gear=document.createElement('span');gear.id='ayBattleGear';gear.textContent='⚙';gear.setAttribute('aria-hidden','true');$('bScene').appendChild(gear);}};
  api.renderHp=function(){['isshin','doutai'].forEach((key,i)=>{$('twinHp'+(i+1)).innerHTML='<span'+(twinHp[key]?'':' class="edim"')+'>⭐</span>';$('enemyChar'+(i?'2':'')).classList.toggle('ay-half-done',!twinHp[key]);});};
  api.answer=function(btn,correct){const battle=api.battle;if(!battle)return;const s=state(),part=s.partIndex,seq=spawnSeq,def=battle.def,word=part?def.second:def.first,y=part?def.sy:def.fy;
   btn.classList.add(correct?'correct':'wrong');combo=0;
-  if(!correct){sfxWrong();document.querySelectorAll('#bOptions .opt').forEach(n=>{if(curCorrectSet.has(n.textContent))n.classList.add('correct');});
+  if(!correct){battle.hadMistake=true;sfxWrong();document.querySelectorAll('#bOptions .opt').forEach(n=>{if(curCorrectSet.has(n.textContent))n.classList.add('correct');});
    if(!battle.isRetry){if(!s.retryWords.includes(battle.word))s.retryWords.push(battle.word);s.retryMasks[battle.word]=(s.retryMasks[battle.word]||0)|(part?2:1);save();}
    setMsg('『'+word+'』は 『'+y+'』と よむよ！');setTimeout(()=>{if(seq===spawnSeq)finishHalf();},1500);return;
   }
@@ -105,7 +139,7 @@
   s.partIndex=0;if(b.isRetry)s.retryIndex++;else s.mainIndex++;save();
   $('enemyWrap').classList.add('defeated');const entry=YOJIJUKUGO[YOJIJUKUGO_BY_KEY[b.word]];
   setMsg('『'+b.word+'』<br>'+b.def.y+(entry?'<br><span class="meaning">'+entry.mean+'</span>':''));
-  const seq=spawnSeq;setTimeout(()=>{if(seq!==spawnSeq)return;clearBattle();next();},1000);
+  const seq=spawnSeq;setTimeout(()=>{if(seq!==spawnSeq)return;clearBattle();if(!b.isRetry&&view?.afterWord&&(current===9||!s.retryMasks[b.word]))view.afterWord(next);else next();},1000);
  }
  api.abort=function(){save();clearBattle();view?.destroy();view=null;showScreen('screen-title');};
  api.createView=createView;
