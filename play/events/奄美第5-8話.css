@@ -58,7 +58,7 @@ body.amami-late-mode .field-object{visibility:hidden}
 #ayCastleLight.show{opacity:1}
 #ayBattleGear{position:absolute;left:5%;top:8%;font-size:40px;color:#c99b48a0;pointer-events:none;animation:ayGear 35s linear infinite}
 /* 第5話の会話のみ。体格は奄美入口.cssの共通測定に合わせる。 */
-#amamiLateRoot:is([data-episode="5"],[data-episode="6"]).cinematic{display:flex;flex-direction:column;background:#123e37;pointer-events:auto;isolation:isolate;padding-bottom:env(safe-area-inset-bottom,0px)}
+#amamiLateRoot:is([data-episode="5"],[data-episode="6"],[data-episode="7"],[data-episode="8"]).cinematic{display:flex;flex-direction:column;background:#123e37;pointer-events:auto;isolation:isolate;padding-bottom:env(safe-area-inset-bottom,0px)}
 .ay-cinema{position:relative;flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;padding-top:64px}
 .ay-cinema-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 54%}
 .ay-cut-location{position:absolute;top:22px;left:16px;right:138px;z-index:3;font-size:12px;letter-spacing:.02em;color:#fff;text-shadow:0 2px 5px #123;font-weight:900}
@@ -87,3 +87,22 @@ body.amami-late-mode .field-object{visibility:hidden}
 #amamiLateRoot[data-episode="6"] .amami-dialog-stage{--depth-unit:min(52cqw,50cqh);--peer-height:calc(var(--depth-unit) * 1.25 * 448 / 310);--listener-height:calc(var(--depth-unit) * 1.65 / var(--listener-fill))}
 #amamiLateRoot[data-episode="6"] .amami-dialog-stage .amami-dialog-peer{left:64%;bottom:calc(24cqh - var(--peer-height) * 70 / 448);z-index:1}
 #amamiLateRoot[data-episode="6"] .amami-dialog-stage .amami-dialog-listener{left:30%;bottom:calc(-12cqh - var(--listener-height) * var(--listener-pad));z-index:2}
+/* 第7話も本人指定の背中越し。身長1.25倍と手前の投影1.65倍を分ける。 */
+#amamiLateRoot[data-episode="7"] .amami-dialog-stage{--depth-unit:min(52cqw,50cqh);--peer-height:calc(var(--depth-unit) * 1.25 * 448 / 310);--listener-height:calc(var(--depth-unit) * 1.65 / var(--listener-fill))}
+#amamiLateRoot[data-episode="7"] .amami-dialog-stage .amami-dialog-peer{left:64%;bottom:calc(24cqh - var(--peer-height) * 70 / 448);z-index:1}
+#amamiLateRoot[data-episode="7"] .amami-dialog-stage .amami-dialog-listener{left:30%;bottom:calc(-12cqh - var(--listener-height) * var(--listener-pad));z-index:2}
+/* 第8話出口：本人指定どおり城を縮めず人物を最前面へ。同距離の身長1:1.25。 */
+.ay-vista-stage{position:relative;flex:1;min-height:0;container-type:size;--vista-unit:min(29cqw,30cqh);--vista-hero-height:calc(var(--vista-unit) / var(--vista-hero-fill,1));--vista-easy-height:calc(var(--vista-unit) * 1.25 / var(--vista-easy-fill,1));opacity:0}
+.ay-vista.ready .ay-vista-stage{opacity:1}
+.ay-vista-castle{position:absolute;left:0;top:-64px;width:100%;height:calc(100% + 64px);object-fit:cover;object-position:center top;z-index:0}
+.ay-vista-hero,.ay-vista-easy{z-index:2}
+@media(max-height:500px){.ay-vista-castle{top:-42px;height:calc(100% + 42px)}}
+.ay-vista-hero{position:absolute;left:31%;bottom:calc(17cqh - var(--vista-hero-height) * var(--vista-hero-pad,0));width:var(--vista-hero-height);height:var(--vista-hero-height);background-size:300% 200%;background-repeat:no-repeat;transform:translateX(-50%) scaleX(var(--vista-step,1));filter:drop-shadow(0 3px 3px #1235)}
+.ay-vista-easy{position:absolute;left:67%;bottom:calc(17cqh - var(--vista-easy-height) * var(--vista-easy-pad,0));width:var(--vista-easy-height);height:var(--vista-easy-height);transform:translateX(-50%);filter:drop-shadow(0 3px 3px #1235)}
+.ay-vista-easy img{width:100%;height:100%}
+.ay-vista-stage.hero-go .ay-vista-hero{transition:bottom 1.4s linear;bottom:calc(28cqh - var(--vista-hero-height) * var(--vista-hero-pad,0))}
+.ay-vista-stage.easy-go .ay-vista-easy{transition:bottom 1s linear;bottom:calc(28cqh - var(--vista-easy-height) * var(--vista-easy-pad,0))}
+#amamiLateRoot:has(.ay-vista) #ayTalk{display:block;visibility:hidden;min-height:calc(3 * clamp(16px,4.4vw,20px) * 1.65 + 80px)}
+#amamiLateRoot:has(.ay-vista) #ayTalk.show{visibility:visible}
+@media(max-height:500px){#amamiLateRoot:has(.ay-vista) #ayTalk{min-height:112px}}
+@media(prefers-reduced-motion:reduce){.ay-vista-stage.hero-go .ay-vista-hero,.ay-vista-stage.easy-go .ay-vista-easy{transition:none}}
