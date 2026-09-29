@@ -83,3 +83,7 @@ body.amami-late-mode .field-object{visibility:hidden}
 .ay-sea-word i{position:absolute;bottom:1px;left:20%;width:60%;height:22px;border:3px solid #effcff;border-radius:50%;background:#8cdfff55;animation:ayRipple 1.6s ease-out both}
 @media(max-height:500px){.ay-sea-word{min-height:42px;margin-bottom:4px}.ay-sea-word span{font-size:18px;padding:2px 12px}.ay-sea-word i{height:13px}}
 @media(prefers-reduced-motion:reduce){.ay-sea-word i{animation:none}}
+/* 第6話の背中越しの会話：設定身長とカメラからの距離を分ける。 */
+#amamiLateRoot[data-episode="6"] .amami-dialog-stage{--depth-unit:min(52cqw,50cqh);--peer-height:calc(var(--depth-unit) * 1.25 * 448 / 310);--listener-height:calc(var(--depth-unit) * 1.65 / var(--listener-fill))}
+#amamiLateRoot[data-episode="6"] .amami-dialog-stage .amami-dialog-peer{left:64%;bottom:calc(24cqh - var(--peer-height) * 70 / 448);z-index:1}
+#amamiLateRoot[data-episode="6"] .amami-dialog-stage .amami-dialog-listener{left:30%;bottom:calc(-12cqh - var(--listener-height) * var(--listener-pad));z-index:2}
