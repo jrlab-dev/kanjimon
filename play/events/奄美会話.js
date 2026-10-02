@@ -27,7 +27,9 @@
   global.AmamiVoice?.stop();
   box.dataset.speaker=speaker;
   who.textContent=names[speaker];
-  text.textContent=row.text||'';
+  /* 奄美は6年生相当。displayTextを表示変換し、row.textは既存音声キー用の読みを保持する。 */
+  const source=row.displayText||row.text||'';
+  text.innerHTML=global.talkText?global.talkText(source,84):source;
   face.src=row.portrait||faces[speaker]||(speaker==='hero'?heroFace():'images/bust/easy.webp');
   face.alt=names[speaker];
   box.classList.add('show');

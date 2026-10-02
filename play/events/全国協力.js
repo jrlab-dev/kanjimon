@@ -172,7 +172,7 @@
     function cut(name){state.cut=name;if(options.onCut)options.onCut(name,state);}
     function auto(name,ms,fn){cut(name);state.ready=false;state.line=null;hideTalk();fn&&fn();later(run,ms);}
     function line(i){
-      const row=LINES[i],g=generation,text=row[2].replace('{name}',playerNameForLine());cut(row[0]);state.line=i;state.ready=false;hideTalk();hideCue();const box=q('#ndTalk',root),who=q('#ndWho',root),txt=q('#ndText',root),face=q('#ndFace',root);who.textContent=row[1];txt.textContent=text;face.src=row[1].includes('マローズ')?FACES.maros:(row[1].includes('先生')?FACES.adult:FACES.mana);box.classList.add('show');
+      const row=LINES[i],g=generation,text=row[2].replace('{name}',playerNameForLine());cut(row[0]);state.line=i;state.ready=false;hideTalk();hideCue();const box=q('#ndTalk',root),who=q('#ndWho',root),txt=q('#ndText',root),face=q('#ndFace',root);who.innerHTML=global.talkText?global.talkText(row[1],102):row[1];txt.innerHTML=global.talkText?global.talkText(text,102):text;face.src=row[1].includes('マローズ')?FACES.maros:(row[1].includes('先生')?FACES.adult:FACES.mana);box.classList.add('show');
       let marked=false;const mark=()=>{if(marked||g!==generation)return;marked=true;later(()=>{if(g===generation){state.ready=true;q('#ndNext',root).classList.add('ready');}},2000,g);};
       if(sound&&row[3]){try{audio=new Audio('audio/battle/'+row[3]+'.mp3');audio.addEventListener('ended',mark,{once:true});audio.addEventListener('error',()=>later(mark,4200,g),{once:true});const p=audio.play();if(p&&p.catch)p.catch(()=>later(mark,4200,g));later(mark,14000,g);}catch(e){later(mark,4200,g);}}else later(mark,Math.max(4200,text.length*115),g);
     }
