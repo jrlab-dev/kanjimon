@@ -372,94 +372,10 @@
   /* 弾R-2：勝利ふり向き演出＝画像差し替え＋軽いポップ（派手なアニメはしない・0.5秒で収まる） */
   #screen-battle.tate .hero-back.victory-pop img{animation:heroVictoryPop .5s ease-out}
   @keyframes heroVictoryPop{0%{transform:scale(.85)}55%{transform:scale(1.08)}100%{transform:scale(1)}}
-  /* ===== 手直し_まほうの演出（2026-07-25・準也さんの発案）=====
-     相性がいい（ばつぐん）ときだけ、属性の「まほう」が出る。子どもは演出を見て
-     「相性がいい＝まほうが出る」と自然に覚える、という狙い（クロノトリガー風）。
-     段階は3つ：弱＝自分のレベル帯が下／中＝同じ／最高＝自分が上。
-     ここでは弱・中を実装（最高は準也さんの指示を受けてから、もっと大げさに作る）。 */
-  .magic-fx{position:absolute;inset:0;pointer-events:none;z-index:55;overflow:hidden}
-  .magic-fx .mp{position:absolute;font-size:2rem;line-height:1;will-change:transform,opacity;
-    filter:drop-shadow(0 2px 3px rgba(0,0,0,.35))}
-  /* 弱：小さめの粒がふわっと舞う */
-  .magic-fx.weak .mp{font-size:1.6rem;animation:magicWeak .75s ease-out forwards}
-  @keyframes magicWeak{
-    0%{transform:translate(0,10px) scale(.6);opacity:0}
-    30%{opacity:1}
-    100%{transform:translate(var(--dx,0),var(--dy,-46px)) scale(1);opacity:0}
-  }
-  /* 中：属性色の光が広がり、粒が大きく回りながら散る */
-  .magic-fx.mid .mp{font-size:2.4rem;animation:magicMid 1s cubic-bezier(.2,.7,.3,1) forwards}
-  @keyframes magicMid{
-    0%{transform:translate(0,0) scale(.4) rotate(0deg);opacity:0}
-    25%{opacity:1}
-    100%{transform:translate(var(--dx,0),var(--dy,-70px)) scale(1.35) rotate(var(--rot,180deg));opacity:0}
-  }
-  .magic-burst{position:absolute;left:50%;top:46%;width:14px;height:14px;border-radius:50%;
-    transform:translate(-50%,-50%);background:var(--mcol,#fff);opacity:.9;
-    box-shadow:0 0 24px 10px var(--mcol,#fff);animation:magicBurst .62s ease-out forwards}
-  @keyframes magicBurst{
-    0%{transform:translate(-50%,-50%) scale(.2);opacity:.95}
-    100%{transform:translate(-50%,-50%) scale(11);opacity:0}
-  }
-  .magic-flash{position:absolute;inset:0;background:var(--mcol,#fff);opacity:0;
-    animation:magicFlash .5s ease-out forwards;mix-blend-mode:screen}
-  @keyframes magicFlash{0%{opacity:0}18%{opacity:.55}100%{opacity:0}}
-  /* 最高（max）：画面が暗くなる→属性の魔法陣が回りながら迫る→特大の一撃。
-     準也さんの「一番最強のものは、もう結構大げさにしたい」(7/25)。
-     絵（images/magic/max-◯◯.webp）が用意できていれば重ねるが、無くても
-     この演出だけで成立するように作ってある＝絵は後から足せる。 */
-  .magic-fx.max{z-index:60}
-  .magic-fx.max .magic-dim{position:absolute;inset:0;
-    background:radial-gradient(circle at 50% 44%,rgba(10,12,30,.42),rgba(4,6,18,.82));
-    animation:magicDim 1.35s ease-out forwards}
-  @keyframes magicDim{0%{opacity:0}10%{opacity:1}72%{opacity:.9}100%{opacity:0}}
-  /* 放射状の集中線（マンガの「ドーン」の線）。暗くした上に白で描くのではっきり出る */
-  .magic-rays{position:absolute;left:50%;top:44%;width:230%;aspect-ratio:1;transform:translate(-50%,-50%);
-    background:repeating-conic-gradient(from 0deg at 50% 50%,rgba(255,255,255,.92) 0deg 1.4deg,transparent 1.4deg 7deg);
-    -webkit-mask-image:radial-gradient(circle,transparent 26%,#000 60%);
-    mask-image:radial-gradient(circle,transparent 26%,#000 60%);
-    opacity:0;animation:magicRays 1.2s ease-out forwards}
-  @keyframes magicRays{
-    0%{opacity:0;transform:translate(-50%,-50%) scale(.5) rotate(0deg)}
-    22%{opacity:.75}70%{opacity:.4}
-    100%{opacity:0;transform:translate(-50%,-50%) scale(1.15) rotate(26deg)}}
-  /* 魔法陣（属性色の二重リング） */
-  /* にじみ（box-shadow）は控えめに。強くすると画面全体が属性色で埋まって
-     肝心の一撃が見えなくなる（7/25の見た目確認で判明） */
-  .magic-ring{position:absolute;left:50%;top:46%;width:74%;aspect-ratio:1;border-radius:50%;
-    border:5px solid var(--mcol,#fff);box-shadow:0 0 14px var(--mcol,#fff);
-    transform:translate(-50%,-50%);opacity:0;animation:magicRing 1.15s cubic-bezier(.2,.8,.3,1) forwards}
-  .magic-ring.r2{width:48%;border-width:3px;border-style:dashed;animation-delay:.12s;animation-duration:1.05s}
-  @keyframes magicRing{
-    0%{opacity:0;transform:translate(-50%,-50%) scale(.2) rotate(0deg)}
-    20%{opacity:1}70%{opacity:.85}
-    100%{opacity:0;transform:translate(-50%,-50%) scale(1.5) rotate(160deg)}}
-  /* 特大の一撃（絵があれば画像・無ければ属性の絵文字を特大で） */
-  .magic-art,.magic-glyph{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);
-    animation:magicArt 1.25s cubic-bezier(.15,.85,.25,1) forwards}
-  .magic-art{width:118%;max-width:none;filter:drop-shadow(0 0 26px var(--mcol,#fff))}
-  /* 絵が無いときの代役。光に埋もれないよう、黒い縁取り（text-shadowの多重がけ）で輪郭を立てる */
-  .magic-glyph{font-size:clamp(7rem,30vw,12rem);line-height:1;
-    text-shadow:0 0 14px rgba(0,0,0,.9),0 0 34px var(--mcol,#fff),0 6px 10px rgba(0,0,0,.6);
-    filter:drop-shadow(0 0 26px var(--mcol,#fff))}
-  @keyframes magicArt{
-    0%{transform:translate(-50%,-50%) scale(.2) rotate(-10deg);opacity:0}
-    16%{transform:translate(-50%,-50%) scale(1.22) rotate(3deg);opacity:1}
-    26%{transform:translate(-50%,-50%) scale(1) rotate(0deg);opacity:1}
-    74%{opacity:1}
-    100%{transform:translate(-50%,-50%) scale(1.18);opacity:0}}
-  .magic-fx.max .mp{font-size:3rem;animation:magicMid 1.2s cubic-bezier(.2,.7,.3,1) forwards}
-  .magic-fx.max .magic-flash{animation:magicFlashMax .8s ease-out forwards}
-  @keyframes magicFlashMax{0%{opacity:0}9%{opacity:.85}26%{opacity:.16}45%{opacity:.28}100%{opacity:0}}
-  /* 光の輪は「塗りつぶし」ではなく衝撃波のリングにする（塗りだと画面が属性色で埋まって
-     肝心の一撃が見えなくなるため。7/25の見た目確認で判明） */
-  .magic-fx.max .magic-burst{width:46px;height:46px;background:transparent;
-    border:4px solid var(--mcol,#fff);box-shadow:0 0 10px var(--mcol,#fff);
-    animation:magicBurstMax .85s ease-out forwards}
-  @keyframes magicBurstMax{
-    0%{transform:translate(-50%,-50%) scale(.25);opacity:1}
-    100%{transform:translate(-50%,-50%) scale(6.5);opacity:0}}
-  .magic-fx.max .magic-burst.b2{animation-delay:.2s;animation-duration:.75s}
+  /* 相性魔法：透明Canvasをバトル画面座標へ重ねる。画像の枠を持ち込まない。 */
+  .magic-fx{position:absolute;left:0;top:0;width:100%;pointer-events:none;z-index:4;overflow:hidden}
+  .magic-fx.max{z-index:4}
+  .magic-canvas{display:block;width:100%;height:100%;pointer-events:none}
   /* ===== 手直し_打撃の演出（2026-07-25・改善メモ4番の後半）=====
      相性がいいときは「まほう」が出るが、ふつう・にがてのときは毎回まったく同じ揺れだけで単調だった。
      そこで打撃を4種類つくってランダムに出す（きりさく／たたく／つきさす／くだく）。
@@ -3762,6 +3678,7 @@ body.ice-dungeon #fieldInfo{display:none}
 <link rel="stylesheet" href="events/奄美歩行.css">
 <script src="events/奄美通行データ.js" defer></script>
 <script src="events/奄美歩行.js" defer></script>
+<script src="events/相性魔法.js" defer></script>
 </head>
 <body>
 <!-- 弾TB-1：タブレットでバトルの絵を画面いっぱいに敷くための層。#app の外（下）に置く。
@@ -13682,6 +13599,7 @@ function onCorrectParty(btn){
   // 接触瞬間に発動するダメージ本体（突進→接触→ダメージ→戻る の順になる）
   const doContact=()=>{
     if(seq!==spawnSeq) return;   // 「おわる」で退出済み→接触自体を無効化（念のための二重ガード）
+    let effectFinishDelay=950;
     if(aff>=2) snd('affinity'); else sfxCorrect();
     $('enemyChar').classList.add('attacked');
     const runHit=()=>{
@@ -13718,16 +13636,20 @@ function onCorrectParty(btn){
           $('bOptions').innerHTML='';
           renderParty();
         }
-      },950);
+      },effectFinishDelay);
     };
     if(aff>=2){
-      // 手直し(表情システム弾)§3：こうかばつぐん＝いたいの直前0.6秒だけsurprisedを追加（既存のいたいは消さず0.6秒後にそのまま発火）
+      // こうかばつぐんは予兆中に驚き、段階ごとの主着弾へ痛い顔とダメージをつなぐ。
       setEnemyFace('surprised');
       /* 手直し_まほうの演出(7/25)：相性がいいときだけ、属性のまほうを出す。
          強さ（ダメージ）には一切影響しない＝見た目だけ。段階はレベル帯の比較で決まる */
       const mlv = magicLevelOf(att, enemyIdx, enemyIsBoss);
       playMagicFx(typeOf(att), mlv);
-      setTimeout(runHit, mlv==='max' ? 1000 : 600);   // 最高は演出が長いぶん、当たるのを少し待つ
+      const mt=window.KanjimonMagic&&window.KanjimonMagic.timing?window.KanjimonMagic.timing(mlv):null;
+      const hitDelay=mt?mt.hitDelay:(mlv==='max'?1000:600);
+      // 数字は主着弾に合わせ、演出が終わるまで次の問題・勝利へ進めない。
+      effectFinishDelay=mt?Math.max(950,mt.duration-hitDelay+80):950;
+      setTimeout(runHit, hitDelay);
     }else{
       playHitFx($('enemyChar'), critical);   // 手直し_打撃の演出(7/25)：まほうが出ないときは4種類の打撃をランダムに
       runHit();
@@ -13739,23 +13661,8 @@ function onCorrectParty(btn){
    相性がいい（ばつぐん）ときだけ属性のまほうを出す。バトルの操作は増やさないので子どもに難しくならない。
    段階＝自分と相手の「レベル帯」（既存 levelBandOf）の比較。判定はもともとバトルの計算に
    使っているものをそのまま流用しているだけ＝新しいルールは足していない。 */
-const MAGIC_PARTS = {
-  'みず':     ['💧', '💦', '🌊'],
-  'ひ':       ['🔥', '✨', '☄️'],
-  'き':       ['🌿', '🍃', '🌱'],
-  '岩':       ['🪨', '⛰️', '💥'],
-  'かみなり': ['⚡', '✨', '🌟'],
-};
-/* 最高（max）で重ねる属性ごとの絵。ファイル名は images/magic/max-<ローマ字>.webp。
-   heroBackOKと同じ「無ければ出さない」流儀＝絵が未完成でも演出は成立する（絵文字の特大版で代用）。 */
+/* 属性15通りの既存音源ファイル名。旧最強原画も同じキーで保全するが表示しない。 */
 const MAGIC_ART_KEY={'みず':'mizu','ひ':'hi','き':'ki','岩':'tsuchi','かみなり':'kaminari'};
-const magicArtOK=new Set();
-Object.keys(MAGIC_ART_KEY).forEach(t=>{
-  const im=new Image(); const key=MAGIC_ART_KEY[t];
-  im.onload=()=>{ magicArtOK.add(key); };
-  im.onerror=()=>{};
-  im.src='images/magic/max-'+key+'.webp';
-});
 /* 段階：weak＝自分のレベル帯が下／mid＝同じ／max＝自分が上 */
 function magicLevelOf(attackerIdx, defenderIdx, defenderIsBoss){
   const selfLv = (attackerIdx!=null) ? levelOf(attackerIdx) : 1;
@@ -13765,54 +13672,20 @@ function magicLevelOf(attackerIdx, defenderIdx, defenderIsBoss){
 }
 /* 敵のいるあたりに、属性のまほうを出す。演出だけで、ダメージ計算には一切関与しない。 */
 function playMagicFx(type, level){
-  const scene = document.querySelector('#screen-battle .scene.battle') || document.getElementById('screen-battle');
+  const scene = document.querySelector("#screen-battle .scene.battle") || document.getElementById("screen-battle");
   if(!scene) return;
-  const parts = MAGIC_PARTS[type] || MAGIC_PARTS['かみなり'];
-  const color = (typeof TYPE_COLOR!=='undefined' && TYPE_COLOR[type] && TYPE_COLOR[type][0]) || '#fff';
-  const isWeak = (level === 'weak'), isMax = (level === 'max');
-  const artKey = MAGIC_ART_KEY[type];
-  const hasArt = isMax && magicArtOK.has(artKey);   // 絵が用意できていれば重ねる
-  const box = document.createElement('div');
-  box.className = 'magic-fx ' + (isWeak ? 'weak' : isMax ? 'max' : 'mid');
-  box.style.setProperty('--mcol', color);
-  const add=(cls,tag)=>{ const el=document.createElement(tag||'div'); el.className=cls; box.appendChild(el); return el; };
-  if(!isWeak){
-    if(isMax){ add('magic-dim'); add('magic-rays'); }   // 暗転＋集中線（maxだけ）
-    add('magic-flash'); add('magic-burst');
-    if(isMax){
-      add('magic-burst b2'); add('magic-ring'); add('magic-ring r2');
-      if(hasArt){ const art=add('magic-art','img'); art.alt=''; art.src='images/magic/max-'+artKey+'.webp'; }
-      else { add('magic-glyph','span').textContent = parts[0]; }   // 絵が無いときは属性の絵文字を特大で
-    }
-  }
-  const n = isWeak ? 4 : (isMax ? 14 : 9);
-  for(let i=0;i<n;i++){
-    const sp = document.createElement('span');
-    sp.className = 'mp';
-    sp.textContent = parts[i % parts.length];
-    // 敵のあたり（右上）から散らす。maxは画面全体に大きく散らす
-    sp.style.left = (isMax ? 12 + Math.random()*76 : 52 + Math.random()*36) + '%';
-    sp.style.top  = (isMax ? 14 + Math.random()*58 : 26 + Math.random()*34) + '%';
-    sp.style.setProperty('--dx', (Math.random()*(isMax?260:140)-(isMax?130:70)).toFixed(0) + 'px');
-    sp.style.setProperty('--dy', (-40 - Math.random()*(isWeak?30:(isMax?120:70))).toFixed(0) + 'px');
-    sp.style.setProperty('--rot', (Math.random()*360-180).toFixed(0) + 'deg');
-    sp.style.animationDelay = (i * (isWeak ? 45 : isMax ? 40 : 55)) + 'ms';
-    box.appendChild(sp);
-  }
-  scene.appendChild(box);
-  /* 手直し_まほうの音(2026-07-26・準也さんが効果音ラボから調達)：属性×段階の15本を鳴らす。
-     ファイル名は audio/se/magic-<ローマ字>-<weak|mid|max>.mp3（magicArtOKと同じローマ字を使う）。
-     音源は演出の長さに合わせて切り詰め済み（weak1.3秒／mid1.9秒／max2.6秒・終わりはフェードアウト）。
-     seFxを使うので🔇連動・読込失敗の握りつぶしは既存どおり。ファイルが無いときは
-     これまでどおり合成音(magicmax)に倒れる＝演出が無音になることはない。 */
-  seFx('magic-' + (MAGIC_ART_KEY[type] || 'kaminari') + '-' + (isWeak ? 'weak' : isMax ? 'max' : 'mid'),
-       isMax ? 0.55 : 0.45, isMax ? (()=>snd('magicmax')) : null);
-  if(isMax){
-    // 画面ゆれ（ボス着地・かいしんの一撃と同じ既存のしくみを流用）
-    const app=$('app');
-    if(app){ app.classList.add('shake'); setTimeout(()=>app.classList.remove('shake'),500); }
-  }
-  setTimeout(()=>{ if(box.parentNode) box.parentNode.removeChild(box); }, isWeak ? 1200 : (isMax ? 2000 : 1600));
+  const isWeak=level==="weak", isMax=level==="max";
+  if(window.KanjimonMagic) window.KanjimonMagic.play(scene,type,isWeak?"weak":isMax?"max":"mid");
+  const timing=window.KanjimonMagic&&window.KanjimonMagic.timing?window.KanjimonMagic.timing(level):null;
+  const cues=timing&&timing.soundCues||[{level:isWeak?'mid':'max',at:0,volume:isMax?0.55:0.45}];
+  const seq=spawnSeq, effect=document.querySelector('#screen-battle .magic-fx');
+  cues.forEach(cue=>{
+    const play=()=>{
+      if(seq!==spawnSeq||!$('screen-battle').classList.contains('active')||(cue.at&&effect&&!effect.isConnected)) return;
+      seFx('magic-'+(MAGIC_ART_KEY[type]||'kaminari')+'-'+cue.level,cue.volume,isMax&&cue.level==='max'?(()=>snd('magicmax')):null);
+    };
+    if(cue.at) setTimeout(play,cue.at); else play();
+  });
 }
 /* ===== 手直し_打撃の演出（2026-07-25・改善メモ4番の後半）=====
    まほうが出ない攻撃（相性ふつう・にがて／熟語ボス／ふたごボス）は、毎回まったく同じ揺れだけで
