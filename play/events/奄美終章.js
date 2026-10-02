@@ -14,9 +14,11 @@
   document.body.appendChild(root);root.addEventListener('click',e=>{if(e.target.closest('#aenQuit'))return;nextLine();});$('aenQuit').addEventListener('click',e=>{e.stopPropagation();abort();});
   document.body.classList.add('amami-ending-mode','nd-event-mode');
  }
- function showLine(){
+ function showLine(afterPause=false){
   global.AmamiVoice?.stop();ready=false;const box=$('aenTalk');$('aenNext').classList.remove('ready');
   if(lineIndex>=lines.length){box.classList.remove('show');const callback=afterTalk;afterTalk=null;lineHook=null;callback?.();return;}
+  // 主人公の言葉を受けてから気づく。連打では飛ばさず、退出時は既存のlaterで取り消す。
+  if(!afterPause&&lines[lineIndex]?.id==='E103'){later(()=>showLine(true),1000);return;}
   const row=lines[lineIndex++];global.AmamiStoryUI.display(row,box,$('aenFace'),$('aenWho'),$('aenText'));lineHook?.(row);
   later(()=>{ready=true;$('aenNext')?.classList.add('ready');},Math.min(1400,Math.max(500,$('aenText').textContent.length*25)));
  }
