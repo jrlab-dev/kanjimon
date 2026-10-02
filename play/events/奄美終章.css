@@ -6,6 +6,12 @@
 #aenTalk>div{min-width:0;text-align:left}#aenWho{display:block;color:#ffea66;font-size:clamp(.82rem,3.4vw,1rem);font-weight:900;margin-bottom:3px}
 #aenText{font-size:clamp(1rem,4.4vw,1.2rem);font-weight:900;line-height:1.48;overflow-wrap:anywhere}
 #aenNext{position:absolute;right:12px;bottom:4px;font-size:.78rem;opacity:.28}#aenNext.ready{opacity:.9}
+#amamiEndingRoot[data-phase="E1"] #aenNext:not(.ready){visibility:hidden}
+#amamiEndingRoot[data-phase="E1"] #aenTalk[data-speaker="hero"] img{display:none}
+body:has(#amamiEndingRoot[data-phase="E1"]) .aen-easy>.easy3d-frame{animation:none}
+body:has(#amamiEndingRoot[data-phase="E1"]) #fieldHero.aen-listening-nod .hero-sprite{animation:aenListeningNod 850ms ease-in-out 1;transform-origin:50% 90%}
+@keyframes aenListeningNod{0%,100%{translate:0 0}40%{translate:0 3px}65%{translate:0 -1px}}
+@media(prefers-reduced-motion:reduce){body:has(#amamiEndingRoot[data-phase="E1"]) #fieldHero.aen-listening-nod .hero-sprite{animation:none}}
 #aenQuit{position:absolute;right:8px;top:70px;z-index:15;pointer-events:auto;padding:7px 13px;min-height:40px;border:1px solid #fff9;border-radius:10px;background:#123c57eb;color:white;font-weight:900}
 body.amami-ending-mode .dpad,body.amami-ending-mode .dpad button,body.amami-ending-mode #fieldControls,body.amami-ending-mode #fieldModeBadge{visibility:hidden!important;pointer-events:none!important}
 body.amami-ending-mode .field-object{visibility:hidden}

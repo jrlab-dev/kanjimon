@@ -37,18 +37,25 @@
    },i*1720));
    later(()=>{if(!root.isConnected)return;root.classList.remove('working');done?.();},list.length*1720+250);
   }
-  function setWide(){
+  async function setWide(){
    root.classList.add('wide');
    if(board.querySelector('.acb-friends'))return;
    const friends=document.createElement('div');friends.className='acb-friends';
    const hero=document.createElement('span');hero.className='acb-child';
-   const source=document.querySelector('#fieldHero .hero-sprite');
-   if(source){const sprite=document.createElement('span'),cs=getComputedStyle(source);sprite.className='acb-child-sprite';for(const k of ['backgroundImage','backgroundSize','backgroundPosition','width','height'])sprite.style[k]=cs[k];hero.appendChild(sprite);}
-   const easy=document.createElement('img');easy.className='acb-easy';easy.src='images/easy-motion/poster.png';easy.alt='一緒に作った城を見るイージー';friends.append(hero,easy);board.appendChild(friends);
+   const sprite=document.createElement('span'),sheet=new Image();sprite.className='acb-child-sprite';sheet.src=heroSheetUrl();sprite.style.backgroundImage='url("'+sheet.src+'")';sprite.setAttribute('role','img');sprite.setAttribute('aria-label','一緒に作った城を見る主人公');hero.appendChild(sprite);
+   const easy=document.createElement('img');easy.className='acb-easy';easy.src='images/easy-motion/easy_15_walk_up/stand.png';easy.alt='一緒に作った城を見るイージー';friends.append(hero,easy);board.appendChild(friends);
+   let timeout;try{
+    await Promise.race([Promise.all([sheet.decode(),easy.decode()]),new Promise((_,reject)=>{timeout=setTimeout(()=>reject(Error('friends images')),4000);})]);
+    if(!root.isConnected)return;
+    function bounds(img,col=0,cols=1,rows=1){const w=img.naturalWidth/cols,h=img.naturalHeight/rows,c=document.createElement('canvas');c.width=w;c.height=h;const ctx=c.getContext('2d');ctx.drawImage(img,col*w,0,w,h,0,0,w,h);const data=ctx.getImageData(0,0,w,h).data;let top=h,bottom=0;for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(data[(y*w+x)*4+3]>64){top=Math.min(top,y);bottom=Math.max(bottom,y+1);}if(bottom<=top)throw Error('empty friend');return{fill:(bottom-top)/h,pad:(h-bottom)/h};}
+    const hb=bounds(sheet,1,3,2),eb=bounds(easy);
+    for(const [who,b] of [['hero',hb],['easy',eb]]){friends.style.setProperty('--'+who+'-fill',b.fill);friends.style.setProperty('--'+who+'-pad',b.pad);}
+    friends.classList.add('ready');
+   }catch(e){friends.remove();}finally{clearTimeout(timeout);}
   }
   function suggestRoof(){const n=nodes.get('C2');if(n.dataset.placed==='true'||n.querySelector('.acb-suggestion'))return;hand(n,'hero').classList.add('acb-suggestion');}
   return{root,board,place,suggestRoof,close(){root.remove();},setWide,focus(){root.classList.add('close');},get placed(){return [...nodes.values()].filter(n=>n.dataset.placed==='true').length;}};
  }
- function recall(owner,later){const scene=create(owner,{step:5,memory:true,later});scene.focus();scene.place(['C2'],()=>{scene.root.classList.add('fade');later(()=>scene.close(),450);});return scene;}
+ function recall(owner,later,onDone){const scene=create(owner,{step:5,memory:true,later});scene.focus();scene.place(['C2'],()=>{scene.root.classList.add('fade');later(()=>{scene.close();onDone?.();},450);});return scene;}
  global.AmamiBlocks={create,recall,parts};
 })(window);

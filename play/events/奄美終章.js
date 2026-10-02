@@ -5,9 +5,41 @@
  const phases=['split','E1','E2','E3','E4','E5','E6','E7','E8','done'];
  let root=null,splitView=null,zoneObserver=null,voyageResize=null,generation=0,ambientSerial=0,timers=[],lines=[],lineIndex=0,ready=false,afterTalk=null,lineHook=null,running=false;
  const heroSheet=()=>heroChar==='girl'?'hero-girl.webp':'hero.webp';
+ let closePair=null,staging=false;
+ // E1だけの寄り。床と人物を同じfieldGridで動かし、会話の実寸を避ける。
+ function focusPair(){
+  const grid=$('fieldGrid'),wrap=$('fieldWrap'),hero=$('fieldHero'),easy=grid?.querySelector('.aen-easy');
+  if(!grid||!wrap||!hero||!easy)return;
+  const original={transform:grid.style.transform,transformOrigin:grid.style.transformOrigin,transition:grid.style.transition};
+  let frame=0,closed=false;
+  function fit(){
+   frame=0;if(closed||!root?.isConnected)return;
+   const before=grid.style.transform;grid.style.transition='none';grid.style.transformOrigin='0 0';grid.style.transform='none';
+   const g=grid.getBoundingClientRect(),w=wrap.getBoundingClientRect(),talkBox=$('aenTalk').getBoundingClientRect();
+   const boxes=[hero.querySelector('.hero-sprite')||hero,easy.querySelector('.easy3d-frame')||easy].map(n=>n.getBoundingClientRect());
+   const left=Math.min(...boxes.map(r=>r.left))-g.left,right=Math.max(...boxes.map(r=>r.right))-g.left;
+   const top=Math.min(...boxes.map(r=>r.top))-g.top,bottom=Math.max(...boxes.map(r=>r.bottom))-g.top;
+   const safeTop=Math.max(w.top,96),safeBottom=Math.min(w.bottom,talkBox.top-20);
+   if(right<=left||bottom<=top||safeBottom<=safeTop){Object.assign(grid.style,original);return;}
+   const scale=Math.min(4.5,w.width*.82/(right-left),(safeBottom-safeTop)*.78/(bottom-top));
+   const x=w.left+w.width*.5-g.left-(left+right)*scale/2;
+   const y=(safeTop+safeBottom)/2-g.top-(top+bottom)*scale/2;
+   grid.style.transform=before;grid.getBoundingClientRect();
+   grid.style.transition=matchMedia('(prefers-reduced-motion:reduce)').matches?'none':'transform 900ms cubic-bezier(.2,.65,.25,1)';
+   grid.style.transform=`translate(${x}px,${y}px) scale(${scale})`;
+  }
+  function schedule(){if(!frame&&!closed)frame=requestAnimationFrame(fit);}
+  const observer=new ResizeObserver(schedule);observer.observe(wrap);observer.observe($('aenTalk'));schedule();
+  closePair=()=>{closed=true;cancelAnimationFrame(frame);observer.disconnect();Object.assign(grid.style,original);hero.classList.remove('aen-listening-nod');closePair=null;};
+ }
+ function e1Pose(kind){
+  if(!root)return;root.dataset.beat=kind;
+  const easy=document.querySelector('#fieldGrid .aen-easy .easy3d-frame');
+  if(easy){easy.src=kind==='realize'?'images/easy-motion/easy_12_settle/frame-030.webp':'images/easy-motion/easy_15_walk_left/stand.png';easy.style.setProperty('--motion-x','0%');easy.style.setProperty('--motion-y','0%');}
+ }
  function later(fn,ms){const g=generation,id=setTimeout(()=>{timers=timers.filter(t=>t!==id);if(g===generation&&running)fn();},ms);timers.push(id);return id;}
  function stopTimers(){timers.forEach(clearTimeout);timers=[];}
- function cleanup(){generation++;ambientSerial++;running=false;stopTimers();zoneObserver?.disconnect();zoneObserver=null;lineHook=null;if(voyageResize){window.removeEventListener('resize',voyageResize);voyageResize=null;}global.AmamiVoice?.stop();global.AmamiMotion?.stop();splitView?.destroy();splitView=null;root?.remove();root=null;$('aenOpening')?.remove();document.querySelectorAll('.aen-easy,.aen-child,.aen-monster-reading').forEach(n=>n.remove());document.body.classList.remove('amami-ending-mode');if($('fieldHero'))$('fieldHero').style.visibility='';}
+ function cleanup(){generation++;ambientSerial++;running=false;staging=false;closePair?.();stopTimers();zoneObserver?.disconnect();zoneObserver=null;lineHook=null;if(voyageResize){window.removeEventListener('resize',voyageResize);voyageResize=null;}global.AmamiVoice?.stop();global.AmamiMotion?.stop();splitView?.destroy();splitView=null;root?.remove();root=null;$('aenOpening')?.remove();document.querySelectorAll('.aen-easy,.aen-child,.aen-monster-reading').forEach(n=>n.remove());document.body.classList.remove('amami-ending-mode');if($('fieldHero'))$('fieldHero').style.visibility='';}
  function ensureRoot(){
   root=document.createElement('div');root.id='amamiEndingRoot';
   root.innerHTML='<div id="aenMontage" aria-hidden="true"></div><div id="aenPhone" aria-hidden="true"><div class="aen-screen"><div class="aen-title">かんじモン<small>RPG</small></div></div></div><div id="aenTalk"><img id="aenFace" alt=""><div><b id="aenWho"></b><p id="aenText"></p><small id="aenNext">▼ つづく</small></div></div><button id="aenQuit" type="button" aria-label="タイトルへ戻る">とじる</button>';
@@ -18,13 +50,13 @@
   global.AmamiVoice?.stop();ready=false;const box=$('aenTalk');$('aenNext').classList.remove('ready');
   if(lineIndex>=lines.length){box.classList.remove('show');const callback=afterTalk;afterTalk=null;lineHook=null;callback?.();return;}
   // 主人公の言葉を受けてから気づく。連打では飛ばさず、退出時は既存のlaterで取り消す。
-  if(!afterPause&&lines[lineIndex]?.id==='E103'){later(()=>showLine(true),1000);return;}
+  if(!afterPause&&lines[lineIndex]?.id==='E103'){e1Pose('pause');later(()=>showLine(true),1000);return;}
   const row=lines[lineIndex++];global.AmamiStoryUI.display(row,box,$('aenFace'),$('aenWho'),$('aenText'));lineHook?.(row);
-  later(()=>{ready=true;$('aenNext')?.classList.add('ready');},Math.min(1400,Math.max(500,$('aenText').textContent.length*25)));
+  later(()=>{ready=true;if(!staging)$('aenNext')?.classList.add('ready');},Math.min(1400,Math.max(500,$('aenText').textContent.length*25)));
  }
  function talk(rows,done,hook=null){lines=rows||[];lineIndex=0;afterTalk=done;lineHook=hook;showLine();}
  // 背景の首振りは会話と独立。発話中だけを待ち、無限演技で送りを止めない。
- function nextLine(){if(!ready||global.AmamiVoice?.busy)return;showLine();}
+ function nextLine(){if(!ready||staging||global.AmamiVoice?.busy)return;showLine();}
  function animateEasies(items){
   const ticket=++ambientSerial;let clip='13';
   function cycle(){
@@ -34,7 +66,7 @@
   }
   cycle();
  }
- function placeEasies(field,count,positions){
+ function placeEasies(field,count,positions,ambient=true){
   const grid=$('fieldGrid'),items=[];if(!grid)return items;
   for(let i=0;i<count;i++){
    const p=positions?.[i]||{x:field.cx+(i-(count-1)/2)*1.85,y:field.cy+(i%2)*.45};
@@ -44,7 +76,7 @@
    try{global.setInteriorActorPose(el,'down','a');}catch(e){}
    global.AmamiMotion?.mount(el);el.style.opacity='0';later(()=>{if(el.isConnected)el.style.opacity='1';},220+i*150);items.push(el);
   }
-  animateEasies(items);return items;
+  if(ambient)animateEasies(items);return items;
  }
  function placeChild(field,scared,reading=false,position=null){
   const img=document.createElement('img');img.className='aen-child'+(scared?' scared':'');img.alt='別の子ども';
@@ -137,12 +169,21 @@
   }
   ensureRoot();root.dataset.phase=phase;
   if(phase==='E1'||phase==='E2'){
-   const f=scene(102,{label:'おもちゃの城 4階',background:'amami-toy-castle-floor4.png',hero:true,scene:'castle'});placeEasies(f,1,[{x:f.cx+1.75,y:f.cy-.35}]);
+   const f=scene(102,{label:'おもちゃの城 4階',background:'amami-toy-castle-floor4.png',hero:true,scene:'castle'});placeEasies(f,1,[{x:f.cx+1.75,y:f.cy-.35}],phase!=='E1');
    if(phase==='E2'){
     const memory=document.createElement('div');memory.className='aen-memory-frame';memory.innerHTML='<img src="images/sprites/mana-farewell-20260920.png" alt="出発時のマナを思い出す">';root.appendChild(memory);
     later(()=>memory.classList.add('show'),250);
     later(()=>talk(storyRows(phase),advance,row=>{if(row?.id==='E201'){try{setHeroFacing(0,1);}catch(e){}}else{memory.classList.remove('show');later(()=>memory.remove(),450);}}),850);
-   }else talk(storyRows(phase),advance,row=>{if(row?.id==='E101')global.AmamiBlocks?.recall(root,later);else root.querySelector('.acb-memory')?.remove();});
+   }else{
+    try{setHeroFacing(1,0);}catch(e){}
+    talk(storyRows(phase),advance,row=>{
+     e1Pose(row?.id==='E103'||row?.id==='E104'?'realize':'listening');
+     if(row?.id==='E101'&&global.AmamiBlocks){staging=true;global.AmamiBlocks.recall(root,later,()=>{staging=false;if(ready)$('aenNext')?.classList.add('ready');});}
+     else root.querySelector('.acb-memory')?.remove();
+     if(row?.id==='E104')$('fieldHero')?.classList.add('aen-listening-nod');
+    });
+    focusPair();
+   }
    return;
   }
   if(phase==='E3'){e3();return;}
