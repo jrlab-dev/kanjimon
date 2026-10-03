@@ -1,0 +1,18 @@
+#nangokuStory{position:fixed;inset:0;z-index:280;width:min(100%,520px);margin:auto;display:flex;flex-direction:column;background:#d5b57b;color:white;visibility:hidden;isolation:isolate;font-family:'Zen Maru Gothic',sans-serif;padding-bottom:env(safe-area-inset-bottom,0px)}
+#nangokuStory.ready{visibility:visible}#nangokuStory:before{content:'';position:fixed;inset:0;background:#174454;z-index:-1}
+#nangokuStory .ng-view{position:relative;flex:1;min-height:0;overflow:hidden;container-type:size}
+#nangokuStory .ng-bg{position:absolute;left:0;top:calc((100% - 202.5cqw)*.75);width:135%;height:auto;max-width:none}
+#nangokuStory .ng-location{position:absolute;left:14px;top:20px;font-size:13px;text-shadow:0 2px 4px #123}
+#nangokuStory .ng-close{position:absolute;right:66px;top:10px;z-index:6;border:1px solid #fff9;border-radius:24px;background:#23465cdd;color:white;font:inherit;font-size:12px;min-width:62px;min-height:44px;cursor:pointer}
+#nangokuStory .ng-cast{position:absolute;inset:0;--hero:min(29cqw,28cqh)}
+#nangokuStory .ng-cast img{position:absolute;max-width:none;width:auto;--scale:1;transform:translateX(-50%) scale(var(--scale));transform-origin:center bottom;filter:drop-shadow(0 4px 2px #44321866)}
+#nangokuStory .ng-man{left:68%;bottom:48%;height:min(46cqw,41.4cqh);z-index:1}
+#nangokuStory .ng-hero{left:27%;bottom:6%;height:var(--hero);z-index:2}
+#nangokuStory .ng-mana{left:52%;bottom:6%;height:calc(var(--hero)*1.5);z-index:2}
+#nangokuStory .ng-dialog{position:relative;flex:none;min-height:178px;margin:0 12px 12px;padding:35px 17px 30px;border:1px solid #b8ced4;border-radius:14px;background:#22465d;box-shadow:0 5px 18px #0016;cursor:pointer}
+#nangokuStory .ng-dialog b{position:absolute;top:10px;left:17px;font-size:13px;color:#ffe1a2}
+#nangokuStory .ng-text{margin:0;font-size:clamp(16px,4.4vw,20px);line-height:1.6;font-weight:900;overflow-wrap:anywhere}
+#nangokuStory .ng-dialog span{position:absolute;bottom:8px;right:12px;font-size:12px}
+#nangokuStory[data-busy=true] .ng-dialog span{visibility:hidden}
+@media(max-height:700px){#nangokuStory .ng-man{bottom:46%}}
+@media(max-height:500px){#nangokuStory{width:min(100%,920px);flex-direction:row}#nangokuStory .ng-dialog{width:38%;min-height:0;margin:58px 12px 12px 0}#nangokuStory .ng-close{right:12px}#nangokuStory .ng-bg{top:calc((100% - 202.5cqw)*.48)}#nangokuStory .ng-man{bottom:44%}#nangokuStory .ng-text{font-size:16px}}

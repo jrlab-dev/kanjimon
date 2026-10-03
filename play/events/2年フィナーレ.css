@@ -1,0 +1,27 @@
+#gfOverlay>.g2-view{display:none}
+#gfOverlay.grade2-finale{position:fixed;inset:0;width:min(100%,480px);height:100%;margin:auto;display:flex;flex-direction:column;z-index:280;background:#a99570;isolation:isolate;cursor:default;padding-bottom:env(safe-area-inset-bottom,0px)}
+#gfOverlay.grade2-finale:before{content:"";position:fixed;inset:0;background:#182d29;z-index:-1}
+#gfOverlay.grade2-finale #gfVeil,#gfOverlay.grade2-finale #gfChara{display:none}
+#gfOverlay.grade2-finale .g2-view{display:block;position:relative;flex:1;min-height:0;overflow:hidden;container-type:size}
+#gfOverlay.grade2-finale .g2-bg{position:absolute;width:100%;height:100%;object-fit:cover;object-position:center 38%;transition:opacity .35s}
+#gfOverlay.grade2-finale .g2-place{position:absolute;left:15px;top:18px;max-width:calc(100% - 160px);font-size:12px;line-height:1.4;color:white;text-shadow:0 1px 5px #142018}
+#gfOverlay.grade2-finale .g2-actors{position:absolute;inset:0;--base:min(32cqw,32cqh);--hero-h:calc(var(--base) * 1.7 / var(--hero-fill,1));--mana-h:calc(var(--base) * 1.5 / var(--mana-fill,1))}
+#gfOverlay.grade2-finale .g2-actors img{position:absolute;max-width:none;width:auto;transform:translateX(-50%);filter:drop-shadow(0 4px 3px #27391c66)}
+#gfOverlay.grade2-finale .g2-hero{left:23%;height:var(--hero-h);bottom:calc(-8cqh - var(--hero-h) * var(--hero-pad,0));z-index:2}
+#gfOverlay.grade2-finale .g2-mana{left:72%;height:var(--mana-h);bottom:calc(16cqh - var(--mana-h) * var(--mana-pad,0));z-index:1}
+#gfOverlay.grade2-finale #gfBox{position:relative;inset:auto;flex:none;margin:0 12px 12px;padding:35px 17px 27px;min-height:176px;max-height:45%;border:1px solid #dcd5b6;border-radius:14px;background:#354534;cursor:pointer}
+#gfOverlay.grade2-finale #gfBox:before{content:'マナ';position:absolute;left:17px;top:10px;color:#ffe1a2;font-size:13px;font-weight:800}
+#gfOverlay.grade2-finale #gfText{font-size:clamp(16px,4.4vw,20px);line-height:1.6;overflow-wrap:anywhere}
+#gfOverlay.grade2-finale #gfNext{font-size:12px;bottom:7px;right:12px}
+#gfOverlay.grade2-finale .gf-skip{position:absolute;right:66px;top:10px;min-height:44px;min-width:64px;z-index:5;background:#263c2ddd}
+#gfOverlay.grade2-finale #gfClues{display:none}
+#gfOverlay.grade2-finale .g2-clue-title{display:none}
+#gfOverlay.grade2-finale[data-g2-beat="clues"] .g2-actors,#gfOverlay.grade2-finale[data-g2-beat="clues"] #gfBox,#gfOverlay.grade2-finale[data-g2-beat="clues"] .g2-place{display:none}
+#gfOverlay.grade2-finale[data-g2-beat="clues"] .g2-bg{opacity:.2}
+#gfOverlay.grade2-finale[data-g2-beat="clues"] .g2-clue-title{display:block;position:absolute;left:18px;top:68px;color:#fff9dd;font-size:18px;line-height:1.5}
+#gfOverlay.grade2-finale[data-g2-beat="clues"] #gfClues{display:flex;inset:112px 16px 24px;justify-content:center;gap:10px}
+#gfOverlay.grade2-finale .gf-clue{flex-shrink:0;border:1px solid #b9aa7a;border-left:3px solid #dbcc9d;background:#fff8e8;color:#303b2b;border-radius:9px;padding:12px;font-size:15px;line-height:1.55;text-shadow:none}
+#gfOverlay.grade2-finale #gfClues.lit .gf-kw{color:#935209;background:#fff1a1;text-shadow:none;font-size:1em}
+@media(max-height:650px){#gfOverlay.grade2-finale .gf-clue{padding:9px;font-size:14px;line-height:1.45}#gfOverlay.grade2-finale[data-g2-beat="clues"] #gfClues{gap:7px;inset:103px 14px 17px}#gfOverlay.grade2-finale .g2-clue-title{font-size:16px}}
+@media(max-height:500px){#gfOverlay.grade2-finale{width:min(100%,760px);flex-direction:row}#gfOverlay.grade2-finale #gfBox{width:39%;max-height:none;margin:62px 12px 12px 0;padding:36px 15px 25px;min-height:0}#gfOverlay.grade2-finale #gfText{font-size:16px}#gfOverlay.grade2-finale .gf-skip{right:66px}#gfOverlay.grade2-finale[data-g2-beat="clues"] #gfClues{inset:94px 25px 18px;display:grid;grid-template-columns:1fr 1fr;align-content:center;gap:9px}#gfOverlay.grade2-finale .g2-clue-title{top:60px}}
+@media(prefers-reduced-motion:reduce){#gfOverlay.grade2-finale *{animation:none!important;transition:none!important}}

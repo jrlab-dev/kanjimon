@@ -3679,6 +3679,24 @@ body.ice-dungeon #fieldInfo{display:none}
 <script src="events/奄美通行データ.js" defer></script>
 <script src="events/奄美歩行.js" defer></script>
 <script src="events/相性魔法.js" defer></script>
+<link rel="stylesheet" href="events/つくば会話.css?v=events-20261003">
+<script defer src="events/つくば会話.js?v=events-20261003"></script>
+<link rel="stylesheet" href="events/琵琶湖会話.css?v=events-20261003">
+<script defer src="events/琵琶湖会話.js?v=events-20261003"></script>
+<link rel="stylesheet" href="events/祭り会話.css?v=events-20261003">
+<script defer src="events/祭り会話.js?v=events-20261003"></script>
+<link rel="stylesheet" href="events/2年フィナーレ.css?v=events-20261003">
+<script defer src="events/2年フィナーレ.js?v=events-20261003"></script>
+<link rel="stylesheet" href="events/4年会話.css?v=events-20261003">
+<script defer src="events/4年会話.js?v=events-20261003"></script>
+<link rel="stylesheet" href="events/南国会話.css?v=events-20261003">
+<script defer src="events/南国会話.js?v=events-20261003"></script>
+<link rel="stylesheet" href="events/くろしお会話.css?v=events-20261003">
+<script defer src="events/くろしお会話.js?v=events-20261003"></script>
+<link rel="stylesheet" href="events/金沢会話.css?v=events-20261003">
+<script defer src="events/金沢会話.js?v=events-20261003"></script>
+<link rel="stylesheet" href="events/うどんの里会話.css?v=events-20261003">
+<script defer src="events/うどんの里会話.js?v=events-20261003"></script>
 </head>
 <body>
 <!-- 弾TB-1：タブレットでバトルの絵を画面いっぱいに敷くための層。#app の外（下）に置く。
@@ -5672,6 +5690,7 @@ function talkGradeForZone(zone){
 /* 会話専用の語読み。ずかん用toHiraへ一字読みを足すと、教材説明や図鑑の読みまで
    変わるため、会話本文で実際に使う送り仮名・熟語だけを表示直前に処理する。 */
 const TALK_WORD_READINGS={
+  "見過ご":["み","す","ご"],
   "字が":["じ","が"],
   "動か":["うご","か"],
   "消え":["き","え"],
@@ -12582,9 +12601,18 @@ COSTUMES.filter(cs=>cs.suffix).forEach(cs=>['boy','girl'].forEach(ch=>{
 ================================ */
 const $=id=>document.getElementById(id);
 function showScreen(id){
+  window.GradeTwoFinale?.beforeScreen(id);
   window.GradeOneStory?.beforeScreen(id);
   window.UtsunomiyaStory?.beforeScreen(id);
+  window.TsukubaStory?.beforeScreen(id);
+  window.UdonStory?.beforeScreen(id);
+  window.GradeFourStory?.beforeScreen(id);
+  window.KuroshioStory?.beforeScreen(id);
+  window.KanazawaStory?.beforeScreen(id);
+  window.NangokuStory?.beforeScreen(id);
   window.NokogiriStory?.beforeScreen(id);
+  window.BiwakoStory?.beforeScreen(id);
+  window.FestivalStory?.beforeScreen(id);
   window.MiyakoStory?.beforeScreen(id);
   window.NihonbashiScene?.beforeScreen(id);
   window.AmamiWalk?.beforeScreen(id);
@@ -15467,7 +15495,9 @@ function launchEventTwinBossIntroAtGate(zone){
            　★出口の方へ去っていく背中 →（追う）→ そこで四字熟語モンが現れる。
            　★見え方＝「あの人が、これを 呼んだのか」。説明は一切しない。
            ⚠️★四字熟語モンの演出（YojiFieldScene）は1文字も変えていない。前に足しただけ。 */
+        const nangokuSeq=fieldSeq;
         const toYoji=()=>{
+          if(nangokuSeq!==fieldSeq||fieldZone!==44||!$('screen-field').classList.contains('active'))return;
           YojiFieldScene.start(()=>{
             const scr0=$('screen-field');
             if(!scr0 || !scr0.classList.contains('active')) return;   // 離脱していたら始めない
@@ -15475,6 +15505,7 @@ function launchEventTwinBossIntroAtGate(zone){
           });
         };
         if(typeof EvCutScene!=='undefined' && EV_CUT_SCENES && EV_CUT_SCENES.nangoku44){
+          if(window.NangokuStory?.start(toYoji,cb=>EvCutScene.start('nangoku44',cb)))return;
           EvCutScene.start('nangoku44', toYoji);
         }else{
           toYoji();
@@ -28275,7 +28306,7 @@ const ZONE_TALK = {
   27: {
     title:"湖の 立て札",
     in:[
-      { snd:'zt27i1', text:'ここ、海じゃないの。湖。……日本で 一番 大きいんだって。' },
+      { snd:'zt27i1_shiga_biwako', text:"ここは、シガの びわ湖。日本で 一番 広い 湖なの。" },
       { snd:'zt27i2', text:'およいで いい ところの 立てふだが 読めなくて、みんな 岸で まってるの。' }
     ],
     out:[
@@ -28628,7 +28659,7 @@ const ZONE_TALK = {
     out:[
       { snd:'zt55o1', text:"「初」めに 粉、次に 水。「順」を 間違えると、ぼろぼろに なる。" },
       { snd:'zt55o2', text:'……つながった！ おじさんが「笑」った。' },
-      { snd:'zt55o3', text:'……ねえ。もう、まってるだけじゃ だめだね。あの人を、さがそう。' }
+      { snd:'zt55o3_follow_20261003', text:'……ねえ。あの人を、見つけよう。もう、見過ごせないよ。' }
     ]
   },
   56: {
@@ -29179,6 +29210,7 @@ function startGradeFinale(grade, onDone){
   const ch=$('gfChara'); ch.removeAttribute('src'); ch.className='hide';
   ov.classList.remove('dark'); ov.classList.add('show');
   for(const k in EV_CHARA){ const im=new Image(); im.src=EV_CHARA[k].img; }   // 切り替えでちらつかせない
+  window.GradeTwoFinale?.begin(grade);
   gfAdvance();
 }
 function startZone102Ending(){
@@ -29196,6 +29228,7 @@ function gfAdvance(){
   if(gfTimer){ clearTimeout(gfTimer); gfTimer=null; }
   gfStep++;
   const s=gfSteps[gfStep];
+  window.GradeTwoFinale?.step(s);
   if(!s){ gfClose(true); return; }
 
   if(s.k==='end'){ gfClose(true, s.banner); return; }
@@ -29263,6 +29296,7 @@ function gfSkip(){
   gfClose(true, last && last.banner);
 }
 function gfClose(runDone, banner){
+  window.GradeTwoFinale?.close();
   if(gfTimer){ clearTimeout(gfTimer); gfTimer=null; }
   stopBattleHakaseVoice();   // ★弾VO-2：閉じるときは声も止める
   gfActive=false; gfTapOK=false;
@@ -29300,8 +29334,8 @@ const PASSERBY = {
   21: { sheet:'images/sprites/maro_walk.webp', mana:'……いま、だれか いた？', snd:'pb21_mana_notice' },
   /* ★2026-08-20：3年。笠の男が通る回（設計＝【計画】3年カンサイの20話_20260820.md §2）。
      27＝初登場（湖のほとり）／33＝祭りの人ごみ。43のすれちがいは台詞で見せるのでここには置かない。 */
-  27: { sheet:'images/sprites/maro_walk.webp', mana:'……あの 大きな せなか。どこかで 見た 気が する。' },
-  33: { sheet:'images/sprites/maro_walk.webp', mana:'……また いた。人ごみの むこう。' }
+  27: { sheet:'images/sprites/maro_walk.webp', mana:'……あの 大きな せなか。どこかで 見た 気が する。', snd:'pb27_mana_notice' },
+  33: { sheet:'images/sprites/maro_walk.webp', mana:'……また いた。人ごみの むこう。', snd:'pb33_mana_notice' }
 };
 const PB_MS       = 3600;   // 歩いて去るまでの時間
 const PB_STEP_MS  = 150;    // 足を出しかえる間隔（主人公と同じ）
@@ -29310,6 +29344,8 @@ let pbTimer=null, pbStep=null, pbSeq=0, pbActive=false;
 
 function stopPasserby(){
   window.NokogiriStory?.abort();
+  window.BiwakoStory?.abort();
+  window.FestivalStory?.abort();
   if(pbTimer){ clearTimeout(pbTimer); pbTimer=null; }
   if(pbStep){ clearInterval(pbStep); pbStep=null; }
   pbActive=false;
@@ -29327,6 +29363,8 @@ function startPasserby(zone, onDone){
   const el=$('pbFigure');
   if(!def || !el || pbActive){ if(onDone) onDone(); return; }
   if(window.NokogiriStory?.start(zone,onDone))return;
+  if(window.BiwakoStory?.start(zone,onDone))return;
+  if(window.FestivalStory?.start(zone,onDone))return;
   const grid=$('fieldGrid');
   const tile=grid ? (parseFloat(grid.style.getPropertyValue('--tile'))||42) : 42;
   pbActive=true; pbSeq=fieldSeq;
@@ -29472,7 +29510,7 @@ function startZoneTalk(lines, onDone){
   heroLock=true;                      // ★stopAutoExplore の後に立てる
   const nihonbashiCut=window.NihonbashiScene?.open(lines);
   const importantCut=window.GradeOneStory?.openTalk(lines);
-  const nokogiriCut=window.NokogiriStory?.openTalk(lines)||window.MiyakoStory?.openTalk(lines);
+  const nokogiriCut=window.NokogiriStory?.openTalk(lines)||window.BiwakoStory?.openTalk(lines)||window.FestivalStory?.openTalk(lines)||window.MiyakoStory?.openTalk(lines)||window.KuroshioStory?.openTalk(lines)||window.KanazawaStory?.openTalk(lines);
   let i=0;
   const step=()=>{
     // ワープ・タイトルへ離脱していたら、後始末だけして終わる（onDoneは呼ばない＝誤発火防止）
@@ -29606,8 +29644,8 @@ function startZoneEvent(zone, onDone, phase='in'){
     const grid=$('fieldGrid');
     if(grid){grid.classList.add('nagoya63-spots-pending');grid.querySelectorAll('.t-spot').forEach(n=>{n.style.animation='';n.style.transformOrigin='';});}
   }
-  const preloadChara=[5,14].includes(zone)?[...new Set(script.map(s=>s.portrait||s.who))]:Object.keys(EV_CHARA);
-  for(const k of preloadChara){ if(EV_CHARA[k]){const im=new Image(); im.src=EV_CHARA[k].img;} } // 浅草・宇都宮は登場する人物だけ
+  const preloadChara=[5,14,17].includes(zone)?[...new Set(script.map(s=>s.portrait||s.who))]:Object.keys(EV_CHARA);
+  for(const k of preloadChara){ if(EV_CHARA[k]){const im=new Image(); im.src=EV_CHARA[k].img;} } // 浅草・宇都宮・つくばは登場する人物だけ
   evActive=true; evZone=zone; evPhase=phase; evScript=script; evStep=-1; evDoneCb=onDone||null; evSeq=fieldSeq;
   setInawashiroLetter(null); setNamahageStory(null); setLighthouseStory(null); setTsugaruStory(null); setSapporoStory(null); setWetlandStory(null); setIceHallStory(null); setHakataStory(null);
   evAutoWasRunning=zone!==83&&isAutoZone(fieldZone);
@@ -29625,6 +29663,9 @@ function startZoneEvent(zone, onDone, phase='in'){
   ov.classList.add('show');
   window.GradeOneStory?.openEvent(zone,phase);
   window.UtsunomiyaStory?.openEvent(zone,phase);
+  window.TsukubaStory?.openEvent(zone,phase);
+  window.UdonStory?.openEvent(zone,phase);
+  window.GradeFourStory?.openEvent(zone,phase);
   evAdvance();
 }
 
@@ -30855,7 +30896,7 @@ function layoutDazaifu92(){if($('evOverlay').classList.contains('dazaifu92'))$('
 window.addEventListener('resize',layoutDazaifu92);
 
 function evAdvance(){
-  if(!evActive) return;
+  if(!evActive || window.UdonStory?.busy() || window.GradeFourStory?.busy()) return;
   evStep++;
   if(evStep>=evScript.length){ evFinish(); return; }
   const s=evScript[evStep];
@@ -30863,6 +30904,7 @@ function evAdvance(){
      　終わったら立ち絵の会話に戻って、続きが流れる（＝準也さんのご指示の並び）。 */
   if(s && s.scene){
     const back=evSeq;
+    if(window.UdonStory?.scene(s.scene,()=>{if(evActive&&back===fieldSeq&&back===evSeq)evAdvance();}))return;
     EvCutScene.start(s.scene, ()=>{
       if(back!==fieldSeq && back!==evSeq) return;   // ワープ等で離脱していたら戻らない
       if(!evActive) return;
@@ -30927,6 +30969,9 @@ function evAdvance(){
   $('evText').innerHTML=talkText(s.text,evZone);
   window.GradeOneStory?.eventLine(evStep,s);
   window.UtsunomiyaStory?.eventLine(evStep,s);
+  window.TsukubaStory?.eventLine(evStep,s);
+  window.UdonStory?.eventLine(evStep,s);
+  window.GradeFourStory?.eventLine(evStep,s);
   if(evZone===83)layoutIce83();
   if(evZone===92||evZone===94||evZone===97||evZone===98||evZone===99||evZone===100||evZone===101)layoutDazaifu92();
   $('evText').className=(s.who==='easy')?'ev-easy':'';    // イージーが喋るときだけ文字色を変える
@@ -30941,6 +30986,9 @@ function evFinish(completed=true){
   if(!evActive) return;
   window.GradeOneStory?.finishEvent();
   window.UtsunomiyaStory?.finishEvent();
+  window.TsukubaStory?.finishEvent();
+  window.UdonStory?.finishEvent();
+  window.GradeFourStory?.finishEvent();
   evActive=false;
   if(fuji52StoryCameraState) cancelFuji52StoryCamera();
   if(nagoya63StoryState) cancelNagoya63StoryCamera();
@@ -31736,10 +31784,19 @@ function renderWorldMap(regionOverride){
   wmPlayIntroZoom(scale, centerCoord.x, centerCoord.y);
 }
 function warpZone(z){
+  window.GradeTwoFinale?.abort();
   window.GradeOneStory?.abort();
   window.UtsunomiyaStory?.abort();
-  window.NokogiriStory?.abort();
+  window.TsukubaStory?.abort();
+  window.UdonStory?.abort();
+  window.GradeFourStory?.abort();
+  window.KuroshioStory?.abort();
+  window.KanazawaStory?.abort();
+  window.NangokuStory?.abort();
   window.MiyakoStory?.abort();
+  window.NokogiriStory?.abort();
+  window.BiwakoStory?.abort();
+  window.FestivalStory?.abort();
   window.NihonbashiScene?.abort();
   if(z===84&&cleared.has(83)&&!iceDungeon.complete){closeWorldMap();iceDungeonStop();fieldZone=83;const p=zoneStartOf(83);setFieldStandardPosition(83,p.x,p.y);showScreen('screen-field');renderField();startIce83Ending();return;}
 
