@@ -3678,7 +3678,7 @@ body.ice-dungeon #fieldInfo{display:none}
 <link rel="stylesheet" href="events/奄美歩行.css">
 <script src="events/奄美通行データ.js" defer></script>
 <script src="events/奄美歩行.js?walk=20261003d" defer></script>
-<script src="events/相性魔法.js" defer></script>
+<script src="events/相性魔法.js?v=20261003-adopted" defer></script>
 <link rel="stylesheet" href="events/つくば会話.css?v=events-20261003">
 <script defer src="events/つくば会話.js?v=events-20261003"></script>
 <link rel="stylesheet" href="events/琵琶湖会話.css?v=events-20261003">
@@ -14948,7 +14948,7 @@ function onCorrectParty(btn){
          強さ（ダメージ）には一切影響しない＝見た目だけ。段階はレベル帯の比較で決まる */
       const mlv = magicLevelOf(att, enemyIdx, enemyIsBoss);
       playMagicFx(typeOf(att), mlv);
-      const mt=window.KanjimonMagic&&window.KanjimonMagic.timing?window.KanjimonMagic.timing(mlv):null;
+      const mt=window.KanjimonMagic&&window.KanjimonMagic.timing?window.KanjimonMagic.timing(mlv,typeOf(att)):null;
       const hitDelay=mt?mt.hitDelay:(mlv==='max'?1000:600);
       // 数字は主着弾に合わせ、演出が終わるまで次の問題・勝利へ進めない。
       effectFinishDelay=mt?Math.max(950,mt.duration-hitDelay+80):950;
@@ -14979,13 +14979,13 @@ function playMagicFx(type, level){
   if(!scene) return;
   const isWeak=level==="weak", isMax=level==="max";
   if(window.KanjimonMagic) window.KanjimonMagic.play(scene,type,isWeak?"weak":isMax?"max":"mid");
-  const timing=window.KanjimonMagic&&window.KanjimonMagic.timing?window.KanjimonMagic.timing(level):null;
+  const timing=window.KanjimonMagic&&window.KanjimonMagic.timing?window.KanjimonMagic.timing(level,type):null;
   const cues=timing&&timing.soundCues||[{level:isWeak?'mid':'max',at:0,volume:isMax?0.55:0.45}];
   const seq=spawnSeq, effect=document.querySelector('#screen-battle .magic-fx');
   cues.forEach(cue=>{
     const play=()=>{
       if(seq!==spawnSeq||!$('screen-battle').classList.contains('active')||(cue.at&&effect&&!effect.isConnected)) return;
-      seFx('magic-'+(MAGIC_ART_KEY[type]||'kaminari')+'-'+cue.level,cue.volume,isMax&&cue.level==='max'?(()=>snd('magicmax')):null);
+      seFx(cue.sound||('magic-'+(MAGIC_ART_KEY[type]||'kaminari')+'-'+cue.level),cue.volume,isMax&&cue.level==='max'?(()=>snd('magicmax')):null);
     };
     if(cue.at) setTimeout(play,cue.at); else play();
   });
