@@ -75,7 +75,7 @@
    root.querySelector('.ud-bg').decode(),
    asset(heroSheetUrl(),0,1,3,2),asset('images/sprites/mana-conversation.webp'),
    asset('images/sprites/maros-full-front-clean.webp'),
-   ...paths.map(async name=>({front:await asset('images/sprites/kid-scared-'+name+'.webp',1,1,3,2),run:await Promise.all([0,1].map(row=>asset('images/sprites/kid-scared-'+name+'.webp',2,row,3,2)))}))
+   ...paths.map(async name=>({front:await asset('images/sprites/kid-scared-'+name+'.webp?walk=20261003d',1,1,3,2),run:await Promise.all([0,1].map(row=>asset('images/sprites/kid-scared-'+name+'.webp?walk=20261003d',2,row,3,2)))}))
   ]).then(async ([,hero,mana,man,...people])=>{
    if(!valid())return;frames=people;
    for(const [selector,a]of [['.ud-hero',hero],['.ud-mana',mana],['.ud-man',man],...people.map((a,i)=>['.k'+i,a.front])])root.querySelector(selector).src=a.src;

@@ -68,7 +68,7 @@
   root.querySelector('.my-close').onclick=()=>{abort();showScreen('screen-title');};document.addEventListener('keydown',key);
   root.querySelector('.my-dialog').onclick=e=>{if(!e.target.closest('#hakaseTalkWin'))hakaseTapAdvance();};
   watch=setInterval(()=>{if(seq!==fieldSeq||fieldZone!==37||!$('screen-field')?.classList.contains('active'))abort();},80);
-  const sheet=new Image();sheet.src='images/sprites/maro-back-walk3.webp';
+  const sheet=new Image();sheet.src='images/sprites/maro-back-walk3.webp?walk=20261003d';
   timeout=setTimeout(close,4000);
   Promise.all([...root.querySelectorAll('img'),sheet].map(img=>img.decode())).then(()=>{
    if(!live)return;if(seq!==fieldSeq||fieldZone!==37){abort();return;}clearTimeout(timeout);

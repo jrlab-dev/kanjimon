@@ -187,7 +187,7 @@
   function vistaWalk(done){
    const v=vista;if(!v?.cut.isConnected)return;
    const reduced=matchMedia('(prefers-reduced-motion:reduce)').matches;root.dataset.beat='hero-first';v.pose('up','up');v.stage.classList.add('hero-go');
-   if(!reduced)for(let t=0;t<1400;t+=140)later(()=>{v.hero.style.backgroundPosition='50% '+(t%280?'100%':'0%');v.hero.style.setProperty('--vista-step',t%280?-1:1);},t);
+   if(!reduced)for(let t=0;t<1400;t+=140)later(()=>{v.hero.style.backgroundPosition='50% '+(t%280?'100%':'0%');v.hero.style.setProperty('--vista-step',HeroWalkQuality.legacyB(t%280,v.hero.style.backgroundImage)?-1:1);},t);
    later(()=>{v.hero.style.backgroundPosition='50% 0%';v.hero.style.setProperty('--vista-step',1);},1400);
    later(()=>{
     root.dataset.beat='easy-follows';let started=false;

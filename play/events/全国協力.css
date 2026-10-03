@@ -31,12 +31,15 @@ body.nd-event-mode #fieldZoneName{position:absolute;left:8px;right:64px;top:50%;
 #fieldGrid .nd-field-mana,#fieldGrid .nd-field-adult,#fieldGrid .nd-field-maros{transition-property:left,top;transition-timing-function:linear}
 #fieldGrid .fuji52-story-mana.nd-field-mana{animation:none!important;background:none!important}
 #fieldGrid .nd-mana-sprite,#fieldGrid .nd-maros-sprite{position:absolute;inset:0;display:block;transform-origin:center bottom;transform:scaleX(1);pointer-events:none}
-#fieldGrid .nd-mana-sprite{background:url('../images/mana-back-a.webp') center/contain no-repeat}
-#fieldGrid .nd-field-mana.nd-walking .nd-mana-sprite{animation:ndMirrorWalk .64s steps(1,end) infinite}
+#fieldGrid .nd-mana-sprite{background:url('../images/mana-back-a.webp?walk=20261003d') center/contain no-repeat}
+#fieldGrid .nd-field-mana.nd-walking .nd-mana-sprite{animation:ndManaWalk .64s steps(1,end) infinite}
 #fieldGrid .nagoya63-segment-maros.nd-field-maros{animation:none!important;background:none!important}
-#fieldGrid .nd-maros-sprite{background:url('../images/sprites/maros-walk-face-20260920.png') 0% 0%/200% 100% no-repeat}
-#fieldGrid .nd-field-maros.nd-walking .nd-maros-sprite{animation:ndMirrorWalk .64s steps(1,end) infinite}
-@keyframes ndMirrorWalk{0%,49%{transform:scaleX(1)}50%,100%{transform:scaleX(-1)}}
+#fieldGrid .nd-maros-sprite{background:url('../images/sprites/maros-walk-face-20260920.png?walk=20261003d') 0% 0%/200% 100% no-repeat}
+#fieldGrid .nd-field-maros.nd-walking .nd-maros-sprite{animation:ndMarosWalk .64s steps(1,end) infinite}
+#fieldGrid .nd-field-adult.nd-walking .interior-npc-visual{animation:ndAdultWalk .64s steps(1,end) infinite}
+@keyframes ndManaWalk{0%,49%{background-image:url('../images/mana-back-a.webp?walk=20261003d')}50%,100%{background-image:url('../images/mana-back-b.webp?walk=20261003d')}}
+@keyframes ndMarosWalk{0%,49%{background-position-x:0%}50%,100%{background-position-x:100%}}
+@keyframes ndAdultWalk{0%,49%{background-position-y:0%}50%,100%{background-position-y:100%}}
 
 #ndEventRoot{position:fixed;inset:0;left:50%;transform:translateX(-50%);width:min(100vw,480px);z-index:9990;pointer-events:none;font-family:inherit}
 #ndIceFlash{position:absolute;inset:0;z-index:3;opacity:0;pointer-events:none;background:radial-gradient(circle at 50% 38%,#fff 0 26%,rgba(220,250,255,.98) 44%,rgba(101,220,255,.9) 70%,rgba(255,255,255,.15) 100%);mix-blend-mode:screen}

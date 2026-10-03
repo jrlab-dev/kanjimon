@@ -22,7 +22,7 @@
   root.querySelector('.g4-close').onclick=e=>{e.stopPropagation();abortAll();showScreen('screen-title');};root.querySelector('.g4-dialog').onclick=()=>{if(!busy)evAdvance();};
   deadline=setTimeout(close,4000);watch=setInterval(()=>{if(!valid()||!$('screen-field')?.classList.contains('active'))abortAll();},80);
   const g=heroChar==='girl'?'girl':'boy';const actors=[asset('images/battle-tate/hero-back-'+g+costumeSuffix()+'.webp'),asset('images/sprites/mana-conversation.webp'),asset('images/easy-motion/easy_02_offer/frame-072.webp')];
-  if(orchard)for(const name of ['m-a','f-a','m-b'])actors.push(asset('images/sprites/kid-front-'+name+'.webp'),...[0,1].map(row=>asset('images/sprites/kid-scared-'+name+'.webp',2,row,3,2)));
+  if(orchard)for(const name of ['m-a','f-a','m-b'])actors.push(asset('images/sprites/kid-front-'+name+'.webp'),...[0,1].map(row=>asset('images/sprites/kid-scared-'+name+'.webp?walk=20261003d',2,row,3,2)));
   Promise.all([...[...root.querySelectorAll('.g4-bg,.g4-logo')].map(i=>i.decode()),Promise.all(actors)]).then(async results=>{if(!valid())return;const [h,m,e,...k]=results.at(-1);root.querySelector('.g4-hero').src=h;root.querySelector('.g4-mana').src=m;root.querySelector('.g4-easy').src=e;if(orchard)kids.forEach((img,i)=>{smiles[i]=k[i*3];walks[i]=k.slice(i*3+1,i*3+3);img.src=smiles[i];});await Promise.all([...root.querySelectorAll('.g4-cast img')].map(i=>i.decode()));if(!valid())return;clearTimeout(deadline);ready=true;root.classList.add('ready');line(index,EV_SCENES[zone][index]);}).catch(close);
   return api;
  }

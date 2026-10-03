@@ -51,8 +51,8 @@
   Promise.all([
    ...[...root.querySelectorAll('.kr-bg')].map(img=>img.decode()),
    asset('images/battle-tate/hero-back-'+gender+costumeSuffix()+'.webp'),asset('images/sprites/mana-conversation.webp'),
-   ...[0,1].map(row=>asset('images/sprites/maro_walk.webp',0,row,3,2)),
-   ...[0,1].map(row=>asset('images/sprites/maro_walk.webp',2,row,3,2))
+   ...[0,1].map(row=>asset('images/sprites/maro_walk.webp?walk=20261003d',0,row,3,2)),
+   ...[0,1].map(row=>asset('images/sprites/maro_walk.webp?walk=20261003d',2,row,3,2))
   ]).then(async ([,hero,mana,f0,f1,s0,s1])=>{
    if(!valid())return;root.querySelector('.kr-hero').src=hero;root.querySelector('.kr-mana').src=mana;front=[f0,f1];side=[s0,s1];man.src=f0;
    await Promise.all([...root.querySelectorAll('.kr-cast img')].map(img=>img.decode()));if(!valid())return;clearTimeout(deadline);ready=true;root.classList.add('ready');const p=pending;pending=null;if(p)play(p.n,p.ln,p.done);

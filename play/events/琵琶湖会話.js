@@ -25,7 +25,7 @@
   function animate(){
    root.dataset.motion='stand';walker.style.visibility='hidden';
    const reduced=matchMedia('(prefers-reduced-motion:reduce)').matches,start=performance.now(),hold=reduced?600:1200,duration=reduced?1200:PB_MS;
-   walker.style.backgroundImage="url('images/sprites/maro-back-walk3.webp')";
+   walker.style.backgroundImage="url('images/sprites/maro-back-walk3.webp?walk=20261003d')";
    const front=root.querySelector('.bw-front'),fb=bounds(front);
    front.style.setProperty('--front-fill',fb.fill);front.style.setProperty('--front-pad',fb.pad);
    const frame=now=>{if(!live)return;const elapsed=now-start,standing=elapsed<hold,t=Math.min(1,Math.max(0,(elapsed-hold)/duration)),progress=reduced?0:t;
@@ -41,7 +41,7 @@
   root.querySelector('.bw-dialog').onclick=e=>{if(!e.target.closest('#hakaseTalkWin'))hakaseTapAdvance();};
   watch=setInterval(()=>{if(seq!==fieldSeq||fieldZone!==27||!$('screen-field')?.classList.contains('active'))abort();},80);
   function fallback(){if(!live)return;failedSeq=seq;const done=callback;callback=null;pbActive=false;heroLock=false;close();if(seq===fieldSeq&&fieldZone===27)done?.();}
-  const sheet=new Image();sheet.src='images/sprites/maro-back-walk3.webp';
+  const sheet=new Image();sheet.src='images/sprites/maro-back-walk3.webp?walk=20261003d';
   timeout=setTimeout(fallback,4000);
   Promise.all([...root.querySelectorAll('img'),sheet].map(img=>img.decode())).then(()=>{
    if(!live)return;if(seq!==fieldSeq||fieldZone!==27){abort();return;}clearTimeout(timeout);

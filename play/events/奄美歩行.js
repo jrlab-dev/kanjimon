@@ -31,7 +31,7 @@
   inertBefore.forEach(([el])=>{el.inert=true;});
   const $=id=>root.querySelector('#'+id),world=$('awWorld'),viewport=$('awView'),hero=$('awHero'),sprite=hero.firstElementChild,enemy=$('awTarget'),hint=$('awHint');
   $('awName').textContent=map.name;$('awProgress').textContent=label||'奄美の冒険';$('awGo').textContent=exit?'出口へ すすむ':'ことばへ すすむ';
-  world.style.backgroundImage='url("'+map.background+'")';sprite.style.backgroundImage='url("images/sprites/'+(heroChar==='girl'?'hero-girl.webp':'hero.webp')+'")';sprite.style.setProperty('--bgx','50%');
+  world.style.backgroundImage='url("'+map.background+'")';sprite.style.backgroundImage='url("'+heroSheetUrl()+'")';sprite.style.setProperty('--bgx','50%');
   if(exit){enemy.classList.add('aw-exit');enemy.textContent=String(episode)==='12'?'イージーの ところへ':'つぎへ ↑';}
   else for(const w of word.length===4?[word.slice(0,2),word.slice(2)]:[word]){const n=document.createElement('span');AmamiMotion.fieldMonster(n,w);enemy.appendChild(n);}
   const objects=map.obstacles.map(o=>{const img=new Image();img.className='aw-obstacle';img.src=o.file;img.alt='';world.appendChild(img);return {img,o};});
@@ -52,7 +52,7 @@
   }
   function stop(){route=[];held=null;walking=false;clearTimeout(timer);timer=0;sprite.style.setProperty('--bgy','0%');sprite.style.setProperty('--hero-lift','0px');}
   function arrive(){if(fired||disposed||preview||!assetsReady)return;fired=true;persist();const cb=onArrive;close();cb?.();}
-  function facing(dx,dy){const ud=!dx;step++;sprite.style.setProperty('--bgx',ud?(dy<0?'50%':'0%'):'100%');sprite.style.setProperty('--bgy',step%2?'100%':'0%');sprite.style.setProperty('--hero-sx',dx<0?'-1':ud&&step%2?'-1':'1');}
+  function facing(dx,dy){const ud=!dx;step++;sprite.style.setProperty('--bgx',ud?(dy<0?'50%':'0%'):'100%');sprite.style.setProperty('--bgy',step%2?'100%':'0%');sprite.style.setProperty('--hero-sx',dx<0?'-1':ud&&HeroWalkQuality.legacyB(step%2,sprite.style.backgroundImage)?'-1':'1');}
   function tick(){timer=0;if(disposed||document.hidden){stop();return;}
    const next=held?[pos[0]+dirs[held][0],pos[1]+dirs[held][1]]:route.shift();
    if(!next){walking=false;sprite.style.setProperty('--bgy','0%');return;}

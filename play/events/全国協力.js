@@ -51,12 +51,12 @@
     }
     const el=document.createElement('div');el.className='interior-npc nd-field-actor nd-field-adult '+extra;
     el.style.setProperty('--ix',x);el.style.setProperty('--iy',y);el.style.setProperty('--npc-scale',scale);el.dataset.x=x;el.dataset.y=y;
-    const visual=document.createElement('i');visual.className='interior-npc-visual';visual.style.backgroundImage=`url('images/sprites/${sheet}')`;el.appendChild(visual);
+    const visual=document.createElement('i');visual.className='interior-npc-visual';visual.style.backgroundImage=`url('images/sprites/${sheet}?walk=20261003d')`;el.appendChild(visual);
     setInteriorActorPose(el,'up','a');grid.appendChild(el);return el;
   }
   function moveActor(el,x,y,duration=2600){
     if(!el)return;el.style.transition=`left ${duration}ms linear,top ${duration}ms linear`;
-    const walking=el.classList.contains('nd-field-mana')||el.classList.contains('nd-field-maros');
+    const walking=el.classList.contains('nd-field-mana')||el.classList.contains('nd-field-maros')||el.classList.contains('nd-field-adult');
     if(walking){clearTimeout(el._ndWalkTimer);el.classList.add('nd-walking');el.dataset.moving='true';}
     if(el.classList.contains('nd-field-adult')){el.style.setProperty('--ix',x);el.style.setProperty('--iy',y);el.dataset.x=x;el.dataset.y=y;}
     else{el.style.setProperty('--mx',x+.5);el.style.setProperty('--my',y+1);el.style.setProperty('--fz',y+1);el.dataset.x=x+.5;el.dataset.y=y+1;}

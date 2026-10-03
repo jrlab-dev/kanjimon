@@ -41,7 +41,7 @@
  }
  function crisisCut(owner,done){
   const cut=document.createElement('div');cut.className='amami-crisis-cut';cut.setAttribute('aria-label','各地でマナたちがかんじモンを抑え続けている');
-  cut.innerHTML='<section class="amami-crisis-tokyo"><img class="mana" src="images/mana-back-a.webp" alt=""><i class="adult" aria-hidden="true"></i><span class="monster one">暴</span><span class="monster two">難</span></section><section class="amami-crisis-hokkaido"><img class="mana" src="images/mana-back-a.webp" alt=""><i class="maroz" aria-hidden="true"></i><span class="monster one">暴</span><span class="monster two">難</span></section>';
+  cut.innerHTML='<section class="amami-crisis-tokyo"><img class="mana" src="images/mana-back-a.webp?walk=20261003d" alt=""><i class="adult" aria-hidden="true"></i><span class="monster one">暴</span><span class="monster two">難</span></section><section class="amami-crisis-hokkaido"><img class="mana" src="images/mana-back-a.webp?walk=20261003d" alt=""><i class="maroz" aria-hidden="true"></i><span class="monster one">暴</span><span class="monster two">難</span></section>';
   document.body.appendChild(cut);
   let finished=false,first=0,last=0;const observer=new MutationObserver(()=>{if(!owner.isConnected)finish(false);});
   function finish(complete){if(finished)return;finished=true;clearTimeout(first);clearTimeout(last);observer.disconnect();cut.remove();if(complete&&owner.isConnected)done?.();}

@@ -47,8 +47,8 @@
   const gender=heroChar==='girl'?'girl':'boy';
   Promise.all([
    ...[...root.querySelectorAll('.kz-bg,.kz-wall')].map(img=>img.decode()),
-   asset('images/battle-tate/hero-back-'+gender+costumeSuffix()+'.webp'),asset('images/mana-back-b.webp'),
-   ...[0,1,2].map(col=>asset('images/sprites/maro-back-walk3.webp',col,0,3,1))
+   asset('images/battle-tate/hero-back-'+gender+costumeSuffix()+'.webp'),asset('images/mana-back-b.webp?walk=20261003d'),
+   ...[0,1,2].map(col=>asset('images/sprites/maro-back-walk3.webp?walk=20261003d',col,0,3,1))
   ]).then(async ([,,hero,mana,...frames])=>{
    if(!valid())return;root.querySelector('.kz-hero').src=hero;root.querySelector('.kz-mana').src=mana;backs=frames;pose(0,1);
    await Promise.all([...root.querySelectorAll('.kz-cast img,.kz-man')].map(img=>img.decode()));if(!valid())return;clearTimeout(deadline);ready=true;root.dataset.phase='notice';root.classList.add('ready');const p=pending;pending=null;if(p)play(p.n,p.ln,p.done);

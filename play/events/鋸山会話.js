@@ -24,7 +24,7 @@
   function finishWalk(){if(!live)return;pbActive=false;heroLock=false;walker.style.opacity='0';line('notice');const done=callback;callback=null;done?.();}
   function animate(){
    const reduced=matchMedia('(prefers-reduced-motion:reduce)').matches,start=performance.now(),duration=reduced?1200:PB_MS;
-   walker.style.backgroundImage="url('images/sprites/maro-back-walk3.webp')";
+   walker.style.backgroundImage="url('images/sprites/maro-back-walk3.webp?walk=20261003d')";
    // 採用背景1024x1536の中央石段：足元y=860→480、x=512。両者を同じ絵座標で移す。
    const frame=now=>{if(!live)return;const t=Math.min(1,(now-start)/duration),progress=reduced?1:t;
     const sc=1-(1-PB_END_SC)*progress;walker.style.top=(56-24.75*progress)+'%';walker.style.setProperty('--scale',sc);
@@ -38,7 +38,7 @@
   root.querySelector('.ng-dialog').onclick=e=>{if(!e.target.closest('#hakaseTalkWin'))hakaseTapAdvance();};
   watch=setInterval(()=>{if(seq!==fieldSeq||fieldZone!==21||!$('screen-field')?.classList.contains('active'))abort();},80);
   function fallback(){if(!live)return;failedSeq=seq;const done=callback;callback=null;pbActive=false;heroLock=false;close();if(seq===fieldSeq&&fieldZone===21)done?.();}
-  const sheet=new Image();sheet.src='images/sprites/maro-back-walk3.webp';
+  const sheet=new Image();sheet.src='images/sprites/maro-back-walk3.webp?walk=20261003d';
   timeout=setTimeout(fallback,4000);
   Promise.all([...root.querySelectorAll('img'),sheet].map(img=>img.decode())).then(()=>{
    if(!live)return;if(seq!==fieldSeq||fieldZone!==21){abort();return;}clearTimeout(timeout);

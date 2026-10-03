@@ -40,7 +40,7 @@
 #miyakoStory.ready[data-beat="hill"] .my-hat{visibility:visible}
 #miyakoStory .my-traveler{position:absolute;inset:0;transform:translateY(100%);transform-origin:50% 93.75%}
 #miyakoStory .my-front{position:absolute;left:50%;bottom:var(--front-bottom);height:var(--front-height);width:auto;max-width:none;transform:translateX(-50%)}
-#miyakoStory .my-back{position:absolute;inset:0;visibility:hidden;background-image:url(../images/sprites/maro-back-walk3.webp);background-size:300% 100%;background-position:50% 0%;background-repeat:no-repeat}
+#miyakoStory .my-back{position:absolute;inset:0;visibility:hidden;background-image:url(../images/sprites/maro-back-walk3.webp?walk=20261003d);background-size:300% 100%;background-position:50% 0%;background-repeat:no-repeat}
 #miyakoStory .my-dialog{background:#4b4937;border-color:#d3c6a1}
 #miyakoStory{background:#75725c}
 #miyakoStory:before{background:#343d36}

@@ -87,8 +87,8 @@ body.amami-ending-mode:has(#amamiEndingRoot[data-scene="sailing"]) #fieldWrap{vi
 .amami-crisis-cut.second .amami-crisis-tokyo{opacity:0}.amami-crisis-cut.second .amami-crisis-hokkaido{opacity:1}
 .amami-crisis-cut img,.amami-crisis-cut i,.amami-crisis-cut .monster{position:absolute;filter:drop-shadow(0 5px 5px #0008)}
 .amami-crisis-cut .mana{width:23%;height:42%;left:17%;bottom:17%;object-fit:contain}
-.amami-crisis-cut .adult{width:20%;aspect-ratio:1;right:18%;bottom:17%;background:url('../images/sprites/npc-mob-otona-f-a.webp') 0 0/300% 200% no-repeat}
-.amami-crisis-cut .maroz{width:24%;aspect-ratio:1;right:16%;bottom:17%;background:url('../images/sprites/maros-walk-face-20260920.png') 0 0/200% 100% no-repeat}
+.amami-crisis-cut .adult{width:20%;aspect-ratio:1;right:18%;bottom:17%;background:url('../images/sprites/npc-mob-otona-f-a.webp?walk=20261003d') 0 0/300% 200% no-repeat}
+.amami-crisis-cut .maroz{width:24%;aspect-ratio:1;right:16%;bottom:17%;background:url('../images/sprites/maros-walk-face-20260920.png?walk=20261003d') 0 0/200% 100% no-repeat}
 .amami-crisis-cut .monster{top:23%;font-weight:900;font-size:clamp(37px,14vw,65px);line-height:1;color:#34536a;-webkit-text-stroke:2px #f4fbff;text-shadow:0 3px 8px #0009}
 .amami-crisis-cut .monster.one{left:48%}.amami-crisis-cut .monster.two{left:70%;top:32%}
 @media(max-height:620px){#aenTalk{bottom:8px;padding-top:7px;padding-bottom:21px}#aenTalk img{width:68px}#aenText{font-size:.96rem;line-height:1.42}#aenHandoff{top:4%;height:70%}}

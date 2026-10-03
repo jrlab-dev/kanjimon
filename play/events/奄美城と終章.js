@@ -12,7 +12,7 @@
   const basic=AmamiLate.createView(episode),s=basic.scene,c=AmamiLate.config[episode];let finalAudio=null,disposed=false,glimpseId=0;
   const state=()=>amamiFinal['episode'+episode];
   const add=(id,html,cls='')=>{const el=document.createElement('div');el.id=id;el.className=cls;el.innerHTML=html;$('amamiLateRoot').appendChild(el);return el;};
-  const heroSheet=()=>heroChar==='girl'?'hero-girl.webp':'hero.webp';
+  const heroSheet=()=>heroSheetUrl();
   function decor(){
    if(episode===9){const f=global.__ND_FIELD;global.AmamiBlocks.create($('fieldGrid'),{step:state().mainIndex,roof:state().castleRoofPlaced,field:true,point:{x:f.cx+.5,y:f.cy-1},later:s.later});}
    if(episode===10)add('ayGear','⚙');
@@ -38,7 +38,7 @@
     $('ayDoor').addEventListener('click',e=>{e.stopPropagation();choiceMotion.choose();el.remove();s.moveHero(f.cx,f.cy+.2,1500);s.later(()=>s.moveEasy(f.cx+1.15,f.cy+.2,900),650);s.later(()=>{state().castleDoorSeen=true;save();normalEntry(done);},1700);},{once:true});
    });},8100);
   }
-  function focus(word){const both=word==='一心同体',who=state().mainIndex%2?'hero':'easy';const child='<span class="ay-focus-sprite" style="background-image:url(images/sprites/'+heroSheet()+')"></span>';const robot='<img class="ay-focus-easy" src="images/easy-motion/poster.png" alt="イージー">';const el=add('ayFocus',(who==='hero'?child:robot)+(both?(who==='hero'?robot:child):''));el.classList.toggle('both',both);}
+  function focus(word){const both=word==='一心同体',who=state().mainIndex%2?'hero':'easy';const child='<span class="ay-focus-sprite" style="background-image:url('+heroSheet()+')"></span>';const robot='<img class="ay-focus-easy" src="images/easy-motion/poster.png" alt="イージー">';const el=add('ayFocus',(who==='hero'?child:robot)+(both?(who==='hero'?robot:child):''));el.classList.toggle('both',both);}
   function encounter(word,label,done){const f=s.base();decor();$('ayProgress').textContent=label;s.pair(word,f);if(episode===12)focus(word);s.later(()=>s.moveHero(f.cx,f.cy+.6,650),400);s.later(done,episode===12?1800:1400);}
   function mid(done){const f=s.base();decor();$('ayProgress').textContent='2／5語';
    if(episode===9){AmamiMotion.play($('amamiEasy'),'07');}

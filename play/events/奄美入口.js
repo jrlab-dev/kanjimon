@@ -46,8 +46,8 @@
   }
 
   function heroWalkFrame(sp,frame){
-    if(!sp)return;const mirror=frame&&(heroFacing==='up'||heroFacing==='down');
-    sp.style.setProperty('--bgy',frame?'100%':'0%');sp.style.setProperty('--hero-lift',frame?'-2px':'0px');sp.style.setProperty('--hero-sx',mirror?'-1':'1');
+    if(!sp)return;const legacyB=HeroWalkQuality.legacyB(frame,sp.style.backgroundImage||heroSheetUrl());const mirror=legacyB&&(heroFacing==='up'||heroFacing==='down');
+    sp.style.setProperty('--bgy',frame?'100%':'0%');sp.style.setProperty('--hero-lift',legacyB?'-2px':'0px');sp.style.setProperty('--hero-sx',mirror?'-1':'1');
   }
 
   function stopWalk(el){

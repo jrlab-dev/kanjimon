@@ -1746,7 +1746,7 @@
      z-index:77;pointer-events:none;font-size:calc(var(--tile)*1.1);font-weight:900;line-height:1;transform:translate(-50%,-100%);filter:drop-shadow(0 2px 3px rgba(0,0,0,.58))}
    #fieldGrid .fuji52-segment-kanjimon{z-index:calc(10 + var(--fz,0))}
    #fieldGrid.fuji52-queue-view .t-spot{visibility:hidden}
-   @keyframes fuji52ManaWalk{0%,49%{background-image:url('images/mana-back-a.webp')}50%,100%{background-image:url('images/mana-back-b.webp')}}
+   @keyframes fuji52ManaWalk{0%,49%{background-image:url('images/mana-back-a.webp?walk=20261003d')}50%,100%{background-image:url('images/mana-back-b.webp?walk=20261003d')}}
    @keyframes fuji52MarosWalk{0%,49%{background-position:50% 0%}50%,100%{background-position:50% 100%}}
    /* §42：名古屋城は一枚の縦フィールドを「城外2画面＋城内1画面」として登る。全景・境界演出の人物は同じDOMを移動する。 */
    #fieldWrap.nagoya63-story-view .dpad,#fieldWrap.nagoya63-story-view .dpad button,
@@ -2169,7 +2169,7 @@
   .hero.has-sprite .hero-body{display:none}                 /* スプライト時は丸キャラ非表示 */
   .hero-sprite{position:absolute;left:50%;bottom:0;width:115%;aspect-ratio:1;
     transform:translateX(-50%) translateY(var(--hero-lift,0px)) scaleX(var(--hero-sx,1));pointer-events:none;
-    background-image:url('images/sprites/hero.webp');background-repeat:no-repeat;
+    background-image:url('images/sprites/hero.webp?walk=20261003d');background-repeat:no-repeat;
     background-size:300% 200%;                              /* シート全体を3列×2行に収める→1コマ分 */
     background-position:var(--bgx,0%) var(--bgy,0%);        /* 列=向き(--bgx)・行=A/B足踏み(--bgy) */
     image-rendering:pixelated}
@@ -2210,8 +2210,8 @@
   .hero-card.sel{border-color:var(--yellow);box-shadow:0 0 0 3px var(--yellow),0 4px 0 rgba(0,0,0,.10)}
   .hero-card-img{width:100%;aspect-ratio:1;background-repeat:no-repeat;background-size:300% 200%;
     background-position:0% 0%;image-rendering:pixelated;image-rendering:crisp-edges}
-  .hero-card-img.boy{background-image:url('images/sprites/hero.webp')}
-  .hero-card-img.girl{background-image:url('images/sprites/hero-girl.webp')}
+  .hero-card-img.boy{background-image:url('images/sprites/hero.webp?walk=20261003d')}
+  .hero-card-img.girl{background-image:url('images/sprites/hero-girl.webp?walk=20261003d')}
   .hero-card-name{font-size:1rem;font-weight:900;color:var(--ink);margin-top:2px}
 
   /* ===== 第5弾§3/§4：ゾーン1 タイル画像化＋輪郭崩し（フォールバック方式） ===== */
@@ -3358,7 +3358,7 @@
   @media(min-aspect-ratio:1/1){#evOverlay:has(#evWetland[data-state]){background:linear-gradient(#99d5ef,#dfe6b0)}#evOverlay:has(#evWetland[data-state]) #evBg{background-size:contain}}
   .wl-actor{position:absolute;transform:translate(-50%,-98%);filter:drop-shadow(0 3px 2px #39503955)}
   .wl-actor i{display:block;width:100%;height:100%;background-size:300% 200%;background-position:50% 0;background-repeat:no-repeat}
-  .wl-mana i{background-image:url('images/mana-back-a.webp');background-size:contain;background-position:center!important}
+  .wl-mana i{background-image:url('images/mana-back-a.webp?walk=20261003d');background-size:contain;background-position:center!important}
   .wl-mana.walking i{animation:fuji52ManaWalk .28s steps(1) infinite}
   .wl-bird{position:absolute;transform:translate(-50%,-99%)}
   .wl-bird:after{content:'';position:absolute;bottom:-1%;left:26%;width:48%;height:4%;background:#46624150;border-radius:50%;filter:blur(2px);z-index:-1}
@@ -3376,7 +3376,7 @@
   @media(min-aspect-ratio:1/1){#evOverlay:has(#evSapporo[data-state]){background:linear-gradient(#93ccee,#e7f4ff)}#evOverlay:has(#evSapporo[data-state]) #evBg{background-size:contain}}
   .sp-actor{position:absolute;transform:translate(-50%,-98%);filter:drop-shadow(0 3px 2px #32577945)}
   .sp-actor i{display:block;width:100%;height:100%;background-size:300% 200%;background-position:50% 0;background-repeat:no-repeat}
-  .sp-mana i{background-image:url('images/mana-back-a.webp');background-size:contain;background-position:center!important}
+  .sp-mana i{background-image:url('images/mana-back-a.webp?walk=20261003d');background-size:contain;background-position:center!important}
   .sp-mana.walking i{animation:fuji52ManaWalk .28s steps(1) infinite}
   .sp-card{position:absolute;display:none;box-sizing:border-box;transform:translate(-50%,-50%);padding:14px 18px;border:3px solid #aa8655;border-radius:7px;background:#fff5dc;color:#5d4938;box-shadow:0 9px 22px #173d6745;text-align:center;font-family:serif;line-height:1.65}
   .sp-card small{display:block;font-size:.7em;letter-spacing:.08em;border-bottom:1px solid #ccb994;margin-bottom:6px}
@@ -3409,7 +3409,7 @@
   #evTsugaru[data-state="queue"] .tg-queue,#evTsugaru[data-state="advance"] .tg-queue,#evTsugaru[data-state="pay"] .tg-queue,#evTsugaru[data-state="leave"] .tg-queue{display:block}
   .tg-person{position:absolute;transform:translate(-50%,-98%);filter:drop-shadow(0 3px 2px #17213666)}
   .tg-person i{display:block;width:100%;height:100%;background-size:300% 200%;background-position:50% 0%;background-repeat:no-repeat}
-  .tg-first i{background-image:url('images/sprites/npc-mob-otona-f-a.webp')}.tg-second i{background-image:url('images/sprites/npc-mob-otona-m-a.webp')}.tg-maros i{background-image:url('images/sprites/maro_walk.webp')}
+  .tg-first i{background-image:url('images/sprites/npc-mob-otona-f-a.webp?walk=20261003d')}.tg-second i{background-image:url('images/sprites/npc-mob-otona-m-a.webp?walk=20261003d')}.tg-maros i{background-image:url('images/sprites/maro_walk.webp?walk=20261003d')}
   .tg-person.walking i{animation:tgFoot .34s ease-in-out infinite alternate}
   .tg-coin,.tg-small-ticket{position:absolute;transform:translate(-50%,-50%);z-index:2000!important;opacity:0}
   .tg-coin{background:#efbd4d;border:2px solid #be852d;border-radius:50%;box-shadow:0 0 5px #ffe7a6}.tg-small-ticket{background:linear-gradient(180deg,#89b8d0 0 24%,#fff4cf 25%);border:1px solid #4c788e;border-radius:2px}
@@ -3424,8 +3424,8 @@
   #evTsugaru:is([data-state="across"],[data-state="spot"],[data-state="call"],[data-state="blocked"],[data-state="monsters"],[data-state="cleared"],[data-state="rush"],[data-state="depart"]) .tg-world{display:block}
   .tg-actor{position:absolute;transform:translate(-50%,-98%);filter:drop-shadow(0 2px 1px #152b4466)}
   .tg-actor i{display:block;width:100%;height:100%;background-size:300% 200%;background-position:50% 0;background-repeat:no-repeat}
-  .tg-distant i{background-image:url('images/sprites/maro_walk.webp')}
-  .tg-mana i{background-image:url('images/mana-back-a.webp');background-size:contain;background-position:center!important}
+  .tg-distant i{background-image:url('images/sprites/maro_walk.webp?walk=20261003d')}
+  .tg-mana i{background-image:url('images/mana-back-a.webp?walk=20261003d');background-size:contain;background-position:center!important}
   .tg-actor.walking i{animation:tgFoot .2s ease-in-out infinite alternate}
   .tg-ship{display:none;position:absolute;transform:translate(-50%,-98%) scaleX(-1);max-width:none;filter:drop-shadow(0 3px 2px #e7f6ffaa)}
   #evTsugaru:is([data-state="rush"],[data-state="depart"]) .tg-ship{display:block}
@@ -3456,8 +3456,8 @@
   #evLighthouse[data-state="restoring"] .lh-arrow b{animation:lhLetterReturn 1.6s both;animation-delay:var(--delay)}
   #evLighthouse[data-state="walking"] .lh-walkers{display:block}
   .lh-walker{position:absolute;transform:translate(-50%,-94%);transition:opacity .3s ease;filter:drop-shadow(0 2px 1px #17211666)}
-  .lh-walker i{display:block;width:100%;height:100%;background-image:url('images/sprites/kid-scared-m-a.webp');background-size:300% 200%;background-position:50% 0;animation:lhFootstep .28s ease-in-out infinite alternate}
-  .lh-walker:nth-child(2) i{background-image:url('images/sprites/kid-scared-f-a.webp');animation-delay:.14s}
+  .lh-walker i{display:block;width:100%;height:100%;background-image:url('images/sprites/kid-scared-m-a.webp?walk=20261003d');background-size:300% 200%;background-position:50% 0;animation:lhFootstep .28s ease-in-out infinite alternate}
+  .lh-walker:nth-child(2) i{background-image:url('images/sprites/kid-scared-f-a.webp?walk=20261003d');animation-delay:.14s}
   @keyframes lhWaver{from{transform:rotate(calc(var(--angle) - 9deg))}to{transform:rotate(calc(var(--angle) + 9deg))}}
   @keyframes lhLetterReturn{from{opacity:0;translate:0 26px}to{opacity:1;translate:0 0}}
   @keyframes lhFootstep{from{transform:rotate(-3deg) translateY(0)}to{transform:rotate(3deg) translateY(-1px)}}
@@ -3515,7 +3515,7 @@ body.ice-dungeon .field-tip,body.ice-dungeon #fieldWrap{visibility:hidden;pointe
 #icdWorld{position:absolute;width:1024px;height:2048px;transform-origin:0 0;background-position:center;background-size:100% 100%;transition:transform .65s cubic-bezier(.22,.61,.36,1)}
 .icd-actor,.icd-monster,.icd-frozen,.icd-torch{position:absolute;transform:translate(-50%,-100%);transform-origin:50% 100%;filter:drop-shadow(0 4px 3px #03263b55)}
 .icd-actor i{display:block;width:100%;height:100%;background-size:300% 200%;background-repeat:no-repeat;background-position:50% 0}
-.icd-mana i{background-image:url('images/mana-back-a.webp');background-size:contain;background-position:center!important}
+.icd-mana i{background-image:url('images/mana-back-a.webp?walk=20261003d');background-size:contain;background-position:center!important}
 .icd-mana.walking i{animation:fuji52ManaWalk .3s steps(1) infinite}
 #icdHero .icd-ready-art{display:none;position:absolute;left:50%;bottom:6.25%;height:88.28125%;width:auto;max-width:none;transform:translateX(-50%)}
 #icdHero.icd-ready i{visibility:hidden}
@@ -3639,18 +3639,18 @@ body.ice-dungeon #fieldInfo{display:none}
 #evOverlay.dazaifu92.aso97 .ev-chara{width:calc(44% * var(--sz,1));max-width:calc(196px * var(--sz,1))}
 
 </style>
-<link rel="stylesheet" href="events/全国協力.css">
+<link rel="stylesheet" href="events/全国協力.css?walk=20261003d">
 <link rel="stylesheet" href="events/奄美入口.css?v=amami78-20260930">
 <link rel="stylesheet" href="events/奄美第1話.css">
 <link rel="stylesheet" href="events/奄美第2話.css">
-<script src="events/全国協力.js" defer></script>
+<script src="events/全国協力.js?walk=20261003d" defer></script>
 <link rel="stylesheet" href="events/イージー演技.css">
 <script src="events/奄美音声台帳.js?v=amami1112-20261001" defer></script>
 <script src="events/奄美音声.js" defer></script>
 <script src="events/奄美物語台本.js?v=amami1112-20261001" defer></script>
-<script src="events/奄美会話.js" defer></script>
-<script src="events/イージー演技.js" defer></script>
-<script src="events/奄美入口.js" defer></script>
+<script src="events/奄美会話.js?walk=20261003d" defer></script>
+<script src="events/イージー演技.js?walk=20261003d" defer></script>
+<script src="events/奄美入口.js?walk=20261003d" defer></script>
 <script src="events/奄美第1話.js" defer></script>
 <script src="events/奄美第2話.js" defer></script>
 <link rel="stylesheet" href="events/奄美第3話.css">
@@ -3662,41 +3662,41 @@ body.ice-dungeon #fieldInfo{display:none}
 <link rel="stylesheet" href="events/宇都宮会話.css">
 <script src="events/宇都宮会話.js" defer></script>
 <link rel="stylesheet" href="events/鋸山会話.css">
-<script src="events/鋸山会話.js" defer></script>
-<link rel="stylesheet" href="events/みやこあと会話.css">
-<script src="events/みやこあと会話.js" defer></script>
+<script src="events/鋸山会話.js?walk=20261003d" defer></script>
+<link rel="stylesheet" href="events/みやこあと会話.css?walk=20261003d">
+<script src="events/みやこあと会話.js?walk=20261003d" defer></script>
 <link rel="stylesheet" href="events/奄美第4話.css">
 <script src="events/奄美第4話.js" defer></script>
 <link rel="stylesheet" href="events/奄美第5-8話.css?v=amami78-20260930">
-<script src="events/奄美第5-8話.js?v=amami78-20260930" defer></script>
+<script src="events/奄美第5-8話.js?walk=20261003d" defer></script>
 <link rel="stylesheet" href="events/奄美城と終章.css?v=amami1112-20261001">
 <link rel="stylesheet" href="events/奄美積み木.css">
 <script src="events/奄美積み木.js" defer></script>
-<script src="events/奄美城と終章.js?v=amami1112-20261001" defer></script>
-<link rel="stylesheet" href="events/奄美終章.css">
+<script src="events/奄美城と終章.js?walk=20261003d" defer></script>
+<link rel="stylesheet" href="events/奄美終章.css?walk=20261003d">
 <script src="events/奄美終章.js" defer></script>
 <link rel="stylesheet" href="events/奄美歩行.css">
 <script src="events/奄美通行データ.js" defer></script>
-<script src="events/奄美歩行.js" defer></script>
+<script src="events/奄美歩行.js?walk=20261003d" defer></script>
 <script src="events/相性魔法.js" defer></script>
 <link rel="stylesheet" href="events/つくば会話.css?v=events-20261003">
 <script defer src="events/つくば会話.js?v=events-20261003"></script>
 <link rel="stylesheet" href="events/琵琶湖会話.css?v=events-20261003">
-<script defer src="events/琵琶湖会話.js?v=events-20261003"></script>
+<script defer src="events/琵琶湖会話.js?walk=20261003d"></script>
 <link rel="stylesheet" href="events/祭り会話.css?v=events-20261003">
-<script defer src="events/祭り会話.js?v=events-20261003"></script>
+<script defer src="events/祭り会話.js?walk=20261003d"></script>
 <link rel="stylesheet" href="events/2年フィナーレ.css?v=events-20261003">
 <script defer src="events/2年フィナーレ.js?v=events-20261003"></script>
 <link rel="stylesheet" href="events/4年会話.css?v=events-20261003">
-<script defer src="events/4年会話.js?v=events-20261003"></script>
+<script defer src="events/4年会話.js?walk=20261003d"></script>
 <link rel="stylesheet" href="events/南国会話.css?v=events-20261003">
-<script defer src="events/南国会話.js?v=events-20261003"></script>
+<script defer src="events/南国会話.js?walk=20261003d"></script>
 <link rel="stylesheet" href="events/くろしお会話.css?v=events-20261003">
-<script defer src="events/くろしお会話.js?v=events-20261003"></script>
+<script defer src="events/くろしお会話.js?walk=20261003d"></script>
 <link rel="stylesheet" href="events/金沢会話.css?v=events-20261003">
-<script defer src="events/金沢会話.js?v=events-20261003"></script>
+<script defer src="events/金沢会話.js?walk=20261003d"></script>
 <link rel="stylesheet" href="events/うどんの里会話.css?v=events-20261003">
-<script defer src="events/うどんの里会話.js?v=events-20261003"></script>
+<script defer src="events/うどんの里会話.js?walk=20261003d"></script>
 </head>
 <body>
 <!-- 弾TB-1：タブレットでバトルの絵を画面いっぱいに敷くための層。#app の外（下）に置く。
@@ -3946,8 +3946,8 @@ body.ice-dungeon #fieldInfo{display:none}
     <img id="tsHeroCut" src="images/fullart/train-denkou-hero.webp" alt="">
     <div id="tsBgDepth"><img src="images/fullart/train-platform-depth.webp" alt=""></div>
     <div id="tsBoardHero"></div>
-    <img id="tsManaWalk" src="images/mana-back-a.webp" alt="">
-    <img id="tsManaBack" src="images/mana-back-a.webp" alt="">
+    <img id="tsManaWalk" src="images/mana-back-a.webp?walk=20261003d" alt="">
+    <img id="tsManaBack" src="images/mana-back-a.webp?walk=20261003d" alt="">
     <img class="train-scene-char" id="tsHero" alt="">
     <img class="train-scene-char" id="tsMana" alt="">
     <div class="train-scene-layer" id="tsBgSky"></div>
@@ -3997,8 +3997,8 @@ body.ice-dungeon #fieldInfo{display:none}
       <!-- ★2026-08-09に修正：試作フォルダのときの相対パス（../../ゲーム/images/）が残っていて、
            本体では読めていなかった（404）。spManaWalk はJS側で src を入れ直すので実害は無かったが、
            spManaBack は入れ直していないため、甲板のカットでマナが表示されていなかった。 -->
-      <img id="spManaWalk" src="images/mana-back-a.webp" alt="">
-      <img id="spManaBack" src="images/mana-back-a.webp" alt="">
+      <img id="spManaWalk" src="images/mana-back-a.webp?walk=20261003d" alt="">
+      <img id="spManaBack" src="images/mana-back-a.webp?walk=20261003d" alt="">
       <!-- 効果 -->
       <div class="sp-speedlines" id="spSpeedLines"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
       <div id="spFogDrift"></div>
@@ -4538,6 +4538,7 @@ body.ice-dungeon #fieldInfo{display:none}
   </div>
 </div>
 
+<script src="events/歩行品質.js?v=20261003b"></script>
 <script>
 /* ==============================
    かんじもんデータ（素材 K 配列をそのままコピー・読み取り専用）
@@ -16733,8 +16734,8 @@ for(let z=1;z<=STAGE_COUNT;z++){
   im.src='images/tiles/ground'+z+'.webp';
 }
 /* 第5弾§2/§3/§6：フォールバック方式の画像存在確認（onload/onerror→フラグ切替。エラーを出さない） */
-let heroImgOK=false;       // §2: images/sprites/hero.webp（768×512・256格子・6コマ歩行シート）
-let heroGirlImgOK=false;   // 第5.5弾: images/sprites/hero-girl.webp（女の子・同じ6コマ規格）
+let heroImgOK=false;       // §2: images/sprites/hero.webp?walk=20261003d（768×512・256格子・6コマ歩行シート）
+let heroGirlImgOK=false;   // 第5.5弾: images/sprites/hero-girl.webp?walk=20261003d（女の子・同じ6コマ規格）
 let worldmapImgOK=false;   // §6: images/worldmap.webp（ちず背景・トウキョウ）
 let worldmapKantoImgOK=false;   // 第18弾§6: images/worldmap-kanto.webp（ちず背景・カントウ）
 let worldmapKansaiImgOK=false;  // 弾3-6§7: images/worldmap-kansai.webp（ちず背景・カンサイ・シコク。弾3-4で未制作＝常にfalseのまま）
@@ -16743,9 +16744,9 @@ let worldmapTohokuImgOK=false;  // 弾5-6§8: images/worldmap-tohoku.webp（ち�
 let worldmapKyushuImgOK=false;  // 弾6-7§1: images/worldmap-kyushu.webp（ちず背景・チュウゴク/キュウシュウ/オキナワ。弾6-4未制作＝クリームフォールバック）
 let worldmapNipponImgOK=false;  // 弾3-4: images/worldmap-nippon.webp（にほんぜんたい図の背景）
 (function(){
-  const h=new Image(); h.onload=()=>{heroImgOK=true;}; h.onerror=()=>{}; h.src='images/sprites/hero.webp';
+  const h=new Image(); h.onload=()=>{heroImgOK=true;}; h.onerror=()=>{}; h.src='images/sprites/hero.webp?walk=20261003d';
   const g=new Image(); g.onload=()=>{ heroGirlImgOK=true; if(typeof updateTitle==='function') updateTitle(); };
-              g.onerror=()=>{}; g.src='images/sprites/hero-girl.webp';   // 無ければ選択機能ごと出さない（§2）
+              g.onerror=()=>{}; g.src='images/sprites/hero-girl.webp?walk=20261003d';   // 無ければ選択機能ごと出さない（§2）
   const w=new Image(); w.onload=()=>{worldmapImgOK=true;}; w.onerror=()=>{}; w.src='images/worldmap.webp';
   const wk=new Image(); wk.onload=()=>{worldmapKantoImgOK=true;}; wk.onerror=()=>{}; wk.src='images/worldmap-kanto.webp';
   const wks=new Image(); wks.onload=()=>{worldmapKansaiImgOK=true;}; wks.onerror=()=>{}; wks.src='images/worldmap-kansai.webp';
@@ -16760,8 +16761,8 @@ function heroSheetUrl(){
      （＝和服画像が配信されていない環境でも今までどおり動く） */
   const base=heroChar==='girl' ? 'images/sprites/hero-girl' : 'images/sprites/hero';
   const sf=costumeSuffix();
-  if(sf && heroSheetOK.has((heroChar==='girl'?'girl':'boy')+sf)) return base+sf+'.webp';
-  return base+'.webp';
+  if(sf && heroSheetOK.has((heroChar==='girl'?'girl':'boy')+sf)) return base+sf+'.webp?walk='+(heroChar==='girl'&&sf==='-wafuku'?'20261003g':'20261003d');
+  return base+'.webp?walk=20261003d';
 }
 function heroCharImgOK(){ return heroChar==='girl' ? heroGirlImgOK : heroImgOK; }
 /* 第5.5弾：女の子画像があれば選択機能を出してよい（§2/§4のゲート） */
@@ -25128,7 +25129,7 @@ function startFuji52StoryCamera(onDone){
   const mapScale=Math.min((cam.vw/cam.mapW),(cam.vh/cam.mapH))*.95;
   const wholeX=(cam.vw-cam.mapW*mapScale)/2, wholeY=(cam.vh-cam.mapH*mapScale)/2;
   const maros=document.createElement('div');
-  maros.className='fuji52-story-maros'; maros.style.backgroundImage="url('images/sprites/maro_walk.webp')";
+  maros.className='fuji52-story-maros'; maros.style.backgroundImage="url('images/sprites/maro_walk.webp?walk=20261003d')";
   /* 構図7の上方向の進路と同じ、右上へ折り返す道の上。全体表示でも最低約39pxを保つ。 */
   maros.style.setProperty('--mx','17.5'); maros.style.setProperty('--my','31.25'); grid.appendChild(maros);
   const mana=document.createElement('div'); mana.className='fuji52-story-mana';
@@ -25819,7 +25820,7 @@ function renderField(){
       if(a.scale) el.style.setProperty('--npc-scale',a.scale);   // ★2026-08-22：大人は子どもの1.5倍
       setInteriorActorPose(el,a.dir,a.frame);
       const visual=document.createElement('span'); visual.className='interior-npc-visual';
-      visual.style.backgroundImage=useSheet?"url('images/sprites/"+a.sheet+"')":"url('images/"+a.img+"')";
+      visual.style.backgroundImage=useSheet?"url('images/sprites/"+a.sheet+"?walk=20261003d')":"url('images/"+a.img+"')";
       el.appendChild(visual); grid.appendChild(el);
     });
     if(fieldZone===SCHOOL_ZONE&&teacherImagesOK){
@@ -25915,9 +25916,8 @@ function renderField(){
   grid.appendChild(hero);
   if(heroOk){
     hero.innerHTML='<div class="hero-sprite"></div>';   // 帽子🧢・顔パーツは絵に含むので非表示
-    // 第5.5弾：CSS既定(hero.webp)を女の子シートへ上書き
-    // 手直し_着替え第1弾：着替え中（suffixあり）は男の子でも上書きが要る
-    if(heroChar==='girl' || costumeSuffix()){
+    // 標準服も共通URLを通す。旧キャッシュの歩行絵を混ぜないため。
+    {
       const sp=hero.querySelector('.hero-sprite'); if(sp) sp.style.backgroundImage="url('"+heroSheetUrl()+"')";
     }
     applyHeroFacing();                                   // 向きに合わせてコマ(--bgx)を設定
@@ -26071,7 +26071,7 @@ function startFuji52SegmentScene(i){
   const queueLead=fuji52SegmentQueueLeader(queueTrack,i);
   fuji52SegmentPending=-1; fuji52SegmentSeen|=seg.bit; save();
   const seq=fieldSeq,own=++fuji52SegmentSeq,tile=parseFloat(grid.style.getPropertyValue('--tile'))||12;
-  const m=document.createElement('div'); m.className='fuji52-segment-maros'; m.style.backgroundImage="url('images/sprites/maro_walk.webp')";
+  const m=document.createElement('div'); m.className='fuji52-segment-maros'; m.style.backgroundImage="url('images/sprites/maro_walk.webp?walk=20261003d')";
   m.style.transition='none'; fuji52PlaceSegmentMaros(m,path[0]); grid.appendChild(m);
   grid.classList.add('fuji52-queue-view'); const queueNodes=fuji52AddFieldQueue(grid,queueTrack,queueLead,'fuji52-segment-kanjimon');
   heroLock=true; if(wrap) wrap.classList.add('fuji52-segment-view');
@@ -26209,7 +26209,7 @@ function startNagoya63StoryCamera(onDone){
   const mapScale=Math.min(cam.vw/cam.mapW,cam.vh/exteriorH)*.95,wholeX=(cam.vw-cam.mapW*mapScale)/2,
     wholeY=(cam.vh-exteriorH*mapScale)/2-cam.mapH*(exteriorTopRow/96)*mapScale;
   const leader=nagoya63RouteIndexAtY(route,72),leaderEnd=Math.min(route.length-1,leader+5);
-  const maros=document.createElement('div'); maros.className='nagoya63-story-maros'; maros.style.backgroundImage="url('images/sprites/maro_walk.webp')"; nagoya63PlaceOnRoute(maros,route,leader); grid.appendChild(maros);
+  const maros=document.createElement('div'); maros.className='nagoya63-story-maros'; maros.style.backgroundImage="url('images/sprites/maro_walk.webp?walk=20261003d')"; nagoya63PlaceOnRoute(maros,route,leader); grid.appendChild(maros);
   const queue=nagoya63AddQueue(grid,route,leader,'nagoya63-story-kanjimon',1.08),started=performance.now(),seq=fieldSeq,T=NAGOYA63_STORY_TIMING,total=T.hold+T.pull+T.look+T.back;
   nagoya63StoryState={seq,started,done:onDone||null,normalX:cam.x,normalY:cam.y,wholeX,wholeY,mapScale,exteriorTopRow,exteriorRows:48,phase:'hold'};
   const skip=$('fieldPanSkip'); if(skip) skip.classList.add('show');
@@ -26271,7 +26271,7 @@ function startNagoya63SegmentScene(i){
   if(!seg||nagoya63SegmentState||fieldZone!==63||fieldHy<48||!nagoya63ChaseReady||!screen||!screen.classList.contains('active')||!cam||!grid||!route) return false;
   const leader=nagoya63RouteIndexAtY(route,seg.targetY),leaderEnd=route.length-1+16*.46,seq=fieldSeq,own=++nagoya63SegmentSeq,tile=parseFloat(grid.style.getPropertyValue('--tile'))||12;
   nagoya63SegmentPending=-1;nagoya63SegmentSeen|=seg.bit;save();
-  const maros=document.createElement('div');maros.className='nagoya63-segment-maros';maros.style.backgroundImage="url('images/sprites/maro_walk.webp')";nagoya63PlaceOnRoute(maros,route,leader);grid.appendChild(maros);
+  const maros=document.createElement('div');maros.className='nagoya63-segment-maros';maros.style.backgroundImage="url('images/sprites/maro_walk.webp?walk=20261003d')";nagoya63PlaceOnRoute(maros,route,leader);grid.appendChild(maros);
   grid.classList.add('nagoya63-queue-view');const queue=nagoya63AddQueue(grid,route,leader,'nagoya63-segment-kanjimon',.46);
   heroLock=true;if(wrap)wrap.classList.add('nagoya63-segment-view','nagoya63-entry-view');
   const sceneScale=Math.min(1,cam.vh/(tile*26)),tx=cam.vw*.5-15.5*tile*sceneScale,ty=-48*tile*sceneScale;
@@ -26699,12 +26699,12 @@ function setHeroSpriteFrame(moving){
   const sprite=hero.querySelector('.hero-sprite'); if(!sprite) return;
   const useB = moving ? (heroStep%2===0) : false;   // step1=A,step2=B…立ち止まりはA
   sprite.style.setProperty('--bgy',useB?'100%':'0%');
-  // 第9弾：Bコマで歩いてる感（絵は変えずコードで）。全方向は2px上に浮かせ・正面(down)/背面(up)は
-  // 左右反転で足を交互に見せる。左右向きは反転しない（進行方向が逆になるため）。
+  // 逆足を描いた12衣装はBの鏡像化・持上げ不要。未登録の旧素材だけ従来処理を残す。
   // translateX(-50%) を保持したまま translateY/scaleX を合成（heroShake は keyframe で transform を上書き＝競合しない）
   const ud = (heroFacing==='up'||heroFacing==='down');
-  sprite.style.setProperty('--hero-lift', useB ? '-2px' : '0px');
-  sprite.style.setProperty('--hero-sx', (useB && ud) ? '-1' : '1');
+  const legacyB=HeroWalkQuality.legacyB(useB,sprite.style.backgroundImage||heroSheetUrl());
+  sprite.style.setProperty('--hero-lift', legacyB ? '-2px' : '0px');
+  sprite.style.setProperty('--hero-sx', (legacyB && ud) ? '-1' : '1');
 }
 
 /* 1歩移動試行（手動＝自由移動ゾーンのみ） */
@@ -29328,14 +29328,14 @@ let evAutoWasRunning=false;     // 始める前にオート巡回が走ってい
    ★大きさは1マスの170%（CSSの .passerby）。**通行判定には いっさい関わらない**（画面に重ねるだけ）。
    正本＝設計書\09_計画と方針\【計画】ゾーンイベントの割り付けと伏線_20260817.md §0-2 */
 const PASSERBY = {
-  75: { sheet:'images/sprites/maro_walk.webp', phase:'out' }, // 祭りの灯が戻った出口だけ
-  /* 例）21: { sheet:'images/sprites/maro_walk.webp', mana:'……いま、だれか いた？' }
+  75: { sheet:'images/sprites/maro_walk.webp?walk=20261003d', phase:'out' }, // 祭りの灯が戻った出口だけ
+  /* 例）21: { sheet:'images/sprites/maro_walk.webp?walk=20261003d', mana:'……いま、だれか いた？' }
      ★2年の台本を書くときに、置くゾーンを決めてここに1行足す（第一候補＝21 のこぎりやま） */
-  21: { sheet:'images/sprites/maro_walk.webp', mana:'……いま、だれか いた？', snd:'pb21_mana_notice' },
+  21: { sheet:'images/sprites/maro_walk.webp?walk=20261003d', mana:'……いま、だれか いた？', snd:'pb21_mana_notice' },
   /* ★2026-08-20：3年。笠の男が通る回（設計＝【計画】3年カンサイの20話_20260820.md §2）。
      27＝初登場（湖のほとり）／33＝祭りの人ごみ。43のすれちがいは台詞で見せるのでここには置かない。 */
-  27: { sheet:'images/sprites/maro_walk.webp', mana:'……あの 大きな せなか。どこかで 見た 気が する。', snd:'pb27_mana_notice' },
-  33: { sheet:'images/sprites/maro_walk.webp', mana:'……また いた。人ごみの むこう。', snd:'pb33_mana_notice' }
+  27: { sheet:'images/sprites/maro_walk.webp?walk=20261003d', mana:'……あの 大きな せなか。どこかで 見た 気が する。', snd:'pb27_mana_notice' },
+  33: { sheet:'images/sprites/maro_walk.webp?walk=20261003d', mana:'……また いた。人ごみの むこう。', snd:'pb33_mana_notice' }
 };
 const PB_MS       = 3600;   // 歩いて去るまでの時間
 const PB_STEP_MS  = 150;    // 足を出しかえる間隔（主人公と同じ）
@@ -30452,9 +30452,9 @@ var EvCutScene = (function(){
   /* 既存の「こわがる子ども」3×2シート。右端上＝足を開いた横向き、右端下＝横向きの足を閉じたコマ。
      逃走先の3人は全員左へ進むので、描画時だけ左右反転する。外側の幅・座標は完成構図JSONを絶対に変えない。 */
   var FUJI52_ENDING_KIDS={
-    '逃げる子ども（男の子A）':{sheet:'images/sprites/kid-scared-m-a.webp',aspect:'94 / 225',runWidth:'239.3617%'},
-    '逃げる子ども（女の子A）':{sheet:'images/sprites/kid-scared-f-a.webp',aspect:'126 / 225',runWidth:'178.5714%'},
-    '逃げる子ども（男の子B）':{sheet:'images/sprites/kid-scared-m-b.webp',aspect:'102 / 225',runWidth:'220.5883%'}
+    '逃げる子ども（男の子A）':{sheet:'images/sprites/kid-scared-m-a.webp?walk=20261003d',aspect:'94 / 225',runWidth:'239.3617%'},
+    '逃げる子ども（女の子A）':{sheet:'images/sprites/kid-scared-f-a.webp?walk=20261003d',aspect:'126 / 225',runWidth:'178.5714%'},
+    '逃げる子ども（男の子B）':{sheet:'images/sprites/kid-scared-m-b.webp?walk=20261003d',aspect:'102 / 225',runWidth:'220.5883%'}
   };
   var fuji52EndingMotionToken=0, fuji52EndingMotionTimers=[], fuji52EndingMotionRafs=[];
   function cancelFuji52EndingMotion(){
@@ -32943,7 +32943,7 @@ let teacherImagesOK=false, schoolBuildingOK=false, shodoBuildingOK=false;
   [MALL_DEF,HOUSE1_DEF,SCHOOL_DEF,SHODO_DEF,STATION_DEF,MURA_DEF].forEach(def=>{ const im=new Image(); im.onload=()=>{ interiorFullartOK.add(def.zone); if(fieldZone===def.zone&&$('screen-field').classList.contains('active')) renderField(); }; im.onerror=()=>{}; im.src='images/fullart/'+def.bg; });   // 発注_町南側と駅：STATION_DEFを追加／発注_村1：MURA_DEFを追加（画像プリロード・onerrorフォールバックはMALL/HOUSE1等と共通のため、画像が万一無くても壊れない）
   INTERIOR_ACTORS.forEach(a=>{
     const redraw=()=>{ if(fieldZone===a.zone&&$('screen-field').classList.contains('active')) renderField(); };
-    const sheet=new Image(); sheet.onload=()=>{ interiorActorSheetOK.add(a.key); redraw(); }; sheet.onerror=()=>{}; sheet.src='images/sprites/'+a.sheet;
+    const sheet=new Image(); sheet.onload=()=>{ interiorActorSheetOK.add(a.key); redraw(); }; sheet.onerror=()=>{}; sheet.src='images/sprites/'+a.sheet+'?walk=20261003d';
     if(a.img){ const still=new Image(); still.onload=()=>{ interiorActorImgOK.add(a.key); redraw(); }; still.onerror=()=>{}; still.src='images/'+a.img; }   // ★2026-08-22：静止画を持たない人（モブ）は読みにいかない
   });
   const files=['nikuya-counter.webp','nikuya-normal.webp','nikuya-happy.webp','nikuya-oops.webp']; let loaded=0,failed=false;
@@ -35474,7 +35474,7 @@ function startWalkAnim(imgEl,character,opts){
   const frameSeq=opts.frameSeq||[2,1,2,3];
   const intervalMs=opts.intervalMs||150;
   let i=0;
-  function tick(){ imgEl.src='images/walk/walk-'+character+'-'+frameSeq[i%frameSeq.length]+'.webp'; i++; }
+  function tick(){ imgEl.src='images/walk/walk-'+character+'-'+frameSeq[i%frameSeq.length]+'.webp?walk=20261003d'; i++; }
   tick();
   const timerId=setInterval(tick,intervalMs);
   return { stop(){ clearInterval(timerId); } };
@@ -35899,16 +35899,11 @@ let trainSceneOnDone=null;    // Phase2作業1：startTrainSceneEvent(onDone)で
 
 const TRAIN_SCENE_MS={ s0:5600, s1:6700, s2:3100, s3:3000, s4a:3000, s5:1050, s6:5000, s7:4300 };  // v4.4秒数表（s7=改札登場を遅らせたぶん延長。s0/s1は自動送り込みの目安値）
 
-/* ★準也さんの指摘（2026-08-02）＝フィールドの歩き方を第9弾で「絵は変えずコードで左右反転」に
-   変えたのに、このシーンの中はその変更が入っていなかった。
-   歩行シートの**正面(0%)と後ろ姿(50%)は上段と下段がまったく同じ絵**（実測の違い 0.00）なので、
-   反転しないと同じ絵が交互に出るだけ＝歩かずに滑って見える。
-   フィールドの setHeroSpriteFrame（13822行）と同じことをする：
-     Bコマは少し浮かせる／正面・背面は左右反転する／よこ向き(100%)は別の絵なので反転しない。 */
+/* 歩行品質修正：素材台帳に合わせてBの扱いを切り替える。左進行の方向反転は別に合成する。 */
 function tsWalkFrame(el,useB,col){
   const ud = (col==='0%'||col==='50%');
   el.style.transformOrigin='center bottom';
-  el.style.transform='translateY('+(useB?'-3%':'0')+') scaleX('+((useB&&ud)?-1:1)+')';
+  HeroWalkQuality.transform(el,useB,ud?'0%':'100%');
 }
 
 function trainSceneStopWalkAnims(){
@@ -35926,7 +35921,7 @@ function trainSceneResetLayers(){
   const tsv=$('tsTrainSide'); if(tsv){ tsv.style.transition=''; tsv.style.left=''; }   // v4.3：通り抜けの移動を戻す
   ['tsPoles','tsGround','tsMountains','tsNearBg','tsTrainSide','tsParapet','tsGroundFill'].forEach(id=>{ const el=$(id); if(el) el.classList.remove('run'); });
   const bh=$('tsBoardHero'); if(bh){ bh.classList.remove('pose'); bh.removeAttribute('style'); }
-  const mw=$('tsManaWalk'); if(mw){ mw.removeAttribute('style'); mw.src='images/mana-back-a.webp'; }
+  const mw=$('tsManaWalk'); if(mw){ mw.removeAttribute('style'); mw.src='images/mana-back-a.webp?walk=20261003d'; }
   const hc=$('tsHeroCut'); if(hc){ hc.removeAttribute('style'); }
   tsTalkHide();   // v4.1：会話カードのタイマー・録音ボイスも確実に止める（とばす対応）
   const sl=$('tsSpeedLines'); if(sl) sl.classList.remove('show','amber');
@@ -36069,7 +36064,7 @@ function trainScenePlayS0(){
       row=!row;
       bh.style.backgroundPosition='50% '+(row?'100%':'0%');
       tsWalkFrame(bh,row,'50%');
-      if(manaBack) mw.src='images/mana-back-'+(row?'b':'a')+'.webp';
+      if(manaBack) mw.src='images/mana-back-'+(row?'b':'a')+'.webp?walk=20261003d';
     },160);
     trainSceneWalkHandles.push({stop(){ clearInterval(tick); }});
   };
@@ -36087,7 +36082,7 @@ function trainScenePlayS0(){
     bh.style.backgroundPosition='50% 0%';
     tsTalkShow('ここが えきだよ！ ここから しんかんせんに のれるんだ。ついてきて！','mid','st01',6800,()=>{
       // コマ5：会話後、2人で改札の奥へ（歩き再開）
-      manaBack=true; mw.src='images/mana-back-b.webp';
+      manaBack=true; mw.src='images/mana-back-b.webp?walk=20261003d';
       mkTick();
       mput(70.2,3.9,24.3,.9); put(70.5,13.3,21.9,.9);
       // コマ6：改札を抜けて見えなくなる→ホームへ
@@ -36149,7 +36144,8 @@ function trainScenePlayS1(){
         bh.style.backgroundImage=`url('${sheet}')`;
         bh.style.backgroundSize='300% 200%';
         bhBgX='100%'; bh.style.backgroundPosition='100% 0%';
-        bh.style.transform='scaleX(-1)';
+        bh.style.setProperty('--walk-facing','-1');
+        tsWalkFrame(bh,bhRow,bhBgX);
         put(56.9,28.8,17.7,.35);
         const tick2=setInterval(()=>{ bhRow=!bhRow; bh.style.backgroundPosition=bhBgX+' '+(bhRow?'100%':'0%'); tsWalkFrame(bh,bhRow,bhBgX); },160);
         trainSceneWalkHandles.push({stop(){ clearInterval(tick2); }});
@@ -36349,8 +36345,8 @@ function trainScenePlayS7(){
 /* 主人公の絵は本体の関数から取る（着替え・男女に対応するため）。新幹線シーンと同じ流儀 */
 const MANA_FACE='images/sprites/hakase-face.webp';
 const MANA_FRONT='images/sprites/hakase.webp';
-const MANA_BACK_A='images/mana-back-a.webp';
-const MANA_BACK_B='images/mana-back-b.webp';
+const MANA_BACK_A='images/mana-back-a.webp?walk=20261003d';
+const MANA_BACK_B='images/mana-back-b.webp?walk=20261003d';
 
 
 
@@ -36364,15 +36360,11 @@ let shipSceneOnDone=null;
    参考＝S0は約11.2秒・S1は約9.9秒。 */
 const SHIP_SCENE_MS={ s2:3000, s3:7000, s4:3000, s5:1600, s6:5000, s7:4200 };   /* s3を伸ばした（2026-08-03・準也さんの指摘「短すぎる」） */
 
-/* ★準也さんの指摘（2026-08-02）＝フィールドの歩き方を「絵は変えずコードで左右反転」に変えたのに、
-   シーンの中はその変更が入っていなかった。歩行シートの**正面と後ろ姿は上段と下段がまったく同じ絵**
-   （実測の違い 0.00）なので、反転しないと同じ絵が交互に出るだけ＝歩かずに滑って見える。
-   本体の setHeroSpriteFrame（kanjimon.html 13822行）と同じことをする：
-     Bコマは少し浮かせる／正面・背面は左右反転する／よこ向きは反転しない（進む向きが逆になるため）。 */
+/* 歩行品質修正：素材台帳に合わせてBの扱いを切り替える。左進行の方向反転は別に合成する。 */
 function spWalkFrame(el,useB,col){
   const ud = (col==='0%'||col==='50%');           // 0%=正面・50%=後ろ姿
   el.style.transformOrigin='center bottom';
-  el.style.transform='translateY('+(useB?'-3%':'0')+') scaleX('+((useB&&ud)?-1:1)+')';
+  HeroWalkQuality.transform(el,useB,ud?'0%':'100%');
 }
 
 function shipSceneStopWalkAnims(){
@@ -38514,7 +38506,7 @@ const TALKS=[];            // 飛行中の会話は無し（搭乗口へ移し�
    背景1枚＋歩行スプライト2人＋顔つき会話カード。終わったら飛行の3Dパートへ渡す。
    ========================================================================== */
 const GATE_BG='images/plane-tex/gate.webp';
-const GATE_MANA='images/mana-back-a.webp';
+const GATE_MANA='images/mana-back-a.webp?walk=20261003d';
 const GATE_DUR=9.6;
 const GATE_TALKS=[
   {at:1.0, dur:4.8, pos:'mid', voice:'audio/battle/pl01.mp3',
@@ -38532,14 +38524,12 @@ function gateClear(){
   document.getElementById('plGateFlash').classList.remove('on');
   const el=document.getElementById('psTalk'); el.className='ps-talk'; el.onclick=null;
 }
-/* 歩くコマ送り。★本体の setHeroSpriteFrame と同じ作法＝Bコマは少し浮かせ、
-   正面と後ろ姿は左右反転する（歩行シートは上段と下段がまったく同じ絵なので、
-   反転しないと同じ絵が交互に出るだけ＝歩かずに滑って見える。2026-08-03の修正と同じ話）。 */
+/* 歩くコマ送り。新しい逆足素材にはBの全身反転・持上げを加えない。 */
 function gateWalkFrame(el,useB,col){
   const ud=(col==='0%'||col==='50%');
   el.style.backgroundPosition=col+' '+(useB?'100%':'0%');
   el.style.transformOrigin='center bottom';
-  el.style.transform='translateY('+(useB?'-3%':'0')+') scaleX('+((useB&&ud)?-1:1)+')';
+  HeroWalkQuality.transform(el,useB,ud?'0%':'100%');
 }
 function gateTalkShow(tk,seqAtStart){
   const el=document.getElementById('psTalk');
@@ -39132,12 +39122,11 @@ var IceScene = (function(){
   function icMoonHide(){ var el=$('icMoon'); if(el) el.classList.remove('show'); }
 
   /* ---------------- キャラの歩き ---------------- */
-  /* 歩行シートの正面・後ろ姿は上段と下段が同じ絵なので、反転しないと歩いて見えない
-     （本体 setHeroSpriteFrame と同じ扱い・2026-08-03に船シーンで直した件） */
+  /* 逆足素材のBはそのまま表示。未登録の旧素材のみ共通処理で反転する。 */
   function icWalkFrame(el,useB,col){
     var ud=(col==='0%'||col==='50%');
     el.style.transformOrigin='center bottom';
-    el.style.transform='translateY('+(useB?'-3%':'0')+') scaleX('+((useB&&ud)?-1:1)+')';
+    HeroWalkQuality.transform(el,useB,ud?'0%':'100%');
   }
   function icStopWalk(){
     icWalkHandles.forEach(function(h){ if(h&&h.stop) h.stop(); });
@@ -39861,7 +39850,7 @@ var YojiFieldScene = (function(){
   'use strict';
 
   function yfSoundOn(){ return (typeof soundOn==='undefined') ? true : !!soundOn; }
-  function yfSheet(){ return (typeof heroSheetUrl==='function') ? heroSheetUrl() : 'images/sprites/hero.webp'; }
+  function yfSheet(){ return (typeof heroSheetUrl==='function') ? heroSheetUrl() : 'images/sprites/hero.webp?walk=20261003d'; }
 
   /* ★2026-08-19：ゾーンごとに使えるようにした（start の第2引数 opts で差し替える）。
      opts を渡さなければ 下の既定＝ゾーン44 のまま＝いままでと1ビットも変わらない。
@@ -40459,7 +40448,7 @@ var YojiFieldScene = (function(){
     var cad=lerp(5,11,g);
     h.frame=(Math.floor(g*cad)%2);
     h.lift=Math.abs(Math.sin(g*Math.PI*cad))*0.10;
-    h.sx=(h.frame===1)?-1:1;                              /* 本体と同じ＝背面のBコマは左右反転で足を出す */
+    h.sx=HeroWalkQuality.legacyB(h.frame===1,yfSheet())?-1:1;                              /* 本体と同じ＝背面のBコマは左右反転で足を出す */
     return h;
   }
 
