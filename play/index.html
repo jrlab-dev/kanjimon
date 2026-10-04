@@ -11970,7 +11970,7 @@ window.addEventListener('pointerdown',()=>{ ensureAudio(); _bgmUnlock(); },{pass
    - 失敗・ファイル欠落は握りつぶす（コンソールに出さない・無音で遊べる）
 ================================ */
 let bgmCache={};          // name -> HTMLAudioElement|null（nullもキャッシュし再試行しない）
-let bgmWanted='title';    // 現在画面が要求する曲名（🔇時も記憶しONで再開）。起動直後はタイトル
+let bgmWanted='opening';  // 起動/開始前タイトルだけ予告付き完成曲。副画面は従来title
 let bgmPlaying=null;      // 実際に再生中の曲名（停止中はnull）
 let bgmUnlocked=false;    // 初回ユーザー操作で自動再生制限を解除したか
 const BGM_VOLUME=0.35;
@@ -11994,21 +11994,43 @@ const BGM_BATTLE_MODE='continue';
 let bgmResumeFieldOnce=false;  // 第9.5弾§3：次回フィールド曲再生を「続きの位置から」にする（ボス戦後にだけ立てる）
 let evoAfterglowLock=false;    // 手直し おと調整2§3：しんかの余韻中はBGMを鳴らさない（余韻タイマー終了時にbgmResumeへ委譲）
 // 手直し(であった演出)§3：ゾーン8のフィールド曲（ユーザー調整用：曲を差し替えたくなったらここを変える）
-const FIELD8_SONG='hageshima'; // 2026-10-03：旧map4=クロノ枠（ゾーン8城）へ禿山RPG版
+const FIELD8_SONG='field8'; // 2026-10-04：クロノを元のゾーン8城へ戻す。禿山は一般四字熟語戦
 /* 音楽配置20261003：原本は保持し、完成ループ版だけを参照する。
-   heroはfield8原曲「クロノトリガー」の完成版。field8原本の映像同期用途は変更しない。 */
+   heroは20261004採用本編の冒頭保持版。field8クロノと従来titleは別用途で保持。 */
 const BGM_TRACKS={
   title:{path:'audio/music/title.mp3'},field12:{path:'audio/music/field12.mp3'},
   field34:{path:'audio/music/field34.mp3'},field56:{path:'audio/music/field56.mp3'},
   field7:{path:'audio/music/field7.mp3'},field8:{path:'audio/music/field8.mp3'},
   lastzone:{path:'audio/music/lastzone.mp3'},battle:{path:'audio/music/battle.mp3'},
-  boss:{path:'audio/music/boss.mp3'},hero:{path:'audio/music/field8.mp3'},
+  boss:{path:'audio/music/boss.mp3'},hero:{path:'audio/music/hero.mp3',loopStart:1.2},
+  opening:{path:'audio/music/opening.mp3'},
   easy:{path:'audio/music/easy.mp3'},mana:{path:'audio/music/mana.mp3'},'amami-boss':{path:'audio/music/amami-boss.mp3'},
   hageshima:{path:'audio/music/hageshima.mp3'},
   'maros-boss':{path:'audio/music/maros-boss.mp3',loopStart:31.202895833333333},
   'maros-mysterious':{path:'audio/music/maros-mysterious.mp3'},
   'maros-heroic':{path:'audio/music/maros-heroic.mp3'}
 };
+// 開始前曲はタイトル訪問ごとに1回。副画面/初回OP/別曲への移動で旧endedを失効。
+let bgmOpeningVisit=1,bgmOpeningTitleActive=true,bgmOpeningFinished=false;
+function _bgmCancelOpening(){
+  if(bgmOpeningTitleActive)++bgmOpeningVisit;
+  bgmOpeningTitleActive=false;bgmOpeningFinished=false;
+}
+function _bgmFinishOpening(visit,el,resuming=false){
+  if(!bgmOpeningTitleActive||visit!==bgmOpeningVisit||bgmOpeningFinished||bgmScene||bgmWanted!=='opening'||!$('screen-title')?.classList.contains('active'))return false;
+  // 同じcached Audioの新handlerへ配送された古endedも、実際の未終端なら無視する。
+  if(!el?.ended||!Number.isFinite(el.duration)||el.currentTime<el.duration-.05)return false;
+  if(!soundOn||!bgmUnlocked||evoLock||evoAfterglowLock)return false;
+  if(bgmPlaying!=='opening'&&!(resuming&&bgmPlaying===null))return false;
+  bgmOpeningFinished=true;bgmPlay('hero',{titleOpening:true});return true;
+}
+function _bgmArmOpening(el){
+  const visit=bgmOpeningVisit;el.onended=()=>_bgmFinishOpening(visit,el);
+}
+function _bgmTitle(){
+  if(!bgmOpeningTitleActive){++bgmOpeningVisit;bgmOpeningTitleActive=true;bgmOpeningFinished=false;}
+  bgmPlay(bgmOpeningFinished?'hero':'opening',{titleOpening:true});
+}
 let bgmScene=null,bgmSceneSerial=0;
 function bgmSceneBegin(key,name){
   if(!name||!BGM_TRACKS[name])return null;
@@ -12118,7 +12140,7 @@ function fieldSongFor(zone){
   return 'lastzone';               // 83（ボスステージ）
 }
 /* name の Audio 要素をキャッシュ生成（初回のみ）。失敗はnullをキャッシュ */
-/* 暗流専用：初回導入後は戦闘部をサンプル単位で反復する。
+/* 暗流/新主人公：初回導入を保持し、指定点以降をサンプル単位で反復する。
    他の曲は既存HTMLAudioを保ち、全曲の大きなPCMキャッシュを作らない。 */
 function _bgmBufferEl(name,track){
   let buffer=null,loading=null,source=null,gain=null,ctx=null,offset=0,started=0;
@@ -12166,11 +12188,12 @@ function _bgmBufferEl(name,track){
   return el;
 }
 function _bgmEl(name){
-  if(Object.prototype.hasOwnProperty.call(bgmCache,name)) return bgmCache[name];
+  if(Object.prototype.hasOwnProperty.call(bgmCache,name)){const el=bgmCache[name];if(name==='opening'&&el)_bgmArmOpening(el);return el;}
   let el=null;
   try{ el=BGM_TRACKS[name]?.loopStart?_bgmBufferEl(name,BGM_TRACKS[name]):new Audio(BGM_TRACKS[name]?.path||('audio/'+name+'.mp3')); }catch(e){ el=null; }
   if(el){
-    el.loop=true; el.volume=bgmEffectiveVolume();
+    el.loop=name!=='opening'; el.volume=bgmEffectiveVolume();
+    if(name==='opening')_bgmArmOpening(el);
     el.onerror=()=>{
       bgmFailed[name]=true;   // 手直し(であった演出)§3：読込失敗を確定・以後はフォールバックへ
       // いま鳴らそうとしていた曲がこれで、フォールバック先があるなら即切替（field8→さらに無音の連鎖も同じ経路で処理）
@@ -12188,10 +12211,11 @@ function _bgmPauseAll(){
 /* 画面がこの曲を要求する。同一曲再生中なら何もしない（頭から鳴らし直さない）
    opts.resume=true のときだけ currentTime を保持したまま続きの位置から再生（§3ボス戦後） */
 function bgmPlay(name,opts){
-  if(bgmScene&&name!==bgmScene.name&&!(opts&&opts.scene)&&name!=='boss'&&name!=='battle'&&name!=='amami-boss'&&name!=='maros-boss'){
+  if(bgmScene&&name!==bgmScene.name&&!(opts&&opts.scene)&&name!=='boss'&&name!=='battle'&&name!=='amami-boss'&&name!=='maros-boss'&&name!=='hageshima'){
     bgmScene.restore=name;name=bgmScene.name;
   }
   if(bgmFailed[name] && BGM_FALLBACK[name]) name=BGM_FALLBACK[name];   // 手直し(であった演出)§3：既に欠落確定済みなら最初からフォールバック曲へ
+  if(!(opts&&opts.titleOpening))_bgmCancelOpening();
   bgmWanted=name;
   if(evoAfterglowLock) return;   // 手直し おと調整2§3：しんかの余韻中は鳴らさない（wantedだけ更新・余韻タイマー終了時にbgmResume）
   if(!soundOn) return;        // 🔇中はwantedだけ記憶（ONで再開）
@@ -12206,7 +12230,7 @@ function bgmPlay(name,opts){
   bgmPlaying=name;
 }
 /* 完全停止：wantedもクリア（何も鳴らさない状態にしたい場合） */
-function bgmStop(){ _bgmPauseAll(); bgmWanted=null; bgmSceneClear(); }
+function bgmStop(){ _bgmCancelOpening();_bgmPauseAll(); bgmWanted=null; bgmSceneClear(); }
 /* 第9.5弾§4：演出用の一時停止（currentTime保持・bgmWanted保持） */
 function bgmPause(){ _bgmPauseAll(); }
 /* 第9.5弾§4：一時停止していた曲を続きの位置から再開（drumroll終了後に呼ぶ） */
@@ -12215,6 +12239,7 @@ function bgmResume(){
   if(!bgmUnlocked) return;
   if(!bgmWanted) return;
   if(bgmPlaying===bgmWanted) return;
+  if(_bgmFinishOpening(bgmOpeningVisit,bgmCache.opening,true))return;
   const el=_bgmEl(bgmWanted);
   if(!el) return;
   el.volume=bgmEffectiveVolume();   // 手直し おと調整2：再開時も現在のマスター係数を反映
@@ -12224,6 +12249,7 @@ function bgmResume(){
 function _bgmOnSoundToggle(){
   if(!soundOn){ _bgmPauseAll(); seStop('drumroll'); return; }   // 第9.5弾§4：OFFはBGM停止＋ドラムロールも停止
   if(evoLock||evoAfterglowLock) return;   // 手直し(2026-07-04・積み残し解消②)＋おと調整2§3：しんか演出中・余韻中はONでもBGM/ドラムロールを再開しない
+  if(_bgmFinishOpening(bgmOpeningVisit,bgmCache.opening,true))return;
   if(bgmWanted && bgmPlaying!==bgmWanted){
     const el=_bgmEl(bgmWanted);
     if(el){ el.volume=bgmEffectiveVolume(); try{ const p=el.play(); if(p&&typeof p.catch==='function') p.catch(()=>{}); bgmPlaying=bgmWanted; }catch(e){} }
@@ -12233,7 +12259,10 @@ function _bgmOnSoundToggle(){
 function _bgmUnlock(){
   if(bgmUnlocked) return;
   bgmUnlocked=true;
-  if(soundOn && bgmWanted) bgmPlay(bgmWanted);
+  if(soundOn && bgmWanted){
+    if(bgmOpeningTitleActive&&bgmWanted==='opening')_bgmTitle();
+    else bgmPlay(bgmWanted);
+  }
 }
 
 /* ==============================
@@ -12720,6 +12749,10 @@ COSTUMES.filter(cs=>cs.suffix).forEach(cs=>['boy','girl'].forEach(ch=>{
 ================================ */
 const $=id=>document.getElementById(id);
 function showScreen(id){
+  if(id!=='screen-title'){
+    const ownedTitle=bgmOpeningTitleActive&&(bgmWanted==='opening'||(bgmOpeningFinished&&bgmWanted==='hero'));
+    _bgmCancelOpening();if(ownedTitle){_bgmPauseAll();bgmWanted=null;}
+  }
   if(id!=='screen-field'){cancelHakaseIntroMusic();op1AbortMusic();}
   if(id!=='screen-field'&&gfActive&&BGM_GRADE_FINALE_CUES[gfMusicGrade])gfClose(false);
   if(id!=='screen-field'&&typeof EvCutScene!=='undefined')EvCutScene.cancelMusic();
@@ -12781,7 +12814,7 @@ function showScreen(id){
   document.body.classList.toggle('wide-field', id==='screen-field');
   /* （弾TB-1のバトル側は2026-08-09に取りやめ。wide-battle は付けなくなったので後始末も不要） */
   window.scrollTo(0,0);
-  if(id==='screen-title') { window.bgmAmamiEpisode=null;bgmSceneClear(); updateTitle(); bgmPlay('title'); }                       // 第9弾：タイトル系=title
+  if(id==='screen-title') { window.bgmAmamiEpisode=null;bgmSceneClear(); updateTitle(); _bgmTitle(); } // 開始前のみopening→hero。副画面はtitle
   if(id==='screen-stages') { bgmSceneClear(); renderStages(); bgmPlay('title'); }                     // タイトル系=title
   if(id==='screen-zukan') { bgmSceneClear(); renderZukan(); bgmPlay('title'); }                       // タイトル系=title
   if(id==='screen-lab') { bgmSceneClear(); renderLab(); bgmPlay('title'); }                           // タイトル系=title
@@ -13588,7 +13621,7 @@ function spawnTwinBossEnemy(){
   enemyType='ふつう';
   enemyIsBoss=true;
   enemyShiny=false; enemyAlt=null;
-  bgmPlay(twinBossZoneCur===102?'amami-boss':(iceDungeonBattle?.floor===4?'maros-boss':'boss'));
+  bgmPlay(twinBossZoneCur===102?'amami-boss':(iceDungeonBattle?.floor===4?'maros-boss':'hageshima'));
   applySceneBg(curStage,{s:'s-cream'});   // curStage(25〜44)はbattle-tate画像がある想定＝k.sは使われないためダミーでよい
   if(window.AmamiLate?.battle)AmamiLate.applyVisual();
   const wrap=$('enemyWrap');
