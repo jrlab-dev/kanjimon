@@ -37396,6 +37396,105 @@ function drawSun(alt,horizonY){
 }
 
 /* =========================================================================
+   ★v3.11（2026-10-04）空の仕上げ：薄明光帯・星・月・巻雲・レンズフレア
+   すべてコード描画（画像は1枚も増やさない）。NEXT=シーン内の時刻は
+   render() が每フレーム入れるので、瞬き・点滅は毎回同じリズムになる
+   ========================================================================= */
+/* 夕方、地平線に沿ってオレンジの光が盛り上がる「薄明光帯」。
+   これが無いと空が単なる上下グラデーションの板に見える */
+function duskBand(horizonY,k){
+  if(k<=0.01) return;
+  const h=Math.max(8,H*0.15);
+  const g=ctx.createLinearGradient(0,horizonY-h,0,horizonY);
+  g.addColorStop(0,'rgba(150,120,150,0)');
+  g.addColorStop(0.55,`rgba(214,126,110,${(0.10*k).toFixed(3)})`);
+  g.addColorStop(1,`rgba(255,176,120,${(0.17*k).toFixed(3)})`);
+  ctx.fillStyle=g; ctx.fillRect(0,horizonY-h,W,h);
+}
+/* 星。夜の深さ nk（0=昼っぽい 1=真夜中）に応じて濃くなる。地平線近くは霞んで薄くなる */
+function drawStars(nk,horizonY){
+  if(nk<=0.02) return;
+  const mx=W*0.24, my=H*0.11, mr=Math.min(W,H)*0.055;   // 月の近くは重ならないようあける
+  reseed(90210);
+  for(let i=0;i<110;i++){
+    const fx=rnd(), fy=rnd(), rr=rnd();
+    const x=fx*W, y=fy*(horizonY*0.94);
+    if((x-mx)*(x-mx)+(y-my)*(y-my)<mr*mr) continue;
+    const tw=0.70+0.30*Math.sin(NOW*(1.3+rr*2.4)+i*2.71);   // またたき
+    const a=nk*(0.12+rr*0.55)*tw*Math.max(0,1.05-0.75*fy);
+    if(a<0.02) continue;
+    const r=Math.max(0.5,Math.min(W,H)*0.0013*(0.5+rr*1.4));
+    ctx.fillStyle=`rgba(${(228+rr*27)|0},236,255,${Math.min(1,a).toFixed(3)})`;
+    ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+    if(r>Math.min(W,H)*0.0024&&a>0.40){                     // 明るい星にはまぶしさの十字
+      ctx.strokeStyle=`rgba(240,246,255,${(a*0.30).toFixed(3)})`;
+      ctx.lineWidth=Math.max(0.5,r*0.45);
+      const L=r*4.2;
+      ctx.beginPath(); ctx.moveTo(x-L,y); ctx.lineTo(x+L,y);
+      ctx.moveTo(x,y-L); ctx.lineTo(x,y+L); ctx.stroke();
+    }
+  }
+}
+/* 三日月。影側を空色で塗って欠ける。夜が深くなるほどくっきり見える */
+function drawMoon(nk){ return;   // 2026-10-04 Claude：既存の丸い月と二つ並ぶため止めた
+  if(nk<=0.03) return;
+  const x=W*0.24, y=H*0.11, r=Math.min(W,H)*0.040;
+  const g=ctx.createRadialGradient(x,y,r*0.4,x,y,r*4.4);
+  g.addColorStop(0,`rgba(214,228,255,${(0.13*nk).toFixed(3)})`);
+  g.addColorStop(0.4,`rgba(200,216,250,${(0.05*nk).toFixed(3)})`);
+  g.addColorStop(1,'rgba(200,216,250,0)');
+  ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y,r*4.4,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle=`rgba(234,240,250,${(0.45+0.50*nk).toFixed(3)})`;
+  ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+  /* 影（太陽と反対側へずらす）。月の円でクリップして、影が月の外の空に
+     はみ出さないようにする（はみ出すと「黒い玉がくっついた」ように見える） */
+  ctx.save();
+  ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.clip();
+  ctx.fillStyle=`rgba(12,22,52,${(0.92*Math.min(1,nk*1.2)).toFixed(3)})`;
+  ctx.beginPath(); ctx.arc(x-r*0.34,y-r*0.08,r*0.94,0,Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+/* 上空の巻雲。うすい横すじがゆっくり流れるだけで「高空にいる」感じが出る */
+function cirrus(drift,alpha){
+  if(alpha<=0.01) return;
+  reseed(51505);
+  for(let i=0;i<3;i++){
+    const span=W*1.9;
+    const x=((i*span*0.37-drift*W)%span+span)%span-W*0.45;
+    const y=H*(0.055+i*0.052);
+    const rx=W*(0.16+rnd()*0.13), ry=Math.min(W,H)*(0.006+rnd()*0.005);
+    puff(x,y,rx,ry,alpha*(0.35+rnd()*0.40),'255,246,238');
+    puff(x+rx*0.7,y+ry*2.2,rx*0.55,ry*0.8,alpha*0.22,'255,240,230');
+  }
+}
+/* レンズフレア（太陽と画面の中心を結ぶ線上にうっすら光の玉）。
+   カメラで撮った映像っぽさが出る。強すぎると安っぽいのでごく控えめに */
+function drawFlare(alt,horizonY,k){
+  if(k<=0.01) return;
+  const sx=W*0.78, sy=horizonY-H*0.02-alt*H*0.04;
+  const dx=W*0.5-sx, dy=H*0.5-sy;
+  for(const [kk,rr,col] of [[1.25,0.016,'255,214,150'],[1.75,0.011,'150,214,255'],[2.35,0.021,'255,190,140']]){
+    const gx=sx+dx*kk, gy=sy+dy*kk;
+    const r=Math.min(W,H)*rr;
+    if(gy<-r||gy>H+r) continue;
+    const g=ctx.createRadialGradient(gx,gy,0,gx,gy,r);
+    g.addColorStop(0,`rgba(${col},${(0.10*k).toFixed(3)})`);
+    g.addColorStop(0.7,`rgba(${col},${(0.05*k).toFixed(3)})`);
+    g.addColorStop(1,`rgba(${col},0)`);
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(gx,gy,r,0,Math.PI*2); ctx.fill();
+  }
+  /* 太陽のまわりの横すじ（アナモフィック） */
+  ctx.save();
+  ctx.translate(sx,sy); ctx.scale(1,0.055);
+  const st=ctx.createLinearGradient(-W*0.20,0,W*0.20,0);
+  st.addColorStop(0,'rgba(255,220,170,0)');
+  st.addColorStop(0.5,`rgba(255,226,180,${(0.10*k).toFixed(3)})`);
+  st.addColorStop(1,'rgba(255,220,170,0)');
+  ctx.fillStyle=st; ctx.beginPath(); ctx.arc(0,0,W*0.20,0,Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+
+/* =========================================================================
    雲
    ========================================================================= */
 function puff(x,y,rx,ry,alpha,tint){
@@ -37661,57 +37760,112 @@ function drawRivers(c,travel){
 }
 
 /* 町の明かり。海沿いほど密＝日本の夜景の見え方。
-   ここが夜景の主役なので、粒は小さすぎると消えてしまう（前の版で1つも見えなかった原因）。
-   最低でも1px以上を保ち、都市は数を大きく増やす */
+   ★第2弾：第1弾の版は最小0.85pxで、しかも雲海・霞の“下”に描かれていたため、
+   390×844では陸がほぼ一色に見えていた。最低半径1.05px・明るさの上限を上げ、
+   まれに「まぶしい電灯」（2.8倍のにじみ）を混ぜ、対岸（四国）の町にも灯す */
 function drawLights(c,travel,lightK){
+  if(lightK<0.01) return;
+  eachCell(c,travel,(ci,base,vN,vF)=>{
+    const kind=regKind(base+CELL*0.5);
+    const city=(kind==='city');
+    /* ★海峡（sea）は右の遠い海岸に小さな町が続く。描かないと巡航前半の陸が
+      消灯に見えるので、海岸にへばりつく形で少しだけ灯す */
+    const n=kind==='sea'?40:(city?680:(kind==='plain'?150:(kind==='islands'?60:(kind==='sand'?90:46))));
+    const tb=coastTable(base);
+    const leftL=hasLeftLand(base+CELL*0.5);
+    reseed(ci*7919+83);
+    for(let k=0;k<n;k++){
+      const fr=rnd(), vw=base+fr*CELL, v=vw-travel;
+      if(v<vN*0.85||v>vF*0.98) continue;
+      const d=kind==='sea'?Math.pow(rnd(),2.6)*2.0:Math.pow(rnd(),city?1.15:1.30)*(city?9.0:8.0);   // 海沿いだけでなく内陸まで光る
+      let u;
+      if(leftL&&rnd()<0.22){ u=coastU(vw,'L')-0.35-Math.pow(rnd(),1.4)*4.5; }   // 対岸の町
+      else u=coastLerp(tb,fr)+0.12+d;
+      const x=xAt(c,u,v), y=yAt(c,v,0);
+      if(x<-30||x>W+30||y<c.hy) continue;
+      const near=clamp(1-v/vF,0,1);
+      const r=Math.max(1.15,sMin(c,v)*0.0075*(0.50+rnd()*1.30));
+      const w=rnd();
+      const col=city?(w<0.12?'255,250,228':(w<0.72?'255,224,152':'255,190,112')):'255,224,158';
+      const a=Math.min(1,lightK*(0.55+rnd()*0.45)*(0.55+near*0.55));
+      ctx.fillStyle=`rgba(${col},${a.toFixed(3)})`;
+      ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+      if(w<0.055&&near>0.15){                     // まぶしい電灯（広場や幹線道路の灯）
+        ctx.fillStyle=`rgba(${col},${(a*0.22).toFixed(3)})`;
+        ctx.beginPath(); ctx.arc(x,y,r*2.8,0,Math.PI*2); ctx.fill();
+      }
+    }
+  });
+}
+
+/* ★第2弾：幹線道路の光の線。u が vw だけで決まる式（coastU＋固定ノイズ）なので
+   セルをまたいで1本の線につながる＝日本の海岸沿いの国道・高速道路の夜景。
+   第1弾の版は短いスポーク6本だけで、道路だと分かる強さがなかった */
+function roadU(vw,off,seed){ return coastU(vw,'R')+off+fbm(vw*0.050,seed,2)*2.3; }
+function drawRoads(c,travel,lightK){
+  if(lightK<0.01) return;
+  const vN=Math.max(0.16,vAtY(c,H+40)), vF=vFarOf(c);
+  for(const rd of [[1.6,4242,0.50,0.016],[4.8,9151,0.30,0.012]]){   // 沿岸幹線＋内陸幹線
+    const [off,seed,aK,lwK]=rd;
+    const N=26;
+    let px=null,py=null;
+    for(let i=0;i<=N;i++){
+      const v=vN*1.10*Math.pow(vF*0.90/(vN*1.10),i/N), vw=v+travel;
+      const x=xAt(c,roadU(vw,off,seed),v), y=yAt(c,v,0);
+      if(py!==null){
+        const near=clamp(1-v/vF,0,1);
+        /* 遠い区間も1.15pxは保つ＝遠目でも「線」だと分かる（細すぎると消える） */
+        ctx.strokeStyle=`rgba(255,236,182,${(lightK*aK*(0.50+near*0.50)).toFixed(3)})`;
+        ctx.lineWidth=Math.max(1.15,sMin(c,v)*lwK);
+        ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(x,y); ctx.stroke();
+      }
+      px=x; py=y;
+      if(y>H) break;
+    }
+  }
+}
+/* ★第2弾：大都市の「光のかたまり」（光害）。都市は大きく2つ、他の地方にも
+   町の規模のかたまりを1つ。かたまりから幹線へ伸びる取付け道路も光らせる */
+function drawCityGlow(c,travel,lightK){
   if(lightK<0.01) return;
   eachCell(c,travel,(ci,base,vN,vF)=>{
     const kind=regKind(base+CELL*0.5);
     if(kind==='sea') return;
     const city=(kind==='city');
-    const n=city?820:(kind==='plain'?120:30);
-    const tb=coastTable(base);
-    reseed(ci*7919+83);
-    for(let k=0;k<n;k++){
-      const fr=rnd(), vw=base+fr*CELL, v=vw-travel;
-      if(v<vN*0.85||v>vF*0.98) continue;
-      const d=Math.pow(rnd(),city?1.15:1.30)*(city?9.0:8.0);   // 海沿いだけでなく内陸まで光る
-      const u=coastLerp(tb,fr)+0.12+d;
-      const x=xAt(c,u,v), y=yAt(c,v,0);
-      if(x<-30||x>W+30||y<c.hy) continue;
-      const near=clamp(1-v/vF,0,1);
-      const r=Math.max(0.85,sMin(c,v)*0.0042*(0.45+rnd()*1.25));
-      const w=rnd();
-      const col=city?(w<0.12?'255,250,228':(w<0.72?'255,224,152':'255,190,112')):'255,222,152';
-      ctx.fillStyle=`rgba(${col},${lightK*(0.46+rnd()*0.54)*(0.34+near*0.78)})`;
-      ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
-    }
-  });
-}
-
-/* 大都市のぼんやりした光（光害）と幹線道路 */
-function drawCityGlow(c,travel,lightK){
-  if(lightK<0.01) return;
-  eachCell(c,travel,(ci,base,vN,vF)=>{
-    if(regKind(base+CELL*0.5)!=='city') return;
-    const vw=base+CELL*0.5, v=vw-travel;
-    if(v<vN*0.6||v>vF) return;
-    const u=coastU(vw,'R')+2.6;
-    const x=xAt(c,u,v), y=yAt(c,v,0);
-    const rad=sAt(c,v)*UK*3.4;
-    const g=ctx.createRadialGradient(x,y,0,x,y,Math.max(24,rad));
-    g.addColorStop(0,`rgba(255,214,150,${0.30*lightK})`);
-    g.addColorStop(0.45,`rgba(255,206,144,${0.12*lightK})`);
-    g.addColorStop(1,'rgba(255,206,144,0)');
-    ctx.fillStyle=g; ctx.fillRect(x-rad,Math.max(c.hy,y-rad*0.7),rad*2,rad*1.6);
+    const nG=city?2:1;
     reseed(ci*7919+151);
-    for(let r=0;r<6;r++){
-      const a=rnd()*Math.PI*2, len=1.6+rnd()*3.4;
-      const u2=u+Math.cos(a)*len, v2=Math.max(vN*0.7,v+Math.sin(a)*len);
-      ctx.beginPath(); ctx.moveTo(x,y);
-      ctx.lineTo(xAt(c,u2,v2),yAt(c,v2,0));
-      ctx.strokeStyle=`rgba(255,232,178,${0.22*lightK})`;
-      ctx.lineWidth=Math.max(0.7,Math.min(W,H)*0.0018); ctx.stroke();
+    for(let g=0;g<nG;g++){
+      const fr=rnd(), vw=base+fr*CELL, v=vw-travel;
+      if(v<vN*0.6||v>vF) continue;
+      const big=city&&g===0;
+      const u=coastU(vw,'R')+(city?0.9:1.3)+rnd()*(city?3.4:4.5);
+      const x=xAt(c,u,v), y=yAt(c,v,0);
+      if(x<-60||x>W+60||y<c.hy) continue;
+      const rad=sAt(c,v)*UK*(big?6.2:(city?3.6:2.2));
+      if(rad<3) continue;
+      const aK=(city?0.30:0.16)*lightK;
+      const g1=ctx.createRadialGradient(x,y,0,x,y,rad);
+      g1.addColorStop(0,`rgba(255,216,150,${aK.toFixed(3)})`);
+      g1.addColorStop(0.5,`rgba(255,206,140,${(aK*0.45).toFixed(3)})`);
+      g1.addColorStop(1,'rgba(255,206,140,0)');
+      ctx.fillStyle=g1;
+      ctx.fillRect(x-rad,Math.max(c.hy,y-rad*0.62),rad*2,rad*1.3);
+      if(big){                                   // かたまりの核（市街地がぽっと明るい）
+        const g2=ctx.createRadialGradient(x,y,0,x,y,rad*0.34);
+        g2.addColorStop(0,`rgba(255,232,178,${(0.34*lightK).toFixed(3)})`);
+        g2.addColorStop(1,'rgba(255,232,178,0)');
+        ctx.fillStyle=g2;
+        ctx.fillRect(x-rad*0.34,Math.max(c.hy,y-rad*0.22),rad*0.68,rad*0.5);
+      }
+      const rN=city?3:2;                        // 幹線へ伸びる取付け道路
+      for(let r=0;r<rN;r++){
+        const a2=rnd()*Math.PI*2, len=(city?2.2:1.4)+rnd()*(city?4.0:2.4);
+        const v2=clamp(v+Math.sin(a2)*len,vN*0.7,vF*0.95);
+        const u2=u+Math.cos(a2)*len*(v2/Math.max(0.1,v));   // 遠近の縮みに合わせる
+        ctx.strokeStyle=`rgba(255,238,190,${(lightK*(city?0.34:0.20)).toFixed(3)})`;
+        ctx.lineWidth=Math.max(0.8,sMin(c,v)*0.009);
+        ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(xAt(c,u2,v2),yAt(c,v2,0)); ctx.stroke();
+      }
     }
   });
 }
@@ -37797,6 +37951,87 @@ function drawSwell(c,travel,lightK){
   });
 }
 
+/* ★v3.11 太陽（夜は月）の光が海面でつぶつぶ光る「光の道」。
+   手前ほど幅が広がる＝水面の反射の付き方と同じ形。海がただの青い板に見えるのを防ぐ */
+function drawGlitter(c,travel,lightK){
+  const vN=Math.max(0.16,vAtY(c,H+40)), vF=vFarOf(c);
+  const cool=clamp((lightK-0.60)/0.30,0,1);            // 夜は月の光（白青）に変わる
+  const col=mixColor([255,208,140],[210,226,255],cool);
+  const cs=col[0]+','+col[1]+','+col[2];
+  const base=0.34*(1-lightK*0.45);
+  for(let i=0;i<26;i++){
+    const v=vN*Math.pow(vF/vN,i/26), vw=v+travel;
+    const cu=coastU(vw,'R');
+    const us=c.uc+(W*0.28)*v/(UK*c.f);                 // 太陽の方位（画面x=0.78W の方向）
+    const w=0.16+(1-v/vF)*1.9;                          // 手前ほど幅広＝光の道の形
+    reseed(Math.floor(vw*9.7)+501);
+    for(let k=0;k<3;k++){
+      const uu=us+(rnd()*2-1)*w;
+      if(uu>cu-0.25) continue;                          // 陸の上には乗らない
+      const x=xAt(c,uu,v), y=yAt(c,v,0);
+      if(y<c.hy+1||y>H) continue;
+      const rw=Math.max(0.7,(0.030+rnd()*0.050)*UK*sAt(c,v));
+      const a=base*(0.20+rnd()*0.55)*(1-i/26*0.25);
+      ctx.fillStyle=`rgba(${cs},${a.toFixed(3)})`;
+      ctx.fillRect(x-rw/2,y-rw*0.22,rw,Math.max(0.8,rw*0.45));
+    }
+  }
+}
+/* ★v3.11 町の明かりが海に映る。夜景の海に映りが無いと「水面」だと分からない */
+function coastReflect(c,travel,lightK,rp){
+  if(lightK<0.30||!rp) return;
+  ctx.save();
+  ctx.globalAlpha=clamp((lightK-0.30)/0.30,0,1);
+  const vF=vFarOf(c);
+  for(let i=6;i<rp.length;i+=10){
+    const vw=rp[i][2]+travel;
+    if(regKind(vw)!=='city') continue;
+    const x=rp[i][0], y=rp[i][1];
+    if(x<-40||x>W+40||y<c.hy) continue;
+    const len=Math.max(6,(H-c.hy)*0.16*(1-rp[i][2]/vF));
+    const w=Math.max(2,(H-c.hy)*0.012);
+    const g=ctx.createLinearGradient(0,y,0,y+len);
+    g.addColorStop(0,'rgba(255,214,150,0.16)');
+    g.addColorStop(1,'rgba(255,214,150,0)');
+    ctx.fillStyle=g;
+    ctx.beginPath();
+    ctx.moveTo(x-w,y); ctx.lineTo(x+w,y);
+    ctx.lineTo(x+w*0.4,y+len); ctx.lineTo(x-w*0.4,y+len);
+    ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
+}
+
+/* ★第2弾：海峡の漁火（いさりび）。海だけの区間（津軽海峡）は夜景が真っ暗で
+   間延びしていた。ワールドに固定してあるので地表と同じ速さで流れ、
+   明滅はNOW由来＝毎回同じリズム。陸の外に描くのでクリップしない */
+function drawFleet(c,travel,lightK){
+  if(lightK<0.35) return;
+  eachCell(c,travel,(ci,base,vN,vF)=>{
+    if(regKind(base+CELL*0.5)!=='sea') return;
+    reseed(ci*7919+613);
+    for(let k=0;k<10;k++){
+      const vw=base+rnd()*CELL, v=vw-travel;
+      if(v<vN*0.9||v>vF*0.92) continue;
+      const cu=coastU(vw,'R');
+      const u=cu-0.8-rnd()*5.5;                  // 必ず海の側
+      const x=xAt(c,u,v), y=yAt(c,v,0);
+      if(x<-20||x>W+20||y<c.hy+2||y>H) continue;
+      const near=clamp(1-v/vF,0,1);
+      const tw=0.60+0.40*Math.sin(NOW*(1.1+rnd()*1.7)+k*3.1);   // ゆらぎ
+      const r=Math.max(0.9,sMin(c,v)*0.0070);
+      const warm=rnd();
+      const col=warm<0.5?'255,244,214':(warm<0.8?'190,255,214':'255,228,178');
+      ctx.fillStyle=`rgba(${col},${(lightK*(0.35+near*0.50)*tw).toFixed(3)})`;
+      ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+      if(rnd()<0.30){                            // 光が海面ににじむ
+        ctx.fillStyle=`rgba(${col},${(lightK*0.10*tw).toFixed(3)})`;
+        ctx.beginPath(); ctx.ellipse(x,y+r*1.6,r*2.6,Math.max(0.7,r*1.2),0,0,Math.PI*2); ctx.fill();
+      }
+    }
+  });
+}
+
 /* 大気（地平線に近いほど白く濁る）。
    画面の下まで効かせると、手前の陸まで白くなってのっぺりする（自己チェックで発覚） */
 function atmosphere(horizonY){
@@ -37805,6 +38040,50 @@ function atmosphere(horizonY){
   g.addColorStop(0.45,'rgba(196,216,242,0.08)');
   g.addColorStop(1,'rgba(184,204,236,0)');
   ctx.fillStyle=g; ctx.fillRect(0,horizonY,W,H-horizonY);
+}
+
+/* =========================================================================
+   ★第2弾：巡航の奥行きと速度感（地平線の丸み・大気の青い縁・遠くの雲の帯）
+   第1弾までは地平線がほぼ直線で、雲も1層＝「止まった絵」に見えていた。
+   ========================================================================= */
+/* 地表をクリップするカーブの形（S4/S5でclipとearthRimが同じ式を共有する） */
+function groundEdgePath(hy,bulge){
+  const p=new Path2D();
+  p.moveTo(-W*0.25,hy+H*bulge);
+  p.quadraticCurveTo(W*0.5,hy-H*bulge*1.7,W*1.25,hy+H*bulge);
+  return p;
+}
+/* 地球の縁に薄く光る大気の層。3段のストローク（幅広の青→白に近い細い線）で
+   「高いところにいる」ことをひと目で伝える。夜は月明かりの青白に */
+function earthRim(hy,bulge,nk){
+  const col=mixColor([198,230,255],[164,206,255],nk*0.6);
+  const cs=col[0]+','+col[1]+','+col[2];
+  for(const ly of [[0.052,0.085],[0.021,0.22],[0.0075,0.60]]){
+    ctx.beginPath();
+    ctx.moveTo(-W*0.25,hy+H*bulge);
+    ctx.quadraticCurveTo(W*0.5,hy-H*bulge*1.7,W*1.25,hy+H*bulge);
+    ctx.strokeStyle=`rgba(${cs},${ly[1]})`;
+    ctx.lineWidth=Math.max(1,H*ly[0]);
+    ctx.stroke();
+  }
+}
+/* 遠くの雲の帯。地表よりゆっくり流す＝視差。奥の層ほど遅く・薄く・小さく。
+   縦画面でも横に長い平たい雲なので、層の違いが読み取れる */
+function farCloudBands(travel,hy,nk){
+  const dim=1-nk*0.45;
+  for(let L=0;L<3;L++){
+    const sp=0.16+L*0.17;                       // 流れの速さ（地表=1）
+    const y=hy+H*(0.012+L*0.040);
+    const al=(0.34-L*0.08)*dim;
+    const tint=L===2?'224,232,248':'236,242,252';
+    reseed(43000+L*77);
+    const span=W*1.35, off=travel*sp*W*0.055;
+    for(let i=0;i<9;i++){
+      const rx=W*(0.10+rnd()*0.14)*(1-L*0.16);
+      const x=(((i/9)*span*1.7+rnd()*span*0.5-off)%span+span)%span-W*0.18;
+      puff(x,y+(rnd()-0.5)*H*0.014,rx,Math.max(1.5,rx*0.045),al*(0.5+rnd()*0.5),tint);
+    }
+  }
 }
 
 /* 仕上げのベール（地表と自分のあいだの極薄の雲）
@@ -37991,14 +38270,16 @@ function drawGround(c,travel,o){
   drawSea(c.hy,lightK);
   drawTexRows(c,travel,'sea',0.62*(1-lightK*0.5));      // ★v3.7：海面の下地テクスチャ（夜は弱める）
   drawSwell(c,travel,lightK);
+  drawGlitter(c,travel,lightK);                          // ★v3.11：光の道
 
   // 左の陸（瀬戸内で見える対岸＝四国）。先に描く＝右の陸が手前に来たとき正しく隠れる
+  let pathL=null;                     // ★第2弾：夜の明かりを対岸にも敷くためパスを残す
   if(hasLeftLand(travel+vFarOf(c)*0.35)||hasLeftLand(travel+vFarOf(c)*0.08)){
     const lp=coastPoints(c,travel,'L',96);
-    const path=landPath(c,lp,'L');
+    pathL=landPath(c,lp,'L');
     ctx.fillStyle=rgb(mixColor(mixColor(LAND_DAY,LAND_NIGHT,lightK),LAND_FAR,0.40*hazeK));
-    ctx.fill(path);
-    ctx.save(); ctx.clip(path);
+    ctx.fill(pathL);
+    ctx.save(); ctx.clip(pathL);
     ctx.strokeStyle='rgba(226,240,255,0.26)'; ctx.lineWidth=Math.max(0.8,H*0.002);
     ctx.beginPath(); ctx.moveTo(lp[0][0],lp[0][1]);
     for(let i=1;i<lp.length;i++) ctx.lineTo(lp[i][0],lp[i][1]);
@@ -38037,8 +38318,6 @@ function drawGround(c,travel,o){
   drawFields(c,travel,hazeK);
   drawRidges(c,travel,hazeK);
   drawRivers(c,travel);
-  drawCityGlow(c,travel,lightK);
-  drawLights(c,travel,lightK);
 
   /* 夕日が地表を横から照らす。これが無いと画面全体が青灰色一色になって夕暮れに見えない */
   const sun=ctx.createLinearGradient(W*0.22,0,W*1.06,0);
@@ -38054,6 +38333,7 @@ function drawGround(c,travel,o){
   for(let i=1;i<rp.length;i++) ctx.lineTo(rp[i][0],rp[i][1]);
   ctx.strokeStyle='rgba(228,242,255,0.34)';
   ctx.lineWidth=Math.max(0.8,H*0.0022); ctx.stroke();
+  coastReflect(c,travel,lightK,rp);                      // ★v3.11：町の明かりの海面への映り
 
   // 遠くほど霞む（強すぎると陸が灰白色になってのっぺりする）
   const span=H-c.hy;
@@ -38062,9 +38342,27 @@ function drawGround(c,travel,o){
   haze.addColorStop(1,'rgba(190,214,240,0)');
   ctx.fillStyle=haze; ctx.fillRect(0,c.hy-H*0.02,W,span*0.38);
 
-  if(o.deck>0) drawCloudDeck(c,travel,c.ch*0.52,o.deck);
+  /* ★第2弾：雲海を2層に（低い層は速く・大きく流れる）＝雲海に厚みと速度感 */
+  if(o.deck>0){ drawCloudDeck(c,travel,c.ch*0.52,o.deck);
+                drawCloudDeck(c,travel,c.ch*0.26,o.deck*0.55); }
   atmosphere(c.hy);
   if(o.veil>0) thinVeil(travel*0.012,c.hy,H,o.veil,3);
+  /* ★第2弾：夜の明かりは雲海・霞・薄雲の「上」に描く。第1弾は下に敷いていたため
+     半分以上が雲に埋もれて「陸がほぼ一色」に見えた。陸の形でクリップするので
+     海にはみ出さない（道路は右の陸だけ、町の明かりは対岸にも） */
+  if(lightK>0.01){
+    ctx.save(); ctx.clip(path);
+    drawRoads(c,travel,lightK);
+    ctx.restore();
+    const clips=pathL?[path,pathL]:[path];
+    for(const pp of clips){
+      ctx.save(); ctx.clip(pp);
+      drawCityGlow(c,travel,lightK);
+      drawLights(c,travel,lightK);
+      ctx.restore();
+    }
+    drawFleet(c,travel,lightK);               // 海峡の漁火（陸の外）
+  }
 }
 
 /* =========================================================================
@@ -38289,17 +38587,20 @@ function scheduleSound(){
 /* =========================================================================
    飛行機（後ろ上から）。全カットこの向きに統一（視点の一貫性）
    ========================================================================= */
+/* 小さな光の玉（航空灯・エンジンの輝き 共用）。rgba(...,a) の a を0に抜いていく */
+function glow(x,y,r,col){
+  const g=ctx.createRadialGradient(x,y,0,x,y,r);
+  g.addColorStop(0,col);
+  g.addColorStop(1,col.replace(/[\d.]+\)$/,'0)'));
+  ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+}
 function planeBack(x,y,s,roll){
-  if(SPRITES.plane.img){
-    /* 機体画像（実効1040x457・中心626,602）。横2.7s基準で貼る（現状の主翼端の広がりを維持） */
-    ctx.save();
-    ctx.translate(x,y); ctx.rotate(roll);
-    ctx.drawImage(SPRITES.plane.img, 106,373,1040,457, -s*1.35,-s*0.5925, s*2.7, s*1.185);
-    ctx.restore();
-    return;
-  }
   ctx.save();
   ctx.translate(x,y); ctx.rotate(roll);
+  if(SPRITES.plane.img){
+    /* 機体画像（実効1040x457・中心626,602）。横2.7s基準で貼る（現状の主翼端の広がりを維持） */
+    ctx.drawImage(SPRITES.plane.img, 106,373,1040,457, -s*1.35,-s*0.5925, s*2.7, s*1.185);
+  }else{
   const g=ctx.createLinearGradient(-s,0,s,0);
   g.addColorStop(0,'#aeb6c0'); g.addColorStop(0.5,'#f2f5f8'); g.addColorStop(1,'#aeb6c0');
   ctx.fillStyle=g;
@@ -38331,18 +38632,34 @@ function planeBack(x,y,s,roll){
   ctx.beginPath(); ctx.arc(-s*1.28,s*0.20,s*0.035,0,Math.PI*2); ctx.fill();
   ctx.fillStyle='rgba(140,255,170,0.95)';
   ctx.beginPath(); ctx.arc(s*1.28,s*0.20,s*0.035,0,Math.PI*2); ctx.fill();
+  }
+  /* ★v3.11 航空灯（画像・コード描画の両方に載る。上空では命綱なので常に点く）
+     位置灯（翼端の赤・緑）＋尾部の赤ビーコン（回転灯）＋翼端ストロボ（二重フラッシュ） */
+  const lr=Math.max(1.2,s*0.030);
+  glow(-s*1.26,s*0.12,lr*2.6,'rgba(255,72,72,0.55)');
+  glow( s*1.26,s*0.12,lr*2.6,'rgba(72,255,120,0.55)');
+  if((NOW*0.9)%1<0.13)  glow(0,-s*0.40,lr*3.4,'rgba(255,64,64,0.85)');
+  const sp=(NOW*1.34)%1;
+  if(sp<0.045||(sp>0.10&&sp<0.145)){
+    glow(-s*1.30,s*0.06,lr*4.6,'rgba(255,255,255,0.95)');
+    glow( s*1.30,s*0.06,lr*4.6,'rgba(255,255,255,0.95)');
+  }
   ctx.restore();
 }
+/* ★v3.11 飛行機雲。ただの台形だと「帯」に見えるので、粒をつらねて
+   後ろへ行くほど広がり・乱流で揺れて消えていく形にする（本物と同じ見え方） */
 function contrail(x,y,s,len,alpha){
-  if(len<=1) return;
-  const g=ctx.createLinearGradient(x-len,y,x,y);
-  g.addColorStop(0,'rgba(255,255,255,0)');
-  g.addColorStop(1,`rgba(255,255,255,${alpha})`);
-  ctx.fillStyle=g;
-  ctx.beginPath();
-  ctx.moveTo(x,y-s*0.05); ctx.lineTo(x-len,y-s*0.16);
-  ctx.lineTo(x-len,y+s*0.16); ctx.lineTo(x,y+s*0.05);
-  ctx.closePath(); ctx.fill();
+  if(len<=1||alpha<=0.01) return;
+  const N=10;
+  for(let i=0;i<N;i++){
+    const f=i/(N-1);
+    const wob=fbm(f*3.2,17,2)*s*0.10*f;                       // 後ろほど揺れが大きくなる
+    const j=0.85+0.30*(fbm(f*5.1+i*0.31,29,2)*0.5+0.5);
+    const px=x-len*f, py=y-s*0.10*f+wob;
+    const r=s*(0.055+f*0.150)*j;
+    const a=alpha*(1-f*0.72)*(0.60+0.40*(fbm(f*4.3+i*0.17,53,2)*0.5+0.5));
+    puff(px,py,r,r*0.55,a,'255,255,255');
+  }
 }
 
 /* =========================================================================
@@ -38370,6 +38687,7 @@ function drawProp(kind,x,y,s){
       /* 塔画像（実効379x1119・縦横比2.953）。足元を(x,y)・高さs*0.44に（影は直前の共通処理で描か済み） */
       const th=s*0.44, tw=th/2.953;
       ctx.drawImage(SPRITES.tower.img, 443,62,379,1119, x-tw/2, y-th, tw, th);
+      if((NOW*1.05)%1<0.16) glow(x,y-th,Math.max(3,s*0.055),'rgba(255,80,70,0.75)');  // 回転灯
       return;
     }
     const h=s*0.44, w=Math.max(1.2,s*0.055);
@@ -38394,6 +38712,8 @@ function drawProp(kind,x,y,s){
     // てっぺんの赤いランプ
     ctx.fillStyle='rgba(255,96,84,0.95)';
     ctx.beginPath(); ctx.arc(x,y-h-s*0.022,Math.max(0.8,s*0.012),0,Math.PI*2); ctx.fill();
+    // ★回転灯のまぶしさ（点滅。遠くからでも飛行場だと分かる）
+    if((NOW*1.05)%1<0.16) glow(x,y-h-s*0.022,Math.max(3,s*0.055),'rgba(255,80,70,0.75)');
 
   }else if(kind==='terminal'){   // ※現在は使っていない（準也さん裁定＝管制塔1本だけ）
     const w=s*0.78, h=s*0.15;
@@ -38442,12 +38762,68 @@ function drawAirport(horizonY,dist,rw,rwFar){
 }
 
 /* =========================================================================
+   ★第2弾：S1の見せ場を足す（夕日の光のすじ・遠くを行き交う飛行機）
+   第1弾のS1は空が単なるグラデーションの板で、他のカットとの差がひと目で
+   分からなかった。滑走路そのものは第1弾で十分実物感があるので、空を動かす
+   ========================================================================= */
+/* 夕日から空へ射す光のすじ（クリスペスクライト）。7本それぞれが独立に
+   ゆらぐ＝静止画でも「光が降っている」感じが出る。
+   ★初版はalpha0.075で390×844の画素差0.1%＝ひと目で分からなかったので3倍強に */
+function sunRays(y,k){
+  if(k<=0.01) return;
+  const sx=W*0.78, R=Math.hypot(W,H)*1.05;
+  ctx.save();
+  ctx.translate(sx,y);
+  /* 太陽のまわりの広い夕焼けのにじみ（光のすじの下地。滑走路より後なので空だけに乗る） */
+  const wash=ctx.createRadialGradient(0,0,0,0,0,R*0.75);
+  wash.addColorStop(0,`rgba(255,214,160,${(0.16*k).toFixed(3)})`);
+  wash.addColorStop(0.5,`rgba(255,190,140,${(0.07*k).toFixed(3)})`);
+  wash.addColorStop(1,'rgba(255,190,140,0)');
+  ctx.fillStyle=wash; ctx.fillRect(-R,-R,R*2,R*2);
+  reseed(60606);
+  for(let i=0;i<7;i++){
+    const ang=-Math.PI*0.86+(i/6)*Math.PI*0.72+(rnd()-0.5)*0.06;
+    const shimmer=0.72+0.28*Math.sin(NOW*(0.55+rnd()*0.5)+i*2.3);
+    const a=0.26*k*shimmer*(0.55+rnd()*0.45);
+    if(a<0.05) continue;
+    ctx.save();
+    ctx.rotate(ang);
+    const w1=R*(0.024+rnd()*0.014), w2=w1*(7+rnd()*5);
+    const g=ctx.createLinearGradient(R*0.06,0,R,0);
+    g.addColorStop(0,`rgba(255,240,212,${a.toFixed(3)})`);
+    g.addColorStop(0.75,`rgba(255,232,200,${(a*0.45).toFixed(3)})`);
+    g.addColorStop(1,'rgba(255,232,200,0)');
+    ctx.fillStyle=g;
+    ctx.beginPath();
+    ctx.moveTo(R*0.06,0); ctx.lineTo(R,-w2); ctx.lineTo(R,w2*0.6); ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+  ctx.restore();
+}
+/* 遠くの空を行き交う別の飛行機（点滅する航空灯だけ。機影は小さな横棒）。
+   空が生きている＝自分の機体だけが飛んでいる世界ではない、という効果 */
+function skyTraffic(t){
+  const pr=(t*0.85)%1;                              // ゆっくり左へ流れる
+  const x=W*(0.80-0.55*pr), y=H*0.145+Math.sin(pr*Math.PI*2)*H*0.006;
+  const s=Math.max(3.2,Math.min(W,H)*0.011);
+  ctx.fillStyle='rgba(70,78,96,0.60)';
+  ctx.fillRect(x-s*1.6,y-s*0.22,s*3.2,s*0.44);
+  glow(x-s*1.55,y,s*1.30,'rgba(255,80,80,0.65)');   // 左翼端＝赤
+  glow(x+s*1.55,y,s*1.30,'rgba(90,255,140,0.60)');  // 右翼端＝緑
+  const st=(t*1.30)%1;
+  if(st<0.05||(st>0.11&&st<0.16)) glow(x,y,s*2.4,'rgba(255,255,255,1)');   // ストロボ
+}
+
+/* =========================================================================
    S1：滑走路（後ろ姿で加速→浮く）
    ========================================================================= */
 function drawS1(t){
   const horizonY=H*0.58;
   drawSky(0);
   drawSun(0,horizonY);
+  duskBand(horizonY,1);                     // ★地平線の薄明光帯
+  sunRays(horizonY-H*0.02,1);               // ★第2弾：夕日から射す光のすじ
+  skyTraffic(t);                            // ★第2弾：遠くの空を行き交う飛行機
 
   ctx.fillStyle='rgba(78,96,122,0.55)';
   ctx.beginPath(); ctx.moveTo(0,horizonY);
@@ -38469,17 +38845,67 @@ function drawS1(t){
   ctx.fillStyle=at; ctx.fillRect(0,horizonY-H*0.12,W,H*0.24);
 
   const rw=W*0.10, rwFar=W*0.012;
+  const v=easeIn(t);
+  const dist=(t*t)*2400;
+  const gap=120;
+  const lift=easeOut(seg(t,0.60,1.0));
+
+  /* ★地上走行中は路面の継ぎ目で画面が細かく震える（浮いたらおさまる）。
+     加速の迫力と「地に足がついている」感触が出る */
+  const shake=clamp(t*1.5,0,1)*(1-lift);
+  const jx=fbm(t*23,911,2)*W*0.0030*shake;
+  const jy=fbm(t*29,313,2)*H*0.0024*shake;
+  ctx.save();
+  ctx.translate(jx,jy);
+
+  /* ★芝生の刈り筋（空港の芝生は帯状に刈ってある）。帯が流れるだけで地面の速度が読める */
+  const mgap=gap*2.6, mw0=Math.floor(dist/mgap);
+  for(let i=0;i<12;i++){
+    const d=(i*mgap-(dist%mgap)); if(d<0) continue;
+    const p=1-d/(26*gap); if(p<=0.03||((i+mw0)%2)) continue;
+    const pA=p*p, pB=Math.min(1,p+0.045)**2;
+    const y1=lerp(horizonY,H,pA), y2=lerp(horizonY,H,pB);
+    const e1=lerp(rwFar,rw*3.2,pA), e2=lerp(rwFar,rw*3.2,pB);
+    ctx.fillStyle='rgba(96,116,80,0.26)';
+    for(const sd of [-1,1]){
+      ctx.beginPath();
+      ctx.moveTo(W*0.5+sd*e1*1.10,y1); ctx.lineTo(W*0.5+sd*e2*1.10,y2);
+      ctx.lineTo(W*0.5+sd*e2*2.60,y2); ctx.lineTo(W*0.5+sd*e1*2.60,y1);
+      ctx.closePath(); ctx.fill();
+    }
+  }
+
   ctx.fillStyle='#4b4f55';
   ctx.beginPath();
   ctx.moveTo(W*0.5-rwFar,horizonY); ctx.lineTo(W*0.5+rwFar,horizonY);
   ctx.lineTo(W*0.5+rw*3.2,H);       ctx.lineTo(W*0.5-rw*3.2,H);
   ctx.closePath(); ctx.fill();
-
-  const v=easeIn(t);
-  const dist=(t*t)*2400;
-  const gap=120;
+  /* ★滑走路の白い縁線（実機の滑走路には必ずある） */
+  ctx.fillStyle='rgba(238,238,232,0.40)';
+  for(const sd of [-1,1]){
+    ctx.beginPath();
+    ctx.moveTo(W*0.5+sd*rwFar*0.84,horizonY); ctx.lineTo(W*0.5+sd*rwFar,horizonY);
+    ctx.lineTo(W*0.5+sd*rw*3.2,H);    ctx.lineTo(W*0.5+sd*rw*3.2*0.84,H);
+    ctx.closePath(); ctx.fill();
+  }
+  /* ★着陸帯のタイヤの跡（よく使われる路面は黒くすり減って見える） */
+  const tgap=gap*1.9, tw0=Math.floor(dist/tgap);
+  for(let i=0;i<10;i++){
+    const d=(i*tgap-(dist%tgap)); if(d<0) continue;
+    const p=1-d/(26*gap); if(p<=0.12) continue;
+    const p2=p*p, y=lerp(horizonY,H,p2);
+    reseed((i+tw0)*577+1234);
+    for(let m=0;m<10;m++){
+      const off=(rnd()*2-1)*lerp(rwFar,rw*1.05,p2);
+      const mw=lerp(rwFar*0.10,rw*0.080,p2)*(0.7+rnd()*0.9);
+      const mh=Math.max(1.5,H*0.030*p2);
+      ctx.fillStyle=`rgba(28,28,32,${((0.09+rnd()*0.12)*clamp((p-0.12)*2.2,0,1)).toFixed(3)})`;
+      ctx.fillRect(W*0.5+off-mw/2,y-mh/2,mw,mh);
+    }
+  }
 
   ctx.fillStyle='rgba(240,238,220,0.9)';
+  const w0=Math.floor(dist/gap);
   for(let i=0;i<26;i++){
     const d=(i*gap-(dist%gap));
     if(d<0) continue;
@@ -38489,6 +38915,14 @@ function drawS1(t){
     const yy=lerp(horizonY,H,Math.min(1,(p+0.035))**2);
     const w=lerp(rwFar*0.25,rw*0.30,p*p);
     ctx.fillRect(W*0.5-w/2,y,w,Math.max(1.2,yy-y));
+    /* ★中央線のわきの接地带標識（白い横棒の対。1つおきに置く＝実機と同じ） */
+    if((i+w0)%2===0&&p>0.06){
+      const bw=lerp(rwFar*0.30,rw*0.34,p*p);
+      for(const sd of [-1,1]){
+        const bx=W*0.5+sd*lerp(rwFar*0.62,rw*0.78,p*p);
+        ctx.fillRect(bx-bw/2,y,bw,Math.max(1.2,yy-y));
+      }
+    }
   }
 
   const lgap=gap*0.8;
@@ -38503,13 +38937,17 @@ function drawS1(t){
     ctx.fillStyle=`rgba(255,242,190,${0.45+v*0.5})`;
     ctx.beginPath(); ctx.arc(W*0.5-wEdge,yy,r,0,Math.PI*2); ctx.fill();
     ctx.beginPath(); ctx.arc(W*0.5+wEdge,yy,r,0,Math.PI*2); ctx.fill();
+    /* ★第2弾：手前の誘導灯はにじみを足す（夕方の灯りらしさ。初版より強く・多く） */
+    if(p>0.18){
+      glow(W*0.5-wEdge,yy,r*3.4,'rgba(255,214,120,0.20)');
+      glow(W*0.5+wEdge,yy,r*3.4,'rgba(255,214,120,0.20)');
+    }
   }
 
   // 滑走路のわきの建物（走るにつれて奥から手前へ流れる＝速さが伝わる）
   drawAirport(horizonY,dist,rw,rwFar);
 
   const adv=easeIn(t);
-  const lift=easeOut(seg(t,0.60,1.0));
   // 縦画面は幅が狭く、翼が画面の外にはみ出すので小さめにする
   const p0=PORT();
   const s=Math.min(W,H)*lerp(p0?0.325:0.40, p0?0.215:0.255, adv);
@@ -38526,12 +38964,24 @@ function drawS1(t){
 
   planeBack(x,y,s,Math.sin(t*5.5)*0.018+lift*0.02);
 
+  /* ★浮いた瞬間、タイヤから煙（回転の衝撃。一瞬で消える） */
+  if(lift>0.02&&lift<0.85){
+    const kk=(0.85-lift)/0.83;
+    ctx.save(); ctx.globalAlpha=0.40*kk;
+    puff(x-s*0.55,groundY+s*0.30,s*0.26*(1.2-kk)+3,s*0.11,0.55,'234,234,238');
+    puff(x+s*0.55,groundY+s*0.30,s*0.26*(1.2-kk)+3,s*0.11,0.55,'234,234,238');
+    ctx.restore();
+  }
+
   if(lift>0.05){
     ctx.save(); ctx.globalAlpha=lift*0.32;
     puff(x-s*1.30,y+s*0.30,s*0.34,s*0.15,0.5,'255,255,255');
     puff(x+s*1.30,y+s*0.30,s*0.34,s*0.15,0.5,'255,255,255');
     ctx.restore();
   }
+
+  ctx.restore();      // ← 震えここまで
+  drawFlare(0,horizonY,0.85);
 }
 
 /* =========================================================================
@@ -38540,6 +38990,58 @@ function drawS1(t){
    ※準也さん指摘（2026-08-02）＝ここで景色（マップ）を見せると、
      離陸→景色→雲、の順になって話の流れがおかしい。だから地表は一瞬だけ
    ========================================================================= */
+/* ★第2弾：滑走路が目に見えて小さくなって落ちていく。第1弾の版はS2に入った瞬間に
+   滑走路が消えて「まだ滑走路の上にいる」ように見えた＝地面が離れていく感じが出ない。
+   S1の続き（dist=2400）からさらに加速して流し、全体が画面の下へ沈んでいく */
+function runwayRecede(t,hy){
+  const k=easeIn(clamp(t*1.05,0,1));               // 0=浮いた瞬間 → 1=見えなくなる
+  const a=clamp(1.12-k*1.12,0,1);
+  if(a<=0.015) return;
+  const drop=k*k;
+  const vy=lerp(hy+H*0.015,H*1.38,drop);           // 滑走路の遠端（下へ落ちる）
+  if(vy>H*1.28) return;
+  const vn=lerp(H*1.08,H*1.95,drop);               // 手前端
+  const wN=W*(PORT()?0.38:0.34)*(1-k*0.62);        // 幅も狭くなる＝遠ざかる
+  const wF=W*0.012*(1-k*0.35);
+  ctx.save();
+  ctx.globalAlpha=a;
+  ctx.fillStyle='#42464c';
+  ctx.beginPath();
+  ctx.moveTo(W*0.5-wF,vy); ctx.lineTo(W*0.5+wF,vy);
+  ctx.lineTo(W*0.5+wN,vn); ctx.lineTo(W*0.5-wN,vn);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle='rgba(240,240,232,0.36)';          // 白い縁線
+  for(const sd of[-1,1]){
+    ctx.beginPath();
+    ctx.moveTo(W*0.5+sd*wF*0.82,vy); ctx.lineTo(W*0.5+sd*wF,vy);
+    ctx.lineTo(W*0.5+sd*wN,vn); ctx.lineTo(W*0.5+sd*wN*0.82,vn);
+    ctx.closePath(); ctx.fill();
+  }
+  const dist=2400+t*t*16000, gap=120;              // 白線はS1の続きからさらに速く流れる
+  for(let i=0;i<14;i++){
+    const d=(i*gap-(dist%gap)); if(d<0) continue;
+    const p=1-d/(14*gap); if(p<=0.05) continue;
+    const y=lerp(vy,vn,p*p), yy=lerp(vy,vn,Math.min(1,(p+0.05))**2);
+    const w=lerp(wF*0.30,wN*0.24,p*p);
+    ctx.fillStyle='rgba(244,242,224,0.68)';
+    ctx.fillRect(W*0.5-w/2,y,w,Math.max(1,yy-y));
+  }
+  const lgap=gap*0.8;                              // 両側の誘導灯もいっしょに遠ざかる
+  for(let i=0;i<12;i++){
+    const d=(i*lgap-(dist%lgap)); if(d<0) continue;
+    const p=1-d/(12*lgap); if(p<=0.06) continue;
+    const yy=lerp(vy,vn,p*p);
+    const wE=lerp(wF,wN*3.1,p*p);
+    const r=Math.max(1.0,lerp(0.8,3.8,p*p)*(1-k*0.45));
+    for(const sd of[-1,1]){
+      const lx=W*0.5+sd*wE;
+      ctx.fillStyle='rgba(255,242,190,0.85)';
+      ctx.beginPath(); ctx.arc(lx,yy,r,0,Math.PI*2); ctx.fill();
+      if(p>0.4) glow(lx,yy,r*3.2,'rgba(255,214,120,0.18)');
+    }
+  }
+  ctx.restore();
+}
 function drawS2(t){
   const alt=easeOut(t)*0.40;
   /* 地表が見えている時間を短くする（easeOut＝最初にぐっと下がる）。
@@ -38547,15 +39049,19 @@ function drawS2(t){
   const horizonY=lerp(H*0.58,H*1.06,easeOut(t));
   drawSky(alt);
   drawSun(alt,Math.min(horizonY,H*0.90));
+  duskBand(Math.min(horizonY,H*0.90),1-t*0.5);
+  sunRays(Math.min(horizonY,H*0.90)-H*0.02,0.55*(1-t*0.7));   // ★第2弾：光のすじも続く
+  drawFlare(alt,Math.min(horizonY,H*0.90),0.7*(1-t*0.55));
 
   if(horizonY<H){
     ctx.save();
     ctx.beginPath(); ctx.rect(0,horizonY,W,H-horizonY); ctx.clip();
     /* 低いところから見た空港のまわり。低空は横の視野が狭いので、カメラの真下を
        陸の内側に置かないと畑も町も画面の外に出てしまう（uc＝カメラの東西位置） */
-    const c=makeCam(horizonY,lerp(0.10,0.26,ease(t)),1.0);
-    drawGround(c, lerp(2.0,4.2,t), {haze:0.5,light:0.22,veil:0.04,deck:0});
+    const c=makeCam(horizonY,lerp(0.10,0.34,ease(t)),1.0);    // ★第2弾：より高くへ
+    drawGround(c, lerp(2.0,26.0,t*t), {haze:0.5,light:0.22,veil:0.04,deck:0});  // ★第2弾：速く流れる
     ctx.restore();
+    runwayRecede(t,horizonY);                     // ★第2弾：滑走路が落ちていく
   }
 
   // 雲が下から一気に迫り上がって画面を覆う＝そのままS3の突入へ
@@ -38564,14 +39070,18 @@ function drawS2(t){
   cloudBand(-t*W*1.6, H*(1.34-rise*0.98), Math.min(W,H)*0.105, 0.65, 1.9, '250,252,255');
 
   const s=Math.min(W,H)*(PORT()?0.225:0.250);
-  const x=W*0.5, y=H*(0.50-ease(t)*0.06);
-  planeBack(x,y,s,Math.sin(t*4.2)*0.035);
-  contrail(x-s*1.30,y+s*0.20,s,W*0.09*ease(t),0.22*ease(t));
-  contrail(x+s*1.30,y+s*0.20,s,W*0.09*ease(t),0.22*ease(t));
+  const x=W*0.5, y=H*(0.52-ease(t)*0.135);        // ★第2弾：機首上げ＝機体がぐんぐん上へ
+  planeBack(x,y,s,Math.sin(t*4.2)*0.035+ease(t)*0.05);
+  contrail(x-s*1.30,y+s*0.20,s,W*0.55*ease(t),0.34*ease(t));
+  contrail(x+s*1.30,y+s*0.20,s,W*0.55*ease(t),0.34*ease(t));
 }
 
 /* =========================================================================
    S3：雲を突き抜ける（離陸のすぐあと）
+   ★第2弾で3段構成に作り直した（第1弾の版は雲が薄く「間を通過中」にしか見えなかった）
+     ① t 0.00-0.30  画面全体が白い雲に包まれる
+     ② t 0.30-0.55  雲の塊が手前へ高速で飛び抜けていく（突き抜ける速度）
+     ③ t 0.52-0.78  一気に抜けて、雲海の上の空がぱっと開ける＋白フラッシュ
    ========================================================================= */
 function drawS3(t){
   const alt=lerp(0.45,0.92,ease(t));
@@ -38579,49 +39089,93 @@ function drawS3(t){
   drawSky(alt);
   drawSun(alt,horizonY);
 
-  const out=seg(t,0.55,1.0);
-  if(out>0){
-    ctx.save(); ctx.globalAlpha=ease(out);
-    const g=ctx.createLinearGradient(0,H*0.44,0,H);
-    g.addColorStop(0,'rgba(255,250,240,0.95)');
-    g.addColorStop(1,'rgba(214,224,242,0.75)');
-    ctx.fillStyle=g; ctx.fillRect(0,H*0.44,W,H*0.56);
-    cloudBand(0,H*0.62,Math.min(W,H)*0.10,0.55,2.4,'255,252,246');
-    cloudBand(0,H*0.86,Math.min(W,H)*0.18,0.55,2.1,'250,250,254');
+  const enter=easeIn(clamp(t/0.30,0,1));        // ①雲への突入
+  const burst=seg(t,0.52,0.78);                 // ③抜ける瞬間
+  const out=ease(burst);
+  const dense=clamp(enter*(1-out*1.06),0,1);    // 「包まれ具合」。抜けたら急落させる
+
+  /* ③抜けたあと＝雲海の上の空。burstとともに一気に現れる（ゆっくりフェードしない） */
+  if(out>0.001){
+    ctx.save();
+    ctx.globalAlpha=out;
+    const g=ctx.createLinearGradient(0,H*0.26,0,H*0.86);
+    g.addColorStop(0,'rgba(160,196,246,0.55)');
+    g.addColorStop(0.30,'rgba(232,240,254,0.97)');
+    g.addColorStop(0.62,'rgba(255,253,248,0.98)');
+    g.addColorStop(1,'rgba(216,226,244,0.92)');
+    ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+    /* 雲海。速く流す＝抜けた勢いがまだ残っている */
+    cloudBand(burst*2.4,H*0.615,Math.min(W,H)*0.075,0.80,2.1,'255,253,248');
+    cloudBand(burst*3.6,H*0.74,Math.min(W,H)*0.14,0.85,1.7,'250,251,255');
+    cloudBand(burst*5.2,H*0.95,Math.min(W,H)*0.24,0.88,2.3,'244,247,255');
+    drawSun(alt,H*0.50);                        // 開けた空で夕日がまぶしくなる
+    drawFlare(alt,H*0.50,0.9);
     ctx.restore();
   }
 
-  const dense=Math.sin(clamp(t,0,1)*Math.PI);
-  ctx.save();
-  reseed(31337);
-  for(let i=0;i<46;i++){
-    const a=rnd()*Math.PI*2;
-    const spread=lerp(0.02,1.75,easeIn(t))*(0.22+rnd()*1.55);
-    const x=W*0.5+Math.cos(a)*W*spread*0.78;
-    const y=H*0.5+Math.sin(a)*H*spread*0.64;
-    const rx=Math.min(W,H)*(0.055+rnd()*0.30)*(0.45+ease(t)*1.6);
-    const ry=rx*(0.19+rnd()*0.30);
-    const tint=rnd()<0.38?'206,218,238':'255,255,255';
-    puff(x,y,rx,ry,dense*(0.26+rnd()*0.46),tint);
+  /* ①+② 画面を包む白い雲 ＆ 手前へ飛び抜ける塊 */
+  if(dense>0.01){
+    const wrap=ctx.createLinearGradient(0,0,0,H);
+    wrap.addColorStop(0,`rgba(244,248,255,${(0.97*dense).toFixed(3)})`);
+    wrap.addColorStop(0.55,`rgba(255,255,255,${(0.99*dense).toFixed(3)})`);
+    wrap.addColorStop(1,`rgba(206,216,236,${(0.96*dense).toFixed(3)})`);
+    ctx.fillStyle=wrap; ctx.fillRect(0,0,W,H);
+
+    /* 塊：中心の外へ向かって加速しながら膨らむ＝手前へ飛び抜ける速度そのもの */
+    reseed(20261004);
+    for(let i=0;i<12;i++){
+      const ang=rnd()*Math.PI*2;
+      const spd=0.60+rnd()*0.50;
+      const off=rnd();
+      const ph=((t*1.55*spd)+off)%1;
+      const reach=Math.pow(ph,1.9);
+      const cx=W*(0.50+Math.cos(ang)*(0.16+reach*1.05));
+      const cy=H*(0.48+Math.sin(ang)*(0.14+reach*0.95));
+      const rx=Math.min(W,H)*(0.05+Math.pow(ph,2.6)*0.85);
+      const a=dense*Math.pow(Math.sin(Math.min(1,ph)*Math.PI),0.7)*(0.30+rnd()*0.40);
+      if(a<0.02) continue;
+      ctx.save();
+      ctx.translate(cx,cy); ctx.rotate(ang);
+      puff(0,0,rx*1.35,rx*0.62,a,'255,255,255');          // 進行方向に引き伸ばす＝ぶっ飛ぶ速さ
+      puff(rx*0.5,0,rx*0.75,rx*0.50,a*0.70,'246,249,255');
+      puff(-rx*0.7,rx*0.2,rx*0.55,rx*0.40,a*0.55,'232,238,250');
+      ctx.restore();
+    }
+    /* すじ：縦に流れる雲の帯。機体は上昇中＝雲は下へ抜けていく（第1弾より速く・多い） */
+    reseed(777);
+    for(let i=0;i<12;i++){
+      const ph=((t*2.30)+i/12)%1;
+      const sx=W*0.5+(rnd()*2-1)*W*(0.18+ph*0.60);
+      const sy=lerp(-H*0.18,H*1.30,ph);
+      const srx=Math.min(W,H)*(0.05+rnd()*0.08)*(0.5+ph*1.6);
+      puff(sx,sy,srx*1.15,srx*(0.85+ph*1.5),dense*0.30*(ph<0.78?1:(1-ph)/0.22),'246,249,255');
+    }
+    /* 下端は雲の底の青グレー（むらのない白一色にしない＝雲の厚み） */
+    const bot=ctx.createLinearGradient(0,H*0.72,0,H);
+    bot.addColorStop(0,'rgba(198,210,232,0)');
+    bot.addColorStop(1,`rgba(186,200,226,${(0.55*dense).toFixed(3)})`);
+    ctx.fillStyle=bot; ctx.fillRect(0,H*0.72,W,H*0.28);
   }
-  ctx.restore();
-
-  ctx.save();
-  ctx.globalAlpha=dense*0.40;
-  const lg=ctx.createLinearGradient(W*0.82,0,W*0.24,H);
-  lg.addColorStop(0,'rgba(255,246,224,0.60)');
-  lg.addColorStop(0.55,'rgba(255,240,214,0.18)');
-  lg.addColorStop(1,'rgba(255,238,210,0)');
-  ctx.fillStyle=lg; ctx.fillRect(0,0,W,H);
-  ctx.restore();
-
-  ctx.fillStyle=`rgba(255,255,255,${dense*0.38})`;
-  ctx.fillRect(0,0,W,H);
 
   const s=Math.min(W,H)*(PORT()?0.210:0.230);
-  ctx.save(); ctx.globalAlpha=1-dense*0.30;
-  planeBack(W*0.5,H*0.46,s,Math.sin(t*3.0)*0.05);
+  const py=H*(0.47-0.05*t);
+  contrail(W*0.5-s*1.30,py+s*0.20,s,W*0.14,0.12*dense);
+  contrail(W*0.5+s*1.30,py+s*0.20,s,W*0.14,0.12*dense);
+  /* 機体は雲の中ではうっすら見えるだけ。翼端の赤・緑が白い雲ににじむ */
+  ctx.save(); ctx.globalAlpha=clamp(0.85-dense*0.66,0.14,0.85);
+  planeBack(W*0.5,py,s,Math.sin(t*3.0)*0.05);
   ctx.restore();
+  if(dense>0.15){
+    glow(W*0.5-s*1.26,py+s*0.12,s*0.15,`rgba(255,84,84,${(0.42*dense).toFixed(3)})`);
+    glow(W*0.5+s*1.26,py+s*0.12,s*0.15,`rgba(84,255,140,${(0.42*dense).toFixed(3)})`);
+  }
+
+  /* ③抜けた瞬間の白フラッシュ（「突き抜けた」の1コマ） */
+  if(burst>0&&burst<1){
+    const fl=Math.sin(burst*Math.PI);
+    ctx.fillStyle=`rgba(255,255,255,${(0.70*fl).toFixed(3)})`;
+    ctx.fillRect(0,0,W,H);
+  }
 }
 
 /* =========================================================================
@@ -38638,30 +39192,51 @@ function drawS4(t){
      カメラを陸側へ寄せ（見どころが右端で切れるのを防ぐ）、少し引く */
   const p=PORT();
   const horizonY=H*(p?0.27:0.34);
+  const lk=lerp(0.55,1.0,t);
+  const nk=clamp((lk-0.50)/0.50,0,1);      // ★夜が深くなるほど星と月が濃くなる
   drawSky(0.92);
+  drawStars(nk,horizonY);
+  drawMoon(nk);
   drawSun(0.92,horizonY);
+  duskBand(horizonY,1-lk*0.85);
+  cirrus(t*3.0,0.09*(1-t*0.5));
 
   ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(-W*0.2,horizonY+H*0.035);
-  ctx.quadraticCurveTo(W*0.5,horizonY-H*0.055,W*1.2,horizonY+H*0.035);
-  ctx.lineTo(W*1.2,H); ctx.lineTo(-W*0.2,H); ctx.closePath();
-  ctx.clip();
+  /* ★第2弾：地平線の丸みを強く（第1弾の0.035/0.055ではほぼ直線に見えた）。
+     clipとearthRimが同じ式を共有するので、縁にぴったり沿う */
+  const bulge=0.052;
+  const gEdge=groundEdgePath(horizonY,bulge);
+  gEdge.lineTo(W*1.25,H); gEdge.lineTo(-W*0.25,H); gEdge.closePath();
+  ctx.clip(gEdge);
 
   const c=makeCam(horizonY,p?1.15:1.0,p?1.15:0);
   // 雲海（deck）は地表と同じ遠近に乗せる＝drawGroundの中で描かれる
-  drawGround(c, S4_TRAVEL0+t*S4_LEN*S4_SPEED, {haze:QN('haze',1.0),light:lerp(0.55,1.0,t),veil:QN('veil',0.16),deck:QN('deck',0.52)});
+  drawGround(c, S4_TRAVEL0+t*S4_LEN*S4_SPEED, {haze:QN('haze',1.0),light:lk,veil:QN('veil',0.16),deck:QN('deck',0.52)});
   ctx.restore();
 
-  cloudBand(-t*W*3.0,H*1.06,Math.min(W,H)*0.20,0.45,2.8,'250,252,255');
+  farCloudBands(S4_TRAVEL0+t*S4_LEN*S4_SPEED,horizonY,nk);   // ★第2弾：遠くの雲の帯（視差）
+  earthRim(horizonY,bulge,nk);                               // ★第2弾：大気の青い縁
+
+  /* ★第2弾：手前の雲を2層に（遅く大きい層＋速く薄い層）。地表・遠雲・手前雲の
+     3つの速さが重なる＝止まった絵に見えない */
+  cloudBand(-t*W*1.6,H*1.10,Math.min(W,H)*0.30,0.32,3.2,'248,250,255');
+  cloudBand(-t*W*4.2,H*1.045,Math.min(W,H)*0.17,0.50,2.4,'218,226,244');
 
   const s=Math.min(W,H)*(p?0.205:0.235);
-  const roll=Math.sin(t*Math.PI*1.3)*0.09;
-  const x=W*0.5+Math.sin(t*Math.PI*1.3)*W*0.035;
+  /* ★第2弾：ゆるいバンクを強く・ゆっくりに（第1弾の±0.09/短周期は揺れにしか見えなかった） */
+  const roll=Math.sin(t*Math.PI*0.9+0.4)*0.155;
+  const x=W*0.5+Math.sin(t*Math.PI*0.9+0.4)*W*0.052;
   const y=H*(p?0.265:0.335)+Math.sin(t*5.0)*H*0.006;
   contrail(x-s*1.30,y+s*0.20,s,W*0.22,0.30);
   contrail(x+s*1.30,y+s*0.20,s,W*0.22,0.30);
   planeBack(x,y,s,roll);
+  /* ★夜はエンジンの出口がほのかに光る */
+  const eg=clamp((lk-0.60)/0.40,0,1);
+  if(eg>0.02){
+    glow(x-s*0.34,y+s*0.30,s*0.11,'rgba(255,192,122,'+(0.55*eg).toFixed(3)+')');
+    glow(x+s*0.34,y+s*0.30,s*0.11,'rgba(255,192,122,'+(0.55*eg).toFixed(3)+')');
+  }
+  drawFlare(0.92,horizonY,0.5*(1-lk*0.55));
 }
 
 /* =========================================================================
@@ -38672,23 +39247,53 @@ function drawS5(t){
   const horizonY=lerp(H*(p?0.27:0.34),H*(p?0.22:0.28),ease(t));
   drawSky(lerp(0.92,0.70,ease(t)));
   drawSun(lerp(0.92,0.70,ease(t)),horizonY);
+  drawStars(1-ease(t)*0.30,horizonY);
+  drawMoon(1);
+  duskBand(horizonY,0.15*(1-ease(t)));
+  cirrus(t*2.0,0.06);
 
   ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(-W*0.2,horizonY+H*0.03);
-  ctx.quadraticCurveTo(W*0.5,horizonY-H*0.03,W*1.2,horizonY+H*0.03);
-  ctx.lineTo(W*1.2,H); ctx.lineTo(-W*0.2,H); ctx.closePath();
-  ctx.clip();
+  /* ★第2弾：S4と同じ丸みのある地平線＋大気の縁（降下で少しだけ弱まる） */
+  const bulge=lerp(0.048,0.026,ease(t));
+  const gEdge=groundEdgePath(horizonY,bulge);
+  gEdge.lineTo(W*1.25,H); gEdge.lineTo(-W*0.25,H); gEdge.closePath();
+  ctx.clip(gEdge);
 
   const c=makeCam(horizonY,lerp(p?1.15:1.0,p?0.62:0.55,ease(t)),p?1.15:0);   // 高度が下がる＝地面が近づく
-  drawGround(c, S4_TRAVEL0+S4_LEN*S4_SPEED+t*10.0,
+  drawGround(c, S4_TRAVEL0+S4_LEN*S4_SPEED+t*13.0,
              {haze:lerp(1.0,0.75,ease(t)),light:1.0,veil:lerp(0.16,0.10,ease(t)),deck:lerp(0.52,0.30,ease(t))});
   ctx.restore();
+
+  farCloudBands(S4_TRAVEL0+S4_LEN*S4_SPEED+t*13.0,horizonY,0.85);   // ★第2弾：遠くの雲の帯
+  earthRim(horizonY,bulge,0.9);                                     // ★第2弾：大気の青い縁
 
   cloudBand(-t*W*2.0,H*0.90,Math.min(W,H)*0.16,0.45,2.6,'252,252,255');
 
   const s=Math.min(W,H)*lerp(p?0.205:0.235,p?0.275:0.315,ease(t));
-  planeBack(W*0.5,H*lerp(p?0.265:0.335,p?0.235:0.30,ease(t)),s,-0.05+ease(t)*0.03);
+  const py=H*lerp(p?0.265:0.335,p?0.235:0.30,ease(t));
+  planeBack(W*0.5,py,s,-0.05+ease(t)*0.03);
+  /* ★第2弾：着陸灯。機首の下の地面を明るく照らす＝夜の降下がひと目で分かる */
+  const lb=ease(seg(t,0.10,0.70));
+  if(lb>0.02){
+    const bx=W*0.5, by=py+s*0.42;
+    const flick=0.85+0.15*Math.sin(NOW*37);
+    const gg=ctx.createRadialGradient(bx,by,0,bx,by,H*0.42);
+    gg.addColorStop(0,`rgba(255,246,220,${(0.26*lb*flick).toFixed(3)})`);
+    gg.addColorStop(0.55,`rgba(255,240,206,${(0.08*lb*flick).toFixed(3)})`);
+    gg.addColorStop(1,'rgba(255,240,206,0)');
+    ctx.save();
+    ctx.translate(bx,by); ctx.scale(0.62,1); ctx.translate(-bx,-by);
+    ctx.fillStyle=gg;
+    ctx.beginPath(); ctx.ellipse(bx,by+H*0.16,H*0.30,H*0.34,0,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+  /* ★降下では雲を引かずに高度が下がる＝飛行機雲は薄くなって消える */
+  const f0=seg(t,0.0,0.72);
+  contrail(W*0.5-s*1.30,py+s*0.20,s,W*0.20*(1-f0*0.85),0.26*(1-f0*0.8));
+  contrail(W*0.5+s*1.30,py+s*0.20,s,W*0.20*(1-f0*0.85),0.26*(1-f0*0.8));
+  glow(W*0.5-s*0.34,py+s*0.30,s*0.11,'rgba(255,192,122,0.30)');
+  glow(W*0.5+s*0.34,py+s*0.30,s*0.11,'rgba(255,192,122,0.30)');
+  drawFlare(lerp(0.92,0.70,ease(t)),horizonY,0.25*(1-seg(t,0.72,1.0)));
 
   const f=seg(t,0.72,1.0);
   ctx.fillStyle=`rgba(255,255,255,${ease(f)*0.95})`;
@@ -38934,10 +39539,19 @@ function startFlight(my){
   };
   requestAnimationFrame(step);
 }
+let NOW=0;   // ★v3.11 シーン内の時刻（航空灯の点滅・星のまたたきの位相に使う）
 function render(t){
+  NOW=t;
   ctx.clearRect(0,0,W,H);
   const cut=CUTS.find(c=>t>=c.a&&t<c.b)||CUTS[CUTS.length-1];
   cut.fn(clamp((t-cut.a)/(cut.b-cut.a),0,1));
+  /* ★四すみをわずかに落とす（ビネット）。画面が引き締まって「映像」っぽくなる */
+  const vr=Math.hypot(W,H)*0.60;
+  const vg=ctx.createRadialGradient(W*0.5,H*0.44,Math.min(W,H)*0.50,W*0.5,H*0.5,vr);
+  vg.addColorStop(0,'rgba(10,12,26,0)');
+  vg.addColorStop(0.72,'rgba(10,12,26,0.055)');
+  vg.addColorStop(1,'rgba(10,12,26,0.22)');
+  ctx.fillStyle=vg; ctx.fillRect(0,0,W,H);
   for(const c of CUTS){
     const d=Math.abs(t-c.a);
     if(d<0.09&&c.a>0){
