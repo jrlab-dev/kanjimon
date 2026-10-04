@@ -2,10 +2,10 @@
 (function(global){
  'use strict';
  let current=null;const cache=new Map();
- function abortAll(){
-  current?.close();
-  if(typeof fieldZone!=='undefined'&&fieldZone===43&&typeof ztActive!=='undefined'&&ztActive){
-   ztActive=false;heroLock=false;hakaseMsgSeq++;hakaseTapTrigger=null;stopBattleHakaseVoice();global.speechSynthesis?.cancel();hakaseDuckRelease();hideHakaseTalkWindow();
+ function abortAll(scene=current){
+  const ownsTalk=scene?.ownsTalk();scene?.close();
+  if(ownsTalk&&typeof fieldZone!=='undefined'&&fieldZone===43&&typeof ztActive!=='undefined'&&ztActive){
+   cancelZoneTalkMusic();ztActive=false;heroLock=false;hakaseMsgSeq++;hakaseTapTrigger=null;stopBattleHakaseVoice();global.speechSynthesis?.cancel();hakaseDuckRelease();hideHakaseTalkWindow();
   }
  }
  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&typeof fieldZone!=='undefined'&&fieldZone===43&&typeof ztActive!=='undefined'&&ztActive){e.preventDefault();e.stopImmediatePropagation();abortAll();showScreen('screen-title');}},true);
@@ -17,7 +17,7 @@
   if(y1<=y0)throw Error('Empty actor');const t=document.createElement('canvas');t.width=x1-x0;t.height=y1-y0;t.getContext('2d').drawImage(c,x0,y0,t.width,t.height,0,0,t.width,t.height);const result=t.toDataURL('image/png');cache.set(key,result);return result;
  }
  function create(){
-  current?.close();const seq=fieldSeq,root=document.createElement('section');root.id='kuroshioStory';root.dataset.phase='loading';root.setAttribute('aria-label','くろしおの海でのすれ違い');
+  current?.close();const talkGeneration=ztMusicGeneration,seq=fieldSeq,root=document.createElement('section');root.id='kuroshioStory';root.dataset.phase='loading';root.setAttribute('aria-label','くろしおの海でのすれ違い');
   root.innerHTML='<div class="kr-view"><img class="kr-bg" src="images/battle-tate/stage43.webp" alt="青い海に沿う広い土の道"><div class="kr-cast"><img class="kr-hero" alt="すれ違う男を見る主人公"><img class="kr-mana" alt="黙って見守るマナ"><img class="kr-man" alt="笠をかぶった大きな男"></div><b class="kr-location">くろしおの うみ</b><button class="kr-close" type="button">もどる</button></div><div class="kr-dialog"><div class="kr-slot"></div><span class="kr-next">▼ つづく</span></div>';
   document.body.appendChild(root);const slot=root.querySelector('.kr-slot'),man=root.querySelector('.kr-man');
   let live=true,ready=false,busy=true,raf=0,watch=0,deadline=0,pending=null;let front=[],side=[];
@@ -43,10 +43,10 @@
    if(!ready){pending={n,ln,done};quiet();return true;}play(n,ln,done);return true;
   }
   function line(n){if(!valid())return;busy=false;root.dataset.busy='false';if(n>=2)root.dataset.phase='gone';mount();}
-  const api={close,abort:abortAll,playLine,line};current=api;
+  const api={close,abort:()=>abortAll(api),ownsTalk:()=>live&&talkGeneration===ztMusicGeneration,playLine,line};current=api;
   root.querySelector('.kr-close').onclick=()=>{abortAll();showScreen('screen-title');};
   root.querySelector('.kr-dialog').addEventListener('click',e=>{if(busy){e.preventDefault();e.stopImmediatePropagation();return;}if(!e.target.closest('#hakaseTalkWin'))hakaseTapAdvance();},true);
-  watch=setInterval(()=>{if(!valid())abortAll();},80);deadline=setTimeout(fallback,4000);
+  watch=setInterval(()=>{if(!valid())abortAll(api);},80);deadline=setTimeout(fallback,4000);
   const gender=heroChar==='girl'?'girl':'boy';
   Promise.all([
    ...[...root.querySelectorAll('.kr-bg')].map(img=>img.decode()),

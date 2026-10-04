@@ -84,7 +84,10 @@
     try{stopAutoExplore();autoExploring=false;heldKeys.clear();if(keyTimer){clearTimeout(keyTimer);keyTimer=null;}heroLock=true;}catch(e){}
     qa('.overlay.show').forEach(n=>n.classList.remove('show'));qa('.screen').forEach(n=>n.classList.remove('active'));$('screen-field').classList.add('active');heroChar=gender;fieldZone=zone;
     try{introSeen=true;evSeen[zone]=true;freeZones.add(zone);}catch(e){}
-    const s=point||stagePoint(zone);setFieldStandardPosition(zone,s.x,s.y);fieldZoomLastZone=zone;renderField();try{stopAutoExplore();autoExploring=false;heroLock=true;}catch(e){}clearEventActors();
+    const s=point||stagePoint(zone);setFieldStandardPosition(zone,s.x,s.y);fieldZoomLastZone=zone;renderField();
+    // この演出経路はshowScreenを通らないので、専用ボス後の続き再生をここで消費する。
+    if(bgmResumeFieldOnce){bgmResumeFieldOnce=false;bgmPlay(fieldSongFor(zone),{resume:true});}
+    try{stopAutoExplore();autoExploring=false;heroLock=true;}catch(e){}clearEventActors();
     const grid=$('fieldGrid');if(background){grid.classList.add('has-fullart');grid.style.setProperty('--fullart-img',`url('images/fullart/${background}')`);if($('fieldZoneName'))$('fieldZoneName').textContent=label;const pbg=$('fieldParallaxBg');if(pbg)pbg.classList.remove('show');}const sources=qa('.tile.t-spot',grid);sources.forEach(n=>n.classList.add('nd-base-hidden'));$('fieldHero').style.visibility=hero?'visible':'hidden';
     const cx=fieldHx,cy=fieldHy,actors=[],mobs=[];
     if(mana)actors.push(placeActor({kind:'mana',x:cx+(hero?1.2:(zone===9?1.35:0)),y:cy+(hero?.15:.7),extra:hokkaido?'nd-hokkaido-mana':''}));
@@ -158,7 +161,7 @@
   }
 
   function create(host,options={}){
-    let root=setupRoot(host),timers=[],audio=null,generation=0,index=-1,doneSent=false,gender=options.gender==='girl'?'girl':'boy',sound=options.sound!==false,linePlayerName=typeof options.playerName==='string'?options.playerName.trim():'';
+    let root=setupRoot(host),timers=[],audio=null,musicToken=null,generation=0,index=-1,doneSent=false,gender=options.gender==='girl'?'girl':'boy',sound=options.sound!==false,linePlayerName=typeof options.playerName==='string'?options.playerName.trim():'';
     const state={ready:false,done:false,line:null,cut:null,running:false};
     function playerNameForLine(){let name=linePlayerName;if(!name)try{name=typeof playerName==='string'?playerName.trim():'';}catch(e){}return name||'君';}
     const later=(fn,ms,g=generation)=>{const t=setTimeout(()=>{if(g===generation)fn();},ms);timers.push(t);return t;},alive=g=>()=>g===generation&&state.running;
@@ -168,15 +171,23 @@
     function freezeHokkaido(){const f=global.__ND_FIELD,flash=q('#ndIceFlash',root),flashAt=performance.now();global.__ND_FREEZE_FX={flashAt,soundAt:flashAt,freezeAt:null,sound:'magic-mizu-max',soundRequested:sound};if(flash){flash.classList.remove('show');void flash.offsetWidth;flash.classList.add('show');}if(sound){try{if(typeof sePlay==='function')sePlay('magic-mizu-max',{volume:.55});else snd('magicmax');}catch(e){}}later(()=>{if(f){setMonsterMood(f.mobs,'sleeping');global.__ND_FREEZE_FX.freezeAt=performance.now();}},260);}
     function hideTalk(){q('#ndTalk',root)?.classList.remove('show');if(audio){try{audio.pause();audio.currentTime=0;}catch(e){}audio=null;}}
     function cleanupVisuals(){hideTalk();hideCue();hideMapRegion();clearEventActors();closeWorldMap();document.body.classList.remove('nd-map-mode','nd-ship-mode');if($('fieldHero'))$('fieldHero').style.visibility='';try{stopAutoExplore();autoExploring=false;heldKeys.clear();heroLock=true;shipSceneSeq++;shipSceneActive=false;spBusKill();shipSceneStopWalkAnims();$('shipSceneOverlay').classList.remove('show');shipSceneResetLayers();}catch(e){}}
-    function clear(){generation++;timers.forEach(clearTimeout);timers=[];cleanupVisuals();state.ready=false;state.running=false;}
-    function cut(name){state.cut=name;if(options.onCut)options.onCut(name,state);}
+    function endMusic(){global.bgmSceneEnd(musicToken);musicToken=null;}
+    function clear(){endMusic();generation++;timers.forEach(clearTimeout);timers=[];cleanupVisuals();state.ready=false;state.running=false;}
+    function cut(name){
+      // C18の氷だけでは正体を明かさない。C19で本人が姿を見せて初めて英雄候補へ。
+      if(name==='C01_FERRY_ENTRANCE')musicToken=global.bgmSceneBegin('national-departure','maros-mysterious');
+      if(name==='C19_MAROS_WALK')musicToken=global.bgmSceneBegin('national-departure','maros-heroic');
+      if(name==='C21_OKINAWA_FAREWELL')musicToken=global.bgmSceneBegin('national-departure','mana');
+      if(name==='C22_SHIP_S0_S3')endMusic();
+      state.cut=name;if(options.onCut)options.onCut(name,state);
+    }
     function auto(name,ms,fn){cut(name);state.ready=false;state.line=null;hideTalk();fn&&fn();later(run,ms);}
     function line(i){
       const row=LINES[i],g=generation,text=row[2].replace('{name}',playerNameForLine());cut(row[0]);state.line=i;state.ready=false;hideTalk();hideCue();const box=q('#ndTalk',root),who=q('#ndWho',root),txt=q('#ndText',root),face=q('#ndFace',root);who.innerHTML=global.talkText?global.talkText(row[1],102):row[1];txt.innerHTML=global.talkText?global.talkText(text,102):text;face.src=row[1].includes('マローズ')?FACES.maros:(row[1].includes('先生')?FACES.adult:FACES.mana);box.classList.add('show');
       let marked=false;const mark=()=>{if(marked||g!==generation)return;marked=true;later(()=>{if(g===generation){state.ready=true;q('#ndNext',root).classList.add('ready');}},2000,g);};
       if(sound&&row[3]){try{audio=new Audio('audio/battle/'+row[3]+'.mp3');audio.addEventListener('ended',mark,{once:true});audio.addEventListener('error',()=>later(mark,4200,g),{once:true});const p=audio.play();if(p&&p.catch)p.catch(()=>later(mark,4200,g));later(mark,14000,g);}catch(e){later(mark,4200,g);}}else later(mark,Math.max(4200,text.length*115),g);
     }
-    function finish(){state.ready=false;state.done=true;state.running=false;state.line=null;cut('DONE');if(!doneSent){doneSent=true;if(options.onDone)options.onDone();}}
+    function finish(){endMusic();state.ready=false;state.done=true;state.running=false;state.line=null;cut('DONE');if(!doneSent){doneSent=true;if(options.onDone)options.onDone();}}
     const plan=[
       ()=>auto('C01_FERRY_ENTRANCE',2400,()=>showField(102,{gender,hero:true,label:'フェリーのりば',adults:0,mana:true,background:'okinawa-ferry-entrance-field-20260921.png',point:{x:15,y:6}})),
       ()=>auto('C01A_TOKYO_INCOMING',1700,showIncoming),()=>auto('C01B_MANA_NOTICE',1500,showManaNotice),()=>line(0),

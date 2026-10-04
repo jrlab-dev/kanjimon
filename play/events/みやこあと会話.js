@@ -11,7 +11,7 @@
   if(bottom<=top)throw Error('Empty character');const b={fill:(bottom-top)/c.height,pad:(c.height-bottom)/c.height};cache.set(img.src,b);return b;
  }
  function create(){
-  current?.close();const seq=fieldSeq,root=document.createElement('section');root.id='miyakoStory';root.dataset.beat='earth';root.setAttribute('aria-label','ナラの古代の都跡での会話');
+  current?.close();const talkGeneration=ztMusicGeneration,seq=fieldSeq,root=document.createElement('section');root.id='miyakoStory';root.dataset.beat='earth';root.setAttribute('aria-label','ナラの古代の都跡での会話');
   root.innerHTML='<div class="my-view"><div class="my-art"><img class="my-bg" src="images/fullart/miyako-conversation.webp" alt="低い礎石と浅い発掘跡のある草原、遠くに丸い丘"><div class="my-hat" role="img" aria-label="丘の向こうから現れ、背を向けて去る笠の人"><div class="my-traveler"><img class="my-front" src="images/sprites/maros-full-front-clean.webp" alt=""><div class="my-back"></div></div></div></div><b class="my-location">ナラ・こだいの みやこあと</b><button class="my-close" type="button">もどる</button><div class="my-stage"><img class="my-hero" alt="マナの話を聞く主人公"><img class="my-mana" src="images/sprites/mana-conversation.webp" alt="マナ"></div></div><div class="my-dialog"><b class="my-speaker">マナ</b><div class="my-slot"></div></div>';
   const stage=root.querySelector('.my-stage'),slot=root.querySelector('.my-slot');
   root.querySelector('.my-hero').src='images/battle-tate/hero-back-'+(heroChar==='girl'?'girl':'boy')+costumeSuffix()+'.webp';document.body.appendChild(root);
@@ -61,7 +61,7 @@
   }
   function restore(){const win=slot.querySelector('#hakaseTalkWin'),wrap=$('fieldWrap');if(win&&wrap){wrap.appendChild(win);positionHakaseTalkWindow(win,wrap);}}
   function close(){if(!live)return;live=false;clearInterval(watch);clearTimeout(timeout);cancelAnimationFrame(raf);for(const id of timers)clearTimeout(id);timers.clear();document.removeEventListener('keydown',key);restore();root.remove();if(current===api)current=null;}
-  function abort(){if(!live)return;ztActive=false;heroLock=false;hakaseMsgSeq++;hakaseTapTrigger=null;stopBattleHakaseVoice();global.speechSynthesis?.cancel();hakaseDuckRelease();close();hideHakaseTalkWindow();}
+  function abort(){if(!live)return;if(!cancelZoneTalkMusic(talkGeneration)){close();return;}ztActive=false;heroLock=false;hakaseMsgSeq++;hakaseTapTrigger=null;stopBattleHakaseVoice();global.speechSynthesis?.cancel();hakaseDuckRelease();close();hideHakaseTalkWindow();}
   function key(e){if(e.key==='Escape'){e.preventDefault();e.stopPropagation();abort();showScreen('screen-title');}}
   function line(n){if(!live)return;index=n;root.dataset.beat=['earth','memory','hill'][n]||'earth';if(ready){const win=$('hakaseTalkWin');if(win)slot.appendChild(win);}}
   const api={close,abort,line,playLine};current=api;

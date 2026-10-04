@@ -15,12 +15,15 @@
   root.innerHTML='<div class="bw-view"><div class="bw-art"><img class="bw-bg" src="images/fullart/biwako-conversation.webp" alt="左に静かな湖、奥へ続く乾いた湖岸の道"><img class="bw-front" src="images/sprites/maros-full-front-clean.webp" alt="目深な笠で目を隠した大きな人"><div class="bw-walker" role="img" aria-label="笠をかぶり、無言で去る大きな人"></div></div><b class="bw-location">びわこ・みずうみの ほとり</b><button class="bw-close" type="button">もどる</button><div class="bw-stage"><img class="bw-hero" alt="湖畔でマナの話を聞く主人公"><img class="bw-mana" src="images/sprites/mana-conversation.webp" alt="マナ"></div></div><div class="bw-dialog"><b class="bw-speaker">マナ</b><div class="bw-slot"></div></div>';
   const stage=root.querySelector('.bw-stage'),slot=root.querySelector('.bw-slot'),walker=root.querySelector('.bw-walker');
   root.querySelector('.bw-hero').src='images/battle-tate/hero-back-'+(heroChar==='girl'?'girl':'boy')+costumeSuffix()+'.webp';document.body.appendChild(root);
-  let live=true,ready=false,watch=0,timeout=0,raf=0,callback=onDone,beat=walk?'walk':'notice';
+  let musicToken=walk?global.bgmSceneBegin('maros-passerby-27',BGM_MAROS_PASSERBY_THEMES[27]):null,live=true,ready=false,watch=0,timeout=0,raf=0,callback=onDone,beat=walk?'walk':'notice';
   function restore(){const win=slot.querySelector('#hakaseTalkWin'),wrap=$('fieldWrap');if(win&&wrap){wrap.appendChild(win);positionHakaseTalkWindow(win,wrap);}}
-  function close(){if(!live)return;live=false;clearInterval(watch);clearTimeout(timeout);cancelAnimationFrame(raf);callback=null;document.removeEventListener('keydown',key);restore();root.remove();if(current===api)current=null;}
-  function abort(){if(!live)return;pbActive=false;heroLock=false;ztActive=false;hakaseMsgSeq++;hakaseTapTrigger=null;stopBattleHakaseVoice();global.speechSynthesis?.cancel();hakaseDuckRelease();close();hideHakaseTalkWindow();}
+  let talkGeneration=walk?null:ztMusicGeneration;
+  function claimTalk(){talkGeneration=ztMusicGeneration;}
+  function endMusic(){global.bgmSceneEnd(musicToken);musicToken=null;}
+  function close(){if(!live)return;live=false;endMusic();clearInterval(watch);clearTimeout(timeout);cancelAnimationFrame(raf);callback=null;document.removeEventListener('keydown',key);restore();root.remove();if(current===api)current=null;}
+  function abort(){if(!live)return;if(talkGeneration!==ztMusicGeneration){if(talkGeneration===null&&!ztActive){pbActive=false;heroLock=false;}close();return;}cancelZoneTalkMusic(talkGeneration);pbActive=false;heroLock=false;ztActive=false;hakaseMsgSeq++;hakaseTapTrigger=null;stopBattleHakaseVoice();global.speechSynthesis?.cancel();hakaseDuckRelease();close();hideHakaseTalkWindow();}
   function key(e){if(e.key==='Escape'){e.preventDefault();e.stopPropagation();abort();showScreen('screen-title');}}
-  function line(next){if(!live)return;beat=next;root.dataset.beat=next;if(ready){const win=$('hakaseTalkWin');if(win)slot.appendChild(win);}}
+  function line(next){if(!live)return;if(next!=='walk'&&next!=='notice')endMusic();beat=next;root.dataset.beat=next;if(ready){const win=$('hakaseTalkWin');if(win)slot.appendChild(win);}}
   function finishWalk(){if(!live)return;pbActive=false;heroLock=false;walker.style.opacity='0';line('notice');const done=callback;callback=null;done?.();}
   function animate(){
    root.dataset.motion='stand';walker.style.visibility='hidden';
@@ -37,7 +40,7 @@
     if(t<1)raf=requestAnimationFrame(frame);else finishWalk();};
    raf=requestAnimationFrame(frame);
   }
-  const api={close,abort,line};current=api;root.querySelector('.bw-close').onclick=()=>{abort();showScreen('screen-title');};document.addEventListener('keydown',key);
+  const api={close,abort,line,endMusic,claimTalk};current=api;root.querySelector('.bw-close').onclick=()=>{abort();showScreen('screen-title');};document.addEventListener('keydown',key);
   root.querySelector('.bw-dialog').onclick=e=>{if(!e.target.closest('#hakaseTalkWin'))hakaseTapAdvance();};
   watch=setInterval(()=>{if(seq!==fieldSeq||fieldZone!==27||!$('screen-field')?.classList.contains('active'))abort();},80);
   function fallback(){if(!live)return;failedSeq=seq;const done=callback;callback=null;pbActive=false;heroLock=false;close();if(seq===fieldSeq&&fieldZone===27)done?.();}
@@ -56,7 +59,7 @@
    if(fieldZone!==27||failedSeq===fieldSeq)return null;
    const intro=lines===ZONE_TALK[27].in,notice=lines.length===1&&lines[0].text===PASSERBY[27].mana;
    if(!intro&&!notice)return null;
-   const scene=current||create(false);return{line(n){scene.line(notice?'notice':n===0?'stone':'warning');},close(){if(notice){scene.line('notice');}else scene.close();}};
+   const scene=current||create(false);scene.claimTalk();return{line(n){scene.line(notice?'notice':n===0?'stone':'warning');},close(){if(notice){scene.endMusic();scene.line('notice');}else scene.close();}};
   },
   abort(){current?.abort();},beforeScreen(id){if(id!=='screen-field')current?.abort();}
  };

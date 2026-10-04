@@ -112,7 +112,9 @@
     function cleanup(){timers.forEach(clearTimeout);timers=[];clearActors();hideTalk();q('#amamiMap',root)?.classList.remove('show');root.classList.remove('active');document.body.classList.remove('amami-arrival-mode');}
     function auto(name,ms,fn){setCut(name);hideTalk();fn&&fn();const g=generation;later(()=>global.AmamiMotion.after(()=>{if(g===generation)run();}),ms);}
     function showMap(){root.classList.add('active');const map=q('#amamiMap',root);map.classList.remove('show');void map.offsetWidth;map.classList.add('show');}
+    let musicToken=null;
     function line(i){
+      if(i===0)musicToken=global.bgmSceneBegin('amami-arrival','easy');
       const row=global.AmamiStoryUI.arrival(LINES)[i],g=generation;
       setCut(row.id);state.line=i;hideTalk();
       const box=q('#amamiTalk',root);
@@ -121,6 +123,7 @@
       later(()=>{if(g===generation){ready=true;state.ready=true;q('#amamiNext',root).classList.add('ready');}},Math.max(900,row.text.length*65),g);
     }
     function finish(){
+      global.bgmSceneEnd(musicToken);musicToken=null;
       global.AmamiMotion.endEventCamera();
       ready=false;running=false;state.ready=false;state.running=false;state.done=true;state.line=null;setCut('DONE');
       if(!doneSent){doneSent=true;if(options.onDone)options.onDone();}
@@ -146,7 +149,7 @@
     }
     function next(){if(!running||!ready||global.AmamiMotion.busy||global.AmamiVoice.busy)return false;ready=false;state.ready=false;q('#amamiNext',root)?.classList.remove('ready');run();return true;}
     root.addEventListener('click',next);
-    return{state,start,restart:start,next,stop(){generation++;running=false;cleanup();state.running=false;},destroy(){generation++;running=false;cleanup();root.remove();},get lines(){return global.AmamiStoryUI.arrival(LINES);}};
+    return{state,start,restart:start,next,stop(){global.bgmSceneEnd(musicToken);musicToken=null;generation++;running=false;cleanup();state.running=false;},destroy(){global.bgmSceneEnd(musicToken);musicToken=null;generation++;running=false;cleanup();root.remove();},get lines(){return global.AmamiStoryUI.arrival(LINES);}};
   }
   global.AmamiArrival={create,lines:LINES,placeEasy,heroWalkFrame};
 })(window);

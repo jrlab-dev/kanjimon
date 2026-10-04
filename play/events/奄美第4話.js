@@ -45,7 +45,8 @@
       if(row.id==='C04c')global.AmamiMotion.play(target,'07');
     }
     function clearActors(){global.AmamiVoice.stop();global.AmamiMotion.stop();qa('.ask-field-enemy').forEach(n=>n.remove());qa('.amami-easy').forEach(n=>n.remove());wordEl=null;easy=null;}
-    function resetTalk(){ready=false;lineIndex=0;lines=[];afterTalk=null;q('#askTalk',root)?.classList.remove('show');q('#askNext',root)?.classList.remove('ready');}
+    let musicToken=null;
+    function resetTalk(){global.bgmSceneEnd(musicToken);musicToken=null;ready=false;lineIndex=0;lines=[];afterTalk=null;q('#askTalk',root)?.classList.remove('show');q('#askNext',root)?.classList.remove('ready');}
     function base(){
       closeCut();clearTimers();clearActors();resetTalk();
       if(!global.NationalDeparture||!global.AmamiArrival)throw new Error('奄美フィールド部品がありません');
@@ -74,7 +75,7 @@
       const row=lines[lineIndex++];global.AmamiStoryUI.display(row,box,q('#askFace',root),q('#askWho',root),q('#askText',root));cutLine(row);
       later(()=>{ready=true;next.classList.add('ready');},520);
     }
-    function talk(texts,done){lines=texts.slice();lineIndex=0;afterTalk=done;showLine();}
+    function talk(texts,done){musicToken=global.bgmSceneBegin('amami-4-talk','easy');lines=texts.slice();lineIndex=0;afterTalk=()=>{global.bgmSceneEnd(musicToken);musicToken=null;done?.();};showLine();}
     function next(){if(!ready||global.AmamiMotion.busy||global.AmamiVoice.busy)return false;showLine();return true;}
     root.addEventListener('click',next);
     function entry(done){

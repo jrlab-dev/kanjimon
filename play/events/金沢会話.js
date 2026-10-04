@@ -2,10 +2,10 @@
 (function(global){
  'use strict';
  let current=null;const cache=new Map();
- function abortAll(){
-  current?.close();
-  if(typeof fieldZone!=='undefined'&&fieldZone===49&&typeof ztActive!=='undefined'&&ztActive){
-   ztActive=false;heroLock=false;hakaseMsgSeq++;hakaseTapTrigger=null;stopBattleHakaseVoice();global.speechSynthesis?.cancel();hakaseDuckRelease();hideHakaseTalkWindow();
+ function abortAll(scene=current){
+  const ownsTalk=scene?.ownsTalk();scene?.close();
+  if(ownsTalk&&typeof fieldZone!=='undefined'&&fieldZone===49&&typeof ztActive!=='undefined'&&ztActive){
+   cancelZoneTalkMusic();ztActive=false;heroLock=false;hakaseMsgSeq++;hakaseTapTrigger=null;stopBattleHakaseVoice();global.speechSynthesis?.cancel();hakaseDuckRelease();hideHakaseTalkWindow();
   }
  }
  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&typeof fieldZone!=='undefined'&&fieldZone===49&&typeof ztActive!=='undefined'&&ztActive){e.preventDefault();e.stopImmediatePropagation();abortAll();showScreen('screen-title');}},true);
@@ -17,7 +17,7 @@
   if(y1<=y0)throw Error('Empty actor');const t=document.createElement('canvas');t.width=x1-x0;t.height=y1-y0;t.getContext('2d').drawImage(c,x0,y0,t.width,t.height,0,0,t.width,t.height);const result=t.toDataURL('image/png');cache.set(key,result);return result;
  }
  function create(){
-  current?.close();const seq=fieldSeq,root=document.createElement('section');root.id='kanazawaStory';root.dataset.phase='loading';root.setAttribute('aria-label','金沢の角を曲がる背中と三体');
+  current?.close();const talkGeneration=ztMusicGeneration,seq=fieldSeq,root=document.createElement('section');root.id='kanazawaStory';root.dataset.phase='loading';root.setAttribute('aria-label','金沢の角を曲がる背中と三体');
   root.innerHTML='<div class="kz-view"><div class="kz-plane"><img class="kz-bg" src="images/fullart/kanazawa-conversation.webp" alt="右奥の町家の裏へ曲がる石畳の路地"><img class="kz-man" alt="角へ去る笠の男の背中">'+['街','各','案'].map((letter,i)=>'<div class="kz-letter dk face-host" data-order="'+i+'"><span class="fc">'+letter+'</span><span class="face normal"><span class="eyes"><span class="eye"></span><span class="eye"></span></span><span class="mouth"></span></span></div>').join('')+'<img class="kz-wall" src="images/fullart/kanazawa-conversation.webp" alt=""></div><div class="kz-cast"><img class="kz-hero" alt="路地を見る主人公"><img class="kz-mana" alt="路地を見るマナ"></div><b class="kz-location">かなざわ じょうかまち</b><button class="kz-close" type="button">もどる</button></div><div class="kz-dialog"><div class="kz-slot"></div><span class="kz-next">▼ つづく</span></div>';
   document.body.appendChild(root);const slot=root.querySelector('.kz-slot'),man=root.querySelector('.kz-man');
   let live=true,ready=false,busy=true,raf=0,watch=0,deadline=0,pending=null;let backs=[];const plane=root.querySelector('.kz-plane'),view=root.querySelector('.kz-view'),letters=[...root.querySelectorAll('.kz-letter')];
@@ -40,10 +40,10 @@
    if(!ready){pending={n,ln,done};quiet();return true;}play(n,ln,done);return true;
   }
   function line(n){if(!valid())return;busy=false;root.dataset.busy='false';mount();}
-  const api={close,abort:abortAll,playLine,line};current=api;
+  const api={close,abort:()=>abortAll(api),ownsTalk:()=>live&&talkGeneration===ztMusicGeneration,playLine,line};current=api;
   root.querySelector('.kz-close').onclick=()=>{abortAll();showScreen('screen-title');};
   root.querySelector('.kz-dialog').addEventListener('click',e=>{if(busy){e.preventDefault();e.stopImmediatePropagation();return;}if(!e.target.closest('#hakaseTalkWin'))hakaseTapAdvance();},true);
-  watch=setInterval(()=>{if(!valid())abortAll();},80);deadline=setTimeout(fallback,4000);
+  watch=setInterval(()=>{if(!valid())abortAll(api);},80);deadline=setTimeout(fallback,4000);
   const gender=heroChar==='girl'?'girl':'boy';
   Promise.all([
    ...[...root.querySelectorAll('.kz-bg,.kz-wall')].map(img=>img.decode()),

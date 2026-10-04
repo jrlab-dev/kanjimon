@@ -6,6 +6,7 @@
  let root=null,splitView=null,zoneObserver=null,voyageResize=null,generation=0,ambientSerial=0,timers=[],lines=[],lineIndex=0,ready=false,afterTalk=null,lineHook=null,running=false;
  const heroSheet=()=>heroChar==='girl'?'hero-girl.webp':'hero.webp';
  let closePair=null,staging=false;
+ let musicToken=null;
  // E1だけの寄り。床と人物を同じfieldGridで動かし、会話の実寸を避ける。
  function focusPair(){
   const grid=$('fieldGrid'),wrap=$('fieldWrap'),hero=$('fieldHero'),easy=grid?.querySelector('.aen-easy');
@@ -39,7 +40,7 @@
  }
  function later(fn,ms){const g=generation,id=setTimeout(()=>{timers=timers.filter(t=>t!==id);if(g===generation&&running)fn();},ms);timers.push(id);return id;}
  function stopTimers(){timers.forEach(clearTimeout);timers=[];}
- function cleanup(){generation++;ambientSerial++;running=false;staging=false;closePair?.();stopTimers();zoneObserver?.disconnect();zoneObserver=null;lineHook=null;if(voyageResize){window.removeEventListener('resize',voyageResize);voyageResize=null;}global.AmamiVoice?.stop();global.AmamiMotion?.stop();splitView?.destroy();splitView=null;root?.remove();root=null;$('aenOpening')?.remove();document.querySelectorAll('.aen-easy,.aen-child,.aen-monster-reading').forEach(n=>n.remove());document.body.classList.remove('amami-ending-mode');if($('fieldHero'))$('fieldHero').style.visibility='';}
+ function cleanup(){global.bgmSceneEnd(musicToken);musicToken=null;generation++;ambientSerial++;running=false;staging=false;closePair?.();stopTimers();zoneObserver?.disconnect();zoneObserver=null;lineHook=null;if(voyageResize){window.removeEventListener('resize',voyageResize);voyageResize=null;}global.AmamiVoice?.stop();global.AmamiMotion?.stop();splitView?.destroy();splitView=null;root?.remove();root=null;$('aenOpening')?.remove();document.querySelectorAll('.aen-easy,.aen-child,.aen-monster-reading').forEach(n=>n.remove());document.body.classList.remove('amami-ending-mode');if($('fieldHero'))$('fieldHero').style.visibility='';}
  function ensureRoot(){
   root=document.createElement('div');root.id='amamiEndingRoot';
   root.innerHTML='<div id="aenMontage" aria-hidden="true"></div><div id="aenPhone" aria-hidden="true"><div class="aen-screen"><div class="aen-title">かんじモン<small>RPG</small></div></div></div><div id="aenTalk"><img id="aenFace" alt=""><div><b id="aenWho"></b><p id="aenText"></p><small id="aenNext">▼ つづく</small></div></div><button id="aenQuit" type="button" aria-label="タイトルへ戻る">とじる</button>';
@@ -164,6 +165,9 @@
  function runPhase(){
   const phase=amamiFinal?.story?.phase;if(!phases.includes(phase)||phase==='done')return;
   cleanup();running=true;
+  global.bgmAmamiEpisode=null;
+  const theme=({E1:'easy',E2:'hero',E3:'easy',E5:'easy',E6:'easy',E7:'easy',E8:'easy'})[phase];
+  musicToken=global.bgmSceneBegin('amami-ending-'+phase,theme);
   if(phase==='split'){
    splitView=global.AmamiCastle.createView(12);splitView.epilogue(()=>{splitView?.destroy();splitView=null;advance();});return;
   }
@@ -195,7 +199,7 @@
    voyageResize();window.addEventListener('resize',voyageResize);
    const voyage=document.createElement('img');voyage.className='aen-picture aen-voyage';voyage.src='images/fullart/ship-side-clear.webp';voyage.alt='奄美から沖縄へ戻る船';sea.appendChild(voyage);
    later(()=>voyage.classList.add('show'),100);
-   later(()=>{if(voyageResize){window.removeEventListener('resize',voyageResize);voyageResize=null;}sea.remove();const f=scene(102,{label:'フェリーのりば',background:'okinawa-ferry-entrance-field-20260921.png',hero:true,mana:true,scene:'return'});placeEasies(f,1,[{x:f.cx+2.4,y:f.cy+.25}]);talk(storyRows(phase),advance);},2600);
+   later(()=>{if(voyageResize){window.removeEventListener('resize',voyageResize);voyageResize=null;}sea.remove();const f=scene(102,{label:'フェリーのりば',background:'okinawa-ferry-entrance-field-20260921.png',hero:true,mana:true,scene:'return'});placeEasies(f,1,[{x:f.cx+2.4,y:f.cy+.25}]);talk(storyRows(phase),advance,row=>{if(row?.id==='E401')musicToken=global.bgmSceneBegin('amami-ending-E4','mana');});},2600);
    return;
   }
   if(phase==='E5'){

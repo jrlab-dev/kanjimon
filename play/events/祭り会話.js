@@ -15,12 +15,15 @@
   root.innerHTML='<div class="fs-view"><div class="fs-art"><img class="fs-bg" src="images/fullart/festival-conversation.webp" alt="提灯と屋台にはさまれた夕方の祭りの通り"><div class="fs-walker" role="img" aria-label="笠をかぶり、無言で去る大きな人"></div><div class="fs-crowd" data-person="woman" role="img" aria-label="祭りを楽しむ町の人の後ろ姿" style="left:40%;top:59%;width:24%;background-image:url(images/sprites/npc-mob-otona-f-a.webp?walk=20261003d)"></div><div class="fs-crowd" data-person="man" role="img" aria-label="祭りを楽しむ町の人の後ろ姿" style="left:57%;top:67%;width:29%;background-image:url(images/sprites/npc-mob-otona-m-a.webp?walk=20261003d)"></div><div class="fs-crowd" data-person="woman2" role="img" aria-label="祭りを楽しむ町の人の後ろ姿" style="left:76%;top:63%;width:26%;background-image:url(images/sprites/npc-mob-otona-f-b.webp?walk=20261003d)"></div><div class="fs-crowd" data-person="man2" role="img" aria-label="祭りを楽しむ町の人の後ろ姿" style="left:70%;top:49%;width:18%;z-index:0;background-image:url(images/sprites/npc-mob-otona-m-b.webp?walk=20261003d)"></div></div><b class="fs-location">にぎわいの まつり</b><button class="fs-close" type="button">もどる</button><div class="fs-stage"><img class="fs-hero" alt="祭りでマナの話を聞く主人公"><img class="fs-mana" src="images/sprites/mana-conversation.webp" alt="マナ"></div></div><div class="fs-dialog"><b class="fs-speaker">マナ</b><div class="fs-slot"></div></div>';
   const stage=root.querySelector('.fs-stage'),slot=root.querySelector('.fs-slot'),walker=root.querySelector('.fs-walker');
   root.querySelector('.fs-hero').src='images/battle-tate/hero-back-'+(heroChar==='girl'?'girl':'boy')+costumeSuffix()+'.webp';document.body.appendChild(root);
-  let live=true,ready=false,watch=0,timeout=0,raf=0,callback=onDone,beat=walk?'walk':'notice';
+  let musicToken=walk?global.bgmSceneBegin('maros-passerby-33',BGM_MAROS_PASSERBY_THEMES[33]):null,live=true,ready=false,watch=0,timeout=0,raf=0,callback=onDone,beat=walk?'walk':'notice';
   function restore(){const win=slot.querySelector('#hakaseTalkWin'),wrap=$('fieldWrap');if(win&&wrap){wrap.appendChild(win);positionHakaseTalkWindow(win,wrap);}}
-  function close(){if(!live)return;live=false;clearInterval(watch);clearTimeout(timeout);cancelAnimationFrame(raf);callback=null;document.removeEventListener('keydown',key);restore();root.remove();if(current===api)current=null;}
-  function abort(){if(!live)return;pbActive=false;heroLock=false;ztActive=false;hakaseMsgSeq++;hakaseTapTrigger=null;stopBattleHakaseVoice();global.speechSynthesis?.cancel();hakaseDuckRelease();close();hideHakaseTalkWindow();}
+  let talkGeneration=walk?null:ztMusicGeneration;
+  function claimTalk(){talkGeneration=ztMusicGeneration;}
+  function endMusic(){global.bgmSceneEnd(musicToken);musicToken=null;}
+  function close(){if(!live)return;live=false;endMusic();clearInterval(watch);clearTimeout(timeout);cancelAnimationFrame(raf);callback=null;document.removeEventListener('keydown',key);restore();root.remove();if(current===api)current=null;}
+  function abort(){if(!live)return;if(talkGeneration!==ztMusicGeneration){if(talkGeneration===null&&!ztActive){pbActive=false;heroLock=false;}close();return;}cancelZoneTalkMusic(talkGeneration);pbActive=false;heroLock=false;ztActive=false;hakaseMsgSeq++;hakaseTapTrigger=null;stopBattleHakaseVoice();global.speechSynthesis?.cancel();hakaseDuckRelease();close();hideHakaseTalkWindow();}
   function key(e){if(e.key==='Escape'){e.preventDefault();e.stopPropagation();abort();showScreen('screen-title');}}
-  function line(next){if(!live)return;beat=next;root.dataset.beat=next;if(ready){const win=$('hakaseTalkWin');if(win)slot.appendChild(win);}}
+  function line(next){if(!live)return;if(next!=='walk'&&next!=='notice')endMusic();beat=next;root.dataset.beat=next;if(ready){const win=$('hakaseTalkWin');if(win)slot.appendChild(win);}}
   function finishWalk(){if(!live)return;pbActive=false;heroLock=false;walker.style.opacity='0';line('notice');const done=callback;callback=null;done?.();}
   function animate(){
    root.dataset.motion='stand';walker.style.visibility='visible';walker.dataset.pose='1';walker.dataset.progress='0';walker.style.backgroundPosition='50% 0%';
@@ -35,7 +38,7 @@
     if(t<1)raf=requestAnimationFrame(frame);else finishWalk();};
    raf=requestAnimationFrame(frame);
   }
-  const api={close,abort,line};current=api;root.querySelector('.fs-close').onclick=()=>{abort();showScreen('screen-title');};document.addEventListener('keydown',key);
+  const api={close,abort,line,endMusic,claimTalk};current=api;root.querySelector('.fs-close').onclick=()=>{abort();showScreen('screen-title');};document.addEventListener('keydown',key);
   root.querySelector('.fs-dialog').onclick=e=>{if(!e.target.closest('#hakaseTalkWin'))hakaseTapAdvance();};
   watch=setInterval(()=>{if(seq!==fieldSeq||fieldZone!==33||!$('screen-field')?.classList.contains('active'))abort();},80);
   function fallback(){if(!live)return;failedSeq=seq;const done=callback;callback=null;pbActive=false;heroLock=false;close();if(seq===fieldSeq&&fieldZone===33)done?.();}
@@ -55,7 +58,7 @@
    if(fieldZone!==33||failedSeq===fieldSeq)return null;
    const intro=lines===ZONE_TALK[33].in,notice=lines.length===1&&lines[0].text===PASSERBY[33].mana;
    if(!intro&&!notice)return null;
-   const scene=current||create(false);return{line(n){scene.line(notice?'notice':n===0?'stone':'warning');},close(){if(notice){scene.line('notice');}else scene.close();}};
+   const scene=current||create(false);scene.claimTalk();return{line(n){scene.line(notice?'notice':n===0?'stone':'warning');},close(){if(notice){scene.endMusic();scene.line('notice');}else scene.close();}};
   },
   abort(){current?.abort();},beforeScreen(id){if(id!=='screen-field')current?.abort();}
  };
