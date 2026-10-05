@@ -2734,6 +2734,9 @@
     font-family:inherit;-webkit-user-select:none;user-select:none}
   .plane-scene-overlay.show{display:block}
   #plCanvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  #plVideoResume{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:45;
+    padding:14px 24px;border:2px solid #fff;border-radius:24px;background:#183b57;color:#fff;font:700 18px system-ui;cursor:pointer}
+  #plVideoResume[hidden]{display:none}
   /* ---------------- ここから v3.6＝キャラ・会話・とばす ----------------
      会話カードは船シーン（.sp-talk）と同じ見た目をそのまま持ってきている。
      ★飛行機は「ずっと景色が流れ続ける」映像なので、会話で時間を止めない。
@@ -2765,6 +2768,7 @@
   #plGate.run #plGateBg{transform:scale(1.14);}          /* ゆっくり寄る＝止まった絵に見せない */
   .pl-fig{position:absolute;background-repeat:no-repeat;background-size:300% 200%;
           transition:left 3.4s linear, top 3.4s linear, width 3.4s linear;}
+  #plGate.arrival .pl-fig{transition:none;}
   #plGateFlash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;
                transition:opacity .55s ease;}
   #plGateFlash.on{opacity:1;}
@@ -4404,6 +4408,7 @@ body.ice-dungeon #fieldInfo{display:none}
 <!-- 弾6-1：飛行機シーン（北海道 → トットリ）。中身は1つの箱に閉じてあり本体の名前とぶつからない -->
 <div class="plane-scene-overlay" id="planeSceneOverlay">
   <canvas id="plCanvas"></canvas>
+  <button id="plVideoResume" hidden>▶ つづきを再生</button>
 <!-- 搭乗口シーン（2D）。飛行の3Dパートの前に流れる -->
 <div id="plGate">
   <div id="plGateBg"></div>
@@ -39013,14 +39018,20 @@ function volAt(pts,rt){
   return pts[pts.length-1][1];
 }
 /* 毎コマ呼ぶ。絵の時刻に合わせて鳴らす＝音と絵がずれない */
-function sfxUpdate(t){
+function sfxUpdate(t,plan=SFX_PLAN){
   if(typeof soundOn!=='undefined' && !soundOn){ sfxStop(); return; }   // 本体の音オフに連動
-  for(const p of SFX_PLAN){
+  for(const p of plan){
     const s=SFX[p.key]; const el=s&&s.el; if(!el) continue;
     const rt=t-p.at;
     if(rt>=0&&rt<p.dur){
+      const rate=p.rate||1;
+      const position=p.offset+(p.loop?(rt*rate)%p.loop:rt*rate);
+      el.playbackRate=rate;
+      if(plan!==SFX_PLAN && Math.abs(el.currentTime-position)>0.22){
+        try{ el.currentTime=position; }catch(e){}
+      }
       if(el.paused){
-        try{ el.currentTime=p.offset+rt; }catch(e){}
+        try{ el.currentTime=position; }catch(e){}
         const pr=el.play(); if(pr&&pr.catch) pr.catch(()=>{});
       }
       el.volume=clamp(volAt(p.vol,rt),0,1);
@@ -40073,7 +40084,8 @@ function gateClear(){
   if(gateWalk){ clearInterval(gateWalk); gateWalk=null; }
   gateVoices.forEach(a=>{ if(a){ try{ a.pause(); a.currentTime=0; }catch(e){} } });
   const g=document.getElementById('plGate');
-  g.classList.remove('show','run');
+  g.classList.remove('show','run','arrival');
+  document.getElementById('plGateMana').style.display='';
   document.getElementById('plGateFlash').classList.remove('on');
   const el=document.getElementById('psTalk'); el.className='ps-talk'; el.onclick=null;
 }
@@ -40109,7 +40121,7 @@ function gatePlay(onDone){
   g.classList.add('show');
   requestAnimationFrame(()=>{ g.classList.add('run'); });
   /* 歩き出し（transitionで移動） */
-  gateTimers.push(setTimeout(()=>{ if(my!==seq) return; put(hero,40,44,17); put(mana,54,42,15); },600));
+  gateTimers.push(setTimeout(()=>{ if(my!==seq) return; put(hero,40,44,17); /* マナは手前の見送り位置で待つ */ },600));
   let useB=false;
   gateWalk=setInterval(()=>{ useB=!useB; gateWalkFrame(hero,useB,'50%'); },260);
   gateTimers.push(setTimeout(()=>{ if(gateWalk){ clearInterval(gateWalk); gateWalk=null; } },4200));
@@ -40130,15 +40142,12 @@ function gatePlay(onDone){
   });
   /* 白フラッシュで飛行の3Dパートへ渡す */
   gateTimers.push(setTimeout(()=>{ if(my!==seq) return; document.getElementById('plGateFlash').classList.add('on'); },(GATE_DUR-0.6)*1000));
-  gateTimers.push(setTimeout(()=>{ if(my!==seq) return; gateClear(); if(onDone) onDone(); },GATE_DUR*1000));
+  gateTimers.push(setTimeout(()=>{ if(my!==seq) return; if(onDone) onDone(); },GATE_DUR*1000));
 }
 
 /* ==========================================================================
-   到着ロビー（降機）シーン（弾6-1d・2026-08-05）＝ gatePlay の逆バージョン。
-   飛行の3Dパートが終わった直後に呼ぶ。白フラッシュINでロビーに切り替え、
-   ゲート（奥・小）から手前（大）へ歩いて近づく＝搭乗口（手前→奥へ遠ざかる）の逆。
-   ★主人公もマナも後ろ姿のまま（マナが案内してロビーへ向かう構図＝背中が見えるのは自然）。
-     正面画像が無くても画像追加なしで済む。背景は当面 gate.webp 流用。
+   到着ロビー（降機）。2026-10-06本人補正：後ろ姿の逆歩きを廃止。
+   採用ロビー背景と主人公の正面歩行を保つ。マナは出発地で待ち、到着で歩くのは主人公だけ。
    ★会話は bh84「ようこそトットリへ！」を統合（onDone側での二重発言を避ける）。
    ========================================================================== */
 const GATE_ARRIVAL_DUR=9.6; // 2026-09-22：新録6.13秒を言い終えてからフェードする。
@@ -40151,26 +40160,37 @@ function gatePlayArrival(onDone){
   const bg=document.getElementById('plGateBg');
   const hero=document.getElementById('plGateHero');
   const mana=document.getElementById('plGateMana');
-  bg.style.backgroundImage="url('"+GATE_BG+"')";   // 当面 gate.webp 流用
+  bg.style.backgroundImage="url('"+GATE_BG+"')";
   hero.style.backgroundImage="url('"+heroSheetUrl()+"')";
-  mana.style.backgroundImage="url('"+GATE_MANA+"')";   // マナも後ろ姿（案内してロビーへ）
-  mana.style.backgroundSize='100% 100%';
-  const put=(el,x,y,w)=>{ el.style.left=x+'%'; el.style.top=y+'%'; el.style.width=w+'%'; el.style.height='auto'; el.style.aspectRatio='1'; };
-  /* ★搭乗口の逆: 奥(小)からスタート → 手前(大)へ近づく */
-  put(hero,40,44,17); put(mana,54,42,15);
-  gateWalkFrame(hero,false,'50%');                 // 後ろ姿（搭乗口と同じ列）
+  mana.style.display='none'; // 2026-10-06本人指定：到着は主人公一人
+  g.classList.add('arrival');
+  // 採用済みの主人公の寸法・歩行経路を保持。
+  const arrivalPose=(progress,frame,walking)=>{
+    const w=g.clientWidth,h=g.clientHeight,foot=h*(.53+.07*progress);
+    const visible=w*(.13+.11*progress),box=visible/(224/256);
+    hero.style.width=box+'px'; hero.style.height=box+'px';
+    hero.style.left=(w*(.44-.06*progress)-box*.5)+'px';
+    hero.style.top=(foot-box*239/256)+'px'; hero.style.transform='none';
+    hero.style.backgroundPosition='0% '+(walking&&frame>=2?'100%':'0%');
+
+  };
   /* 白フラッシュIN（飛行から受継ぐ）→ ロビー表示 → フラッシュ解除で見える化 */
   document.getElementById('plGateFlash').classList.add('on');
   g.classList.add('show');
+  arrivalPose(0,1,false);
   requestAnimationFrame(()=>{
     g.classList.add('run');
     requestAnimationFrame(()=>{ if(my===seq) document.getElementById('plGateFlash').classList.remove('on'); });
   });
-  /* 歩き出し（奥→手前・近づく＝搭乗口と逆方向） */
-  gateTimers.push(setTimeout(()=>{ if(my!==seq) return; put(hero,30,58,30); put(mana,52,54,26); },600));
-  let useB=false;
-  gateWalk=setInterval(()=>{ useB=!useB; gateWalkFrame(hero,useB,'50%'); },260);
-  gateTimers.push(setTimeout(()=>{ if(gateWalk){ clearInterval(gateWalk); gateWalk=null; } },4200));
+  const arrivalStart=performance.now();
+  gateWalk=setInterval(()=>{
+    if(my!==seq) return;
+    const elapsed=(performance.now()-arrivalStart)/1000;
+    const u=Math.max(0,Math.min(1,(elapsed-.4)/2));
+    const progress=u*u*(3-2*u);
+    arrivalPose(progress,Math.floor(Math.max(0,elapsed-.4)/.24)%4,u>0&&u<1);
+    if(u===1){ clearInterval(gateWalk); gateWalk=null; }
+  },33);
   /* 会話: bh84「ついたわね！ようこそトットリへ！」 */
   gateTimers.push(setTimeout(()=>{
     if(my!==seq) return;
@@ -40235,12 +40255,56 @@ function talkUpdate(t,withVoice){
 
 /* 再生。世代番号で古いループを止める（本体に入れるときも同じ作法にする） */
 let seq=0;
+/* Blenderで制作した30秒。動画の時計だけで映像と録音を進める。
+   事前読込や再生待ちでは搭乗口を残し、再生失敗は従来の描画で続行する。 */
+const FLIGHT_VIDEO='events/plane/airport-flight-20261006-v3.mp4';
+const VIDEO_SFX_PLAN=[
+  {key:'takeoff',at:0,offset:0.5,dur:8,rate:0.8,vol:[[0,0.65],[2,0.85],[5.6,1],[6.8,1],[8,0]]},
+  {key:'cruise',at:7.3,offset:0.5,dur:11.7,loop:9.6,vol:[[0,0],[1,0.7],[10.8,0.75],[11.7,0]]},
+  {key:'cruise2',at:18.4,offset:0.5,dur:11.6,loop:9.6,vol:[[0,0],[0.6,0.8],[6.6,0.9],[7.1,1],[9,0.35],[11.6,0]]},
+  {key:'wind',at:11.7,offset:0.5,dur:7.2,vol:[[0,0],[1,0.55],[3,0.65],[5.5,0.3],[7.2,0]]}
+];
+let flightVideo=null, flightRAF=0, flightWait=0, flightFallback=null;
+const flightResume=document.getElementById('plVideoResume');
+function flightDispose(){
+  cancelAnimationFrame(flightRAF); flightRAF=0;
+  clearTimeout(flightWait); flightWait=0; flightFallback=null;
+  flightResume.hidden=true; flightResume.onclick=null;
+  if(flightVideo){
+    const v=flightVideo; flightVideo=null;
+    v.onplaying=v.onwaiting=v.onpause=v.onended=v.onerror=null;
+    v.pause(); v.removeAttribute('src'); v.load(); v.remove();
+  }
+}
+function flightPrepare(){
+  flightDispose();
+  const v=document.createElement('video'); flightVideo=v;
+  v.id='plFlightVideo'; v.preload='auto'; v.muted=true; v.playsInline=true;
+  v.setAttribute('playsinline','');
+  v.style.cssText='position:absolute;width:1px;height:1px;opacity:0;pointer-events:none';
+  document.getElementById('planeSceneOverlay').appendChild(v);
+  v.onerror=()=>{ if(flightVideo===v && flightFallback) flightFallback(); };
+  v.src=FLIGHT_VIDEO; v.load();
+}
+function flightDraw(v){
+  if(v.readyState<2 || !v.videoWidth) return false;
+  // 縦画面の長さが違っても主翼と月を切らない。余白も同じ映像をぼかした背景で埋める。
+  const fit=Math.min(W/v.videoWidth,H/v.videoHeight);
+  const cover=Math.max(W/v.videoWidth,H/v.videoHeight);
+  ctx.save(); ctx.fillStyle='#102335'; ctx.fillRect(0,0,W,H);
+  ctx.filter='blur(18px)';
+  ctx.drawImage(v,(W-v.videoWidth*cover)/2-20,(H-v.videoHeight*cover)/2-20,v.videoWidth*cover+40,v.videoHeight*cover+40);
+  ctx.filter='none';
+  ctx.drawImage(v,(W-v.videoWidth*fit)/2,(H-v.videoHeight*fit)/2,v.videoWidth*fit,v.videoHeight*fit);
+  ctx.restore(); return true;
+}
 async function startScene(){
   seq++;
   const my=seq;
+  flightPrepare();
   psKill(); talkStopVoices(); talkReset(); talkInit();
-  if(audioInit() && actx.state==='suspended'){ try{ await actx.resume(); }catch(e){} }
-  if(!sfxReady) await loadSfx();          // 録音を読み終えてから始める（音と絵をずらさない）
+  if(audioInit() && actx.state==='suspended'){ actx.resume().catch(()=>{}); }
+  if(!sfxReady) loadSfx();               // 搭乗口の9.6秒で先読み。入口を黒画面で待たせない。
   if(my!==seq) return;
   texLoad();
   /* ★まず搭乗口（2D）を見せ、終わってから飛行（3D）に渡す */
@@ -40248,20 +40312,84 @@ async function startScene(){
   gatePlay(()=>{ if(my!==seq) return; startFlight(my); });
 }
 function startFlight(my){
-  scheduleSound();
+  const v=flightVideo;
+  psKill();
+  let started=false, finished=false, lastTime=-1, lastAdvance=performance.now();
+  const valid=()=>my===seq && flightVideo===v && !finished;
+  const finish=()=>{
+    if(!valid()) return;
+    finished=true; flightDispose(); sfxStop(); psKill(); talkReset();
+    gatePlayArrival(()=>{ if(my===seq) planeSceneFinish(); });
+  };
+  const fallback=()=>{
+    if(!valid()) return;
+    finished=true; const t=v?v.currentTime:0;
+    flightDispose(); sfxStop(); gateClear(); startLegacyFlight(my,t);
+  };
+  flightFallback=fallback;
+  if(!v || v.error){ fallback(); return; }
+  const pauseSounds=()=>{ for(const k in SFX) if(SFX[k].el) SFX[k].el.pause(); };
+  const showResume=()=>{
+    if(!valid()) return;
+    clearTimeout(flightWait); pauseSounds(); flightResume.hidden=false;
+    // 止まったフレーム/搭乗口を残す。タップした時点でだけ再開を試す。
+    flightResume.onclick=()=>{ if(valid()){ lastAdvance=performance.now(); tryPlay(); } };
+  };
+  const armWait=()=>{
+    clearTimeout(flightWait);
+    flightWait=setTimeout(()=>{ if(valid() && flightResume.hidden) fallback(); },15000);
+  };
+  const step=()=>{
+    if(!valid()) return;
+    const now=performance.now(), t=Math.min(v.currentTime,TOTAL);
+    window.__sceneT=t;
+    if(t!==lastTime){ lastTime=t; lastAdvance=now; }
+    if(v.readyState>=2 && !v.seeking){
+      if(flightDraw(v) && !started && !v.paused){ started=true; gateClear(); }
+    }
+    if(!v.paused && !v.seeking && v.readyState>=3 && now-lastAdvance<250){
+      sfxUpdate(t,VIDEO_SFX_PLAN);
+    }else pauseSounds();
+    if(v.ended){ finish(); return; }
+    if(!v.paused && now-lastAdvance>15000){ fallback(); return; }
+    flightRAF=requestAnimationFrame(step);
+  };
+  function tryPlay(){
+    flightResume.hidden=true; armWait();
+    try{
+      const p=v.play();
+      if(p && p.catch) p.catch(e=>{
+        if(!valid()) return;
+        if(e.name==='NotAllowedError') showResume(); else fallback();
+      });
+    }catch(e){ if(e.name==='NotAllowedError') showResume(); else fallback(); }
+  }
+  v.onplaying=()=>{ if(valid()){ clearTimeout(flightWait); flightResume.hidden=true; lastAdvance=performance.now(); } };
+  v.onwaiting=()=>{ if(valid()){ pauseSounds(); armWait(); } };
+  v.onpause=()=>{ if(valid() && !v.ended) showResume(); };
+  v.onended=finish;
+  // 読込中は白フラッシュだけ戻し、空港と人物を保持する。
+  document.getElementById('plGateFlash').classList.remove('on');
+  tryPlay(); flightRAF=requestAnimationFrame(step);
+}
+function startLegacyFlight(my,fromVideoTime=0){
+  // 途中の通信失敗でも離陸から巻き戻さず、対応する場面へつなぐ。
+  const startAt=fromVideoTime<18.4?fromVideoTime*6.4/18.4:6.4+(fromVideoTime-18.4)*23.6/11.6;
+  render(startAt);
+  if(startAt===0) scheduleSound();
   let start=null;
   const step=(now)=>{
     if(my!==seq) return;                 // 新しい再生が始まったら古いループは黙って終わる
     if(start===null) start=now;
-    const t=(now-start)/1000;
+    const t=startAt+(now-start)/1000;
     window.__sceneT=t;                   // 検証スクリプトから経過秒を見るための窓口（試作だけの飾り）
     render(Math.min(t,TOTAL));
     sfxUpdate(t);                        // 録音は絵と同じ時計で鳴らす
     talkUpdate(t,true);   // 会話は絵と同じ時計で動かす
-    if(t<TOTAL+0.4) requestAnimationFrame(step);
+    if(t<TOTAL+0.4) flightRAF=requestAnimationFrame(step);
     else { sfxStop(); talkReset(); gatePlayArrival(()=>{ if(my!==seq) return; planeSceneFinish(); }); }   // 完走＝到着ロビー(降機)→本体へ（弾6-1d）
   };
-  requestAnimationFrame(step);
+  flightRAF=requestAnimationFrame(step);
 }
 let NOW=0;   // ★v3.11 シーン内の時刻（航空灯の点滅・星のまたたきの位相に使う）
 function render(t){
@@ -40302,6 +40430,7 @@ function planeSceneFinish(){
   if(!planeSceneActive) return;      // とばすと完走が重なっても onDone は1回だけ
   seq++;
   planeSceneActive=false;
+  flightDispose();
   sfxStop(); psKill(); talkStopVoices(); talkReset(); gateClear();
   document.getElementById('planeSceneOverlay').classList.remove('show');
   const cb=planeSceneOnDone; planeSceneOnDone=null;
