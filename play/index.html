@@ -382,6 +382,13 @@
      画像は使わずCSSだけ＝容量ゼロ・権利の心配なし。色は白＋うすい黄、クリティカルだけ金。 */
   .hit-fx{position:absolute;width:0;height:0;pointer-events:none;z-index:45;--hcol:#fff3a8}
   .hit-fx.crit{--hcol:#fde047}
+  .hit-fx.icd-hit-fx{position:fixed;z-index:220;visibility:visible;--hcol:#ffe16b}
+  .icd-hit-fx .hit-star{width:var(--icd-hit-size,140px);background:radial-gradient(circle,transparent 0%,#fff5 22%,#ffe16bdd 43%,transparent 72%)}
+  .icd-hit-fx .hit-ring{box-sizing:border-box;width:calc(var(--icd-hit-size,140px) * .5)}
+  .icd-hit-flash{position:absolute;width:var(--icd-hit-size,140px);height:var(--icd-hit-size,140px);border-radius:50%;
+    background:radial-gradient(circle,#fff5 0%,#fff9b566 24%,#ffc43844 48%,transparent 70%);
+    transform:translate(-50%,-50%);animation:icdHitFlash .3s ease-out forwards;pointer-events:none}
+  @keyframes icdHitFlash{0%{opacity:0;transform:translate(-50%,-50%) scale(.55)}15%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.45)}}
   /* ①きりさく：ひかりの線が2本、×の形に走る */
   .hit-slash{position:absolute;left:0;top:0;width:min(52vw,190px);height:11px;border-radius:9px;
     background:linear-gradient(90deg,rgba(255,255,255,0),#fff 26%,#fff 74%,rgba(255,255,255,0));
@@ -607,6 +614,12 @@
   .dash-char-clone{position:fixed;margin:0!important;z-index:90;pointer-events:none;
     transition:none;animation:none;will-change:transform;font-size:2.1rem;
     filter:drop-shadow(0 3px 6px rgba(0,0,0,.3))}
+  .dash-char-clone.icd-attack-root{inset:0;filter:none;will-change:auto}
+  .icd-attack-mover,.icd-attack-shadow{position:absolute;left:0;top:0;will-change:transform}
+  .icd-attack-mover{transform-origin:50% 100%;filter:drop-shadow(0 2px 2px #03182466)}
+  .icd-attack-mover>.pc{display:block;transform-origin:50% 100%;transition:none;animation:none}
+  .icd-attack-mover .sel-ring{display:none!important}
+  .icd-attack-shadow{height:6px;border-radius:50%;background:#05233266;filter:blur(1px)}
   .pbtn .pc{font-size:1.8rem;font-weight:900;line-height:1}
   .pbtn .plv{position:absolute;top:-7px;right:-5px;background:var(--yellow);color:#7c4a03;font-size:.62rem;font-weight:900;
     padding:1px 5px;border-radius:50px;border:2px solid #fff;line-height:1.2}
@@ -11957,6 +11970,7 @@ function snd(name){
 }
 function toggleSound(){
   soundOn=!soundOn;
+  if(!soundOn){seStop('ice-hop');seStop('ice-impact');}
   if(window.AmamiCastle)AmamiCastle.onSoundToggle();
   $('soundBtn').textContent=soundOn?'🔊':'🔇';
   if(soundOn){ ensureAudio(); }
@@ -14999,8 +15013,118 @@ function calcDamage(attackerIdx,defType,comboBonus){
 /* - タイマー競合ガード：spawnSeq と画面表示で「おわる」・敵入れ替えを検知し複製を残さない */
 /* - フォールバック：複製を作れない状況では即 onContact（突進なしでも攻撃は成立） */
 let dashSeq=0;
-function clearDashClones(){ document.querySelectorAll('.dash-char-clone').forEach(e=>e.remove()); }
+let iceAttackCleanup=null;
+function clearDashClones(){
+  if(iceAttackCleanup)iceAttackCleanup();
+  document.querySelectorAll('.dash-char-clone').forEach(e=>e.remove());
+  document.querySelectorAll('.icd-hit-fx').forEach(e=>e.remove());
+  seStop('ice-hop');seStop('ice-impact');
+}
+/* 氷の城限定。二跳躍の後に高く跳び頂点で120msためて背面で落下攻撃。接触1600ms、帰還完了2140ms。
+   通常戦の170/180ms・700ms安全網は下の既存経路に残し、この分岐では起動しない。 */
+function playIceAttackHop(attackerIdx,onContact){
+  clearDashClones();
+  const battle=iceDungeonBattle,seq=spawnSeq,attack=++dashSeq;
+  const valid=()=>iceDungeonBattle===battle&&!!battle&&!battle.won&&seq===spawnSeq&&attack===dashSeq&&
+    document.body.classList.contains('ice-dungeon-battle')&&$('screen-battle').classList.contains('active');
+  let contacted=false;
+  const contact=()=>{if(contacted||!valid())return;contacted=true;if(enemy)playHitFx(enemy,false);if(typeof onContact==='function')onContact();};
+  if(!valid())return;
+  const src=document.querySelector('#partyRow .pbtn[data-idx="'+attackerIdx+'"] .pc.face-host');
+  const enemy=$(isTwinBoss&&twinTurn==='doutai'?'enemyChar2':'enemyChar');
+  if(!src||!enemy){contact();return;}
+  const sr=src.getBoundingClientRect(),er=(enemy.querySelector('.fc')||enemy).getBoundingClientRect();
+  if(!sr.width||!sr.height||!er.width||!er.height){contact();return;}
+  const root=document.createElement('div');root.className='dash-char-clone icd-attack-root';root.setAttribute('aria-hidden','true');
+  const shadow=document.createElement('div');shadow.className='icd-attack-shadow';shadow.style.width=sr.width*.8+'px';
+  const mover=document.createElement('div');mover.className='icd-attack-mover';
+  Object.assign(mover.style,{width:sr.width+'px',height:sr.height+'px'});
+  const clone=src.cloneNode(true),cs=getComputedStyle(src);
+  Object.assign(clone.style,{width:sr.width+'px',height:sr.height+'px',fontSize:cs.fontSize,fontFamily:cs.fontFamily,
+    fontWeight:cs.fontWeight,lineHeight:cs.lineHeight,visibility:'visible'});
+  clone.querySelector('.fc').style.textShadow=getComputedStyle(src.querySelector('.fc')).textShadow;
+  mover.appendChild(clone);
+  // renderPartyは子だけを作り直す。この規則は複製側で保持し、新しい同idxの文字も隠す。
+  const hide=document.createElement('style');
+  hide.textContent='body.ice-dungeon-battle #partyRow .pbtn[data-idx="'+attackerIdx+'"] .pc{visibility:hidden!important}';
+  root.append(shadow,mover,hide);document.body.appendChild(root);
+  const w=sr.width,h=sr.height,startX=sr.left+w/2,startY=sr.bottom;
+  const endX=Math.max(w/2+4,Math.min(innerWidth-w/2-4,er.left+er.width/2));
+  // 字の手前側へ浅く接触。敵の中心まで潜り込ませず、足元を基準に二つの弧を描く。
+  const endY=Math.min(startY,er.bottom+h*.55),dx=endX-startX,dy=endY-startY;
+  const hop1=Math.min(h*.45,Math.max(0,Math.min(startY,startY+dy*.45)-h-8));
+  const hop2=Math.min(h*.6,Math.max(0,Math.min(startY+dy*.45,startY+dy*.86)-h-8));
+  const impactY=Math.max(h+8,Math.min(innerHeight-8,er.top+h*.22));
+  const apexY=Math.max(h+8,Math.min(impactY,er.top-h*.8));
+  const face=clone.querySelector('.face');
+  let raf=0,watch=0,safety=0,done=false;
+  const finish=()=>{
+    if(done)return;done=true;cancelAnimationFrame(raf);clearInterval(watch);clearTimeout(safety);
+    if(!valid()){seStop('ice-hop');seStop('ice-impact');document.querySelectorAll('.icd-hit-fx').forEach(e=>e.remove());}
+    root.remove();window.removeEventListener('resize',resize);
+    if(iceAttackCleanup===finish)iceAttackCleanup=null;
+  };
+  // 画面回転時は古い座標へ飛び続けず、有効な攻撃を一度成立させて復元する。
+  const resize=()=>{try{contact();}finally{finish();}};
+  iceAttackCleanup=finish;window.addEventListener('resize',resize);
+  const smooth=p=>p*p*(3-2*p);
+  function draw(t){
+    // 最後の頂点だけ一瞬止める。以後の軌道と落下速度は変更しない。
+    if(t>1300)t=Math.max(1300,t-120);
+    let k=0,lift=0,sx=1,sy=1,footY=null,back=false;
+    if(t<100){const q=Math.sin(Math.PI*t/100);sx=1+q*.1;sy=1-q*.13;}
+    else if(t<420){const p=(t-100)/320;k=.45*p;lift=Math.sin(Math.PI*p)*hop1;}
+    else if(t<500){k=.45;const q=Math.sin(Math.PI*(t-420)/80);sx=1+q*.12;sy=1-q*.14;}
+    else if(t<860){const p=(t-500)/360;k=.45+.41*p;lift=Math.sin(Math.PI*p)*hop2;}
+    else if(t<960){k=.86;const q=Math.sin(Math.PI*(t-860)/100);sx=1+q*.08;sy=1-q*.1;}
+    else if(t<1300){
+      const p=(t-960)/340;k=.86+.14*smooth(p);
+      footY=(startY+dy*.86)+(apexY-startY-dy*.86)*(1-(1-p)*(1-p));
+      sx=Math.cos(Math.PI*Math.min(1,(t-960)/120));back=t>=1020;
+    }
+    else if(t<1480){const p=(t-1300)/180;k=1;footY=apexY+(impactY-apexY)*p*p;sx=-1;back=true;}
+    else if(t<1600){k=1;footY=impactY;sx=-1;back=true;}
+    else{
+      const p=Math.min(1,(t-1600)/420);k=1-smooth(p);
+      footY=impactY+(startY-impactY)*smooth(p);
+      lift=Math.min(Math.sin(Math.PI*p)*Math.min(h*.3,hop2),Math.max(0,footY-h-8));
+      sx=-Math.cos(Math.PI*Math.min(1,(t-1600)/120));back=t<1660;
+    }
+    const x=startX+dx*k,y=startY+dy*k;
+    const actualY=(footY===null?y:footY)-lift;
+    const altitude=Math.max(0,y-actualY);
+    mover.style.transform='translate('+(x-w/2)+'px,'+(actualY-h)+'px)';
+    clone.style.transform='scale('+sx+','+sy+')';
+    if(face)face.style.visibility=back?'hidden':'visible';
+    shadow.style.transform='translate('+(x-w*.4)+'px,'+(y-2)+'px) scale('+Math.max(.25,1-altitude/Math.max(h,1)*.35)+')';
+    shadow.style.opacity=String(Math.max(.15,.8-altitude/Math.max(h,1)*.45));
+  }
+  const started=performance.now();draw(0);
+  const hopCues=[100,500,960,1720];let nextHopCue=0;
+  function step(now){
+    if(done)return;
+    if(!valid()){finish();return;}
+    const t=now-started;
+    try{
+      while(nextHopCue<hopCues.length&&t>=hopCues[nextHopCue]){
+        const cue=hopCues[nextHopCue++];
+        if(t-cue<100)sePlay('ice-hop',{volume:.30});
+      }
+      // 時刻が大きく飛んだ場合でも接触位置を先に描き、途中の位置で被弾させない。
+      if(t>=1600&&!contacted){draw(1600);contact();}
+      if(done)return;
+      if(!valid()){finish();return;}
+      draw(Math.min(t,2140));
+    }catch(error){finish();throw error;}
+    if(t>=2140)finish();else raf=requestAnimationFrame(step);
+  }
+  // rAF停止中も退出は復元する。安全網では同一の接触弁を使い、二重ダメージを防ぐ。
+  watch=setInterval(()=>{if(!valid())finish();},80);
+  safety=setTimeout(()=>{try{if(valid()){draw(1600);contact();}}finally{finish();}},2800);
+  raf=requestAnimationFrame(step);
+}
 function playAttackDash(attackerIdx,onContact){
+  if(iceDungeonBattle&&document.body.classList.contains('ice-dungeon-battle')){playIceAttackHop(attackerIdx,onContact);return;}
   const seq=spawnSeq;
   const battleOn=$('screen-battle').classList.contains('active');
   const src=document.querySelector('.pbtn[data-idx="'+attackerIdx+'"]');
@@ -15158,7 +15282,10 @@ let _lastHitFx = -1;
 function playHitFx(targetEl, critical, forceKind){
   const scene = document.querySelector('#screen-battle .scene.battle') || document.getElementById('screen-battle');
   if(!scene) return;
+  const ice=!!iceDungeonBattle&&document.body.classList.contains('ice-dungeon-battle');
+  if(ice&&document.querySelector('.icd-hit-fx[data-attack="'+dashSeq+'"]'))return;
   let kind = forceKind;   // 第3引数は検品・撮影で種類を指定するためのもの（ゲーム中は使わない＝いつもランダム）
+  if(ice)kind='ban';
   if(HIT_FX_KINDS.indexOf(kind) < 0){
     let i = Math.floor(Math.random() * HIT_FX_KINDS.length);
     if(i === _lastHitFx) i = (i + 1) % HIT_FX_KINDS.length;   // 2回続けて同じ種類は出さない（ランダムらしく見せるため）
@@ -15166,7 +15293,8 @@ function playHitFx(targetEl, critical, forceKind){
     kind = HIT_FX_KINDS[i];
   }
   const box = document.createElement('div');
-  box.className = 'hit-fx ' + kind + (critical ? ' crit' : '');
+  box.className = 'hit-fx ' + kind + (critical ? ' crit' : '')+(ice?' icd-hit-fx':'');
+  if(ice)box.dataset.attack=String(dashSeq);
   // 当たった相手の真ん中に重ねる（ふたごボスでも、当たったほうに出る）
   let lp = 50, tp = 46;
   const el = targetEl || document.getElementById('enemyChar');
@@ -15179,7 +15307,14 @@ function playHitFx(targetEl, critical, forceKind){
   }
   box.style.left = lp.toFixed(1) + '%';
   box.style.top  = tp.toFixed(1) + '%';
+  if(ice&&el){
+    const tr=(el.querySelector('.fc')||el).getBoundingClientRect();
+    const cx=tr.left+tr.width/2,cy=tr.top+tr.height*.28;
+    box.style.left=cx+'px';box.style.top=cy+'px';
+    box.style.setProperty('--icd-hit-size',Math.max(24,Math.min(140,(Math.min(cx,innerWidth-cx,cy,innerHeight-cy)-4)*2/1.45))+'px');
+  }
   const add = cls => { const e = document.createElement('div'); e.className = cls; box.appendChild(e); return e; };
+  if(ice)add('icd-hit-flash');
   if(kind === 'zan'){ add('hit-slash'); add('hit-slash s2'); }
   else if(kind === 'ban'){ add('hit-star'); add('hit-ring'); }
   else if(kind === 'totsu'){
@@ -15196,11 +15331,12 @@ function playHitFx(targetEl, critical, forceKind){
     }
     add('hit-ring');
   }
-  scene.appendChild(box);
-  snd('hit' + kind);   // 種類ごとの音（きりさく＝シャッ／たたく＝ドン／つきさす＝ビシッ／くだく＝パリン）
+  (ice?document.body:scene).appendChild(box);
+  if(ice)seFx('ice-impact',.65,()=>snd('hitban'));
+  else snd('hit' + kind);   // 種類ごとの音（きりさく＝シャッ／たたく＝ドン／つきさす＝ビシッ／くだく＝パリン）
   /* 手直し_まほうの音(2026-07-26)：効果音ラボの打撃音を薄く重ねて「当たった重み」を足す。
      4種類の鳴き分けは今までどおり上の合成音が担当するので、こちらは共通の下敷き（音量控えめ）。 */
-  sePlay('hit-thud', {volume:0.3});
+  if(!ice)sePlay('hit-thud', {volume:0.3});
   setTimeout(()=>{ if(box.parentNode) box.parentNode.removeChild(box); }, 900);
 }
 
@@ -32768,6 +32904,7 @@ function readIceDungeonSave(d){
 function iceDungeonWait(ms,seq=iceDungeonSeq){return new Promise(resolve=>{const id=setTimeout(()=>{iceDungeonTimers.delete(id);resolve(seq===iceDungeonSeq);},ms);iceDungeonTimers.set(id,resolve);});}
 function iceDungeonBlocked(){return autoPaused||!!document.querySelector('#partyEditOverlay.show,#itemsOverlay.show,#worldmapOverlay.show,#nipponMapOverlay.show,#guideOverlay.show,#genkiTiredOverlay.show');}
 function iceDungeonStop(){
+  clearDashClones();
   iceDungeonSeq++;iceDungeonBusy=false;
   iceDungeonTimers.forEach((resolve,id)=>{clearTimeout(id);resolve(false);});iceDungeonTimers.clear();
   if(iceDungeonTalk){const t=iceDungeonTalk;iceDungeonTalk=null;bgmSceneEnd(t.musicToken);t.resolve(false);}
