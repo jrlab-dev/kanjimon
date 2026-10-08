@@ -3714,6 +3714,8 @@ body.ice-dungeon #fieldInfo{display:none}
 <script defer src="events/金沢会話.js?walk=20261003d&music=20261004-release"></script>
 <link rel="stylesheet" href="events/うどんの里会話.css?v=events-20261003">
 <script defer src="events/うどんの里会話.js?walk=20261003d"></script>
+<link rel="stylesheet" href="events/opening-movie.css?v=20261008b">
+<script defer src="events/opening-movie.js?v=20261008b"></script>
 </head>
 <body>
 <!-- 弾TB-1：タブレットでバトルの絵を画面いっぱいに敷くための層。#app の外（下）に置く。
@@ -12047,7 +12049,9 @@ function _bgmArmOpening(el){
   const visit=bgmOpeningVisit;el.onended=()=>_bgmFinishOpening(visit,el);
 }
 function _bgmTitle(){
+  if(window.OpeningMovie?.isActive())return;
   if(!bgmOpeningTitleActive){++bgmOpeningVisit;bgmOpeningTitleActive=true;bgmOpeningFinished=false;}
+  bgmOpeningFinished=true; // 予告音楽は冒頭の動画だけで再生する。
   bgmPlay(bgmOpeningFinished?'hero':'opening',{titleOpening:true});
 }
 let bgmScene=null,bgmSceneSerial=0;
@@ -12230,6 +12234,7 @@ function _bgmPauseAll(){
 /* 画面がこの曲を要求する。同一曲再生中なら何もしない（頭から鳴らし直さない）
    opts.resume=true のときだけ currentTime を保持したまま続きの位置から再生（§3ボス戦後） */
 function bgmPlay(name,opts){
+  if(window.OpeningMovie?.isActive())return;
   if(bgmScene&&name!==bgmScene.name&&!(opts&&opts.scene)&&name!=='boss'&&name!=='battle'&&name!=='amami-boss'&&name!=='maros-boss'&&name!=='hageshima'){
     bgmScene.restore=name;name=bgmScene.name;
   }
@@ -12254,6 +12259,7 @@ function bgmStop(){ _bgmCancelOpening();_bgmPauseAll(); bgmWanted=null; bgmScene
 function bgmPause(){ _bgmPauseAll(); }
 /* 第9.5弾§4：一時停止していた曲を続きの位置から再開（drumroll終了後に呼ぶ） */
 function bgmResume(){
+  if(window.OpeningMovie?.isActive())return;
   if(!soundOn) return;
   if(!bgmUnlocked) return;
   if(!bgmWanted) return;
@@ -12266,6 +12272,7 @@ function bgmResume(){
 }
 /* 🔇トグル連動：OFF=一時停止／ON=現在画面の曲を再開（続きの位置から） */
 function _bgmOnSoundToggle(){
+  if(window.OpeningMovie?.isActive()){window.OpeningMovie.syncSound();return;}
   if(!soundOn){ _bgmPauseAll(); seStop('drumroll'); return; }   // 第9.5弾§4：OFFはBGM停止＋ドラムロールも停止
   if(evoLock||evoAfterglowLock) return;   // 手直し(2026-07-04・積み残し解消②)＋おと調整2§3：しんか演出中・余韻中はONでもBGM/ドラムロールを再開しない
   if(_bgmFinishOpening(bgmOpeningVisit,bgmCache.opening,true))return;
@@ -12884,6 +12891,7 @@ COSTUMES.filter(cs=>cs.suffix).forEach(cs=>['boy','girl'].forEach(ch=>{
 ================================ */
 const $=id=>document.getElementById(id);
 function showScreen(id){
+  if(id!=='screen-title'){window.openingMovieDismissed=true;window.OpeningMovie?.cancel();}
   sceneImages.cancel();
   if(id!=='screen-title'){
     const ownedTitle=bgmOpeningTitleActive&&(bgmWanted==='opening'||(bgmOpeningFinished&&bgmWanted==='hero'));
@@ -25166,6 +25174,8 @@ function fieldViewCoords(){
 /* フィールド画面へ（タイトル「フィールドで あそぶ」） */
 /* 第6弾§2：前回位置の自動再開は廃止。タイトル→ワールドマップ→ゾーン選択→Sから開始 */
 function goField(){
+  window.openingMovieDismissed=true;window.OpeningMovie?.cancel();
+  if(bgmOpeningTitleActive)bgmPlay('title');
   // 第5.5弾§4：完全な新規プレイヤー（起動時セーブ無し）で女の子画像あり → ちずの前に選択ポップ
   // 弾NM-1（2026-08-14）：新規プレイヤーは今はop1Finish()側の②画面で既にせいべつを選び終えており、
   // heroSelectShownOnceが立っているのでこの分岐は通常発火しない（削除はせず保険として残す＝既存の流儀）。
@@ -31728,6 +31738,8 @@ function bindFieldControls(){
 
 /* ワールドマップ */
 function openWorldMap(regionOverride){
+  window.openingMovieDismissed=true;window.OpeningMovie?.cancel();
+  if(bgmOpeningTitleActive)bgmPlay('title');
   if(typeof abortSchoolTest==='function') abortSchoolTest();   // 弾3-16：テスト中の地図離脱は途中終了（報酬なし）
   // 弾3-12§5-3：町から「ちず」で出るとき＝町に入る前にいた地方を表示（fieldZone=0で地方判定がundefinedにならないようregionOverrideの既存仕組みで解決）
   if(isTownLike(fieldZone) && !regionOverride){
@@ -37515,7 +37527,15 @@ kakitoriTestSelfTest(); // 発注W-2：ヒント生成・出題組み立て・�
    弾NM-2：準也さんのご指示の順（オープニングPV→なまえ・せいべつ→今あるオープニングop1）にあわせ、
    まずnmOpen()でなまえ・せいべつを済ませてから、そのコールバックとしてstartOp1Event()を呼ぶ。
    playerNameが既にある等の安全側の分岐に入ってもnmOpen内でstartOp1Eventはちゃんと呼ばれる。 */
-if(!hadSaveAtBoot){ nmOpen(startOp1Event); }
+let openingBootContinued=false;
+function continueAfterOpeningMovie(){
+  if(openingBootContinued)return;
+  openingBootContinued=true;
+  if(!hadSaveAtBoot){ nmOpen(startOp1Event); }
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  if(!window.OpeningMovie?.isActive())continueAfterOpeningMovie();
+},{once:true});
 
 /* 第7弾§2：画面リサイズ・モバイルのアドレスバー増減でビューポートを再計算 */
 window.addEventListener('resize', ()=>{
