@@ -12587,22 +12587,143 @@ function showCryBubble(idx,isBoss,known,altReading){
 /* ==============================
    ステージ背景画像（images/stageN.webp があれば使用・なければグラデーション）
 ================================ */
+/* 2026-10-08：採用画像を必要な場面から読む。状態変更の前で待つ。 */
+const sceneImages=(()=>{
+  const records=new Map(),queue=[];
+  let active=0,pending=null,serial=0,box=null,restoreInert=null;
+  function record(url){
+    if(!records.has(url))records.set(url,{url,state:'idle',promise:null});
+    return records.get(url);
+  }
+  function pump(){
+    while(active<4&&queue.length){
+      const r=queue.shift();active++;r.state='loading';
+      const im=new Image();im.fetchPriority=r.low?'low':'high';
+      let ended=false;
+      const finish=ok=>{
+        if(ended)return;ended=true;clearTimeout(timer);
+        im.onload=im.onerror=null;r.cancel=null;
+        r.state=ok?'ready':'error';active--;r.resolve(ok);pump();
+      };
+      const timer=setTimeout(()=>{im.src='';finish(false);},30000);
+      r.cancel=()=>{im.src='';finish(false);};
+      im.onload=()=>finish(true);im.onerror=()=>finish(false);im.src=r.url;
+    }
+  }
+  function load(url,low=false){
+    const r=record(url);
+    if(r.state==='ready')return Promise.resolve(true);
+    if(r.state==='loading'||r.state==='queued'){
+      if(!low&&r.state==='queued'){queue.splice(queue.indexOf(r),1);queue.unshift(r);r.low=false;}
+      return r.promise;
+    }
+    r.low=low;r.state='queued';r.promise=new Promise(resolve=>{r.resolve=resolve;});
+    if(low)queue.push(r);else queue.unshift(r);
+    pump();return r.promise;
+  }
+  function core(){
+    return [
+      ['images/sprites/hero.webp?walk=20261003d',()=>{heroImgOK=true;}],
+      ['images/sprites/hero-girl.webp?walk=20261003d',()=>{heroGirlImgOK=true;}],
+      ['images/sprites/hakase.webp',()=>{hakaseImgOK=true;}],
+      ['images/sprites/hakase-face.webp',()=>{hakaseFaceImgOK=true;op1SetManaFace();}]
+    ];
+  }
+  function assets(key){
+    if(Array.isArray(key))return key.flatMap(assets);
+    const list=core(),add=(url,ready=()=>{})=>{if(url)list.push([url,ready]);};
+    const z=key==='opening'?1:Number(key);
+    if(key==='opening'){
+      ['op1-bg-shodo.webp','op-hero-boy.webp','op-hero-girl.webp','op1-ichi-base.webp','op1-ichi-eyes.webp','op1-ichi-mouth.webp'].forEach(f=>add('images/op/'+f));
+      add('images/fullart/interior-shodo.webp');
+    }
+    if(z>=1&&z<=STAGE_COUNT){
+      const file=ZONE_FULLART[z-1];
+      if(file)add('images/fullart/'+file,()=>fullartOK.add(z));
+      const bg=ZONE_PARALLAX_BG[z];
+      if(bg)add('images/fullart/'+bg,()=>parallaxBgOK.add(z));
+      (ZONE_PARALLAX_LAYERS[z]||[]).forEach(L=>{if(L.img||L.boat)add('images/fullart/'+(L.img||L.boat));});
+      [BRIDGE_ROAD[z],BRIDGE_RAIL[z]].forEach(L=>{if(L&&L.img)add('images/fullart/'+L.img);});
+      (ZONE_OBJECTS[z]||[]).forEach(o=>add('images/parts/'+o.img,()=>partImgOK.add(o.img)));
+      add('images/battle-tate/'+(BATTLE_BG_FILE[z]||('stage'+z+'.webp')),()=>battleTateOK.add(z));
+    }else if(z===TOWN_ZONE){
+      TOWN_DEF.fullart.forEach(file=>add('images/fullart/'+file,()=>{
+        townFullartOK=TOWN_DEF.fullart.every(f=>record('images/fullart/'+f).state==='ready');
+      }));
+      add('images/buildings/town-school.webp',()=>{schoolBuildingOK=true;});
+      add('images/buildings/town-shodo.webp',()=>{shodoBuildingOK=true;});
+    }else if(PSEUDO_DEFS[z]){
+      const file=z===MURA_ZONE?(ownsForest?'mura-cleared.webp':'mura-forest.webp'):PSEUDO_DEFS[z].bg;
+      add('images/fullart/'+file,()=>interiorFullartOK.add(z));
+      if(isIceDungeon(z))list.push(...assets(83));
+    }
+    if(z<=0){
+      INTERIOR_ACTORS.filter(a=>a.zone===z).forEach(a=>{
+        add('images/sprites/'+a.sheet+'?walk=20261003d',()=>interiorActorSheetOK.add(a.key));
+        if(a.img)add('images/'+a.img,()=>interiorActorImgOK.add(a.key));
+      });
+    }
+    return list;
+  }
+  function ready(list){return list.every(([url])=>record(url).state==='ready');}
+  function hide(){
+    if(box)box.remove();box=null;
+    if(restoreInert){restoreInert();restoreInert=null;}
+  }
+  function cancel(){
+    const wasPending=!!pending;serial++;pending=null;hide();
+    if(wasPending){
+      queue.splice(0).forEach(r=>{r.state='idle';r.resolve(false);});
+      [...records.values()].forEach(r=>{if(r.cancel)r.cancel();});
+    }
+  }
+  function ui(){
+    hide();box=document.createElement('div');box.id='imageLoading';box.setAttribute('role','dialog');box.setAttribute('aria-modal','true');
+    box.style.cssText='position:fixed;inset:0;z-index:2147483000;background:#10283f;color:white;display:grid;place-items:center;padding:24px;text-align:center;font:18px sans-serif';
+    box.innerHTML='<div><p role="status" aria-live="polite" id="imageLoadingText">ぼうけんの じゅんび中…</p><button id="imageLoadingRetry" hidden>もういちど よみこむ</button> <button id="imageLoadingBack">タイトルへ もどる</button></div>';
+    document.body.appendChild(box);
+    const siblings=[...document.body.children].filter(el=>el!==box&&el.tagName!=='SCRIPT'&&el.tagName!=='STYLE');
+    const old=siblings.map(el=>el.inert),focus=document.activeElement;siblings.forEach(el=>el.inert=true);
+    restoreInert=()=>{siblings.forEach((el,i)=>el.inert=old[i]);if(focus?.isConnected&&!focus.inert)focus.focus();};
+    box.querySelectorAll('button').forEach(b=>b.style.cssText='font:inherit;padding:12px;margin:8px;border-radius:12px;cursor:pointer');
+    box.querySelector('#imageLoadingBack').onclick=()=>{cancel();showScreen('screen-title');};
+    box.querySelector('#imageLoadingBack').focus();
+  }
+  function gate(key,done){
+    const list=assets(key);
+    if(ready(list))return false;
+    cancel();
+    const token=++serial;pending={key,token};ui();
+    if(typeof stopAutoExplore==='function')stopAutoExplore();
+    const run=async()=>{
+      if(!pending||token!==serial)return;
+      const retry=box.querySelector('#imageLoadingRetry');retry.hidden=true;
+      let count=0;const status=box.querySelector('#imageLoadingText');
+      status.textContent='ぼうけんの じゅんび中…';
+      const results=await Promise.all(list.map(async([url,mark])=>{
+        const ok=await load(url);if(ok)mark();count++;
+        if(token===serial&&box)status.textContent='ぼうけんの じゅんび中… '+count+' / '+list.length;
+        return ok;
+      }));
+      if(token!==serial||!pending)return;
+      if(results.every(Boolean)){pending=null;hide();done();prefetch(key);}
+      else{status.textContent='えを よみこめませんでした。つうしんを たしかめてね。';retry.hidden=false;retry.onclick=run;retry.focus();}
+    };
+    run();return true;
+  }
+  function prefetch(key){
+    const next=key==='opening'?2:Number(key)+1;
+    if(next>=1&&next<=STAGE_COUNT&&ZONE_FULLART[next-1])load('images/fullart/'+ZONE_FULLART[next-1],true);
+  }
+  // body側の既存キーボード操作も読込中は止める。ダイアログ内のTab/Enter操作は残す。
+  window.addEventListener('keydown',e=>{if(pending){e.stopImmediatePropagation();if(!box?.contains(e.target)||!['Tab','Enter',' '].includes(e.key))e.preventDefault();}},true);
+  return {gate,cancel,assets,load,ready, get pending(){return pending;}};
+})();
+
 const stageImgOK=new Set();
-for(let sn=1;sn<=STAGE_COUNT;sn++){
-  const im=new Image(); const n=sn;
-  im.onload=()=>{ stageImgOK.add(n); };
-  im.onerror=()=>{}; // フォールバック（エラーを出さない）
-  im.src='images/stage'+sn+'.webp';
-}
 /* バトル縦長化 試作(2026-07-11)：images/battle-tate/stageN.webp がある戦場だけ縦長モード。
    無ければ従来表示のまま（stageImgOKと同じ流儀＝安全なフォールバック） */
 const battleTateOK=new Set();
-for(let sn=1;sn<=STAGE_COUNT;sn++){
-  const im=new Image(); const n=sn;
-  im.onload=()=>{ battleTateOK.add(n); };
-  im.onerror=()=>{};
-  im.src='images/battle-tate/stage'+sn+'.webp';
-}
 /* 採用済みのバトル背景。1・2年生の作り直し8面を含め、実ゲーム画面で確認した画像を個別指定する。 */
 const BATTLE_BG_FILE={
   2:'stage2-v2.png',3:'stage3-v2.png',8:'stage8-v2.png',12:'stage12-v2.png',15:'stage15-v2.png',23:'stage23-v2.png',
@@ -12623,12 +12744,7 @@ const BATTLE_BG_FILE={
 };
 /* ファイル名を個別指定した背景も縦長モードの読込判定へ入れる。
    84〜102は旧stageN.webpがなくv2だけなので、この読込がないと単色背景へ戻ってしまう。 */
-for(const [sn,file] of Object.entries(BATTLE_BG_FILE)){
-  const im=new Image(); const n=Number(sn);
-  im.onload=()=>{ battleTateOK.add(n); };
-  im.onerror=()=>{};
-  im.src='images/battle-tate/'+file;
-}
+// 採用背景だけをsceneImagesで必要時に読む。旧背景への存在確認リクエストは送らない。
 /* ★弾BG-1（2026-08-17）：ゾーンごとに「絵のどこを映すか」を変える表。
    ―― なぜ要るか ――――――――――――――――――――――――――――――――――
    敵（かんじモン）が立つのは、絵の【横84〜89%・たて27〜33%】（実測）。
@@ -12768,6 +12884,7 @@ COSTUMES.filter(cs=>cs.suffix).forEach(cs=>['boy','girl'].forEach(ch=>{
 ================================ */
 const $=id=>document.getElementById(id);
 function showScreen(id){
+  sceneImages.cancel();
   if(id!=='screen-title'){
     const ownedTitle=bgmOpeningTitleActive&&(bgmWanted==='opening'||(bgmOpeningFinished&&bgmWanted==='hero'));
     _bgmCancelOpening();if(ownedTitle){_bgmPauseAll();bgmWanted=null;}
@@ -13187,6 +13304,7 @@ function handleTiredAfterRound(seq){
    プレイヤーが「やすむ」を押して回復（鉄則9＝やって見せる導線。「やめる」で逃げてもいつでも入り直せる・詰みなし）。
    フィールド発・クイックバトル発のどちらも同じく町へ。呼び出しは必ずこの1点を経由すること。 */
 function sendHomeAllTired(source){
+  if(sceneImages.gate(TOWN_ZONE,()=>sendHomeAllTired(source)))return;
   save();
   spawnSeq++;   // 送還は演出タイマーの中から呼ばれるため、既存のexitBattleと同じ流儀で世代を進めて残タイマーを無効化
   itemUseMode=false;
@@ -13284,6 +13402,7 @@ function setupBattleCommon(sn,ignoreTired=false){
    手直し(であった演出)§2：fromSumika=trueのときだけ「であった！」演出を挟んでからバトルへ
    （すみか到着＝オートたんけん/手動移動の両方が対象。くさむら/まよいご/乱入/クイックバトルはfromSumika未指定＝従来どおり即バトル） */
 function startFieldBattle(zone, kanjiIdx, fromSumika){
+  if(sceneImages.gate(zone,()=>startFieldBattle(zone,kanjiIdx,fromSumika)))return;
   if(zone>=3 && party.length===0){        // てもちバトル不能 → ガイド/チュートリアル
     if(!partyTutorialDone){ pendingFieldBattle={zone,kanjiIdx,fromSumika:!!fromSumika}; showPartyTutorial(zone); }
     else $('guideOverlay').classList.add('show');
@@ -13301,6 +13420,7 @@ function startFieldBattle(zone, kanjiIdx, fromSumika){
      （フィールド画面で先に見せてからバトル画面へ切替＝敵が見えないうちに「とびだした」と言っていた）ため、
      バトル画面で敵が実際に見えてから出すよう spawnReviewIntrudeEnemy 側に移した（このガード分岐は廃止） */
 function startReviewIntrudeBattle(zone, kanjiIdx){
+  if(sceneImages.gate(zone,()=>startReviewIntrudeBattle(zone,kanjiIdx)))return;
   if(zone>=3 && party.length===0){        // てもちバトル不能 → ガイド/チュートリアル
     if(!partyTutorialDone){ pendingFieldBattle={zone,kanjiIdx,fromSumika:false}; showPartyTutorial(zone); }
     else $('guideOverlay').classList.add('show');
@@ -13324,6 +13444,7 @@ function launchReviewIntrudeBattle(zone,kanjiIdx){
 /* 実際のバトル開始本体（従来のstartFieldBattleの中身をそのまま移設）。
    であった演出の有無に関わらず、ここで初めて画面遷移＋敵を出す */
 function launchFieldBattle(zone,kanjiIdx){
+  if(sceneImages.gate(zone,()=>launchFieldBattle(zone,kanjiIdx)))return;
   if(!setupBattleCommon(zone)){ sendHomeAllTired('field'); return; }   // 弾3-11§4-1：バトル開始前ガード
   battleSource='field';
   fieldBattleFromAuto = isFieldAutoZone(zone);   // §41：富士山追跡オートも含めて記録
@@ -13352,6 +13473,7 @@ function startJukugoBossBattle(zone){
   launchJukugoBossBattle(zone);
 }
 function launchJukugoBossBattle(zone,gateShown=false){
+  if(sceneImages.gate(zone,()=>launchJukugoBossBattle(zone,gateShown)))return;
   if(!gateShown&&showGateBossArrival(zone,isEventBoss?'event':'jukugo',()=>launchJukugoBossBattle(zone,true)))return;
   // 弾3-11§4-1：バトル開始前ガード。isEventBossは呼び出し元(launchEventBossBattle)が先に立てているため、
   //   ここで中断する場合は次回の通常もんばん戦を汚染しないよう明示的にfalseへ戻す
@@ -13618,6 +13740,7 @@ function startTwinBossBattle(zone){
   launchTwinBossBattle(zone);
 }
 function launchTwinBossBattle(zone,gateShown=false){
+  if(sceneImages.gate(zone,()=>launchTwinBossBattle(zone,gateShown)))return;
   const gateKind=(zone===102&&zone102FinalPhase===1)?'twinFinal':'twin';
   if(!gateShown&&showGateBossArrival(zone,gateKind,()=>launchTwinBossBattle(zone,true)))return;
   if(!setupBattleCommon(zone)){ sendHomeAllTired('field'); return; }   // 弾3-11§4-1：バトル開始前ガード
@@ -14006,6 +14129,7 @@ function cleanupDeatta(){
 }
 
 function startStage(sn){
+  if(sceneImages.gate(sn,()=>startStage(sn)))return;
   if(!setupBattleCommon(sn)){ sendHomeAllTired('quick'); return; }   // 弾3-11§4-1：バトル開始前ガード
   let ks=stageKanji(sn);
   if(cleared.has(sn)){ // クリア済みの遊び直しは順番シャッフル（思い出しテスト）
@@ -15643,6 +15767,7 @@ function afterIntruder(){
 }
 /* フィールド：バトル勝利後に同じ位置へ戻る */
 function fieldReturn(){
+  if(sceneImages.gate(fieldZone,fieldReturn))return;
   resetHeroVictoryPose();   // 弾R-2：バトル画面を離れたら勝利ポーズ状態を持ち越さない（次バトルの保険は既にsetupBattleCommon側にもあり）
   tutorialShinyBattle=false;   // 発注_初回チュートリアル：勝利で戻る際も必ず消費（持ち越さない）
   battleSource='quick';
@@ -15706,6 +15831,7 @@ function showGateBossArrival(zone,kind,done){
 }
 
 function launchEventBossIntro(zone){
+  if(sceneImages.gate(zone,()=>launchEventBossIntro(zone)))return;
   if(routeBossToGate(zone,'event')) return;
   launchEventBossIntroAtGate(zone);
 }
@@ -15757,11 +15883,13 @@ function launchEventBossBattle(zone){
    launchEventBossIntroと同じ書き方・同じガード（screen遷移順序・heroLock/screen-active対策）を踏襲。
    launchTwinBossBattle(zone)自体は弾3-8のまま無変更（既存のツインボス開始処理をそのまま呼ぶだけ）。 */
 function launchEventTwinBossIntro(zone){
+  if(sceneImages.gate(zone,()=>launchEventTwinBossIntro(zone)))return;
   if(routeBossToGate(zone,'twin')) return;
   launchEventTwinBossIntroAtGate(zone);
 }
 /* 102前半の勝利後だけ、同じゲートで大願成就を出す。中断後もphase=1からここへ戻る。 */
 function launchZone102FinalBoss(){
+  if(sceneImages.gate(102,launchZone102FinalBoss))return;
   if(fieldZone!==102||zone102FinalPhase!==1||cleared.has(102))return;
   if(routeBossToGate(102,'twinFinal'))return;
   hakaseTalkOnce('まった！ つよそうな けはいが ちかづいてくる…！',()=>{
@@ -16058,6 +16186,7 @@ function faint(){
    - spawnSeq世代ガードを他のバトル演出と同じ流儀で全タイマーに適用（「おわる」・ワープでも固まらない）
 ================================ */
 function startTamashiiBattle(zone, kanjiIdx){
+  if(sceneImages.gate(zone,()=>startTamashiiBattle(zone,kanjiIdx)))return;
   isTamashii=true; tamashiiIdx=kanjiIdx;
   curStage=zone;
   battleSource='field';
@@ -17022,13 +17151,7 @@ const ZONE_PAL=[
   {grass:['#86efac','#4ade80'],path:['#fde68a','#fbbf24'],wall:['#dc2626','#991b1b','#fee2e2'],we:'🌺'}    // 102 しゅりじょうと さとうきびばたけ（赤瓦）
 ];
 /* 第4.5弾：地面テクスチャ画像（groundN.webp があれば敷き詰め・無ければ単色フォールバック） */
-const groundImgOK=new Set();
-for(let z=1;z<=STAGE_COUNT;z++){
-  const im=new Image(); const n=z;
-  im.onload=()=>{ groundImgOK.add(n); };
-  im.onerror=()=>{};   // フォールバック（エラーを出さない＝第2.5弾と同じ方式）
-  im.src='images/tiles/ground'+z+'.webp';
-}
+const groundImgOK=new Set(); // 一枚絵が採用済み。旧地面画像の一斉取得は不要。
 /* 第5弾§2/§3/§6：フォールバック方式の画像存在確認（onload/onerror→フラグ切替。エラーを出さない） */
 let heroImgOK=false;       // §2: images/sprites/hero.webp?walk=20261003d（768×512・256格子・6コマ歩行シート）
 let heroGirlImgOK=false;   // 第5.5弾: images/sprites/hero-girl.webp?walk=20261003d（女の子・同じ6コマ規格）
@@ -24817,51 +24940,17 @@ const ZONE_OBJECTS={
 };
 
 /* 部品の絵の読みこみ（fullartOK と同じ流儀。無ければ描かないだけで、エラーにしない） */
-const partImgOK=new Set();
-(function(){
-  const names=new Set();
-  Object.keys(ZONE_OBJECTS).forEach(z=>{ (ZONE_OBJECTS[z]||[]).forEach(o=>names.add(o.img)); });
-  names.forEach(file=>{
-    const im=new Image();
-    im.onload=()=>{ partImgOK.add(file); };
-    im.onerror=()=>{};
-    im.src='images/parts/'+file;
-  });
-})();
+const partImgOK=new Set(); // 必要な地域の部品だけsceneImagesで読む。
 /* 第20弾§4-2：一枚絵プリロード（groundImgOKと同じ流儀＝onload/onerror。無ければfullartOKに入らず従来表示） */
-const fullartOK=new Set();
-ZONE_FULLART.forEach((file,i)=>{
-  if(!file) return;
-  const im=new Image(); const n=i+1;
-  im.onload=()=>{
-    fullartOK.add(n);
-    // 富士山は大きいPNGなので初回描画後に読み終わる場合がある。読み終えた時点で一度だけ背景を反映する。
-    if(n===52 && fieldZone===52 && $('screen-field').classList.contains('active')) renderField();
-  };
-  im.onerror=()=>{};   // フォールバック（エラーを出さない＝既存方式と同じ）
-  im.src='images/fullart/'+file;
-});
+const fullartOK=new Set(); // 準備完了後に初回描画。onloadから演出を再起動しない。
 /* 弾3-7：パララックス背景のプリロード（fullartOKと同じ流儀。無ければ.showが付かず非表示のまま＝実害なし） */
 const parallaxBgOK=new Set();
-Object.entries(ZONE_PARALLAX_BG).forEach(([zone,file])=>{
-  const im=new Image(); const n=Number(zone);
-  im.onload=()=>{
-    parallaxBgOK.add(n);
-    /* 富士山はPNGと遠景が別読込。遠景が後から届いた場合も、再描画でfieldSeqを変えずにその場へ反映する。 */
-    if(n===52 && fieldZone===52 && $('screen-field').classList.contains('active')){
-      const bg=$('fieldParallaxBg');
-      if(bg){ bg.classList.add('show','fuji-panorama'); bg.style.backgroundImage="url('images/fullart/"+file+"')"; updateCamera(true); }
-    }
-  };
-  im.onerror=()=>{};
-  im.src='images/fullart/'+file;
-});
 /* 手直し はかせトーク2§3-3：はかせ2枚（フィールド全身／会話ウィンドウの顔）。hero-girl方式のプリロード判定流儀＝
    無ければフラグfalseのまま＝絵文字フォールバックで全機能成立（画像が後から置かれたら次回ロードで自動的に画像表示） */
 let hakaseImgOK=false, hakaseFaceImgOK=false;
 (function(){
   const a=new Image(); a.onload=()=>{hakaseImgOK=true;}; a.onerror=()=>{}; a.src='images/sprites/hakase.webp';
-  const b=new Image(); b.onload=()=>{hakaseFaceImgOK=true;}; b.onerror=()=>{}; b.src='images/sprites/hakase-face.webp';
+  const b=new Image(); b.onload=()=>{hakaseFaceImgOK=true;op1SetManaFace();}; b.onerror=()=>{}; b.src='images/sprites/hakase-face.webp';
 })();
 /* 手直し(けんきゅうじょ画像組み込み)：images/lab.webp（512×512・実在）。hero-girl方式のプリロード判定流儀＝
    無ければフラグfalseのまま＝現行表示（絵文字🔬等）のみで全機能成立。適用箇所はrenderLab()とshowLabOpenOverlay() */
@@ -25206,6 +25295,7 @@ function nmTapAdvance(){ if(nmAdvanceTrigger){ const f=nmAdvanceTrigger; nmClear
    済んだあと」に呼ぶコールバック（op1開始）。playerNameが既にある・オーバーレイ要素が無いときは
    画面を出さずafterCbだけ即呼ぶ（安全側＝この画面が原因でop1が始まらなくなる事故を防ぐ） */
 function nmOpen(afterCb){
+  if(sceneImages.gate('opening',()=>nmOpen(afterCb)))return;
   nmAfterDone=(typeof afterCb==='function') ? afterCb : null;
   if(playerName || !$('nmOverlay')){
     const f=nmAfterDone; nmAfterDone=null; if(f) f();
@@ -25716,6 +25806,7 @@ function playFieldZoomIntro(plan){
 }
 
 function renderField(){
+  if(sceneImages.gate(fieldZone,renderField))return;
   cancelHakaseIntroMusic();op1AbortMusic();
   if(isIceDungeon(fieldZone)){renderIceDungeonField();return;}
   // 76の旧い雪道上のセーブ位置が水路に変わった場合だけ、港の入口へ戻す。
@@ -27225,6 +27316,7 @@ function enterNextZone(){
   enterNextZoneAfterCeremony();
 }
 function enterNextZoneAfterCeremony(){
+  if(sceneImages.gate(fieldZone+1,enterNextZoneAfterCeremony))return;
   gateFxLock=true;
   ensureAudio(); snd('gatepass');                          // 第17弾§2：ゲート通過の効果音（sfxFanfareとは別・控えめ・🔇連動はsnd()側で担保）
   const gf=$('gateFlash'); if(gf) gf.classList.add('on');  // 第17弾§2：短いフラッシュ（evo-flashとは別の軽量要素）
@@ -32122,6 +32214,7 @@ function renderWorldMap(regionOverride){
   wmPlayIntroZoom(scale, centerCoord.x, centerCoord.y);
 }
 function warpZone(z){
+  if(sceneImages.gate(z===84&&cleared.has(83)&&!iceDungeon.complete?[84,83]:z,()=>warpZone(z)))return;
   cancelHakaseIntroMusic();op1AbortMusic();
   if(typeof EvCutScene!=='undefined')EvCutScene.cancelMusic();
   cancelZoneTalkMusic();
@@ -33154,11 +33247,13 @@ async function iceDungeonAdvance(){
   else{iceDungeon.complete=true;save();iceDungeonFinish();}
 }
 function iceDungeonEnter(f,resume=true){
+  if(sceneImages.gate(-10-f,()=>iceDungeonEnter(f,resume)))return;
   iceDungeonStop();iceDungeon.floor=Math.max(0,Math.min(4,f));iceDungeon.entered=true;iceDungeonPaused=false;
   if(!resume)iceDungeon.pos={...ICE_DUNGEON_DEFS[iceDungeon.floor].start};
   fieldZone=-10-iceDungeon.floor;showScreen('screen-field');renderField();
 }
 function iceDungeonBack(){
+  if(sceneImages.gate(iceDungeon.floor<4?83:-10-(iceDungeon.floor-1),iceDungeonBack))return;
   if(iceDungeonTalk||iceDungeonBattle)return;
   if(iceDungeon.floor<4){iceDungeonStop();fieldZone=83;const s=zoneStartOf(83);setFieldStandardPosition(83,s.x,s.y);showScreen('screen-field');renderField();openWorldMap();return;}
   iceDungeonEnter(iceDungeon.floor-1,false);iceDungeonPaused=true;iceDungeonUpdatePause();
@@ -33169,6 +33264,7 @@ function iceDungeonToggle(){
 }
 function iceDungeonUpdatePause(){if($('icdPause'))$('icdPause').textContent=iceDungeonPaused?'▶ つづける':'Ⅱ とまる';}
 function iceDungeonFinish(){
+  if(sceneImages.gate(83,iceDungeonFinish))return;
   unlocked=Math.max(unlocked,84);save();
   iceDungeonStop();fieldZone=83;const s=zoneStartOf(83);setFieldStandardPosition(83,s.x,s.y);save();showScreen('screen-field');renderField();openWorldMapAfterZoneOut();
 }
@@ -33286,9 +33382,9 @@ function zoneFullartOf(zone){ return zone===TOWN_ZONE ? TOWN_DEF.fullart[0] : (z
 let interiorFullartOK=new Set(), interiorActorSheetOK=new Set(), interiorActorImgOK=new Set(), meatSceneOK=false;
 let teacherImagesOK=false, schoolBuildingOK=false, shodoBuildingOK=false;
 (function preloadInteriorAssets(){
-  [MALL_DEF,HOUSE1_DEF,SCHOOL_DEF,SHODO_DEF,STATION_DEF,MURA_DEF].forEach(def=>{ const im=new Image(); im.onload=()=>{ interiorFullartOK.add(def.zone); if(fieldZone===def.zone&&$('screen-field').classList.contains('active')) renderField(); }; im.onerror=()=>{}; im.src='images/fullart/'+def.bg; });   // 発注_町南側と駅：STATION_DEFを追加／発注_村1：MURA_DEFを追加（画像プリロード・onerrorフォールバックはMALL/HOUSE1等と共通のため、画像が万一無くても壊れない）
+  [MALL_DEF,HOUSE1_DEF,SCHOOL_DEF,SHODO_DEF,STATION_DEF,MURA_DEF].forEach(def=>{ const im=new Image(); im.onload=()=>{ interiorFullartOK.add(def.zone);  }; im.onerror=()=>{}; im.src='images/fullart/'+def.bg; });   // 発注_町南側と駅：STATION_DEFを追加／発注_村1：MURA_DEFを追加（画像プリロード・onerrorフォールバックはMALL/HOUSE1等と共通のため、画像が万一無くても壊れない）
   INTERIOR_ACTORS.forEach(a=>{
-    const redraw=()=>{ if(fieldZone===a.zone&&$('screen-field').classList.contains('active')) renderField(); };
+    const redraw=()=>{  };
     const sheet=new Image(); sheet.onload=()=>{ interiorActorSheetOK.add(a.key); redraw(); }; sheet.onerror=()=>{}; sheet.src='images/sprites/'+a.sheet+'?walk=20261003d';
     if(a.img){ const still=new Image(); still.onload=()=>{ interiorActorImgOK.add(a.key); redraw(); }; still.onerror=()=>{}; still.src='images/'+a.img; }   // ★2026-08-22：静止画を持たない人（モブ）は読みにいかない
   });
@@ -33300,9 +33396,9 @@ let teacherImagesOK=false, schoolBuildingOK=false, shodoBuildingOK=false;
     const im=new Image(); im.onload=()=>{ interiorActorImgOK.add(a.key); }; im.onerror=()=>{}; im.src='images/'+a.img;
   });
   const teacherFiles=['teacher-normal.webp','teacher-happy.webp','teacher-encourage.webp']; let teacherLoaded=0,teacherFailed=false;
-  teacherFiles.forEach(file=>{ const im=new Image(); im.onload=()=>{ teacherLoaded++; if(!teacherFailed&&teacherLoaded===teacherFiles.length){teacherImagesOK=true;if(fieldZone===SCHOOL_ZONE&&$('screen-field').classList.contains('active'))renderField();} }; im.onerror=()=>{teacherFailed=true;teacherImagesOK=false;}; im.src='images/'+file; });
-  const school=new Image(); school.onload=()=>{schoolBuildingOK=true;if(fieldZone===TOWN_ZONE&&$('screen-field').classList.contains('active'))renderField();}; school.onerror=()=>{schoolBuildingOK=false;}; school.src='images/buildings/town-school.webp';
-  const shodo=new Image(); shodo.onload=()=>{shodoBuildingOK=true;if(fieldZone===TOWN_ZONE&&$('screen-field').classList.contains('active'))renderField();}; shodo.onerror=()=>{shodoBuildingOK=false;}; shodo.src='images/buildings/town-shodo.webp';
+  teacherFiles.forEach(file=>{ const im=new Image(); im.onload=()=>{ teacherLoaded++; if(!teacherFailed&&teacherLoaded===teacherFiles.length){teacherImagesOK=true;} }; im.onerror=()=>{teacherFailed=true;teacherImagesOK=false;}; im.src='images/'+file; });
+  const school=new Image(); school.onload=()=>{schoolBuildingOK=true;}; school.onerror=()=>{schoolBuildingOK=false;}; school.src='images/buildings/town-school.webp';
+  const shodo=new Image(); shodo.onload=()=>{shodoBuildingOK=true;}; shodo.onerror=()=>{shodoBuildingOK=false;}; shodo.src='images/buildings/town-shodo.webp';
 })();
 /* 弾3-14§5：町背景2枚のプリロード。北/南どちらかが無ければ町全体をタイル絵フォールバック */
 let townFullartOK=false;
@@ -33315,7 +33411,7 @@ let townFullartOK=false;
       if(!failed && loaded===TOWN_DEF.fullart.length){
         townFullartOK=true;
         const scr=document.getElementById('screen-field');
-        if(fieldZone===TOWN_ZONE && scr && scr.classList.contains('active')) renderField();
+
       }
     };
     im.onerror=()=>{ failed=true; townFullartOK=false; };
@@ -33376,6 +33472,7 @@ function townSelfTest(){
 /* §5-3：町への入場。fieldPosは書かない（§5-2＝リロード後は最後にいた通常ゾーン扱い） */
 let townPrevZone=1;   // 町に入る前にいた通常ゾーン（ちずを開いたときの表示地方に使う・セッション値）
 function warpTown(){
+  if(sceneImages.gate(TOWN_ZONE,warpTown))return;
   if(fieldZone>=1) townPrevZone=fieldZone;
   fieldZone=TOWN_ZONE;
   const s=zoneStartOf(TOWN_ZONE);
@@ -33416,6 +33513,7 @@ function onArriveTownTile(ch){
 
 /* ===== 弾3-15：屋内の出入り・住人カード ===== */
 function warpInterior(zone){
+  if(sceneImages.gate(zone,()=>warpInterior(zone)))return;
   if(!PSEUDO_DEFS[zone]||zone>=0) return;
   if(zone===MURA_ZONE){ MURA_DEF.bg=ownsForest?'mura-cleared.webp':'mura-forest.webp'; }   // 発注_村1・0-8節：入場のたびに所有状態から書き換える
   fieldZone=zone; const s=zoneStartOf(zone); fieldHx=s.x; fieldHy=s.y;
@@ -33442,6 +33540,7 @@ function warpInterior(zone){
   }
 }
 function leaveInterior(){
+  if(sceneImages.gate(TOWN_ZONE,leaveInterior))return;
   const def=PSEUDO_DEFS[fieldZone]; if(!def||fieldZone>=0) return;
   fieldZone=TOWN_ZONE; fieldHx=def.returnTo.x; fieldHy=def.returnTo.y;
   showScreen('screen-field'); renderField();
@@ -35389,6 +35488,7 @@ function startAmamiArrival(){
   }
 }
 function startNationalDeparture(){
+  if(sceneImages.gate([102,1,9,25,45,65,12,83],startNationalDeparture))return;
   if(nationalDepartureSeen){startAmamiArrival();return;}
   const seq=++finalChapterFlowSeq;
   destroyFinalChapterEvent();
@@ -35863,6 +35963,7 @@ function op1PlaySnd(key){
 
 /* 新規プレイヤーの起動時にだけ呼ばれる（呼び出し元＝本ファイル末尾の初期化ブロック） */
 function startOp1Event(){
+  if(sceneImages.gate('opening',startOp1Event))return;
   if(op1Active) return;
   op1Active=true;
   bgmStop();   // 開始時は無音。2026-10-04採用のマナ名乗りS3b/cだけ人物曲を入れる（タイトル曲は止める）
