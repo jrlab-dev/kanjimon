@@ -723,6 +723,8 @@
   .shop-use-btn{padding:8px 12px;font-size:.85rem;flex:0 0 auto}
   /* 道具の使用ボタンだけ、共通.panel .btnの全幅指定を解除して商品名の幅を確保する。 */
   #itemsOverlay .shop-use-btn{width:auto;font-size:.85rem;padding:8px 12px;margin-top:0}
+  /* 狭い画面では説明と所持数/使用を別段に置き、6桁所持でも文章幅を確保する。 */
+  @media(max-width:374px){#itemsBody .shop-item{display:grid;grid-template-columns:28px minmax(0,1fr) auto}#itemsBody .shop-item-body{grid-column:2/4}#itemsBody .shop-item-price{grid-column:2}}
   .shop-none{font-size:.72rem;color:var(--sub);flex:0 0 auto}
   .ot-card{background:#fffbe6;border:3px solid var(--yellow);border-radius:14px;padding:10px;margin:8px 0}
   .ot-clock{width:150px;height:150px;margin:8px auto;display:block}
@@ -789,7 +791,7 @@
     min-height:92px;padding:12px 5px;border-top:1px dashed #b7a989;border-bottom:1px dashed #b7a989}
   .school-paper-num{font-weight:900;color:#76644e}.school-paper-kanji{font-size:2.35rem;font-weight:900;text-align:center;color:#202020}
   .school-paper-reading{font-family:'Segoe Print','Yu Mincho',cursive;font-size:1.45rem;font-weight:700;letter-spacing:.05em;text-align:center;color:#3f4d54}
-  .school-mark-stack{position:relative;width:62px;height:62px;display:flex;align-items:center;justify-content:center}
+  .school-mark-stack{position:relative;width:62px;height:62px;padding-left:8px;display:flex;align-items:center;justify-content:center}
   .school-live-mark,.school-sheet-mark{font-family:'Segoe Print','Yu Mincho',cursive;font-weight:900;color:#d71920;text-align:center;line-height:1}
   .school-live-mark{position:absolute;font-size:3.5rem;transform:rotate(var(--mark-rot, -6deg)) scale(.2);opacity:0;animation:schoolInk .32s ease-out forwards}
   .school-live-mark.school-mark-static{opacity:1;transform:rotate(var(--mark-rot,-6deg)) scale(1);animation:none}
@@ -818,7 +820,7 @@
     .school-teacher{left:50%;top:2px;bottom:auto;transform:translateX(-50%);width:112px;height:108px;font-size:3.5rem}
     .school-board{min-height:300px}
     .school-paper-page{padding:14px 8px 22px;min-height:190px}
-    .school-paper-focus{grid-template-columns:25px 48px minmax(76px,1fr) 52px;gap:4px;padding:10px 1px}
+    .school-paper-focus{grid-template-columns:25px 48px minmax(0,1fr) 64px;gap:4px;padding:10px 1px}
     .school-paper-kanji{font-size:2rem}.school-paper-reading{font-size:1.22rem}.school-mark-stack{width:50px;height:58px}.school-live-mark{font-size:3rem}
     .school-score-grid{grid-template-columns:repeat(3,1fr)}
   }
@@ -33895,7 +33897,7 @@ function renderSchoolGuide(){
   const inside='<div class="school-qno">おてほん</div><div class="school-paper-viewport"><div class="school-paper-page">'+
     '<div class="school-paper-head">ふりがなを みて、○か×を つけましょう</div>'+
     '<div class="school-paper-focus"><span class="school-paper-num">れい</span><span class="school-paper-char">一</span>'+
-    '<span class="school-paper-reading">いち</span><span class="school-live-mark school-mark-static">○</span></div></div></div>'+
+    '<span class="school-paper-reading">いち</span><span class="school-mark-stack"><span class="school-live-mark school-mark-static">○</span></span></div></div></div>'+
     '<div class="school-msg">「一」を「いち」と よむから ○だよ！</div>';
   $('schoolTestBody').innerHTML=schoolStageHtml('happy',inside)+
     '<div class="school-actions"><button class="btn btn-primary" onclick="beginSchoolQuestions('+s.seq+')">テストを はじめる</button>'+
@@ -33927,7 +33929,7 @@ function schoolPaperTrackHtml(s){
   let html='<div class="school-paper-viewport"><div class="school-paper-track" style="transform:translateX(-'+(s.pos*100)+'%);transition-duration:'+SCHOOL_PAPER_SLIDE_MS+'ms">';
   s.questions.forEach((q,i)=>{html+='<div class="school-paper-page"><div class="school-paper-head">ふりがなを みて、○か×を つけましょう</div>'+
     '<div class="school-paper-focus"><span class="school-paper-num">'+(i+1)+'</span><span class="school-paper-char">'+q.char+'</span>'+
-    '<span class="school-paper-reading">'+q.shown+'</span>'+schoolPaperMarkHtml(s,i)+'</div></div>';});
+    '<span class="school-paper-reading">'+q.shown+'</span><span class="school-mark-stack">'+schoolPaperMarkHtml(s,i)+'</span></div></div>';});
   return html+'</div></div>';
 }
 function renderSchoolQuestion(){
