@@ -26749,7 +26749,7 @@ function afterFieldRender(){
 }
 function startAutoExplore(){
   if(isAmamiEventField()){stopAutoExplore();return;}
-  if(document.querySelector('#worldmapOverlay.show,#nipponMapOverlay.show')){stopAutoExplore();autoPaused=true;return;}
+  if(document.querySelector('#worldmapOverlay.show,#nipponMapOverlay.show,#itemsOverlay.show,#partyEditOverlay.show')){stopAutoExplore();autoPaused=true;return;}
   if(isIceDungeon(fieldZone)){iceDungeonPaused=false;iceDungeonSchedule();return;}
   stopAutoExplore();
   autoPaused=false;
@@ -33952,9 +33952,10 @@ function renderSchoolQuestion(){
   const below='<div class="school-actions"><button class="btn btn-ghost" '+(s.slideLocked?'disabled':'')+' onclick="confirmSchoolQuit('+s.seq+')">やめる</button></div>';
   $('schoolTestBody').innerHTML=schoolStageHtml(mood,inside)+below;
   if(s.answered){
+    const pos=s.pos;
     const mark=document.querySelector('.school-current-final,.corrected-final');
-    if(mark)mark.addEventListener('animationend',()=>advanceSchoolPaper(s.seq),{once:true});
-    setTimeout(()=>advanceSchoolPaper(s.seq),1050);
+    if(mark)mark.addEventListener('animationend',()=>advanceSchoolPaper(s.seq,pos),{once:true});
+    setTimeout(()=>advanceSchoolPaper(s.seq,pos),1050);
   }
 }
 function answerSchoolMark(mark,seq){
@@ -33967,14 +33968,15 @@ function answerSchoolMark(mark,seq){
   ensureAudio(); if(s.lastChoiceCorrect)sfxCorrect();else sfxWrong();
   renderSchoolQuestion();
 }
-function advanceSchoolPaper(seq){
+function advanceSchoolPaper(seq,pos){
   const s=schoolTestState;
-  if(!s||seq!==schoolTestSeq||s.seq!==seq||s.phase!=='question'||!s.answered||!s.slideLocked)return;
+  if(!s||seq!==schoolTestSeq||s.seq!==seq||s.pos!==pos||s.phase!=='question'||!s.answered||!s.slideLocked||s.paperAdvancing)return;
   if(s.pos===9){s.phase='score';s.scoreAnswered=false;s.scoreRevealDone=false;renderSchoolScore();return;}
   const track=document.querySelector('.school-paper-track');
   if(!track)return;
+  s.paperAdvancing=true;
   let completed=false;
-  const done=()=>{if(completed||!schoolTestState||schoolTestState.seq!==seq)return;completed=true;s.pos++;s.answered=false;s.slideLocked=false;s.lastChoice=null;s.lastChoiceCorrect=false;renderSchoolQuestion();};
+  const done=()=>{if(completed||schoolTestState!==s||s.seq!==seq||s.pos!==pos)return;completed=true;s.pos++;s.paperAdvancing=false;s.answered=false;s.slideLocked=false;s.lastChoice=null;s.lastChoiceCorrect=false;renderSchoolQuestion();};
   track.addEventListener('transitionend',done,{once:true});
   setTimeout(done,SCHOOL_PAPER_SLIDE_MS+120);
   requestAnimationFrame(()=>requestAnimationFrame(()=>{track.style.transform='translateX(-'+((s.pos+1)*100)+'%)';}));
