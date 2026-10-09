@@ -721,6 +721,8 @@
   .shop-count-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:10px 0}
   .shop-count-btn{min-width:72px}
   .shop-use-btn{padding:8px 12px;font-size:.85rem;flex:0 0 auto}
+  /* 道具の使用ボタンだけ、共通.panel .btnの全幅指定を解除して商品名の幅を確保する。 */
+  #itemsOverlay .shop-use-btn{width:auto;font-size:.85rem;padding:8px 12px;margin-top:0}
   .shop-none{font-size:.72rem;color:var(--sub);flex:0 0 auto}
   .ot-card{background:#fffbe6;border:3px solid var(--yellow);border-radius:14px;padding:10px;margin:8px 0}
   .ot-clock{width:150px;height:150px;margin:8px auto;display:block}
@@ -1140,6 +1142,10 @@
   /* ===== 第4弾：フィールド画面 ===== */
   #screen-field{max-width:480px;margin:0 auto;touch-action:manipulation;padding:8px 4px 14px}
   .field-h{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+  /* 音ボタン46px＋右余白10px−画面余白4px＝52pxを確保。名前は既存の狭幅と同じ2行目へ。 */
+  body:not(.ice-dungeon) .field-h{padding-right:52px;flex-wrap:wrap}
+  body:not(.ice-dungeon) .field-h h2{order:9;flex:1 0 100%}
+  @media(max-width:374px){body:not(.ice-dungeon) .field-h{gap:6px}}
   /* ★2026-08-17：ゾーン名を実在の地名にしたら「すみだがわ」(5字)でも2行に折り返していた。
      準也さんの裁定＝A案（文字を少し小さくする。表示幅・レイアウトは動かさない）。
      1.05rem→0.92rem。★白space:nowrap は付けない（もっと長い名前が来たとき、
