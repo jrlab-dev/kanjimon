@@ -224,6 +224,7 @@
   .t-みず{background:#38bdf8}.t-ひ{background:#f87171}.t-き{background:#4ade80}.t-岩{background:#9ca3af}.t-かみなり{background:#facc15}.t-ふつう{background:#374151}
 
   /* ===== タイトル画面 ===== */
+  #screen-title{height:100vh;height:100dvh;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y}
   .title-hero{position:relative;isolation:isolate;overflow:hidden;
     background:#eaf6ff;
     border-radius:24px;padding:16px 0 10px;text-align:center;color:#fff;
@@ -3931,7 +3932,7 @@ body.ice-dungeon #fieldInfo{display:none}
     <img class="op5-char" id="op5Mana" src="images/sprites/hakase.webp" alt="">
     <div class="op1-voice" id="op1Voice"></div>
     <!-- OP-1b§3：自動再生制限対応の入口ボタン（タップでS0開始＋以後の音声再生を解禁）。とばすはここからも押せる -->
-    <button type="button" class="btn btn-primary op1-gate-btn" id="op1GateBtn" style="font-size:1.25rem;padding:18px 32px" onclick="op1EnterFromGate()">▶ タップして はじめる</button>
+    <button type="button" class="btn btn-primary op1-gate-btn" id="op1GateBtn" style="font-size:1.25rem;padding:18px 32px" onclick="event.stopPropagation();op1EnterFromGate()">▶ タップして はじめる</button>
     <div class="op1-charwrap" id="op1CharWrap" style="display:none">
       <div class="op1-brush-clip" id="op1BrushClip"><img id="op1CharImg" src="images/op/op1-ichi-base.webp" alt=""></div>
       <!-- OP-1b§2：正解後に変身する「ゲーム標準のかんじモン表示」（既存.face-host仕組みの流用・普段は非表示） -->
@@ -4553,7 +4554,7 @@ body.ice-dungeon #fieldInfo{display:none}
     <div class="nm-keys" id="nmKeys"><!-- ボタンはJSで並べる --></div>
     <div class="nm-btns">
       <button class="nm-btn nm-del" onclick="event.stopPropagation();nmDel()">けす</button>
-      <button class="nm-btn nm-ok" id="nmOkBtn" onclick="event.stopPropagation();nmOk()" disabled>これで いい</button>
+      <button class="nm-btn nm-ok" id="nmOkBtn" onclick="event.stopPropagation();nmOk()">これで いい</button>
     </div>
   </div>
 </div>
@@ -12862,7 +12863,7 @@ for(let sn=25;sn<=83;sn++) if(!BATTLE_BG_POS[sn]) BATTLE_BG_POS[sn]='right 70%';
    手直し_着替え第1弾：キーを衣装込み（'boy' / 'boy-wafuku' …）に拡張。標準衣装(suffix='')の
    キーは今までどおり'boy'/'girl'のままなので、既存の「後ろ姿を出すか」の判定は無変更で動く。 */
 const heroBackOK=new Set();
-COSTUMES.forEach(cs=>['boy','girl'].forEach(ch=>{
+COSTUMES.forEach(cs=>['boy','girl'].filter(ch=>costumeUsable(cs.key,ch)).forEach(ch=>{
   const im=new Image(); const key=ch+cs.suffix;
   im.onload=()=>{ heroBackOK.add(key); };
   im.onerror=()=>{};
@@ -12870,7 +12871,7 @@ COSTUMES.forEach(cs=>['boy','girl'].forEach(ch=>{
 }));
 /* 弾R-2：勝利ふり向き演出用の前向き画像（無ければ従来どおり後ろ姿のまま＝heroBackOKと同じ流儀） */
 const heroVictoryOK=new Set();
-COSTUMES.forEach(cs=>['boy','girl'].forEach(ch=>{
+COSTUMES.forEach(cs=>['boy','girl'].filter(ch=>costumeUsable(cs.key,ch)).forEach(ch=>{
   const im=new Image(); const key=ch+cs.suffix;
   im.onload=()=>{ heroVictoryOK.add(key); };
   im.onerror=()=>{};
@@ -12879,7 +12880,7 @@ COSTUMES.forEach(cs=>['boy','girl'].forEach(ch=>{
 /* 手直し_着替え第1弾：着替え用の歩行シート（標準衣装のhero.webp/hero-girl.webpは既存の
    heroImgOK/heroGirlImgOKが担当するので、ここは追加衣装（suffixあり）だけを見る） */
 const heroSheetOK=new Set();
-COSTUMES.filter(cs=>cs.suffix).forEach(cs=>['boy','girl'].forEach(ch=>{
+COSTUMES.filter(cs=>cs.suffix).forEach(cs=>['boy','girl'].filter(ch=>costumeUsable(cs.key,ch)).forEach(ch=>{
   const im=new Image(); const key=ch+cs.suffix;
   im.onload=()=>{ heroSheetOK.add(key); };
   im.onerror=()=>{};
@@ -25264,7 +25265,7 @@ function nmRenderInput(){
   const el=$('nmInput'); if(!el) return;
   el.innerHTML=[...nmVal].map(c=>'<span>'+c+'</span>').join('')+'<span class="nm-caret"></span>';
 }
-function nmUpdateOkState(){ const b=$('nmOkBtn'); if(b) b.disabled=(nmVal.length===0); }
+function nmUpdateOkState(){ const b=$('nmOkBtn'); if(b) b.disabled=(nmStep!=='ask'); }
 function nmKeyPress(ch){
   if(nmStep!=='ask') return;   // 名前入力中(askステップ)以外はキーを受け付けない
   if(ch==='゛'){
@@ -25285,7 +25286,8 @@ function nmDel(){
   nmRenderInput(); nmUpdateOkState();
 }
 function nmOk(){
-  if(nmStep!=='ask' || nmVal.length===0) return;   // 空のままでは確定できない
+  if(nmStep!=='ask') return;
+  if(nmVal.length===0){ nmSetTalk('なまえを いれてね'); return; }   // 空のままでは確定せず、押した結果を案内する
   playerName=nmVal; save();
   nmShowConfirm();
 }
@@ -25312,7 +25314,7 @@ function nmOpen(afterCb){
     return;
   }
   nmActive=true; nmVal='';
-  nmBuildKeys(); nmRenderInput(); nmUpdateOkState();
+  nmBuildKeys(); nmRenderInput();
   $('nmOverlay').classList.add('show');
   nmSayAsk();
 }
@@ -25320,16 +25322,19 @@ function nmOpen(afterCb){
    最初から入力を受け付ける（マナのあいさつぶんの自動送りは廃止） */
 function nmSayAsk(){
   nmStep='ask';
+  nmUpdateOkState();
   nmClearAdvanceTimer();   // 入力中はタップ先送りを無効化（キー操作を優先）
   nmSetTalk('なまえを おしえてね');
 }
 function nmShowConfirm(){
   nmStep='confirm';
+  nmUpdateOkState();
   nmSetTalk(playerName+'だね！');
   nmScheduleAdvance(1800, heroSelectAvailable() ? nmSayGenderPrompt : nmGoGender);
 }
 function nmSayGenderPrompt(){
   nmStep='gender';
+  nmUpdateOkState();
   nmSetTalk('きみは どっち？');
   nmScheduleAdvance(1100, nmGoGender);
 }
@@ -26738,6 +26743,7 @@ function afterFieldRender(){
 }
 function startAutoExplore(){
   if(isAmamiEventField()){stopAutoExplore();return;}
+  if(document.querySelector('#worldmapOverlay.show,#nipponMapOverlay.show')){stopAutoExplore();autoPaused=true;return;}
   if(isIceDungeon(fieldZone)){iceDungeonPaused=false;iceDungeonSchedule();return;}
   stopAutoExplore();
   autoPaused=false;
@@ -31749,10 +31755,14 @@ function openWorldMap(regionOverride){
   // 手直し ちず拡大とパン：先にshowしてからrenderWorldMap()を呼ぶ（renderWorldMap内のwmSetupZoomが
   // #wmViewportのclientWidth/Heightを実測するため。display:noneのままだと0になってしまう）
   $('worldmapOverlay').classList.add('show');
+  if($('screen-field').classList.contains('active')){ stopAutoExplore(); autoPaused=true; }
   if(typeof updateClueBtn==='function') updateClueBtn();   // 弾EV-4：てがかりボタンの表示と ◯/7 を更新
   renderWorldMap(regionOverride);
 }
-function closeWorldMap(){ $('worldmapOverlay').classList.remove('show'); }
+function closeWorldMap(){
+  $('worldmapOverlay').classList.remove('show');
+  if($('screen-field').classList.contains('active')&&!document.querySelector('.overlay.show')){ autoPaused=false; afterFieldRender(); }
+}
 /* 第5弾§6：8ゾーンを空間配置した「島の地図」。ノード＋番号順の道。タップ挙動は従来通り */
 // 手直し ちず座標v2：トウキョウv2地図（海と雲）の目印に合わせて再計測（設計書§1）
 /* 弾M-2（2026-08-15）★1・2年生を「実在の地理」にする：
@@ -31947,8 +31957,14 @@ const WM_COORDS_NIPPON=[
 ];
 /* トウキョウは常時開放・出発地なので専用ノード(tokyo自体はfrom=1で常に条件を満たす)として別途固定表示する。
    下記renderNipponMapのコードでWM_COORDS_TOKYO代表点は使わず、固定座標{x:50,y:46}をトウキョウ表示に使う(カントウの近く)。 */
-function openNipponMap(){ renderNipponMap(); $('nipponMapOverlay').classList.add('show'); }
-function closeNipponMap(){ $('nipponMapOverlay').classList.remove('show'); }
+function openNipponMap(){
+  renderNipponMap(); $('nipponMapOverlay').classList.add('show');
+  if($('screen-field').classList.contains('active')){ stopAutoExplore(); autoPaused=true; }
+}
+function closeNipponMap(){
+  $('nipponMapOverlay').classList.remove('show');
+  if($('screen-field').classList.contains('active')&&!document.querySelector('.overlay.show')){ autoPaused=false; afterFieldRender(); }
+}
 function renderNipponMap(){
   const map=$('nipponMap');
   map.classList.toggle('has-bg-nippon', worldmapNipponImgOK);
@@ -34852,7 +34868,7 @@ function renderClockSelect(){
 }
 function startClockHelp(mode){
   const rate=mode==='easy'?ODACHIN_EASY:(mode==='normal'?ODACHIN_NORMAL:ODACHIN_HARD);
-  otetsudaiState={kind:'clock',mode,rate,q:0,correct:0,options:[],answer:0,seq:++otetsudaiSeq};
+  otetsudaiState={kind:'clock',mode,rate,q:0,correct:0,options:[],answer:0,asked:new Set(),seq:++otetsudaiSeq};
   nextClockQuestion();
 }
 function otClockSvg(h,min){
@@ -34867,7 +34883,10 @@ function nextClockQuestion(){
   const st=otetsudaiState; if(!st||st.kind!=='clock') return;
   if(st.q>=OTETSUDAI_QCOUNT){ finishOtetsudai('とけいやさん',st.correct,st.rate,true); return; }
   const mins=st.mode==='easy'?[0]:(st.mode==='normal'?[0,30]:[0,5,10,15,20,25,30,35,40,45,50,55]);
-  const h=1+Math.floor(Math.random()*12), min=mins[Math.floor(Math.random()*mins.length)];
+  const remaining=[];
+  for(let h=1;h<=12;h++) mins.forEach(min=>{ if(!st.asked.has(h+':'+min)) remaining.push({h,min}); });
+  const {h,min}=remaining[Math.floor(Math.random()*remaining.length)];
+  st.asked.add(h+':'+min);
   const answer=otClockLabel(h,min,st.mode);
   const used=new Set([answer]), opts=[answer];
   let guard=0;
@@ -36011,6 +36030,7 @@ function op1Finish(){
   op1EndMusic();
   op1Seq++;              // 残っている古いシーンのsetTimeoutを無効化
   op1Active=false;
+  $('op1Stage').onclick=null;
   op1StopAllSnd();       // OP-1b§3：とばす等で途中終了したとき、鳴っているセリフ音声を確実に止める（次画面へ音を持ち越さない）
   op1StopWalkAnims();    // 弾OP-5：とばす等で退室演出の途中に終了したとき、歩行コマ送りのintervalを確実に止める
   $('op1GateBtn').classList.remove('show');
@@ -36030,6 +36050,12 @@ function op1SetManaFace(){
 /* ---- S0：声（暗転・約5秒）。確定文言は一字も変えない（設計書§2 S0・検品項目7） ---- */
 function op1PlayS0(){
   const seq=op1Seq;
+  let advanced=false;
+  const advance=()=>{
+    if(advanced || seq!==op1Seq || !op1Active) return;
+    advanced=true; $('op1Stage').onclick=null; op1StopAllSnd(); op1PlayS05();
+  };
+  $('op1Stage').onclick=advance;   // 黒画面のせりふはタップでも一度だけ先へ進む
   $('op1Stage').className='op1-stage op1-bg-black';
   $('op1CharWrap').style.display='none';
   $('op1Mana').classList.remove('show');
@@ -36057,12 +36083,12 @@ function op1PlayS0(){
   $('op1KanjiFaceText').textContent=K[PARTNER_IDX].c;
   $('op1KanjiFaceText').style.color=K[PARTNER_IDX].cl;
   setTimeout(()=>{
-    if(seq!==op1Seq) return;
+    if(seq!==op1Seq || advanced) return;
     $('op1Voice').innerHTML='だいじょうぶ。なにも おぼえなくて いいよ。たのしむだけで いいんだ。<span class="op1-key">イージーだよ</span>';
     $('op1Voice').classList.add('show');
     op1PlaySnd('s0');   // OP-1b§3：台詞表示と同時にイージーの声を再生
   },300);
-  setTimeout(()=>{ if(seq!==op1Seq) return; op1PlayS05(); },300+OP1_VOICE_MS.s0+OP1_VOICE_PAUSE_MS);
+  setTimeout(advance,300+OP1_VOICE_MS.s0+OP1_VOICE_PAUSE_MS);
 }
 /* ---- S0.5：モニター起動（約2秒・CSSのみ）。白フラッシュ＋走査線→そのままS1の白画面へ ---- */
 function op1PlayS05(){
