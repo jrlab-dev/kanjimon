@@ -26799,6 +26799,9 @@ function stopAutoExplore(){
 function autoTick(){
   autoTimer=null;
   if(isAmamiEventField())return;
+  if((typeof trainSceneActive!=='undefined' && trainSceneActive) || (typeof YojiFieldScene!=='undefined' && YojiFieldScene.isActive())){
+    autoTimer=setTimeout(autoTick,250); return;
+  }
   if(typeof shipSceneActive!=='undefined' && shipSceneActive) return;
   // フィールド画面が表示中のときだけ動く（タイトル/バトル中に裏で歩き回らないよう安全弁）
   const fscr=$('screen-field');
