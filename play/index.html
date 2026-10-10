@@ -13636,7 +13636,7 @@ function amamiEpisodeOneOnWrong(btn){
   const state=amamiBattleState(battle);
   if(battle&&!battle.isRetry&&!state.retryWords.includes(battle.word)){state.retryWords.push(battle.word);save();}
   $('dmgFlash').classList.add('on');cheerParty(selectedAttacker,'pain',650);
-  setMsg('『<span class="yomi">'+(jw?jw.w:'')+'</span>』は 『'+(jw?jw.y:'')+'』と よむよ！<br><span class="meaning">あとで もういちど</span>');
+  setMsg('『<span class="yomi">'+(jw?jw.w:'')+'</span>』は 『'+(jw?jw.y:'')+'』と よむよ！'+(battle&&battle.isRetry?'':'<br><span class="meaning">あとで もういちど</span>'));
   setTimeout(()=>{if(seq!==spawnSeq)return;$('dmgFlash').classList.remove('on');$('enemyWrap').classList.add('defeated');},900);
   setTimeout(()=>{if(seq!==spawnSeq)return;amamiEpisodeOneFinishEncounter();},1750);
 }
