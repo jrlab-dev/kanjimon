@@ -362,8 +362,8 @@
   /* 弾R-2（7/19）：主人公後ろ姿を新基準絵に差し替え。新画像はタイトクロップ（余白なし）で
      旧素材より横幅が細いため、旧来のleft:-130pxのままだと画面外にほぼ全身が消えてしまう。
      見た目で再調整（旧素材のクリップ比率に近い見え方＝画面左に大きく立ちつつ全身がほぼ見える） */
-  #screen-battle.tate .hero-back{display:block;position:absolute;left:-15px;top:min(28%,max(0px,calc(100% - 460px)));bottom:auto;margin:0;pointer-events:none}
-  #screen-battle.tate .hero-back img{height:320px;display:block;filter:drop-shadow(0 6px 8px rgba(0,0,0,.25));transform-origin:top center}
+  #screen-battle.tate .hero-back{display:block;position:absolute;left:-15px;bottom:-128px;margin:0}
+  #screen-battle.tate .hero-back img{height:320px;display:block;filter:drop-shadow(0 6px 8px rgba(0,0,0,.25));transform-origin:bottom center}
   /* 発注_軽微調整3件(2026-07-20) 作業2：当初は旧hero-back-girl.webp（512×512の正方形・構図も男の子と違い
      ほぼ真後ろ向き）が原因と見て.hero-back.girl専用のleft調整を検討したが、準也さんの指摘で「そもそも
      構図（ポーズの向き）が男の子とそろっていない」のが根本原因と判明。素材\キャラクター基準の元絵から
@@ -14287,8 +14287,6 @@ function renderEnemyHp(){
 }
 function renderParty(){
   const row=$('partyRow');
-  const battleScreen=$('screen-battle');
-  if(battleScreen)battleScreen.querySelectorAll('.hero-back').forEach(el=>el.remove());
   if(battleMode!=='party'){ row.innerHTML=''; row.style.display='none'; return; }
   row.style.display='';
   row.innerHTML='';
@@ -14302,7 +14300,7 @@ function renderParty(){
     // 女の子のときだけCSSで位置を個別調整できるようにする（画像アスペクト比の違いによる右はみ出し対策）
     hb.className='hero-back '+hbChar+(heroVictoryPose?' victory-pop':'');
     hb.innerHTML='<img src="'+heroBackImgSrc(hbChar)+'" alt="">';
-    scrB.prepend(hb);
+    row.appendChild(hb);
   }
   party.forEach(idx=>{
     const k=K[idx];
@@ -14427,11 +14425,7 @@ function triggerHeroVictoryPose(){
   }
 }
 /* 新しい敵が出るたび（次の戦い）に必ず後ろ姿へ戻す */
-function resetHeroVictoryPose(){
-  heroVictoryPose=false;
-  const battleScreen=$('screen-battle');
-  if(battleScreen)battleScreen.querySelectorAll('.hero-back').forEach(el=>el.remove());
-}
+function resetHeroVictoryPose(){ heroVictoryPose=false; }
 /* 弾3-12§8：🍙ボタン＝「だれに つかう？」モードのオン/オフ（もう一度タップでキャンセル） */
 function onGenkidamaBtnTap(){
   if(answering||evoLock) return;
