@@ -249,7 +249,7 @@
    },1900);
   }
  }
- function start(){if(!amamiFinal?.episode12?.done)return false;if(amamiFinal.story?.phase==='done')return false;runPhase();return true;}
+ function start(){if(!amamiFinal?.episode12?.done)return false;if(amamiFinal.story?.phase==='done')return false;if(sceneImages.gate([102,1,83],start))return true;runPhase();return true;}
  function preview(phase='split'){
   if(!phases.includes(phase)||phase==='done'||typeof amamiFinal!=='object'||!amamiFinal)return false;
   amamiFinal.episode12={...(amamiFinal.episode12||{}),done:true};
