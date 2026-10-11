@@ -128,7 +128,7 @@
    {zone:83,label:'ホッカイドウ',count:5,mana:true,adults:0,hokkaido:true,monsters:16}
   ];
   function cut(i){
-   const p=places[i],f=scene(p.zone,{...p,hero:false,scene:'rescue'});
+   const p=places[i],f=scene(p.zone,{...p,hero:false,scene:p.hokkaido?'rescue-hokkaido':'rescue'});
    const positions=p.count===5?
     [{x:f.cx-2.75,y:f.cy+1},{x:f.cx-1.35,y:f.cy+1.45},{x:f.cx,y:f.cy+1},{x:f.cx+1.35,y:f.cy+1.45},{x:f.cx+2.75,y:f.cy+1}]:
     [{x:f.cx-2.2,y:f.cy+1.05},{x:f.cx,y:f.cy+1.4},{x:f.cx+2.2,y:f.cy+1.05}];
@@ -136,7 +136,7 @@
    if(i===3){
     const mana=f.actors.find(n=>n.classList.contains('nd-field-mana'));
     if(mana){mana.style.setProperty('--mx',f.cx-.7);mana.style.setProperty('--my',f.cy-.4);}
-    global.NationalDeparture.placeActor({kind:'maros',x:f.cx-3.2,y:f.cy-2.2,extra:'aen-maros'});
+    global.NationalDeparture.placeActor({kind:'maros',x:f.cx-.4,y:f.cy-3.4,extra:'aen-maros'});
     f.mobs.forEach(n=>n.classList.add('nd-frozen'));
    }
    const key=['okinawa','tokyo','town','hokkaido'][i];

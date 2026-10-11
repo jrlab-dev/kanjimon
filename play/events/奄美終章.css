@@ -103,3 +103,6 @@ body.amami-ending-mode:has(#amamiEndingRoot[data-scene="sailing"]) #fieldWrap{vi
 .aen-making-hand{position:absolute;width:35%;aspect-ratio:1.38;bottom:-25%;left:4%;background:url('../images/amami-blocks/hands.png') 26.75% 55.87%/351.68% 246.67% no-repeat;clip-path:polygon(20% 0,100% 0,100% 100%,30% 100%,0 65%,0 30%);opacity:0;transition:opacity .3s,transform .5s}
 #aenMakingWords.chosen .aen-making-hand{opacity:1;transform:translate(12%,-15%)}
 #aenMakingWords.read .aen-making-hand{opacity:0}
+
+body:has(#amamiEndingRoot[data-scene="rescue-hokkaido"]) #fieldGrid .nd-event-spot .spot-char{font-size:calc(var(--tile)*.85)}
+body:has(#amamiEndingRoot[data-scene="rescue-hokkaido"]) #fieldGrid .aen-easy{--easy-size:calc(var(--tile)*1.76)!important}
