@@ -1,0 +1,12 @@
+.amami-easy.has-easy3d>.interior-npc-visual{display:none!important}
+[data-input-locked] #ayNext{opacity:.2!important;animation:none!important}
+.amami-easy.has-easy3d{animation:none!important;filter:none}
+.easy3d-frame{display:block;pointer-events:none;object-fit:contain;--motion-x:0%;--motion-y:0%;transform:translate(var(--motion-x),var(--motion-y))}
+.amami-easy>.easy3d-frame{position:absolute;left:50%;bottom:calc(var(--easy-size,64px) * -.17);width:var(--easy-size,64px);height:auto;max-width:none;margin-left:calc(var(--easy-size,64px) * -.5);filter:drop-shadow(0 4px 2px #0002)}
+body.easy-motion-busy #aseNext,body.easy-motion-busy #astNext,body.easy-motion-busy #asnNext,body.easy-motion-busy #askNext,body.easy-motion-busy #ayNext,body.easy-motion-busy #amamiNext{opacity:.25;animation:none}
+body:is(.amami-arrival-mode,.amami-episode1-mode,.amami-episode2-mode,.amami-episode3-mode,.amami-episode4-mode,.amami-late-mode) :is(#fieldControls,.dpad){visibility:hidden!important;pointer-events:none!important}
+
+body.amami-voice-busy :is(#aseNext,#astNext,#asnNext,#askNext,#ayNext,#amamiNext){opacity:.25!important;animation:none!important}
+.amami-field-monster{width:max-content!important;height:auto!important;white-space:nowrap;writing-mode:horizontal-tb;font-size:calc(var(--tile)*1.1)!important;line-height:1;color:#475569!important;-webkit-text-stroke:0!important;text-shadow:0 0 6px #fff,2px 2px 3px #0004!important}
+.amami-field-monster .face-host,.amami-field-monster .fc{white-space:nowrap;writing-mode:horizontal-tb}
+.ay-field-word.amami-field-monster{font-size:calc(var(--tile)*.9)!important}

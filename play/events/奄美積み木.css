@@ -1,0 +1,25 @@
+.acb-scene{position:absolute;inset:72px 0 0;overflow:hidden;pointer-events:none;background:url('../images/fullart/amami-toy-castle-floor1.png') 50% 63%/220% 180%;z-index:6;opacity:1;transition:opacity .45s,transform .7s;isolation:isolate;box-shadow:inset 0 0 50px #a7751820}
+.acb-scene{container-type:size}
+.acb-board{position:absolute;left:50%;top:37%;width:min(100cqw,66cqh,410px);aspect-ratio:10/11;transform:translate(-50%,-50%);transform-origin:50% 65%;transition:transform .8s}
+.acb-scene.wide .acb-board{transform:translate(-50%,-50%) scale(.74)}
+.acb-piece{position:absolute;transform:rotate(var(--turn));transform-origin:50% 100%;transition:left 1.05s cubic-bezier(.3,.05,.25,1),top 1.05s cubic-bezier(.3,.05,.25,1),width 1.05s,height 1.05s,transform 1.05s;opacity:1}
+.acb-sprite{display:block;position:absolute;inset:0;background-image:url('../images/amami-blocks/wooden-parts.png');background-repeat:no-repeat;filter:drop-shadow(0 2px 1px #63482365);transition:translate .4s,filter .4s}
+.acb-piece.carried .acb-sprite{translate:0 -9px;filter:drop-shadow(0 13px 4px #63482345)}
+.acb-piece[data-placed=false]:before,.acb-piece.grounded:before{content:'';position:absolute;left:-5%;bottom:-3%;width:110%;height:9%;border-radius:50%;background:#71502660;filter:blur(2px)}
+.acb-piece.carried:before{opacity:0}
+.acb-friends{position:absolute;inset:0;z-index:800;pointer-events:none}
+.acb-child{position:absolute;left:8%;top:60%;width:22%;height:23%;display:flex;align-items:flex-end;justify-content:center;filter:drop-shadow(0 3px 2px #64482455)}
+.acb-child-sprite{display:block;transform:scale(3.8);transform-origin:50% 100%;image-rendering:auto}
+.acb-easy{position:absolute;right:-10%;top:43%;width:52%;height:52%;object-fit:contain;filter:drop-shadow(0 3px 2px #64482455)}
+.acb-hand{position:absolute;width:95%;aspect-ratio:1.38;bottom:-58%;background-image:url('../images/amami-blocks/hands.png');background-repeat:no-repeat;z-index:2;transition:opacity .35s,translate .35s;pointer-events:none}
+.acb-hand.hero{left:-52%;background-size:351.68% 246.67%;background-position:26.75% 55.87%;clip-path:polygon(20% 0,100% 0,100% 100%,30% 100%,0 65%,0 30%)}
+.acb-hand.easy{right:-52%;background-size:301.02% 197.33%;background-position:81.79% 67.81%}
+.acb-hand.released{opacity:0;translate:0 25px}
+.acb-field{inset:auto;left:calc(var(--acb-x)*var(--tile));top:calc(var(--acb-y)*var(--tile));width:calc(5*var(--tile));height:calc(5.5*var(--tile));transform:translate(-50%,-70%);background:none;box-shadow:none;z-index:31;overflow:visible}
+.acb-field .acb-board{width:100%;top:50%}
+.acb-memory{inset:90px 3% 29%;border:3px solid #ffefc9;border-radius:25px;box-shadow:0 0 45px #fff5d390;z-index:8}
+.acb-memory:after{content:'あのとき';position:absolute;left:12px;top:8px;font-size:14px;color:#63471c;background:#fff9e8ce;padding:3px 10px;border-radius:20px}
+.acb-memory.fade{opacity:0}
+body.amami-late-mode #ayTalk[data-speaker=hero] img{display:none}
+@media(max-height:650px){.acb-scene:not(.acb-field):not(.acb-memory){top:58px;bottom:0}.acb-board{width:min(94cqw,64cqh,290px);top:36%}}
+@media(prefers-reduced-motion:reduce){.acb-piece,.acb-board,.acb-scene,.acb-sprite{transition-duration:.01ms}}
