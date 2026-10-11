@@ -14204,7 +14204,7 @@ function exitBattle(){ if(evoLock) return;
 function updateBattleCoins(){ const el=$('bCoins'); if(el) el.innerHTML=yenHtml(coins); }
 function updateBattleHud(){
   updateBattleCoins();
-  $('bProgress').textContent=window.AmamiLate?.battle?AmamiLate.progress():amamiEpisodeOneBattle?amamiBattleProgressLabel(amamiEpisodeOneBattle):(enemyPos+1)+'／'+queue.length+' たいめ';
+  $('bProgress').textContent=window.AmamiLate?.battle?AmamiLate.progress():amamiEpisodeOneBattle?amamiBattleProgressLabel(amamiEpisodeOneBattle):isJukugoBoss?'1／1 たいめ':(enemyPos+1)+'／'+queue.length+' たいめ';
   if(iceDungeonBattle)iceDungeonSyncHp();
   // 弾3-11§5(弾3-13前置きで⚡→数字)：partyモードは選択中の子のげんきを現在/最大の数字で表示。simpleモードは従来のハート3つのまま
   if(battleMode==='party'){
