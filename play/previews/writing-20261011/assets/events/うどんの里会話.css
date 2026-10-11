@@ -1,0 +1,25 @@
+#udonStory{position:fixed;inset:0;width:min(100%,520px);margin:auto;z-index:280;display:flex;flex-direction:column;background:#cabb93;color:white;font-family:'Zen Maru Gothic',sans-serif;visibility:hidden;isolation:isolate;padding-bottom:env(safe-area-inset-bottom,0px)}
+#udonStory.ready{visibility:visible}#udonStory:before{content:'';position:fixed;inset:0;background:#263c3d;z-index:-1}
+#udonStory .ud-view{position:relative;flex:1;min-height:0;overflow:hidden;container-type:size}
+#udonStory .ud-bg{position:absolute;width:100%;height:100%;object-fit:cover;object-position:50% 0}
+#udonStory .ud-location{position:absolute;top:20px;left:16px;font-size:14px;text-shadow:0 2px 4px #000;z-index:3}
+#udonStory .ud-close{position:absolute;right:66px;top:10px;z-index:5;border:1px solid #fffa;border-radius:24px;background:#3d4638e8;color:white;font:inherit;font-size:12px;min-width:62px;min-height:44px;cursor:pointer}
+#udonStory .ud-cast{position:absolute;inset:0;--child:min(32.5cqw,32.5cqh);--hero:min(22.5cqw,25.5cqh)}
+#udonStory .ud-cast img{position:absolute;width:auto;max-width:none;transform:translateX(-50%);filter:drop-shadow(0 3px 2px #30291755)}
+#udonStory .ud-man{height:min(79.3cqw,62.4cqh);left:50%;bottom:22%;z-index:2}
+#udonStory .ud-kid{height:var(--child);bottom:5%;z-index:3;--dx:0cqw;--dy:0cqh;--flip:1;transform:translate(calc(-50% + var(--dx)),var(--dy)) scaleX(var(--flip))!important}
+#udonStory .k0{left:20%}#udonStory .k1{left:50%;bottom:2%}#udonStory .k2{left:80%}
+#udonStory .ud-hero{height:var(--hero);left:17%;bottom:47%;z-index:1}
+#udonStory .ud-mana{height:calc(var(--hero)*1.5);left:84%;bottom:47%;z-index:1}
+#udonStory[data-beat=arrival] .ud-man,#udonStory[data-beat=arrival] .ud-kid{visibility:hidden}
+#udonStory[data-beat=arrival] .ud-hero{left:29%;bottom:10%;height:calc(var(--hero)*1.6)}#udonStory[data-beat=arrival] .ud-mana{left:69%;bottom:10%;height:calc(var(--hero)*2.4)}
+#udonStory .ud-dialog{position:relative;flex:none;min-height:178px;margin:0 12px 12px;padding:39px 17px 30px;border:1px solid #b8c8c4;border-radius:14px;background:#294c61;box-shadow:0 5px 18px #0016;cursor:pointer}
+#udonStory .ud-speaker{position:absolute;top:11px;left:17px;color:#ffe1a2;font-size:13px}
+#udonStory .ud-next{position:absolute;bottom:8px;right:12px;font-size:12px;color:#e3e8d7}
+#udonStory[data-running=true] .ud-next{visibility:hidden}
+#udonStory #evBox{position:static;inset:auto!important;transform:none!important;animation:none;opacity:1;width:auto;max-width:none;min-height:0;margin:0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;display:block;text-align:left}
+#udonStory #evText,#udonStory .ud-cut-text{font-size:clamp(16px,4.4vw,20px);font-weight:900;line-height:1.6;color:#fff;overflow-wrap:anywhere;margin:0}
+#udonStory #evNext{display:none}#udonStory .ud-cut-text{display:none}
+#udonStory[data-scene=true] .ud-slot{display:none}#udonStory[data-scene=true] .ud-cut-text{display:block}
+@media(max-height:500px){#udonStory{width:min(100%,920px);flex-direction:row}#udonStory .ud-dialog{width:38%;min-height:0;margin:58px 12px 12px 0;padding:38px 15px 28px}#udonStory #evText,#udonStory .ud-cut-text{font-size:16px;line-height:1.5}#udonStory .ud-close{right:12px}#udonStory .ud-bg{object-position:50% 28%}#udonStory .ud-cast{--child:min(32.5cqw,32.5cqh);--hero:min(22.5cqw,25.5cqh)}}
+@media(prefers-reduced-motion:reduce){#udonStory *{animation:none!important;transition:none!important}}

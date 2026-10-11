@@ -1,0 +1,58 @@
+#aySteps{position:absolute;left:calc(var(--stack-x)*var(--tile));top:calc(var(--stack-y)*var(--tile));width:calc(1.35*var(--tile));transform:translate(-50%,-100%);z-index:10;display:flex;flex-direction:column-reverse;align-items:center;gap:2px;pointer-events:none}#aySteps i{display:block;width:100%;height:5px;background:linear-gradient(#fff1b3,#ce982b);border:1px solid #a7792a;border-radius:3px;opacity:1;transform:none}#aySteps i:nth-child(2){width:85%}#aySteps i:nth-child(3){width:70%}#aySteps i:nth-child(4){width:55%}#aySteps i:nth-child(5){width:40%}
+#aySteps i.ay-shared-block{width:28%;height:6px;background:linear-gradient(#ffe7a9,#e56c40);border-color:#aa512f;opacity:1;transform:translate(-75px,38px) rotate(-15deg);transition:transform .65s cubic-bezier(.2,.8,.2,1),opacity .65s;box-shadow:0 3px 4px #0004}
+#aySteps i.ay-shared-block.placed{transform:translate(0,0) rotate(0)}
+#ayGear{position:absolute;right:8%;top:26%;width:64px;height:64px;animation:ayGear 35s linear infinite;pointer-events:none}@keyframes ayGear{to{transform:rotate(360deg)}}
+#ayGear,#ayBattleGear,.ay-gear-wheel{font-size:0;background:url('/play/images/amami-blocks/brass-gear.svg') center/contain no-repeat}
+#ayBattleGear{width:40px;height:40px}
+#ayGearCut{position:absolute;inset:72px 0 0;z-index:8;container-type:size;display:grid;place-items:center;background:url('/play/images/fullart/amami-toy-castle-floor2.png') center/cover;pointer-events:none}
+.ay-gear-result{width:92%;display:flex;flex-direction:column;align-items:center;gap:24px;padding-bottom:8cqh}
+.ay-gear-wheel{width:min(68cqw,48cqh,280px);aspect-ratio:1;animation:ayGear 35s linear infinite;filter:drop-shadow(0 8px 5px #63391966);transition:filter .2s}
+#ayGearCut[data-beat=turning] .ay-gear-wheel,#ayGearCut[data-beat=settled] .ay-gear-wheel{filter:drop-shadow(0 0 14px #fff2af) drop-shadow(0 8px 5px #63391966)}
+.ay-gear-result p{margin:0;padding:8px 22px;border:2px solid #d6ac63;border-radius:16px;background:#fff8e9f2;color:#654019;font-size:clamp(22px,7cqw,32px);font-weight:900;letter-spacing:.12em;box-shadow:0 4px 12px #70461930}
+@media(max-height:650px){#ayGearCut{top:58px}.ay-gear-result{gap:12px;padding-bottom:0}}
+@media(prefers-reduced-motion:reduce){#ayBattleGear,.ay-gear-wheel{animation:none}.ay-gear-wheel{transition:none}}
+#ayAlmost{position:absolute;left:62%;top:39%;padding:5px 12px;background:#fff;color:#3b4e68;border-radius:14px;font-weight:900}
+#ayDoorWrap{position:absolute;left:50%;top:25%;transform:translateX(-50%);pointer-events:auto}#ayDoor{border:2px solid #fff;border-radius:14px;background:#204565e8;color:#fff;font-size:1rem;font-weight:900;padding:12px 20px;white-space:nowrap;cursor:pointer}
+#ayCastlePan{position:absolute;inset:0;z-index:8;background:url('/play/images/fullart/amami-castle-pan-v2.png') center bottom/auto 145% no-repeat;opacity:1;transition:background-position 5.1s ease-in-out,opacity .9s;pointer-events:none}
+#ayCastlePan.look-up{background-position:center top}#ayCastlePan.look-back{background-position:center bottom;opacity:0}
+#ayFocus{position:absolute;left:15%;right:15%;top:21%;height:28%;display:flex;justify-content:center;background:radial-gradient(ellipse,#fff9,transparent 70%);pointer-events:none}#ayFocus .ay-focus-sprite{width:55%;aspect-ratio:1;background-size:300% 200%;background-position:0 0;background-repeat:no-repeat}#ayFocus.both .ay-focus-sprite{width:48%}
+
+.ay-focus-easy{width:35%;object-fit:contain}#ayFocus.both .ay-focus-easy{width:42%}
+#amamiLateRoot.final-stage{background:#10251e}#amamiLateRoot.beach-stage{background:url('/play/images/fullart/amami-ending-beach.png') center/cover}
+#aySplit{position:absolute;top:4%;left:50%;transform:translateX(-50%);width:94%;height:min(82dvh,calc(100dvh - 95px));overflow:hidden;border-radius:12px;background:#13261e;isolation:isolate}
+#aySplit .ay-pane{position:absolute;inset:0;background-size:200% 200%;background-position:50% 100%;color:white}
+#aySplit .ay-pane:nth-child(1){clip-path:polygon(50% 50%,13.67% 0,86.33% 0)}
+#aySplit .ay-pane:nth-child(2){clip-path:polygon(50% 50%,86.33% 0,100% 0,100% 66.25%)}
+#aySplit .ay-pane:nth-child(3){clip-path:polygon(50% 50%,100% 66.25%,100% 100%,50% 100%);background-position:20% 20%}
+#aySplit .ay-pane:nth-child(4){clip-path:polygon(50% 50%,50% 100%,0 100%,0 66.25%);background-position:50% 20%}
+#aySplit .ay-pane:nth-child(5){clip-path:polygon(50% 50%,0 66.25%,0 0%,13.67% 0)}
+#aySplit .ay-copy-easy{position:absolute;width:10%;height:auto;left:51%;top:6%;background:none;filter:drop-shadow(0 3px 1px #0002)}
+#aySplit .ay-main-child{position:absolute;width:12%;height:auto;aspect-ratio:1;left:42%;top:22%;background-size:300% 200%;background-position:50% 0;background-repeat:no-repeat}
+#aySplit .ay-new-child{position:absolute;width:9%;height:auto;aspect-ratio:1/2;background-size:200% 100%;background-position:100% 50%;background-repeat:no-repeat}
+#aySplit .ay-pane:nth-child(2) .ay-copy-easy{left:81%;top:17%}#aySplit .ay-pane:nth-child(2) .ay-new-child{left:79%;top:32%}
+#aySplit .ay-pane:nth-child(3) .ay-copy-easy{left:77%;top:64%}#aySplit .ay-pane:nth-child(3) .ay-new-child{left:69%;top:78%}
+#aySplit .ay-pane:nth-child(4) .ay-copy-easy{left:28%;top:64%}#aySplit .ay-pane:nth-child(4) .ay-new-child{left:19%;top:78%}
+#aySplit .ay-pane:nth-child(5) .ay-copy-easy{left:7%;top:17%}#aySplit .ay-pane:nth-child(5) .ay-new-child{left:11%;top:31%}
+#ayFinalChoices{position:absolute;left:4%;right:4%;bottom:3%;padding:10px;background:#fffdf1;color:#17324b;border:3px solid #cfdfed;border-radius:18px;pointer-events:auto;text-align:center}
+#ayFinalChoices p{font-size:.95rem;font-weight:900;margin:0 0 7px}#ayFinalChoices button{display:block;width:100%;min-height:44px;margin:4px 0;padding:6px;border:1px solid #a8c0d2;background:#eef7ff;color:#193d5b;border-radius:9px;font-size:.94rem;font-weight:900;cursor:pointer}#ayFinalChoices button.chosen{background:#b9f2bd}
+#ayLastFrame{position:absolute;left:0;right:0;top:12%;aspect-ratio:1.18;pointer-events:none}
+#ayLastFrame .ay-beach-hero{position:absolute;left:36%;top:61%;width:8%;height:15%;background-position:50% 0;background-size:300% 200%;background-repeat:no-repeat}
+#aySmile{position:absolute;left:33%;top:48%;width:14%;height:25%;object-fit:contain;opacity:0;transition:opacity .4s}#aySmile.show{opacity:1}
+#ayEndEasy{position:absolute;left:52%;top:40%;width:16%;aspect-ratio:1}#ayEndEasy>.easy3d-frame,#ayFinalGlint{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}#ayFinalGlint[hidden]{display:none}
+#ayBlack{position:absolute;inset:0;background:#000;z-index:30}
+body.amami-late-mode .amami-easy .interior-npc-visual{filter:none}
+@media(max-height:620px){#ayFinalChoices{padding:6px;bottom:1%}#ayFinalChoices button{margin:2px 0}#aySplit{top:2%;height:min(82dvh,calc(100dvh - 85px))}#ayLastFrame{top:8%}}
+@media(prefers-reduced-motion:reduce){#ayGear,#aySteps.rebuild i{animation:none}#aySmile{transition:none}}
+
+                                         
+#aySplit[data-beat=loading]{visibility:hidden}
+#amamiLateRoot.final-stage #ayChapter,#amamiLateRoot.final-stage #ayProgress{visibility:hidden}
+#aySplit{container-type:size}
+#aySplit .ay-main-child{width:min(12cqw,15cqh)}
+#aySplit .ay-new-child{width:min(9cqw,9cqh)}
+#aySplit .ay-copy-easy{width:min(10cqw,15cqh)}
+
+                                       
+#ayComic{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#101916;z-index:20;overflow:hidden;pointer-events:none}
+#ayComic[data-beat=loading]{visibility:hidden}
+#ayComic canvas{display:block;width:min(100vw,65dvh);height:auto;max-width:100%;max-height:100%;aspect-ratio:390/600;object-fit:contain}

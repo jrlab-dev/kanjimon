@@ -1,0 +1,24 @@
+#amamiWalk{position:fixed;inset:0;z-index:900;background:#16372d;color:#fff9e6;font-family:'Zen Maru Gothic',sans-serif;display:flex;flex-direction:column;isolation:isolate;overscroll-behavior:none}
+#amamiWalk *{box-sizing:border-box}
+#amamiWalk button{font:inherit;cursor:pointer;min-height:44px;border:1px solid #b5c6b7;border-radius:12px;background:#f7f1d9;color:#224338;font-weight:800;padding:8px 12px;touch-action:manipulation}
+#amamiWalk button:focus-visible,#awView:focus-visible{outline:3px solid #ffdc72;outline-offset:-3px}
+#amamiWalk button:disabled{opacity:.55;cursor:wait}
+#awHeader{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px max(12px,env(safe-area-inset-right));flex:none;background:#16372d}
+#awHeader div{min-width:0}#awName{display:block;font-size:clamp(15px,4vw,21px);line-height:1.3;overflow-wrap:anywhere}#awProgress{display:block;font-size:12px;margin-top:3px;color:#d6dec1}
+#awView{position:relative;flex:1;min-height:100px;overflow:hidden;background:#122d23;touch-action:none}
+#awWorld{position:absolute;left:0;top:0;background-size:100% 100%;background-repeat:no-repeat;transform-origin:0 0;--tile:30px}
+.aw-obstacle{position:absolute;transform:translate(-50%,-100%);pointer-events:none;object-fit:contain}
+#awHero{position:absolute;width:38px;height:38px;transform:translate(-50%,-100%);pointer-events:none}
+#awHero:after{content:'';position:absolute;bottom:0;left:20%;width:60%;height:12%;background:#1a2b2855;border-radius:50%;z-index:-1}
+#awHero .hero-sprite{width:100%;image-rendering:auto}
+#awTarget{position:absolute;transform:translate(-50%,-100%);display:flex;align-items:end;gap:14px;pointer-events:none;padding-bottom:9px;filter:drop-shadow(0 3px 3px #fff)}
+#awTarget:after{content:'';position:absolute;bottom:0;left:25%;right:25%;height:5px;border-radius:50%;background:#fff1a6;box-shadow:0 0 7px #ffb700}
+#awTarget .amami-field-monster{position:relative;display:block;--tile:28px;animation:none}
+#awTarget.aw-exit{font-size:16px;font-weight:900;white-space:nowrap;background:#244a3f;color:#fff7cf;border:2px solid #fff1a6;border-radius:12px;padding:7px 12px;filter:none}
+#awFooter{flex:none;padding:9px max(12px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom));display:grid;grid-template-columns:1fr auto;gap:8px 12px;align-items:center;background:#16372d}
+#awHint{font-size:12px;line-height:1.45;min-height:18px;margin:0;grid-column:1/-1;color:#e1e5cc}
+#awActions{display:flex;flex-direction:column;gap:7px;min-width:0}
+#awGo{background:#f5d47d!important;border-color:#f5d47d!important}#awOverview{background:transparent!important;color:#fff9e6!important}
+#awPad{display:grid;grid-template-columns:44px 44px 44px;grid-template-rows:44px 44px;gap:4px}#awPad button{padding:0;font-size:20px;touch-action:none}#awPad [data-d="up"]{grid-column:2}#awPad [data-d="left"]{grid-column:1;grid-row:2}#awPad [data-d="down"]{grid-column:2;grid-row:2}#awPad [data-d="right"]{grid-column:3;grid-row:2}
+@media(min-width:900px){#amamiWalk{left:50%;width:1000px;max-width:100%;transform:translateX(-50%)}#awFooter{grid-template-columns:1fr auto auto}#awHint{grid-column:auto}#awActions{flex-direction:row}}
+@media(max-height:530px){#awHeader{padding-top:4px;padding-bottom:4px}#awFooter{grid-template-columns:1fr auto;padding-top:4px;padding-bottom:4px}#awHint{display:none}#awActions{flex-direction:row}#awPad{grid-template-rows:36px 36px}#awPad button{min-height:36px}}
