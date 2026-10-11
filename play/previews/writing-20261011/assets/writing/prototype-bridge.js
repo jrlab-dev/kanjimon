@@ -1,34 +1,28 @@
-                                         
-                                                   
+                                     
 (function(){
 'use strict';
-let engine,pad,session=null,generation=0,pendingSave=false,saveReturn=null;
+let engine,pad,session=null,generation=0,pendingSave=false,saveReturn=null,assetsLoaded=false;
 const originalSave=save;
 const $w=id=>document.getElementById('wb-'+id);
 const questions=window.KanjimonWritingQuestions;
 const zoneIndices=()=>stageKanji(1);
-                                  
 const bossLevelByZone=Object.freeze({1:9});
 const policyEnemyLevel=()=>enemyIsBoss?(bossLevelByZone[curStage]??enemyLevelFor(enemyIdx,true)):enemyLevelFor(enemyIdx,false);
-const policyDamage=att=>{
- return damageForMatch(levelOf(att),policyEnemyLevel(),affinity(typeOf(att),typeOf(enemyIdx)))*2;
-};
-const safeSave=()=>{
- try{if(window.WB_QA&&window.WB_QA.failSave)return false;return originalSave()===true;}
- catch(e){return false;}
-};
+const policyDamage=att=>damageForMatch(levelOf(att),policyEnemyLevel(),affinity(typeOf(att),typeOf(enemyIdx)))*2;
+const valid=(s,seq)=>session===s&&generation===seq;
+const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+const safeSave=()=>{try{if(window.WB_QA?.failSave)return false;return originalSave()===true;}catch(e){return false;}};
 function saveOrPause(after){
  if(safeSave()){pendingSave=false;saveReturn=null;after();pad?.setEnabled(session?.phase==='writing');refreshButtons();renderRoster();return true;}
- pendingSave=true;saveReturn=after;
- $w('message').textContent='ほぞん できませんでした。もういちど ほぞんしてね。';
+ pendingSave=true;saveReturn=after;message('ほぞん できませんでした。もういちど ほぞんしてね。');
  $w('retry-save').hidden=false;pad?.setEnabled(false);refreshButtons();return false;
 }
 function closeInk(){pad?.destroy();pad=null;}
 function refreshButtons(){
  const busy=pendingSave||!session||session.phase!=='writing';
  for(const id of ['submit','undo','clear'])$w(id).disabled=busy;
- $w('exit').disabled=pendingSave;
- $w('next').disabled=pendingSave;
+ $w('exit').disabled=pendingSave||['attacking','celebrating'].includes(session?.phase);
+ $w('next').disabled=pendingSave||session?.phase!=='won';
 }
 function message(text){$w('message').textContent=text;}
 function sampleTemplates(){
@@ -39,17 +33,16 @@ function sampleTemplates(){
  })]));
 }
 function renderRoster(){
- const root=$w('party');root.replaceChildren();
- for(const i of party){
-  const b=document.createElement('button'),same=!!session&&session.phase!=='won'&&i===enemyIdx;
-  b.type='button';b.className='wb-partner'+(i===selectedAttacker?' selected':'');
-  b.dataset.idx=i;b.textContent=(same?'なかま':K[i].c)+' Lv'+levelOf(i)+'　げんき '+genkiOf(i)+'/'+genkiMaxOf(i);
+                                       
+ phase='writing';renderParty();
+ for(const b of $('partyRow').querySelectorAll('.pbtn')){
+  const i=Number(b.dataset.idx),same=!!session&&!['won','celebrating'].includes(session.phase)&&i===enemyIdx;
+  if(same){const pc=b.querySelector('.pc');pc.querySelector('.fc').textContent=session.question?.reading||questions[K[i].c][0].reading;pc.classList.add('writing-same-answer');}
   b.disabled=pendingSave||!session||session.phase!=='writing'||genkiOf(i)<=GENKI_TIRED;
-  b.onclick=()=>{if(!session||session.phase!=='writing'||pendingSave)return;selectedAttacker=i;renderRoster();};root.appendChild(b);
+  b.onclick=()=>{if(!session||session.phase!=='writing'||pendingSave)return;selectedAttacker=i;renderRoster();};
  }
- if(session&&selectedAttacker!=null){
-  $w('power').textContent='1かいの こうげき：'+policyDamage(selectedAttacker)+'　てき Lv'+policyEnemyLevel();
- }
+ updateBattleHud();
+ if(session&&selectedAttacker!=null)$w('power').textContent='こうげき '+policyDamage(selectedAttacker)+'・てき Lv'+policyEnemyLevel();
 }
 function selectAvailable(){
  const usable=party.filter(i=>genkiOf(i)>GENKI_TIRED);
@@ -57,132 +50,165 @@ function selectAvailable(){
  if(autoPick||!usable.includes(selectedAttacker))selectedAttacker=usable.reduce((a,b)=>{
   const ah=Math.ceil(enemyHp/policyDamage(a)),bh=Math.ceil(enemyHp/policyDamage(b));
   return bh<ah||(bh===ah&&levelOf(b)>levelOf(a))?b:a;
- });
- return true;
+ });return true;
 }
-function renderHp(){$w('hp').textContent='てきの たいりょく '+enemyHp+' / '+enemyMaxHp;}
+function renderHp(){renderEnemyHp();updateBattleHud();}
 function question(){
  if(!session||session.phase==='won')return;
  const list=questions[K[enemyIdx].c];
- if(session.turn>=list.length){message('この しさくの もんだいが おわりました。ここで ちゅうだんします。');exit();return;}
+ if(session.turn>=list.length){exit();$w('home-status').textContent='もんだいを ひとやすみ。つづきから ためしてね。';return;}
  const q=list[session.turn];session.question=q;
  const focus=document.createElement('mark');focus.textContent=q.reading;
  $w('question').replaceChildren(document.createTextNode(q.before),focus,document.createTextNode(q.after));
- $w('enemy').textContent=q.reading;$w('instruction').textContent='「'+q.reading+'」を かんじ 1じで かこう。';
- $w('enemy').classList.remove('revealed');
- $w('next').hidden=true;$w('retry-save').hidden=true;
- session.phase='writing';pad?.clear();pad?.setEnabled(true);
+ $('enemyCharText').textContent=q.reading;$('enemyChar').classList.add('writing-reading');
+ $w('instruction').textContent='「'+q.reading+'」を かんじで かこう';
+ $w('next').hidden=true;$w('retry-save').hidden=true;$w('ink-area').hidden=false;
+ session.phase='writing';answering=false;pad?.clear();pad?.setEnabled(true);
  if(!selectAvailable()){
-  session.phase='tired';pad?.setEnabled(false);message('みんな ヘトヘト。きょうは ここまで。やすんでから つづけよう。');
-  $w('rest').hidden=false;
- }else{message('ぶんを よんで、じを かいてね。');$w('rest').hidden=true;}
+  session.phase='tired';pad?.setEnabled(false);message('みんな ヘトヘト。やすんで つづけよう。');$w('rest').hidden=false;
+ }else{message('');$w('rest').hidden=true;}
  renderHp();renderRoster();refreshButtons();
 }
 function start(){
- if(pendingSave)return;
- generation++;closeInk();session=null;
+ if(pendingSave||evoLock||!assetsLoaded)return;
+ generation++;spawnSeq++;autoPickSeq++;autoPickArmed=false;clearDashClones();closeInk();session=null;
  const ids=zoneIndices(),cursor=wbProgress.cursor||0;
- $w('home').hidden=true;$w('play').hidden=false;$w('complete').hidden=true;
- if(cursor>=ids.length){$w('play').hidden=true;$w('complete').hidden=false;return;}
- curStage=1;battleMode='party';battleSource='quick';difficulty='writing';
+ if(cursor>=ids.length){showScreen('wb-root');$w('home').hidden=true;$w('complete').hidden=false;return;}
+ setupBattleCommon(1,true);battleMode='party';battleSource='quick';difficulty='writing';battleRewardDifficulty='writing';
  queue=ids;enemyPos=cursor;enemyIdx=ids[cursor];enemyIsBoss=cursor===ids.length-1;
+ enemyShiny=false;enemyAlt=null;enemyType=typeOf(enemyIdx);phase='writing';answering=true;
  enemyMaxHp=enemyHpFor(enemyIdx,enemyIsBoss);enemyHp=enemyMaxHp;
- if(!questions[K[enemyIdx].c]||!window.KAKITORI_STROKES[K[enemyIdx].c]){message('もんだいを よみこめませんでした。');return;}
  session={generation,phase:'writing',turn:0,committed:false,question:null};
- $w('progress').textContent=(cursor+1)+' / '+ids.length+' たいめ'+(enemyIsBoss?'・ボス':'');
- pad=window.KanjimonInkPad($w('canvas'));question();
+ applySceneBg(1,K[enemyIdx]);showScreen('screen-battle');
+ $('screen-battle').classList.add('writing-battle');$('bStageName').textContent=stageName(1);
+ $('affHelp').style.display='none';hideBattleHakase();
+ $('enemyWrap').className='enemy-wrap'+(enemyIsBoss?' boss':'')+' entering';
+ $('enemyChar').className='enemy-char face-host writing-reading';$('enemyChar').style.color=K[enemyIdx].cl;
+ $('enemyInfo').style.display='';$('eType').innerHTML='<span class="tbadge t-'+enemyType+'">'+TYPE_EMOJI[enemyType]+' '+enemyType+(enemyIsBoss?' 👑ボス':'')+'</span>';
+ $('orb').classList.remove('show');$('dmgPop').classList.remove('show');$('cryBubble').classList.remove('show');
+ setEnemyFace(restExpr());resetHeroVictoryPose();
+ setMsg('<span id="wb-question"></span><small id="wb-instruction"></small><small id="wb-message" role="status" aria-live="polite"></small>');
+ $w('play').hidden=false;pad=window.KanjimonInkPad($w('canvas'));question();
+ const seq=generation;playEncounterSe(spawnSeq);bgmPlay(enemyIsBoss?'boss':'battle');
+ setTimeout(()=>{if(generation===seq)$('enemyWrap').classList.remove('entering');},enemyIsBoss?BOSS_ENTRY_MS:ENTRY_MS);
 }
-function completeWin(att){
+async function presentWin(idx,isNew,growing,evolution,s,seq,reward){
+ s.phase='celebrating';pad?.setEnabled(false);$('enemyCharText').textContent=K[idx].c;$('enemyChar').classList.remove('writing-reading');
+ setEnemyFace('heart');$('orb').classList.add('show');triggerHeroVictoryPose();
+ $w('question').textContent=isNew?'「'+K[idx].c+'」が なかまに なった！':'「'+K[idx].c+'」に かった！';
+ $w('instruction').textContent='＋'+reward+'円';message('バトルに かった！');
+ $w('retry-save').hidden=true;$w('rest').hidden=true;$w('ink-area').hidden=true;renderRoster();renderHp();refreshButtons();snd('get');
+ if(evolution){
+  await wait(1000);if(!valid(s,seq))return;
+  await new Promise(resolve=>playEvolution(evolution.from,evolution.to,resolve));
+ }else{ sfxLevelup();cheerParty(growing,'doya',1500); }
+ if(!valid(s,seq))return;
+ s.phase='won';$w('next').hidden=false;message('なかま Lv'+levelOf(growing)+'・ほぞんしたよ');renderRoster();refreshButtons();
+}
+async function completeWin(att){
  if(session.committed)return;
- session.committed=true;
+ const s=session,seq=generation;s.committed=true;
  const idx=enemyIdx,isNew=!caught.has(idx),upTimes=enemyMaxHp>=7?3:enemyMaxHp>=4?2:1;
- wbBatch=true;
+ const reward=playRewardYen(battleYen(enemyIsBoss)*enemyRewardMultiplier(policyEnemyLevel()),'writing');
+ let growing=att,evolution=null;wbBatch=true;
  try{
   caught.add(idx);bodies.delete(idx);separated.delete(idx);delete soulZone[idx];
   if(firstBodyIdx===idx){forceTamashiiNext=false;firstBodyIdx=null;}
-  if(isNew&&party.length<4)party.push(idx);
-  coins+=playRewardYen(battleYen(enemyIsBoss)*enemyRewardMultiplier(policyEnemyLevel()),'writing');
-  let growing=att;for(let n=0;n<upTimes;n++){
+  if(isNew&&party.length<4)party.push(idx);coins+=reward;
+  for(let n=0;n<upTimes;n++){
    const previousLevel=levelOf(growing),r=planLevelUp(growing);if(!r)break;
-   if(r.to!=null){
-    growing=r.to;
-                                         
+   if(r.to!=null){if(!evolution)evolution=r;growing=r.to;
     if(levelOf(growing)<previousLevel){levels[growing]=previousLevel;genki[growing]=genkiMaxOf(growing);}
    }
   }
-                                       
   caught.forEach(i=>{bodies.delete(i);separated.delete(i);delete soulZone[i];});
   wbProgress={...wbProgress,version:1,cursor:(wbProgress.cursor||0)+1};
   if(wbProgress.cursor>=zoneIndices().length){cleared.add(1);unlocked=Math.max(unlocked,2);}
  }finally{wbBatch=false;}
- session.phase='saving';
- saveOrPause(()=>{
-  session.phase='won';$w('enemy').textContent=K[idx].c;$w('enemy').classList.add('revealed');
-  $w('question').textContent='せいかい！';$w('instruction').textContent='';
-  message(isNew?'かいた じが すがたに なった！ なかまに なったよ！':'やったね！ なかまが つよく なった！');
-  $w('next').hidden=false;renderRoster();renderHp();refreshButtons();
+ s.phase='saving';let presentation;
+ if(saveOrPause(()=>{presentation=presentWin(idx,isNew,growing,evolution,s,seq,reward);}))await presentation;
+}
+function animateAttack(att,damage,s,seq){
+ return new Promise(resolve=>{
+  let contacted=false,finished=false;
+  const finish=ok=>{if(finished)return;finished=true;resolve(ok);};
+  const contact=()=>{
+   if(contacted)return;contacted=true;if(!valid(s,seq)){finish(false);return;}
+   const aff=affinity(typeOf(att),typeOf(enemyIdx));
+   let delay=0,duration=700;
+   if(aff>=2){
+    const rel=levelRelOf(levelOf(att),policyEnemyLevel()),mlv=rel==='yuri'?'max':rel==='furi'?'weak':'mid';
+    playMagicFx(typeOf(att),mlv);const timing=window.KanjimonMagic?.timing?.(mlv,typeOf(att));
+    delay=timing?.hitDelay||(mlv==='max'?1000:600);duration=Math.max(700,(timing?.duration||delay+950)-delay+80);
+   }else playHitFx($('enemyChar'),false);
+   setTimeout(()=>{
+    if(!valid(s,seq)){finish(false);return;}
+    genkiSpendAttack(att);enemyHp=Math.max(0,enemyHp-damage);setEnemyFace('pain');
+    $('enemyChar').classList.add('attacked');$('dmgPop').textContent='⭐−'+damage+'！';$('dmgPop').className='dmg-pop show';
+    sfxCorrect();renderHp();renderRoster();cheerParty(att,'wink',850);
+    setTimeout(()=>{
+     if(!valid(s,seq)){finish(false);return;}
+     $('enemyChar').classList.remove('attacked');$('dmgPop').classList.remove('show');setEnemyFace(restExprHit());finish(true);
+    },duration);
+   },delay);
+  };
+  playAttackDash(att,contact);
+  setTimeout(()=>{if(!valid(s,seq))finish(false);else if(!contacted)contact();},800);
  });
 }
 async function submit(strokes){
  if(!session||session.phase!=='writing'||pendingSave||pad?.isDrawing()||selectedAttacker==null)return {status:'ignored'};
  const s=session,seq=generation,att=selectedAttacker;
  if(genkiOf(att)<=GENKI_TIRED){question();return {status:'ignored'};}
- s.phase='evaluating';pad?.setEnabled(false);renderRoster();refreshButtons();
- await new Promise(r=>setTimeout(r,0));
- if(seq!==generation||s!==session)return {status:'cancelled'};
+ s.phase='evaluating';pad?.setEnabled(false);renderRoster();refreshButtons();await wait(0);
+ if(!valid(s,seq))return {status:'cancelled'};
  const result=engine.judge(strokes,K[enemyIdx].c);
  if(result.status==='correct'){
-  const damage=policyDamage(att);enemyHp=Math.max(0,enemyHp-damage);genkiSpendAttack(att);
-  $w('scene').classList.add('wb-hit');setTimeout(()=>{if(generation===seq)$w('scene').classList.remove('wb-hit');},350);
-  renderHp();
-  if(enemyHp===0){completeWin(att);return result;}
-  s.turn++;s.phase='saving';
-  saveOrPause(()=>{
-   message('せいかい！ '+damage+' ダメージ！');
-   setTimeout(()=>{if(generation===seq&&session===s)question();},800);
-  });return result;
+  s.phase='attacking';answering=true;refreshButtons();message('せいかい！ こうげき！');
+  if(!await animateAttack(att,policyDamage(att),s,seq))return {status:'cancelled'};
+  if(enemyHp===0){await completeWin(att);return result;}
+  s.turn++;s.phase='saving';saveOrPause(question);return result;
  }
  s.phase='writing';pad?.setEnabled(true);refreshButtons();renderRoster();
  if(result.status==='otherKanji'){
-  const other=K.findIndex(k=>k.c===result.char);
-  const homophone=other>=0&&schoolAllowedReadings(other).includes(s.question.reading);
-  if(homophone)message('その じも おなじ よみだね。もういちど ぶんを みてね。');
+  const other=K.findIndex(k=>k.c===result.char),homophone=other>=0&&schoolAllowedReadings(other).includes(s.question.reading);
+  if(homophone)message('おなじ よみだね。ぶんを もういちど みてね。');
   else{
-   genkiHitWrong(att);message('この ぶんの じとは ちがうみたい。もういちど！');
+   genkiHitWrong(att);message('この ぶんの じとは ちがうみたい。もういちど！');sfxWrong();
+   $('dmgFlash').classList.add('on');setTimeout(()=>{if(valid(s,seq))$('dmgFlash').classList.remove('on');},400);
    saveOrPause(()=>{selectAvailable();renderRoster();if(selectedAttacker==null)question();});
   }
- }else message(result.reason==='insufficient-ink'?'せんを かいてから「かけた！」を おしてね。':'じを よみとれなかった。もういちど ためしてね。');
+ }else message(result.reason==='insufficient-ink'?'じを かいてから「かけた！」を おしてね。':'よみとれなかった。もういちど ためしてね。');
  return result;
 }
 function exit(){
- if(pendingSave)return;generation++;closeInk();session=null;
- $w('play').hidden=true;$w('complete').hidden=true;$w('home').hidden=false;
- $w('home-status').textContent='なかま '+caught.size+'たい・'+coins+'えん・つづき '+((wbProgress.cursor||0)+1)+'たいめ';
+ if(pendingSave||evoLock)return;
+ generation++;spawnSeq++;autoPickSeq++;autoPickArmed=false;clearDashClones();closeInk();session=null;answering=false;
+ $('enemyChar').classList.remove('attacked');$('dmgFlash').classList.remove('on');
+ $w('complete').hidden=true;$w('home').hidden=false;showScreen('wb-root');bgmStop();
+ $w('home-status').textContent='なかま '+caught.size+'たい・'+coins+'円・'+Math.min(12,(wbProgress.cursor||0)+1)+'／12 たいめ';
+ $w('start').textContent=(wbProgress.cursor||0)>=12?'クリアした きろくを みる':'書き取りバトルへ';
 }
 function init(){
- document.body.classList.add('writing-prototype');window.OpeningMovie?.cancel();bgmStop();soundOn=false;
- const root=document.createElement('main');root.id='wb-root';root.innerHTML=`
- <header class="wb-heading"><span>むずかしい・にほんばし</span><b>かいて なかまにしよう</b></header>
- <p class="wb-note">書き取り戦闘の試作です。通常版の記録とは別に保存します。日本橋の12字まで対応しています。</p>
- <section id="wb-home"><h1>よみから かんじを かこう</h1><p>ぶんを よんで、しろい わくに かいてね。せいかいすると なかまが こうげきするよ。</p><p>レベルや あいしょうで つよさが かわるよ。</p><p id="wb-home-status"></p><button id="wb-start">つづきから あそぶ</button></section>
- <section id="wb-play" hidden><div class="wb-top"><span id="wb-progress"></span><button id="wb-exit">おわる</button></div>
- <div class="wb-scene" id="wb-scene"><img class="wb-hero" src="/play/images/battle-tate/hero-back-boy.webp" alt="しゅじんこう"><div id="wb-enemy" class="wb-enemy"></div><div id="wb-hp"></div></div>
- <div id="wb-party" class="wb-party"></div><div id="wb-power" class="wb-power"></div>
- <p id="wb-question" class="wb-question"></p><p id="wb-instruction"></p>
- <canvas id="wb-canvas" aria-label="かんじを かく わく"></canvas>
- <div class="wb-actions"><button id="wb-undo">1かく もどす</button><button id="wb-clear">けす</button><button id="wb-submit">かけた！</button></div>
- <p id="wb-message" role="status" aria-live="polite"></p>
- <button id="wb-next" hidden>つぎの あいてへ</button><button id="wb-retry-save" hidden>もういちど ほぞん</button>
- <button id="wb-rest" hidden>しさくの きゅうけい（ぜんかいふく）</button></section>
- <section id="wb-complete" hidden><h1>にほんばし クリア！</h1><p>ここまでが こんかいの しさくです。なかまと レベルは ほぞんされています。</p><button id="wb-home-button">もどる</button></section>
- <footer>筆順データ：KanjiVG / © Ulrich Apel / CC BY-SA 3.0。書き取り判定は検証中です。</footer>`;
- document.body.append(root);
+ document.body.classList.add('writing-prototype');window.OpeningMovie?.cancel();window.openingMovieDismissed=true;bgmStop();
+ const root=document.createElement('section');root.id='wb-root';root.className='screen';root.innerHTML=`
+ <section id="wb-home"><h1>かんじモン</h1><h2>書き取りバトル</h2><p>日本橋の12字で ためせるよ。<br>いつもの バトルで、かんじを かこう。</p><p id="wb-home-status"></p><button class="btn btn-primary" id="wb-start" disabled>よみこみ中…</button><p>通常版とは別に記録します。</p></section>
+ <section id="wb-complete" hidden><h1>にほんばし クリア！</h1><p>12字を なかまにしたよ！</p><button class="btn btn-primary" id="wb-home-button">もどる</button></section>
+ <footer>筆順：KanjiVG / © Ulrich Apel / <a href="https://creativecommons.org/licenses/by-sa/3.0/" target="_blank" rel="noopener">CC BY-SA 3.0</a></footer>`;
+ $('app').append(root);
+ $('bOptions').innerHTML=`<div id="wb-play"><div id="wb-ink-area"><canvas id="wb-canvas" aria-label="かんじを かく わく"></canvas><div class="wb-actions"><button id="wb-undo">1かく<br>もどす</button><button id="wb-clear">けす</button><button id="wb-submit">かけた！</button><small id="wb-power"></small></div></div><button id="wb-next" hidden>つぎの あいてへ</button><button id="wb-retry-save" hidden>もういちど ほぞん</button><button id="wb-rest" hidden>やすんで つづける</button></div>`;
+ const exitButton=$('screen-battle').querySelector('.battle-exit');exitButton.removeAttribute('onclick');exitButton.id='wb-exit';exitButton.onclick=exit;
  engine=KanjimonWritingRecognizer.createEngine(sampleTemplates());
- $w('start').onclick=start;$w('next').onclick=start;$w('exit').onclick=exit;$w('home-button').onclick=exit;
+ $w('start').onclick=start;$w('next').onclick=start;$w('home-button').onclick=exit;
  $w('undo').onclick=()=>pad?.undo();$w('clear').onclick=()=>pad?.clear();$w('submit').onclick=()=>submit(pad.getStrokes());
  $w('retry-save').onclick=()=>{if(saveReturn){const after=saveReturn;saveOrPause(()=>{$w('retry-save').hidden=true;after();});}};
  $w('rest').onclick=()=>{if(pendingSave)return;party.forEach(i=>genki[i]=genkiMaxOf(i));saveOrPause(question);};
- window.WritingPrototype=Object.freeze({start,exit,submit,getState:()=>({phase:session?.phase,cursor:wbProgress.cursor,enemyIdx,enemyHp,enemyMaxHp,selectedAttacker,caught:[...caught],bodies:[...bodies],party:[...party],levels:{...levels},coins,pendingSave,saveKey:SAVE_KEY})});
+ const ready=Promise.all(sceneImages.assets(1).map(async([url,mark])=>{const ok=await sceneImages.load(url);if(ok)mark();return ok;})).then(loaded=>{
+  assetsLoaded=loaded.every(Boolean);$w('start').disabled=!assetsLoaded;
+  if(!assetsLoaded)$w('home-status').textContent='画像を よみこめませんでした。ページを ひらきなおしてね。';
+  return assetsLoaded;
+ });
+ window.WritingPrototype=Object.freeze({start,exit,submit,ready,getState:()=>({phase:session?.phase,cursor:wbProgress.cursor,enemyIdx,enemyHp,enemyMaxHp,selectedAttacker,caught:[...caught],bodies:[...bodies],party:[...party],levels:{...levels},coins,pendingSave,saveKey:SAVE_KEY})});
  exit();
 }
 if(document.readyState==='complete')init();else window.addEventListener('load',init,{once:true});

@@ -1,14 +1,64 @@
-                             
-body.writing-prototype{background:#eaf1e7!important;overflow:auto!important;height:auto!important;color:#203d30;font:16px/1.6 system-ui,sans-serif}
-body.writing-prototype> *{display:none!important}body.writing-prototype>#wb-root{display:block!important}
-#wb-root{width:min(100%,660px);padding:14px;margin:auto;box-sizing:border-box}#wb-root *{box-sizing:border-box}
-#wb-root [hidden]{display:none!important}#wb-root button{font:inherit;min-height:44px;cursor:pointer;border:1px solid #b2c8b9;background:white;color:#224c37;border-radius:10px;padding:8px 12px;box-shadow:none}
-#wb-root button:disabled{opacity:.48;cursor:default}#wb-root section{background:#fffef9;padding:16px;border-radius:18px}
-.wb-heading{display:flex;flex-direction:column;background:#205b43;color:white;border-radius:16px;padding:16px}.wb-heading b{font-size:24px}.wb-heading span,.wb-note,#wb-root footer{font-size:12px}.wb-note{margin:9px 0;color:#4a6757}.wb-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.wb-scene{height:140px;position:relative;border-radius:12px;overflow:hidden;background:#bdd8ae url('/play/images/battle-tate/stage1.webp') right 40%/cover}
-.wb-hero{height:100px;position:absolute;left:12%;bottom:0}.wb-enemy{position:absolute;right:10%;top:12px;padding:4px 15px;background:#fff1c4;border:2px solid #cbaf61;box-shadow:0 4px 0 #0002;border-radius:45%;font-size:27px;font-weight:bold;color:#4c3a11}.wb-enemy.revealed{font-size:38px;background:#ecffd9}
-#wb-hp{position:absolute;right:4px;bottom:4px;background:#fffef4;border-radius:8px;padding:2px 7px;font-size:12px}.wb-party{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:9px}.wb-party button{font-size:12px!important;padding:4px!important}.wb-party button.selected{border:2px solid #0b7750!important;background:#e8f9e9!important}.wb-power{font-size:12px;margin:5px 0;color:#3d624d}
-.wb-question{font-size:20px;font-weight:bold;margin:12px 0 4px;line-height:1.6}.wb-question mark{background:#ffe5a2;padding:2px 6px;border-radius:5px}#wb-instruction{margin:4px 0;font-size:14px}#wb-canvas{display:block;touch-action:none;user-select:none;width:min(100%,290px);aspect-ratio:1;height:auto;margin:10px auto;border:2px solid #87a28e;border-radius:6px;background:linear-gradient(90deg,transparent calc(50% - .5px),#d6dfd6 50%,transparent calc(50% + .5px)),linear-gradient(transparent calc(50% - .5px),#d6dfd6 50%,transparent calc(50% + .5px)),#fff}
-.wb-actions{display:grid;grid-template-columns:1.2fr .7fr 1fr;gap:6px}.wb-actions button{font-size:14px!important;padding:8px 4px!important}#wb-submit,#wb-start,#wb-next{background:#205b43!important;color:white!important}#wb-message{min-height:2em;margin:12px 0 0;font-size:15px}#wb-next,#wb-retry-save,#wb-rest{width:100%;margin-top:8px}#wb-root footer{margin-top:14px;color:#536e5d;overflow-wrap:anywhere}.wb-hit .wb-enemy{animation:wb-hit .35s ease-out}@keyframes wb-hit{50%{transform:translateX(12px);filter:brightness(1.4)}}
-@media(max-width:360px){#wb-root{padding:8px}#wb-root section{padding:12px}.wb-question{font-size:18px}.wb-scene{height:118px}#wb-canvas{max-width:250px}}
-@media(prefers-reduced-motion:reduce){.wb-hit .wb-enemy{animation:none}}
+                                           
+#wb-root{width:100%;max-width:660px;margin:auto;box-sizing:border-box}
+#wb-root *,#screen-battle.writing-battle #wb-play *{box-sizing:border-box}
+#wb-root [hidden],#screen-battle.writing-battle [hidden]{display:none!important}
+#wb-root button,#screen-battle.writing-battle #wb-play button{
+  font:inherit;font-weight:900;min-height:44px;cursor:pointer;border:2px solid var(--line,#d5e2d8);
+  background:rgba(255,255,255,.94);color:var(--ink,#224c37);border-radius:12px;padding:8px 12px;
+  box-shadow:0 3px 0 var(--line,#d5e2d8);-webkit-tap-highlight-color:transparent;
+}
+#wb-root button:disabled,#screen-battle.writing-battle #wb-play button:disabled{opacity:.48;cursor:default}
+#wb-root button:focus-visible,#screen-battle.writing-battle #wb-play button:focus-visible{
+  outline:3px solid #205b43;outline-offset:2px;
+}
+#wb-root section{background:#fffef9;padding:16px;border-radius:18px}
+.wb-heading{display:flex;flex-direction:column;background:#205b43;color:white;border-radius:16px;padding:16px}
+.wb-heading b{font-size:24px}
+.wb-heading span,.wb-note,#wb-root footer{font-size:12px}
+.wb-note{margin:9px 0;color:#4a6757}
+#wb-root footer{margin-top:14px;color:#536e5d;overflow-wrap:anywhere}
+#wb-start,#wb-home-button,#screen-battle.writing-battle #wb-play #wb-submit,#screen-battle.writing-battle #wb-play #wb-next{
+  background:#205b43;color:white;border-color:#164b36;
+}
+
+#screen-battle.writing-battle{--wb-ink-size:clamp(160px,calc(63vw - 26px),220px)}
+#screen-battle.tate.battle-responsive.writing-battle[id="screen-battle"]{min-height:568px}
+#screen-battle.writing-battle #wb-play{
+  width:100%;min-width:0;min-height:var(--wb-ink-size);margin:0;padding:0;
+  display:flex;flex-direction:column;justify-content:center;gap:6px;
+}
+#screen-battle.writing-battle #wb-ink-area{
+  display:grid;grid-template-columns:var(--wb-ink-size) minmax(0,1fr);gap:8px;
+  width:100%;min-width:0;height:var(--wb-ink-size);align-items:start;
+}
+#screen-battle.writing-battle #wb-canvas{
+  display:block;width:100%;height:var(--wb-ink-size);align-self:start;aspect-ratio:1;margin:0;touch-action:none;
+  user-select:none;-webkit-user-select:none;border:2px solid #87a28e;border-radius:6px;
+  background:linear-gradient(90deg,transparent calc(50% - .5px),#d6dfd6 50%,transparent calc(50% + .5px)),
+    linear-gradient(transparent calc(50% - .5px),#d6dfd6 50%,transparent calc(50% + .5px)),#fff;
+}
+#screen-battle.writing-battle #wb-play .wb-actions{
+  display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:repeat(3,minmax(44px,1fr)) auto;
+  min-width:0;height:var(--wb-ink-size);gap:6px;
+}
+#screen-battle.writing-battle #wb-play .wb-actions button{
+  width:100%;min-width:0;padding:4px 3px;font-size:14px;line-height:1.1;
+  white-space:normal;overflow-wrap:anywhere;
+}
+#screen-battle.writing-battle #wb-next,
+#screen-battle.writing-battle #wb-retry-save,
+#screen-battle.writing-battle #wb-rest{width:100%;margin:0;line-height:1.4;overflow-wrap:anywhere}
+#screen-battle.writing-battle #wb-question{margin:0;font:inherit;font-weight:900;line-height:1.4}
+#screen-battle.writing-battle #wb-question mark{background:#ffe5a2;color:inherit;padding:0 3px;border-radius:4px}
+#screen-battle.writing-battle #wb-instruction{display:block;margin:3px 0 0;font-size:.78em;line-height:1.35}
+#screen-battle.writing-battle #wb-message{display:block;margin:4px 0 0;font-size:.84em;line-height:1.35}
+#screen-battle.writing-battle #wb-message:empty{display:none}
+#screen-battle.writing-battle #wb-power{display:block;max-width:100%;margin:0;padding:0 2px;font-size:10.5px;line-height:1.05;color:#253d30;background:rgba(255,255,255,.9);border-radius:4px;overflow-wrap:anywhere}
+#screen-battle.writing-battle .enemy-char.writing-reading{
+  font-size:clamp(62px,20vw,80px)!important;white-space:nowrap;
+}
+#screen-battle.writing-battle .pc.writing-same-answer{font-size:clamp(20px,6vw,26px)!important;white-space:nowrap}
+@media(max-width:360px){
+  #wb-root section{padding:12px}
+  #screen-battle.writing-battle #wb-play .wb-actions button{font-size:13px}
+}
