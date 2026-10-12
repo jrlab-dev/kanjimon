@@ -1,13 +1,13 @@
-                                    
-                                     
-                                  
+
+
+
 (function(root,factory){
   const api=factory();
   if(typeof module==='object'&&module.exports)module.exports=api;
   else root.KanjimonWritingRecognizer=api;
 })(typeof window==='undefined'?globalThis:window,function(){
   'use strict';
-  const POLICY=Object.freeze({version:2,samples:24,maxStrokes:40,maxPoints:4000,
+  const POLICY=Object.freeze({version:3,samples:24,maxStrokes:40,maxPoints:4000,
     minExtent:12,minLength:12,maxScore:.14,maxStrokeScore:.24,minMargin:.012});
   const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
   function length(points){let n=0;for(let i=1;i<points.length;i++)n+=dist(points[i-1],points[i]);return n;}
@@ -46,7 +46,7 @@
     for(let i=0;i<a.length;i++){f+=dist(a[i],b[i])**2;r+=dist(a[i],b[b.length-1-i])**2;}
     return Math.sqrt(Math.min(f,r)/a.length);
   }
-                                         
+
   function assignment(cost){
     const n=cost.length,u=Array(n+1).fill(0),v=Array(n+1).fill(0),p=Array(n+1).fill(0),way=Array(n+1).fill(0);
     for(let i=1;i<=n;i++){
@@ -69,6 +69,26 @@
     if(a.length!==b.length)return {score:Infinity,worst:Infinity};
     return assignment(a.map(s=>b.map(t=>strokeCost(s,t))));
   }
+
+  function detachedEight(input){
+    if(input.length!==2)return false;
+    const sides=input.map(s=>s[0].y<s.at(-1).y?s:[...s].reverse()).sort((a,b)=>a[0].x-b[0].x);
+    const [a,b]=sides,at=a[0],ab=a.at(-1),bt=b[0],bb=b.at(-1);
+    if(bt.x-at.x<=.06||ab.y-at.y<=.35||bb.y-bt.y<=.35||at.x-ab.x<=.1||bb.x-bt.x<=.1)return false;
+    const cross=(p,q,r)=>(q.x-p.x)*(r.y-p.y)-(q.y-p.y)*(r.x-p.x);
+    const pointSegment=(p,q,r)=>{const dx=r.x-q.x,dy=r.y-q.y,den=dx*dx+dy*dy,t=den?Math.max(0,Math.min(1,((p.x-q.x)*dx+(p.y-q.y)*dy)/den)):0;return Math.hypot(p.x-q.x-t*dx,p.y-q.y-t*dy);};
+    for(let i=1;i<a.length;i++)for(let j=1;j<b.length;j++){
+      const p=a[i-1],q=a[i],r=b[j-1],s=b[j];
+      const overlap=Math.max(Math.min(p.x,q.x),Math.min(r.x,s.x))<=Math.min(Math.max(p.x,q.x),Math.max(r.x,s.x))&&Math.max(Math.min(p.y,q.y),Math.min(r.y,s.y))<=Math.min(Math.max(p.y,q.y),Math.max(r.y,s.y));
+      if(overlap&&cross(p,q,r)*cross(p,q,s)<=0&&cross(r,s,p)*cross(r,s,q)<=0)return false;
+      if(Math.min(pointSegment(p,r,s),pointSegment(q,r,s),pointSegment(r,p,q),pointSegment(s,p,q))<=.035)return false;
+    }
+    return true;
+  }
+  const eightVariants=[
+    [[[40,22],[24,86]],[[68,22],[88,86]]],
+    [[[42,34],[15,84]],[[66,34],[94,84]]]
+  ].map(v=>normalize(v.map(s=>s.map(([x,y])=>({x,y})))));
   function createEngine(rawTemplates){
     const templates=new Map(),groups=new Map();
     for(const [char,raw] of Object.entries(rawTemplates)){
@@ -79,7 +99,12 @@
       if(!templates.has(target))return {status:'unjudgeable',reason:'missing-data'};
       const input=normalize(strokes);
       if(!input)return {status:'retry',reason:'insufficient-ink'};
-      const scored=(groups.get(input.length)||[]).map(([char,t])=>({char,...compare(input,t)})).sort((a,b)=>a.score-b.score);
+      const useEight=detachedEight(input);
+      const scored=(groups.get(input.length)||[]).map(([char,t])=>{
+        let match=compare(input,t);
+        if(char==='八'&&useEight)for(const variant of eightVariants){const alt=compare(input,variant);if(alt.score<match.score)match=alt;}
+        return {char,...match};
+      }).sort((a,b)=>a.score-b.score);
       const best=scored[0],next=scored[1];
       if(!best||best.score>POLICY.maxScore||best.worst>POLICY.maxStrokeScore)return {status:'unjudgeable',reason:'shape-uncertain'};
       if(next&&next.score-best.score<POLICY.minMargin)return {status:'unjudgeable',reason:'ambiguous',candidates:scored.slice(0,2).map(x=>x.char)};

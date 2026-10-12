@@ -1,7 +1,7 @@
-                                     
+
 (function(){
 'use strict';
-let engine,pad,session=null,generation=0,pendingSave=false,saveReturn=null,assetsLoaded=false;
+let engine,pad,templates,session=null,generation=0,pendingSave=false,saveReturn=null,assetsLoaded=false,hintTimer=null;
 const originalSave=save;
 const $w=id=>document.getElementById('wb-'+id);
 const questions=window.KanjimonWritingQuestions;
@@ -17,7 +17,20 @@ function saveOrPause(after){
  pendingSave=true;saveReturn=after;message('ほぞん できませんでした。もういちど ほぞんしてね。');
  $w('retry-save').hidden=false;pad?.setEnabled(false);refreshButtons();return false;
 }
-function closeInk(){pad?.destroy();pad=null;}
+function hideHint(){clearTimeout(hintTimer);hintTimer=null;if(session)session.hint=false;pad?.setGuide([]);}
+function closeInk(){hideHint();pad?.destroy();pad=null;}
+function showHint(s,seq){
+ clearTimeout(hintTimer);hintTimer=null;s.hint=true;pad?.setGuide(templates[K[enemyIdx].c]);
+ $w('instruction').textContent='うすい じを ヒントに かこう';
+ if(s.misses<6){
+  const questionId=s.question.id;
+  hintTimer=setTimeout(()=>{
+   if(!valid(s,seq)||s.question.id!==questionId)return;
+   hideHint();
+   if(['writing','evaluating','tired'].includes(s.phase))$w('instruction').textContent='「'+s.question.reading+'」を かんじで かこう';
+  },(s.misses-2)*1000);
+ }
+}
 function refreshButtons(){
  const busy=pendingSave||!session||session.phase!=='writing';
  for(const id of ['submit','undo','clear'])$w(id).disabled=busy;
@@ -33,7 +46,7 @@ function sampleTemplates(){
  })]));
 }
 function renderRoster(){
-                                       
+
  phase='writing';renderParty();
  for(const b of $('partyRow').querySelectorAll('.pbtn')){
   const i=Number(b.dataset.idx),same=!!session&&!['won','celebrating'].includes(session.phase)&&i===enemyIdx;
@@ -57,11 +70,13 @@ function question(){
  if(!session||session.phase==='won')return;
  const list=questions[K[enemyIdx].c];
  if(session.turn>=list.length){exit();$w('home-status').textContent='もんだいを ひとやすみ。つづきから ためしてね。';return;}
- const q=list[session.turn];session.question=q;
+ const q=list[session.turn];
+ if(session.question?.id!==q.id){hideHint();session.misses=0;}
+ session.question=q;
  const focus=document.createElement('mark');focus.textContent=q.reading;
  $w('question').replaceChildren(document.createTextNode(q.before),focus,document.createTextNode(q.after));
  $('enemyCharText').textContent=q.reading;$('enemyChar').classList.add('writing-reading');
- $w('instruction').textContent='「'+q.reading+'」を かんじで かこう';
+ $w('instruction').textContent=session.hint?'うすい じを ヒントに かこう':'「'+q.reading+'」を かんじで かこう';
  $w('next').hidden=true;$w('retry-save').hidden=true;$w('ink-area').hidden=false;
  session.phase='writing';answering=false;pad?.clear();pad?.setEnabled(true);
  if(!selectAvailable()){
@@ -78,7 +93,7 @@ function start(){
  queue=ids;enemyPos=cursor;enemyIdx=ids[cursor];enemyIsBoss=cursor===ids.length-1;
  enemyShiny=false;enemyAlt=null;enemyType=typeOf(enemyIdx);phase='writing';answering=true;
  enemyMaxHp=enemyHpFor(enemyIdx,enemyIsBoss);enemyHp=enemyMaxHp;
- session={generation,phase:'writing',turn:0,committed:false,question:null};
+ session={generation,phase:'writing',turn:0,committed:false,question:null,misses:0,hint:false};
  applySceneBg(1,K[enemyIdx]);showScreen('screen-battle');
  $('screen-battle').classList.add('writing-battle');$('bStageName').textContent=stageName(1);
  $('affHelp').style.display='none';hideBattleHakase();
@@ -164,12 +179,17 @@ async function submit(strokes){
  if(!valid(s,seq))return {status:'cancelled'};
  const result=engine.judge(strokes,K[enemyIdx].c);
  if(result.status==='correct'){
+  hideHint();
   s.phase='attacking';answering=true;refreshButtons();message('せいかい！ こうげき！');
   if(!await animateAttack(att,policyDamage(att),s,seq))return {status:'cancelled'};
   if(enemyHp===0){await completeWin(att);return result;}
   s.turn++;s.phase='saving';saveOrPause(question);return result;
  }
  s.phase='writing';pad?.setEnabled(true);refreshButtons();renderRoster();
+ if(result.status==='otherKanji'||(result.status==='unjudgeable'&&result.reason!=='missing-data')){
+  s.misses++;
+  if(s.misses>=3)showHint(s,seq);
+ }
  if(result.status==='otherKanji'){
   const other=K.findIndex(k=>k.c===result.char),homophone=other>=0&&schoolAllowedReadings(other).includes(s.question.reading);
   if(homophone)message('おなじ よみだね。ぶんを もういちど みてね。');
@@ -198,7 +218,7 @@ function init(){
  $('app').append(root);
  $('bOptions').innerHTML=`<div id="wb-play"><div id="wb-ink-area"><canvas id="wb-canvas" aria-label="かんじを かく わく"></canvas><div class="wb-actions"><button id="wb-undo">1かく<br>もどす</button><button id="wb-clear">けす</button><button id="wb-submit">かけた！</button><small id="wb-power"></small></div></div><button id="wb-next" hidden>つぎの あいてへ</button><button id="wb-retry-save" hidden>もういちど ほぞん</button><button id="wb-rest" hidden>やすんで つづける</button></div>`;
  const exitButton=$('screen-battle').querySelector('.battle-exit');exitButton.removeAttribute('onclick');exitButton.id='wb-exit';exitButton.onclick=exit;
- engine=KanjimonWritingRecognizer.createEngine(sampleTemplates());
+ templates=sampleTemplates();engine=KanjimonWritingRecognizer.createEngine(templates);
  $w('start').onclick=start;$w('next').onclick=start;$w('home-button').onclick=exit;
  $w('undo').onclick=()=>pad?.undo();$w('clear').onclick=()=>pad?.clear();$w('submit').onclick=()=>submit(pad.getStrokes());
  $w('retry-save').onclick=()=>{if(saveReturn){const after=saveReturn;saveOrPause(()=>{$w('retry-save').hidden=true;after();});}};
