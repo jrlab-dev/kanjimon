@@ -7,8 +7,8 @@
   else root.KanjimonWritingRecognizer=api;
 })(typeof window==='undefined'?globalThis:window,function(){
   'use strict';
-  const POLICY=Object.freeze({version:1,samples:24,maxStrokes:40,maxPoints:4000,
-    minExtent:12,minLength:12,maxScore:.085,maxStrokeScore:.16,minMargin:.012});
+  const POLICY=Object.freeze({version:2,samples:24,maxStrokes:40,maxPoints:4000,
+    minExtent:12,minLength:12,maxScore:.14,maxStrokeScore:.24,minMargin:.012});
   const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
   function length(points){let n=0;for(let i=1;i<points.length;i++)n+=dist(points[i-1],points[i]);return n;}
   function sample(points,n=POLICY.samples){
