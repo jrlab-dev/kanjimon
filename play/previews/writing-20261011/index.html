@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
-<head><meta name="robots" content="noindex,nofollow"><base href="/play/"><link rel="stylesheet" href="/play/previews/writing-20261011/assets/writing/prototype.css?v=ink300-20261013">
+<head><script src="/play/previews/writing-20261011/assets/writing/progress.js?v=ueno-20261013"></script><meta name="robots" content="noindex,nofollow"><base href="/play/"><link rel="stylesheet" href="/play/previews/writing-20261011/assets/writing/prototype.css?v=ink300-20261013">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>かんじモンRPG｜小1の かんじを あそんで おぼえる むりょうゲーム</title>
@@ -11435,7 +11435,7 @@ function fieldSelfTest(){
                               
                                    
 const SAVE_KEY='kanjimon-writing-prototype-v1';
-let wbProgress={version:1,cursor:0},wbBatch=false;
+let wbProgress={version:2,zone:1,cursor:0},wbBatch=false;
 let newGamePlus={version:1,cycle:0,maxGrade:1};
 let ngplusTransitionCommitted=false;
 let caught=new Set();                         
@@ -11813,7 +11813,7 @@ function load(){
                                                    
     yoji=new Set(); if(Array.isArray(d.yoji)) d.yoji.forEach(w=>{ if(YOJIJUKUGO_BY_KEY[w]!==undefined) yoji.add(w); });
     difficulty = normalizeDifficulty(d.difficulty);
-    wbProgress={version:1,cursor:Number.isInteger(d.wbProgress?.cursor)?Math.max(0,Math.min(12,d.wbProgress.cursor)):0};
+    wbProgress=KanjimonWritingProgress.normalize(d.wbProgress);
     writingUnavailableOnLoad=difficulty==='writing';
     writingUnavailableOnLoad=false;
     labSeen = (d.labSeen===true);
@@ -43240,7 +43240,7 @@ var YojiFieldScene = (function(){
 })();
 
 </script>
-<script src="/play/previews/writing-20261011/assets/writing/recognizer.js?v=eight3-20261013"></script><script src="/play/previews/writing-20261011/assets/writing/questions-zone1.js"></script><script src="/play/previews/writing-20261011/assets/writing/ink-pad.js?v=guide2-20261013"></script>
+<script src="/play/previews/writing-20261011/assets/writing/recognizer.js?v=eight3-20261013"></script><script src="/play/previews/writing-20261011/assets/writing/questions-zone1.js"></script><script src="/play/previews/writing-20261011/assets/writing/questions-zone2.js?v=ueno-20261013"></script><script src="/play/previews/writing-20261011/assets/writing/ink-pad.js?v=guide2-20261013"></script>
  <script>if(!localStorage.getItem(SAVE_KEY)){localStorage.setItem(SAVE_KEY,JSON.stringify({...makeZoneStartSave(1),coins:200,sound:false,wbProgress:{version:1,cursor:0},difficulty:'writing'}));load();}</script>
- <script src="/play/previews/writing-20261011/assets/writing/prototype-bridge.js?v=hint-timed-20261013"></script></body>
+ <script src="/play/previews/writing-20261011/assets/writing/prototype-bridge.js?v=ueno-20261013"></script></body>
 </html>

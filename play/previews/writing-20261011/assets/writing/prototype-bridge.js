@@ -5,7 +5,8 @@ let engine,pad,templates,session=null,generation=0,pendingSave=false,saveReturn=
 const originalSave=save;
 const $w=id=>document.getElementById('wb-'+id);
 const questions=window.KanjimonWritingQuestions;
-const zoneIndices=()=>stageKanji(1);
+const activeZone=()=>wbProgress.zone===2?2:1;
+const zoneIndices=()=>stageKanji(activeZone());
 const bossLevelByZone=Object.freeze({1:9});
 const policyEnemyLevel=()=>enemyIsBoss?(bossLevelByZone[curStage]??enemyLevelFor(enemyIdx,true)):enemyLevelFor(enemyIdx,false);
 const policyDamage=att=>damageForMatch(levelOf(att),policyEnemyLevel(),affinity(typeOf(att),typeOf(enemyIdx)))*2;
@@ -13,9 +14,26 @@ const valid=(s,seq)=>session===s&&generation===seq;
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const safeSave=()=>{try{if(window.WB_QA?.failSave)return false;return originalSave()===true;}catch(e){return false;}};
 function saveOrPause(after){
- if(safeSave()){pendingSave=false;saveReturn=null;after();pad?.setEnabled(session?.phase==='writing');refreshButtons();renderRoster();return true;}
+ if(safeSave()){pendingSave=false;saveReturn=null;$w('travel-retry').hidden=true;after();pad?.setEnabled(session?.phase==='writing');refreshButtons();renderRoster();return true;}
  pendingSave=true;saveReturn=after;message('ほぞん できませんでした。もういちど ほぞんしてね。');
  $w('retry-save').hidden=false;pad?.setEnabled(false);refreshButtons();return false;
+}
+function completeScreen(){
+ const zone=activeZone();
+ $w('complete-title').textContent=stageName(zone)+' クリア！';
+ $w('complete-message').textContent=zone===1?'12字を なかまにしたよ！ つぎは うえの。':'にほんばしと うえのを クリア！';
+ $w('travel').hidden=zone!==1;$w('travel').disabled=pendingSave;
+ $w('travel-retry').hidden=!pendingSave;$w('travel-status').textContent='';
+ showScreen('wb-root');$w('home').hidden=true;$w('complete').hidden=false;
+}
+function travel(){
+ if(pendingSave||evoLock||!assetsLoaded||activeZone()!==1||wbProgress.cursor<zoneIndices().length)return;
+ generation++;closeInk();session=null;
+ wbProgress={version:2,zone:2,cursor:0};
+ const begin=()=>{pendingSave=false;saveReturn=null;$w('travel-retry').hidden=true;$w('home-button').disabled=false;start();};
+ if(safeSave()){begin();return;}
+ pendingSave=true;saveReturn=begin;$w('travel').disabled=true;$w('home-button').disabled=true;
+ $w('travel-status').textContent='ほぞん できませんでした。もういちど ほぞんしてね。';$w('travel-retry').hidden=false;
 }
 function hideHint(){clearTimeout(hintTimer);hintTimer=null;if(session)session.hint=false;pad?.setGuide([]);}
 function closeInk(){hideHint();pad?.destroy();pad=null;}
@@ -36,6 +54,8 @@ function refreshButtons(){
  for(const id of ['submit','undo','clear'])$w(id).disabled=busy;
  $w('exit').disabled=pendingSave||['attacking','celebrating'].includes(session?.phase);
  $w('next').disabled=pendingSave||session?.phase!=='won';
+ $w('travel').disabled=pendingSave;
+ $w('home-button').disabled=pendingSave;
 }
 function message(text){$w('message').textContent=text;}
 function sampleTemplates(){
@@ -88,14 +108,15 @@ function start(){
  if(pendingSave||evoLock||!assetsLoaded)return;
  generation++;spawnSeq++;autoPickSeq++;autoPickArmed=false;clearDashClones();closeInk();session=null;
  const ids=zoneIndices(),cursor=wbProgress.cursor||0;
- if(cursor>=ids.length){showScreen('wb-root');$w('home').hidden=true;$w('complete').hidden=false;return;}
- setupBattleCommon(1,true);battleMode='party';battleSource='quick';difficulty='writing';battleRewardDifficulty='writing';
+ if(cursor>=ids.length){completeScreen();return;}
+ const zone=activeZone();
+ setupBattleCommon(zone,true);battleMode='party';battleSource='quick';difficulty='writing';battleRewardDifficulty='writing';
  queue=ids;enemyPos=cursor;enemyIdx=ids[cursor];enemyIsBoss=cursor===ids.length-1;
  enemyShiny=false;enemyAlt=null;enemyType=typeOf(enemyIdx);phase='writing';answering=true;
  enemyMaxHp=enemyHpFor(enemyIdx,enemyIsBoss);enemyHp=enemyMaxHp;
  session={generation,phase:'writing',turn:0,committed:false,question:null,misses:0,hint:false};
- applySceneBg(1,K[enemyIdx]);showScreen('screen-battle');
- $('screen-battle').classList.add('writing-battle');$('bStageName').textContent=stageName(1);
+ applySceneBg(zone,K[enemyIdx]);showScreen('screen-battle');
+ $('screen-battle').classList.add('writing-battle');$('bStageName').textContent=stageName(zone);
  $('affHelp').style.display='none';hideBattleHakase();
  $('enemyWrap').className='enemy-wrap'+(enemyIsBoss?' boss':'')+' entering';
  $('enemyChar').className='enemy-char face-host writing-reading';$('enemyChar').style.color=K[enemyIdx].cl;
@@ -137,8 +158,8 @@ async function completeWin(att){
    }
   }
   caught.forEach(i=>{bodies.delete(i);separated.delete(i);delete soulZone[i];});
-  wbProgress={...wbProgress,version:1,cursor:(wbProgress.cursor||0)+1};
-  if(wbProgress.cursor>=zoneIndices().length){cleared.add(1);unlocked=Math.max(unlocked,2);}
+  wbProgress={...wbProgress,version:2,zone:activeZone(),cursor:(wbProgress.cursor||0)+1};
+  if(wbProgress.cursor>=zoneIndices().length){cleared.add(activeZone());unlocked=Math.max(unlocked,activeZone()+1);}
  }finally{wbBatch=false;}
  s.phase='saving';let presentation;
  if(saveOrPause(()=>{presentation=presentWin(idx,isNew,growing,evolution,s,seq,reward);}))await presentation;
@@ -206,29 +227,32 @@ function exit(){
  generation++;spawnSeq++;autoPickSeq++;autoPickArmed=false;clearDashClones();closeInk();session=null;answering=false;
  $('enemyChar').classList.remove('attacked');$('dmgFlash').classList.remove('on');
  $w('complete').hidden=true;$w('home').hidden=false;showScreen('wb-root');bgmStop();
- $w('home-status').textContent='なかま '+caught.size+'たい・'+coins+'円・'+Math.min(12,(wbProgress.cursor||0)+1)+'／12 たいめ';
- $w('start').textContent=(wbProgress.cursor||0)>=12?'クリアした きろくを みる':'書き取りバトルへ';
+ const count=zoneIndices().length;
+ $w('home-status').textContent=stageName(activeZone())+'・なかま '+caught.size+'たい・'+coins+'円・'+Math.min(count,(wbProgress.cursor||0)+1)+'／'+count+' たいめ';
+ $w('start').textContent=(wbProgress.cursor||0)>=count?(activeZone()===1?'つぎの フィールドへ':'クリアした きろくを みる'):'書き取りバトルへ';
 }
 function init(){
  document.body.classList.add('writing-prototype');window.OpeningMovie?.cancel();window.openingMovieDismissed=true;bgmStop();
  const root=document.createElement('section');root.id='wb-root';root.className='screen';root.innerHTML=`
- <section id="wb-home"><h1>かんじモン</h1><h2>書き取りバトル</h2><p>日本橋の12字で ためせるよ。<br>いつもの バトルで、かんじを かこう。</p><p id="wb-home-status"></p><button class="btn btn-primary" id="wb-start" disabled>よみこみ中…</button><p>通常版とは別に記録します。</p></section>
- <section id="wb-complete" hidden><h1>にほんばし クリア！</h1><p>12字を なかまにしたよ！</p><button class="btn btn-primary" id="wb-home-button">もどる</button></section>
+ <section id="wb-home"><h1>かんじモン</h1><h2>書き取りバトル</h2><p>にほんばしから うえのへ。<br>21字を かいて なかまにしよう。</p><p id="wb-home-status"></p><button class="btn btn-primary" id="wb-start" disabled>よみこみ中…</button><p>通常版とは別に記録します。</p></section>
+ <section id="wb-complete" hidden><h1 id="wb-complete-title"></h1><p id="wb-complete-message"></p><button class="btn btn-primary" id="wb-travel">うえのへ すすむ</button><p id="wb-travel-status" role="status"></p><button class="btn btn-primary" id="wb-travel-retry" hidden>もういちど ほぞん</button><button class="btn btn-primary" id="wb-home-button">もどる</button></section>
  <footer>筆順：KanjiVG / © Ulrich Apel / <a href="https://creativecommons.org/licenses/by-sa/3.0/" target="_blank" rel="noopener">CC BY-SA 3.0</a></footer>`;
  $('app').append(root);
  $('bOptions').innerHTML=`<div id="wb-play"><div id="wb-ink-area"><canvas id="wb-canvas" aria-label="かんじを かく わく"></canvas><div class="wb-actions"><button id="wb-undo">1かく<br>もどす</button><button id="wb-clear">けす</button><button id="wb-submit">かけた！</button><small id="wb-power"></small></div></div><button id="wb-next" hidden>つぎの あいてへ</button><button id="wb-retry-save" hidden>もういちど ほぞん</button><button id="wb-rest" hidden>やすんで つづける</button></div>`;
  const exitButton=$('screen-battle').querySelector('.battle-exit');exitButton.removeAttribute('onclick');exitButton.id='wb-exit';exitButton.onclick=exit;
  templates=sampleTemplates();engine=KanjimonWritingRecognizer.createEngine(templates);
  $w('start').onclick=start;$w('next').onclick=start;$w('home-button').onclick=exit;
+ $w('travel').onclick=travel;
+ $w('travel-retry').onclick=()=>{if(pendingSave&&saveReturn){const after=saveReturn;if(safeSave())after();}};
  $w('undo').onclick=()=>pad?.undo();$w('clear').onclick=()=>pad?.clear();$w('submit').onclick=()=>submit(pad.getStrokes());
  $w('retry-save').onclick=()=>{if(saveReturn){const after=saveReturn;saveOrPause(()=>{$w('retry-save').hidden=true;after();});}};
  $w('rest').onclick=()=>{if(pendingSave)return;party.forEach(i=>genki[i]=genkiMaxOf(i));saveOrPause(question);};
- const ready=Promise.all(sceneImages.assets(1).map(async([url,mark])=>{const ok=await sceneImages.load(url);if(ok)mark();return ok;})).then(loaded=>{
+ const ready=Promise.all([1,2].flatMap(zone=>sceneImages.assets(zone)).map(async([url,mark])=>{const ok=await sceneImages.load(url);if(ok)mark();return ok;})).then(loaded=>{
   assetsLoaded=loaded.every(Boolean);$w('start').disabled=!assetsLoaded;
   if(!assetsLoaded)$w('home-status').textContent='画像を よみこめませんでした。ページを ひらきなおしてね。';
   return assetsLoaded;
  });
- window.WritingPrototype=Object.freeze({start,exit,submit,ready,getState:()=>({phase:session?.phase,cursor:wbProgress.cursor,enemyIdx,enemyHp,enemyMaxHp,selectedAttacker,caught:[...caught],bodies:[...bodies],party:[...party],levels:{...levels},coins,pendingSave,saveKey:SAVE_KEY})});
+ window.WritingPrototype=Object.freeze({start,exit,submit,travel,ready,getState:()=>({phase:session?.phase,zone:activeZone(),cursor:wbProgress.cursor,enemyIdx,enemyHp,enemyMaxHp,selectedAttacker,caught:[...caught],bodies:[...bodies],party:[...party],levels:{...levels},coins,pendingSave,saveKey:SAVE_KEY})});
  exit();
 }
 if(document.readyState==='complete')init();else window.addEventListener('load',init,{once:true});
