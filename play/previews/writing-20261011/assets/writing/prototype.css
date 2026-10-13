@@ -49,7 +49,7 @@
 #screen-battle.writing-battle #wb-retry-save,
 #screen-battle.writing-battle #wb-rest{width:100%;margin:0;line-height:1.4;overflow-wrap:anywhere}
 #screen-battle.writing-battle #wb-question{margin:0;font:inherit;font-weight:900;line-height:1.4}
-#screen-battle.writing-battle #wb-question mark{background:#ffe5a2;color:inherit;padding:0 3px;border-radius:4px}
+#screen-battle.writing-battle #wb-question mark{display:inline-block;white-space:nowrap;background:#ffe5a2;color:inherit;padding:0 3px;border-radius:4px}
 #screen-battle.writing-battle #wb-instruction{display:block;margin:3px 0 0;font-size:.78em;line-height:1.35}
 #screen-battle.writing-battle #wb-message{display:block;margin:4px 0 0;font-size:.84em;line-height:1.35}
 #screen-battle.writing-battle #wb-message:empty{display:none}
@@ -57,7 +57,12 @@
 #screen-battle.writing-battle .enemy-char.writing-reading{
   font-size:clamp(62px,20vw,80px)!important;white-space:nowrap;
 }
+#screen-battle.writing-battle .enemy-char.writing-reading.wb-long-reading{font-size:clamp(24px,calc(150px / var(--wb-reading-length,2)),60px)!important}
 #screen-battle.writing-battle .pc.writing-same-answer{font-size:clamp(20px,6vw,26px)!important;white-space:nowrap}
+#screen-battle.writing-battle #bStageName.wb-long-name{display:block;max-width:min(140px,calc(100vw - 224px));white-space:normal;overflow-wrap:anywhere;font-size:12px;line-height:1.12}
+#screen-battle.writing-battle .stage-label:has(.wb-long-name)>br{display:none}
+#screen-battle.writing-battle #bHp{white-space:nowrap;font-size:16px}
+#wb-root #wb-travel{max-width:100%;white-space:normal;overflow-wrap:anywhere}
 @media(max-width:360px){
   #wb-root section{padding:12px}
   #screen-battle.writing-battle #wb-play .wb-actions button{font-size:13px}
