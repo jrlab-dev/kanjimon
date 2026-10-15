@@ -259,6 +259,18 @@
   setMsg('『'+b.word+'』<br>'+b.def.y+(entry?'<br><span class="meaning">'+entry.mean+'</span>':''));
   const seq=spawnSeq;setTimeout(()=>{if(seq!==spawnSeq)return;bgmResumeFieldOnce=true;clearBattle();if(!b.isRetry&&view?.afterWord&&(current===9||!s.retryMasks[b.word]))view.afterWord(next);else next();},1000);
  }
+ api.prepareWritingWin=function(){
+  const b=api.battle,s=amamiFinal['episode'+b.episode],part=s.partIndex,mask=b.isRetry?s.retryMasks[b.word]:3;
+  if(part===0&&(mask&2)){s.partIndex=1;return {half:true,episode:b.episode};}
+  s.partIndex=0;if(b.isRetry)s.retryIndex++;else s.mainIndex++;
+  return {half:false,episode:b.episode};
+ };
+ api.writingMiss=function(){const b=api.battle;if(!b||b.isRetry)return;const s=amamiFinal['episode'+b.episode];if(!s.retryWords.includes(b.word))s.retryWords.push(b.word);s.retryMasks[b.word]=(s.retryMasks[b.word]||0)|(s.partIndex?2:1);};
+ api.continueWriting=function(half){
+  if(half){twinTurn='doutai';twinBossUpdateHighlight();renderTwinHp();return;}
+  const b=api.battle;bgmResumeFieldOnce=true;clearBattle();
+  if(!b.isRetry&&view?.afterWord&&(current===9||!state().retryMasks[b.word]))view.afterWord(next);else next();
+ };
  api.abort=function(){save();clearBattle();view?.destroy();view=null;showScreen('screen-title');};
  api.createView=createView;
  global.AmamiLate=api;

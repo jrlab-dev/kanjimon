@@ -1,0 +1,10 @@
+.ngplus-title{width:100%;max-width:400px;margin:12px auto;display:flex;flex-direction:column;gap:8px;padding:0 16px;box-sizing:border-box}
+.ngplus-title p{margin:0;text-align:center;font-size:.9rem;color:#655341}
+.ngplus-title [hidden]{display:none!important}
+#ngplusDialog{box-sizing:border-box;width:min(92vw,420px);max-height:85dvh;overflow-y:auto;border:2px solid #d6b987;border-radius:18px;padding:22px;background:#fff9ed;color:#3e3026;box-shadow:0 10px 40px #0004;font:inherit}
+#ngplusDialog::backdrop{background:#0008}
+#ngplusDialog h2{font-size:1.25rem;margin:0 0 12px}
+#ngplusDialog p{line-height:1.8;overflow-wrap:anywhere}
+#ngplusError{color:#a6201b;font-size:.9rem}
+.ngplus-actions{display:flex;flex-direction:column;gap:12px}
+.ngplus-actions .btn{min-height:48px;white-space:normal;line-height:1.5;padding:12px}

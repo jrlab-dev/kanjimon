@@ -3713,7 +3713,7 @@ body.ice-dungeon #fieldInfo{display:none}
 <link rel="stylesheet" href="events/奄美第4話.css">
 <script src="events/奄美第4話.js?music=20261004-release" defer></script>
 <link rel="stylesheet" href="events/奄美第5-8話.css?v=amami78-20260930">
-<script src="events/奄美第5-8話.js?walk=20261003d&music=20261004-release" defer></script>
+<script src="events/奄美第5-8話.js?v=story-20261016" defer></script>
 <link rel="stylesheet" href="events/奄美城と終章.css?v=amami1112-20261001">
 <link rel="stylesheet" href="events/奄美積み木.css">
 <script src="events/奄美積み木.js" defer></script>
@@ -3744,6 +3744,8 @@ body.ice-dungeon #fieldInfo{display:none}
 <script defer src="events/うどんの里会話.js?walk=20261003d"></script>
 <link rel="stylesheet" href="events/opening-movie.css?v=20261008b">
 <script defer src="events/opening-movie.js?v=20261008b"></script>
+<script src="new-game-plus/core.js?v=story-20261016"></script>
+<link rel="stylesheet" href="new-game-plus/ui.css?v=story-20261016">
 </head>
 <body>
 <!-- 弾TB-1：タブレットでバトルの絵を画面いっぱいに敷くための層。#app の外（下）に置く。
@@ -3759,6 +3761,21 @@ body.ice-dungeon #fieldInfo{display:none}
       <div class="sub">よみかたを えらんで かんじもんを ゲットしよう！</div>
     </div>
     <div class="get-count" id="titleCount"></div>
+    <div class="ngplus-title">
+      <p id="ngplusCycle" aria-live="polite"></p>
+      <button class="btn btn-yellow" id="ngplusStart" hidden onclick="openNewGamePlus('start')">つよくて はじめから</button>
+      <button class="btn btn-ghost" id="ngplusRestore" hidden onclick="openNewGamePlus('restore')">まえの たびに もどる</button>
+    </div>
+    <dialog id="ngplusDialog" aria-labelledby="ngplusHeading" aria-describedby="ngplusPrompt">
+      <h2 id="ngplusHeading">たびの きろく</h2>
+      <p id="ngplusPrompt"></p>
+      <p id="ngplusError" role="alert"></p>
+      <div class="ngplus-actions">
+        <button class="btn btn-primary" id="ngplusCancel" autofocus onclick="closeNewGamePlus()">いまの たびを つづける</button>
+        <button class="btn btn-yellow" id="ngplusConfirm" onclick="confirmNewGamePlus()"></button>
+      </div>
+    </dialog>
+
     <button class="hero-change-btn" id="heroChangeBtn" onclick="openHeroSelectFromTitle()" style="display:none">しゅじんこうを かえる</button>
     <div class="title-btns">
       <button class="btn btn-primary" id="amamiContinueBtn" style="display:none;background:linear-gradient(135deg,#0ea5e9,#0369a1)" onclick="startAmamiContinuation()">アマミの つづき</button>
@@ -3770,12 +3787,11 @@ body.ice-dungeon #fieldInfo{display:none}
       <button class="btn btn-ghost lab-btn" id="labBtn" onclick="goLab()" style="display:none">けんきゅうじょ<span class="new-badge">NEW!</span></button>
     </div>
     <div class="diff-toggle">
-      <!-- 手直し(2026-07-26)：ラベルは「ひらがなヒント」だった。文字の吹き出しだった頃の名残で、
-           いまは声で名乗るかどうかを決めるスイッチ。実態とずれていて作者自身が
-           「名乗りが鳴らない」と迷った（正体はこの設定）。何が切り替わるかを言葉にした。 -->
-      <span class="diff-label">てきの なまえ</span>
-      <button class="diff-pill" id="diffEasy" onclick="setDifficulty('easy')">こえで なのる<br><small>（かんたん）</small></button>
-      <button class="diff-pill" id="diffHard" onclick="setDifficulty('hard')">ひみつにする<br><small>（むずかしい）</small></button>
+      <span class="diff-label">あそびかた</span>
+      <button class="diff-pill" id="diffEasy" onclick="setDifficulty('easy')">かんたん<br><small>こえで なのる・おかね ×1</small></button>
+      <button class="diff-pill" id="diffNormal" onclick="setDifficulty('normal')">ふつう<br><small>なのらない・おかね ×1.5</small></button>
+      <button class="diff-pill" id="diffWriting" onclick="setDifficulty('writing')">むずかしい<br><small>かきとり・おかね ×3</small></button>
+      <p id="writingAvailabilityNote" style="font-size:.75rem;color:var(--sub)">かきとりの バトルは じゅんびちゅうだよ。</p>
     </div>
     <!-- 発注_OP3 作業2-2：AUTOえらび切替。難易度ピルと同じ場所・同じ見た目の作法（.diff-toggle/.diff-pill流用） -->
     <div class="diff-toggle">
@@ -4287,10 +4303,11 @@ body.ice-dungeon #fieldInfo{display:none}
 
     <!-- こえ（難易度）：既存 diff-pill を流用 -->
     <div style="margin-bottom:18px">
-      <div style="font-size:.8rem;font-weight:900;color:#555;margin-bottom:8px">こえ</div>
+      <div style="font-size:.8rem;font-weight:900;color:#555;margin-bottom:8px">あそびかた</div>
       <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
-        <button class="diff-pill" id="ts-diff-easy" onclick="setTsDiff('easy')">こえで なのる</button>
-        <button class="diff-pill" id="ts-diff-hard" onclick="setTsDiff('hard')">ひみつに する</button>
+        <button class="diff-pill" id="ts-diff-easy" onclick="setTsDiff('easy')">かんたん ×1</button>
+        <button class="diff-pill" id="ts-diff-normal" onclick="setTsDiff('normal')">ふつう ×1.5</button>
+        <button class="diff-pill" id="ts-diff-writing" onclick="setTsDiff('writing')">むずかしい ×3</button>
       </div>
     </div>
 
@@ -4463,6 +4480,18 @@ body.ice-dungeon #fieldInfo{display:none}
   <button id="psSkip">とばす ▶</button>
 </div>
 <script src="data/kakitori-strokes.js" defer></script>
+<script src="writing/strokes-extra.js?v=story-20261016" defer></script>
+<script src="writing/recognizer.js?v=story-20261016" defer></script>
+<script src="writing/ink-pad.js?v=story-20261016" defer></script>
+<script src="writing/questions-zone1.js?v=story-20261016" defer></script>
+<script src="writing/questions-zone2.js?v=story-20261016" defer></script>
+<script src="writing/questions-all.js?v=story-20261016" defer></script>
+<script src="writing/story-transaction.js?v=story-20261016" defer></script>
+<script src="writing/story-questions.js?v=story-20261016" defer></script>
+<script src="writing/story-outcome.js?v=story-20261016" defer></script>
+<script src="writing/story-battle.js?v=story-20261016" defer></script>
+<link rel="stylesheet" href="writing/prototype.css?v=story-20261016">
+<link rel="stylesheet" href="writing/story.css?v=story-20261016">
 
 
 
@@ -11314,6 +11343,8 @@ function fieldSelfTest(){
    セーブ（localStorage・第1弾セーブと互換）
 ================================ */
 const SAVE_KEY='kanjimon-save';
+let newGamePlus={version:1,cycle:0,maxGrade:1};
+let ngplusTransitionCommitted=false;
 let caught=new Set();   // ゲット済み K インデックス（なかま）
 let bodies=new Set();   // 第15弾：からだのみ＝ねむっている K インデックス
 // 弾3-11：げんき（1本方式＋魂分離）のデータ
@@ -11334,9 +11365,39 @@ let jukugo=new Set();   // 発見済み熟語（熟語文字列のセット）
 let shiny=new Set();    // オンヨミフォーム取得済み Kインデックス
 // 弾3-8§1-2：発見済み四字熟語（辞書エントリ・文字列のセット。今回は'一心同体'の1件のみ）
 let yoji=new Set();
-// 'easy'(こえで なのる＝どの敵も声で読みを叫ぶ) | 'hard'(ひみつにする＝まだ捕まえていない敵は声を出さず「？？？…！」の文字だけ)
-// ※画面の表示は2026-07-26に「ひらがなヒント／なまえを なのる／なまえは ひみつ」から変更した（値そのものは不変＝セーブ互換あり）
+// easyは読みを名乗る。normalは仲間済みも名乗らない。writingは書き取り用。
+// 旧hardはnormalへ移行する。writingの本編提供は準備中。
+function normalizeDifficulty(value){
+  if(value==='hard') return 'normal';
+  return ['easy','normal','writing'].includes(value)?value:'easy';
+}
 let difficulty='easy';
+let battleRewardDifficulty='easy';
+let writingState={version:1,receipt:null,quick:null,tutorial:false};
+function readWritingState(value){
+  const out={version:1,receipt:null,quick:null,tutorial:value?.tutorial===true};
+  if(!value||value.version!==1)return out;
+  const validRoute=r=>{
+    if(!r||typeof r!=='object')return false;
+    if(r.kind==='amami'||r.kind==='amami-late')return Number.isInteger(r.episode)&&r.episode>=1&&r.episode<=12;
+    if(r.kind==='field')return Number.isInteger(r.zone)&&Number.isInteger(r.stage)&&Number.isFinite(r.x)&&Number.isFinite(r.y)&&((r.zone>=1&&r.zone<=STAGE_COUNT)||isTownLike(r.zone)||isIceDungeon(r.zone));
+    return ['quick','clear'].includes(r.kind)&&Number.isInteger(r.stage)&&r.stage>=1&&r.stage<=STAGE_COUNT&&Array.isArray(r.queue)&&r.queue.length<=K.length&&r.queue.every(i=>Number.isInteger(i)&&i>=0&&i<K.length)&&Number.isInteger(r.pos)&&r.pos>=0&&r.pos<=r.queue.length&&(r.intruder==null||Number.isInteger(r.intruder)&&r.intruder>=0&&r.intruder<K.length);
+  };
+  if(value.receipt?.version===1&&typeof value.receipt.id==='string'&&validRoute(value.receipt.route))out.receipt=value.receipt;
+  if(value.quick?.kind==='quick'&&validRoute(value.quick))out.quick=value.quick;
+  if(typeof value.last?.questionId==='string')out.last={questionId:value.last.questionId,assisted:value.last.assisted===true};
+  return out;
+}
+function tryStartWritingBattle(){
+  if(difficulty!=='writing')return false;
+  if(window.KanjimonStoryBattle)KanjimonStoryBattle.start();
+  else{
+    answering=true;phase='writing';$('bOptions').replaceChildren();
+    $('enemyCharText').textContent='？';$('enemyCharText2').textContent='？';
+    setMsg('かきとりを よみこめませんでした。「おわる」で もどって、よみなおしてね。');
+  }
+  return true;
+}
 // 発注_OP3 作業2：AUTOえらび（カントウ開放まで自動選択）。新規ゲーム＝AUTOオン（既定値どおり）
 let autoPick=true;          // true=自動でこうげきする子を選ぶ／false=じぶんでタップ
 let autoPickExplained=false; // カントウ開放後の「じぶんで えらんでみて」説明カードを見せた（＝AUTOをオフにした）か
@@ -11559,15 +11620,16 @@ function ensureCostumeForChar(){
 let hadSaveAtBoot=false;     // 起動時にセーブが存在したか（完全新規プレイヤー判定・セッション値）
 let heroSelectShownOnce=false; // 同一セッションで初回選択ポップを2回出さないための番人
 function levelOf(idx){ return levels[idx]||1; }
-function save(){
-  try{
-    localStorage.setItem(SAVE_KEY,JSON.stringify({
+function getSaveData(){
+  return {
       caught:[...caught],bodies:[...bodies],unlocked:unlocked,cleared:[...cleared],
       levels:levels,party:party,sound:soundOn,tut:partyTutorialDone,
-      jukugo:[...jukugo],shiny:[...shiny],difficulty:difficulty,
+      jukugo:[...jukugo],shiny:[...shiny],difficulty:normalizeDifficulty(difficulty),difficultyVersion:2,
+      writingState:writingState,
       autoPick:autoPick,
       autoPartySwapSeen:autoPartySwapSeen,   // 弾AP-1
-      autoPickNudged:autoPickNudged,         // 弾AP-1autoPickExplained:autoPickExplained,   // 発注_OP3 作業2
+      autoPickNudged:autoPickNudged,
+      autoPickExplained:autoPickExplained,
       labSeen:labSeen,shinySeen:shinySeen,intrudeSeen:intrudeSeen,
       fieldPos:fieldPos,fieldMapRev52:fieldMapRev52,fieldMapRev63:fieldMapRev63,introSeen:introSeen,zoneVisited:[...zoneVisited],
       freeZones:[...freeZones],heroChar:heroChar,
@@ -11634,14 +11696,23 @@ function save(){
       // 手直し_着替え（7/25）：どちらも主人公ごと（男の子ぶん・女の子ぶんを別々に保存する）
       heroCostume:{boy:heroCostumeBy.boy,girl:heroCostumeBy.girl},
       ownedCostumes:{boy:[...ownedListOf('boy')],girl:[...ownedListOf('girl')]}
-    }));
-  }catch(e){}
+
+      ,newGamePlus:KanjimonNewGamePlus.normalizeInfo({newGamePlus,unlocked,cleared:[...cleared],zoneVisited,fieldPos,amamiFinal},gradeOfZone)
+  };
+}
+function save(){
+  if(ngplusTransitionCommitted)return false;
+  if(window.KanjimonStoryOutcome?.batch)return true;
+  if(window.KanjimonStoryOutcome?.locked)return false;
+  if(difficulty==='writing'&&window.KanjimonStoryOutcome&&!KanjimonStoryOutcome.canSave())return false;
+  try{localStorage.setItem(SAVE_KEY,JSON.stringify(getSaveData()));window.KanjimonStoryOutcome?.saved();return true;}catch(e){return false;}
 }
 function load(){
   try{
     const raw=localStorage.getItem(SAVE_KEY); if(!raw) return;
     hadSaveAtBoot=true;   // 第5.5弾：rawが存在すれば既存プレイヤー（旧セーブ含む）→ 初回選択ポップは出さない
     const d=JSON.parse(raw);
+    newGamePlus=KanjimonNewGamePlus.normalizeInfo(d,gradeOfZone);
     if(Array.isArray(d.caught)) caught=new Set(d.caught.filter(i=>i>=0&&i<K.length));
     // 第15弾：bodies（からだのみ）。旧セーブは空・caughtにある子はbodiesから除外（二重防止）
     bodies=new Set();
@@ -11674,7 +11745,8 @@ function load(){
     shiny=new Set();  if(Array.isArray(d.shiny))  d.shiny.forEach(i=>{ if(Number.isInteger(i)&&i>=0&&i<K.length) shiny.add(i); });
     // 弾3-8§1-2：発見済み四字熟語（旧セーブは空Set扱い＝既存jukugoと同じ流儀）
     yoji=new Set(); if(Array.isArray(d.yoji)) d.yoji.forEach(w=>{ if(YOJIJUKUGO_BY_KEY[w]!==undefined) yoji.add(w); });
-    difficulty = (d.difficulty==='hard') ? 'hard' : 'easy';
+    difficulty = normalizeDifficulty(d.difficulty);
+    writingState=readWritingState(d.writingState);
     labSeen = (d.labSeen===true);
     shinySeen = (d.shinySeen===true);
     intrudeSeen = (d.intrudeSeen===true);
@@ -12599,9 +12671,9 @@ function playNanoriVoice(idx,isBoss,altReading,fallbackText){
   }catch(e){ toFallback(); }
 }
 // 頭上に鳴き声吹き出しを表示(約1.2秒)＋鳴き声音＋名乗り（mp3・失敗時はspeechSynthesisへ）
-// known 省略時は「難易度」で判定（かんたん＝常に名乗る／むずかしい＝ゲット済みのみ名乗る）
+// 読みの名乗りはかんたんだけ。明示指定でも他の難易度には出さない。
 function showCryBubble(idx,isBoss,known,altReading){
-  if(known===undefined) known = (difficulty==='easy') ? true : caught.has(idx);
+  known = difficulty==='easy' && (known===undefined || !!known);
   const c=buildCry(idx,isBoss,known,altReading);
   const el=$('cryBubble'); if(!el) return;
   // 声で名乗れるときは ふりがな吹き出しを出さない（声が出ないときだけ文字で補う）2026-07-03ユーザー判断
@@ -12920,6 +12992,7 @@ COSTUMES.filter(cs=>cs.suffix).forEach(cs=>['boy','girl'].filter(ch=>costumeUsab
 const $=id=>document.getElementById(id);
 function showScreen(id){
   if(id!=='screen-title'){window.openingMovieDismissed=true;window.OpeningMovie?.cancel();}
+  if(id!=='screen-battle')window.KanjimonStoryBattle?.cancel();
   sceneImages.cancel();
   if(id!=='screen-title'){
     const ownedTitle=bgmOpeningTitleActive&&(bgmWanted==='opening'||(bgmOpeningFinished&&bgmWanted==='hero'));
@@ -12996,6 +13069,7 @@ function showScreen(id){
   }
 }
 function updateTitle(){
+  updateNewGamePlusTitle();
   $('titleCount').innerHTML='ゲットした かんじもん<br><span class="big">'+caught.size+'／'+K.length+'</span>';
   // けんきゅうじょボタン：ステージ2クリアで出現（未開放は非表示）
   const labBtn=$('labBtn');
@@ -13008,7 +13082,9 @@ function updateTitle(){
   }
   // 難易度ピル
   $('diffEasy').classList.toggle('on',difficulty==='easy');
-  $('diffHard').classList.toggle('on',difficulty==='hard');
+  $('diffNormal').classList.toggle('on',difficulty==='normal');
+  $('diffWriting').classList.toggle('on',difficulty==='writing');
+  $('writingAvailabilityNote').textContent='むずかしい：ぶんを よんで、かんじを かいて こうげき。';
   // 発注_OP3 作業2-2：AUTOえらびピル
   $('autoOn').classList.toggle('on',autoPick);
   $('autoOff').classList.toggle('on',!autoPick);
@@ -13030,8 +13106,11 @@ function updateTitle(){
   const arb=$('amamiEndingReviewBtn');if(arb)arb.style.display=amamiFinal.episode12.done&&amamiFinal.story?.phase==='done'?'':'none';
 }
 function setDifficulty(d){
-  difficulty=d; save(); updateTitle();
-  ensureAudio(); if(d==='hard') sfxWrong(); else sfxCorrect();
+  const next=normalizeDifficulty(d);
+  if(window.KanjimonStoryOutcome?.locked)return;
+  if(next==='writing'&&!window.KanjimonStoryBattle){showToast('かきとりを よみこみ中だよ');return;}
+  difficulty=next; stopNanoriVoice(); save(); updateTitle();
+  ensureAudio(); if(next==='normal') sfxWrong(); else sfxCorrect();
 }
 /* 発注_OP3 作業2-2：AUTOえらび切替（いつでも切替可能・切替は保存する）。カントウ開放前にオフにするのも自由 */
 function setAutoPick(v){
@@ -13222,8 +13301,32 @@ const YEN_SCHOOL_PARTIAL_PER_GRADE=20;   // 学校のテスト まちがいあ�
 const YEN_KAKITORI_PER_GRADE=20;         // かきとりテスト 1字せいかい
 const YEN_KAKITORI_BONUS_PER_GRADE=100;  // かきとり 5問ぜんぶ正解ボーナス
 const OMAKE_RATE=0.1;              // 買い物の計算クイズ正解＝代金の1わりが もどる
-function battleYen(isBoss){ return zoneGrade(curStage||1)*(isBoss?YEN_BOSS_PER_GRADE:YEN_WIN_PER_GRADE); }
+const YEN_WIN_BASE=20;
+const YEN_BOSS_BASE=60;
+function battleYen(isBoss,idx=enemyIdx){
+  if(isBoss) return YEN_BOSS_BASE;
+  const char=K[idx]?.c;
+  return YEN_WIN_BASE*(char==='金'?3:['銀','銅','円'].includes(char)?2:1);
+}
+function enemyRewardMultiplier(level){
+  if(!Number.isFinite(level)||level<1) return 1;
+  return 12**(Math.floor(Math.min(level,59)/10)/5);
+}
+function battleRewardLevel(){
+  return (isJukugoBoss||isTwinBoss)?capOfZone(curStage):enemyLevelFor(enemyIdx,enemyIsBoss);
+}
 function townYen(perGrade){ return progressGrade()*perGrade; }
+function playRewardYen(base,mode=difficulty){
+  const amount=Number(base);
+  if(!Number.isFinite(amount)||amount<0) return 0;
+  const normalized=normalizeDifficulty(mode);
+  return Math.floor(amount*(normalized==='writing'?3:normalized==='normal'?1.5:1));
+}
+function grantPlayReward(base,mode=difficulty){
+  const reward=playRewardYen(base,mode);
+  coins+=reward;
+  return reward;
+}
 /* ---- ねだん（実際に売っている値段の良心的安め）---- */
 const PRICE_GENKIDAMA=150;    // げんきだま＝コンビニのおにぎり1個ぶん
 const PRICE_FUE=500;          // ヨミのふえ＝おもちゃの笛ぶん
@@ -13529,6 +13632,7 @@ function launchJukugoBossBattle(zone,gateShown=false){
 /* 2026-09-19本人指定：ボスのHPは味方に依存しない。 */
 function jukugoBossHp(){return 10;}
 function spawnJukugoBossEnemy(){
+  battleRewardDifficulty=normalizeDifficulty(difficulty);
   const seq=++spawnSeq;
   playEncounterSe(seq);
   const jw=jukugoBossWordObj;
@@ -13556,6 +13660,7 @@ function spawnJukugoBossEnemy(){
   phase='select';
   renderParty();
   answering=true; setMsg(''); hideBattleHakase(); $('bOptions').innerHTML=''; updateBattleHud();
+  if(tryStartWritingBattle())return;
   setTimeout(()=>{ if(seq!==spawnSeq) return; $('app').classList.add('shake'); setTimeout(()=>$('app').classList.remove('shake'),500); }, BOSS_ENTRY_MS-150);
   setTimeout(()=>{
     if(seq!==spawnSeq) return;
@@ -13794,6 +13899,7 @@ function launchTwinBossBattle(zone,gateShown=false){
   spawnTwinBossEnemy();
 }
 function spawnTwinBossEnemy(){
+  battleRewardDifficulty=normalizeDifficulty(difficulty);
   const seq=++spawnSeq;
   playEncounterSe(seq);
   enemyType='ふつう';
@@ -13823,6 +13929,7 @@ function spawnTwinBossEnemy(){
   phase='select';
   renderParty();
   answering=true; setMsg(''); hideBattleHakase(); $('bOptions').innerHTML=''; updateBattleHud();
+  if(tryStartWritingBattle())return;
   setTimeout(()=>{ if(seq!==spawnSeq) return; $('app').classList.add('shake'); setTimeout(()=>$('app').classList.remove('shake'),500); }, BOSS_ENTRY_MS-150);
   setTimeout(()=>{
     if(seq!==spawnSeq) return;
@@ -14177,7 +14284,9 @@ function startStage(sn){
   $('affHelp').style.display = battleMode==='party'?'':'none';
   spawnEnemy();
 }
-function exitBattle(){ if(evoLock) return;
+function exitBattle(){ if(evoLock||window.KanjimonStoryOutcome?.locked||window.KanjimonStoryBattle?.session?.committed) return;
+  if(difficulty==='writing'&&battleSource==='quick'){writingState.quick=null;save();}
+  window.KanjimonStoryBattle?.cancel();
   if(window.AmamiLate?.battle){AmamiLate.abort();return;}
   if(amamiEpisodeOneBattle){amamiEpisodeOneAbortBattle();return;}
   if(iceDungeonBattle){iceDungeonAbortTrial();return;}
@@ -14461,6 +14570,7 @@ function cheerParty(idx,expr,msec){
 
 let spawnSeq=0;   // 登場演出中に「おわる」→別ステージ開始した際、古いタイマーが新しい敵のUIを壊さないためのガード
 function spawnEnemy(){
+  battleRewardDifficulty=normalizeDifficulty(difficulty);
   // 弾3-11§4-1：連戦中のガード。Lv9頭打ちでレベルアップ回復が止まり、連戦中に全員ヘトヘトが起こりうるため、
   //   次の敵を出す直前にも確認する（バトル開始前ガードとは別・こちらは既に始まっているバトルの継続時点）
   if(battleMode==='party' && !allPartyUsable()){ sendHomeAllTired(); return; }
@@ -14547,6 +14657,7 @@ function spawnEnemy(){
   $('bOptions').innerHTML='';
   updateBattleHud();
 
+  if(tryStartWritingBattle())return;
   const enterMs=isBoss?BOSS_ENTRY_MS:ENTRY_MS;
   if(isBoss){   // ボスの着地で画面を短く揺らす（既存の .shake を流用）
     setTimeout(()=>{ if(seq!==spawnSeq) return; $('app').classList.add('shake'); setTimeout(()=>$('app').classList.remove('shake'),500); }, enterMs-150);
@@ -14554,7 +14665,7 @@ function spawnEnemy(){
   setTimeout(()=>{
     if(seq!==spawnSeq) return;             // 古い登場タイマーは無効
     wrap.classList.remove('entering');     // 到着 → efloat 浮遊を再開
-    // 着地の鳴き声：色違いはALTよみで必ず名乗る／通常は難易度準拠（かんたん=名乗る・むずかしい=未ゲットは？？？）
+    // かんたんは読みを名乗る。色違いは別読みを使い、他の難易度は名乗らない。
     if(enemyShiny) showCryBubble(idx,isBoss,true,enemyAlt);
     else           showCryBubble(idx,isBoss);
     // 色違い初遭遇の記録
@@ -14590,6 +14701,7 @@ function spawnEnemy(){
 }
 /* 第16弾：ふくしゅうのらんにゅうの敵出現（spawnEnemyとほぼ同じだが、メッセージが異なる） */
 function spawnReviewIntrudeEnemy(){
+  battleRewardDifficulty=normalizeDifficulty(difficulty);
   const seq=++spawnSeq;
   playEncounterSe(seq);
   const idx=queue[enemyPos]; enemyIdx=idx;
@@ -14630,6 +14742,7 @@ function spawnReviewIntrudeEnemy(){
   $('bOptions').innerHTML='';
   updateBattleHud();
 
+  if(tryStartWritingBattle())return;
   setTimeout(()=>{
     if(seq!==spawnSeq) return;
     wrap.classList.remove('entering');
@@ -14756,7 +14869,7 @@ function onCorrectSimple(btn){
       setEnemyFace('heart');   // 手直し(表情システム弾)§3：からだゲット＝heart
       if(enemyShiny) shiny.add(idx);   // 第15弾§9：色違いは倒した時点で記録
       // §7-2：最初のからだゲット → 次のくさむらエンカウントを強制的にその子のたましいに
-      if(firstBodyIdx===null){ firstBodyIdx=idx; forceTamashiiNext=true; }
+      if(firstBodyIdx===null&&newGamePlus.cycle===0){ firstBodyIdx=idx; forceTamashiiNext=true; }
       // §7-1：最初のフィールドバトル勝利だけ はかせのセリフを添える
       const hakaseWinMsg = firstFieldWin
         ? 'みごと！ あばれが おさまって からだを ゲットよ。たましいは フィールドに いるわ' : null;
@@ -14989,7 +15102,8 @@ function enemyHpFor(idx,isBoss){
   return grade===1?3:grade===2?6:9;
 }
 function damageForMatch(selfLv,enemyLv,aff){
-  return DAMAGE_TABLE[levelRelOf(selfLv,enemyLv)][aff>=2?'batsugun':aff<1?'nigate':'futsuu'];
+  const base=DAMAGE_TABLE[levelRelOf(selfLv,enemyLv)][aff>=2?'batsugun':aff<1?'nigate':'futsuu'];
+  return base*KanjimonNewGamePlus.damageMultiplier(selfLv,enemyLv,newGamePlus.cycle);
 }
 function attackDamageFor(attackerIdx,defenderIdx,defenderIsBoss){
   return damageForMatch(attackerIdx!=null?levelOf(attackerIdx):1,enemyLevelFor(defenderIdx,defenderIsBoss),affinity(attackerIdx!=null?typeOf(attackerIdx):'ふつう',typeOf(defenderIdx)));
@@ -15091,6 +15205,7 @@ function autoPickBestIdx(){
 /* renderParty()の末尾から毎回呼ばれる。実際に何かするのは「AUTOオン・party戦・選択フェーズ・
    ボス戦以外・操作ブロック中でない」ときだけ。多重発火はautoPickArmedで防ぐ */
 function maybeAutoPickAttacker(){
+  if(difficulty==='writing')return;
   if(!autoPick || battleMode!=='party' || phase!=='select') return;
   if(answering || evoLock || itemUseMode) return;
   if(isJukugoBoss || isTwinBoss) return;
@@ -15502,8 +15617,8 @@ function playHitFx(targetEl, critical, forceKind){
 
 /* 弾3-12§4：バトル勝利のコイン加算（partyモード専用＝onEnemyDefeatedは常にparty経由）。
    加算してから勝利メッセージ末尾に添える小さな表示HTMLを返す（既存<span class="meaning">流儀） */
-function awardCoinsHtml(n){
-  coins+=n; save();
+function awardCoinsHtml(base){
+  const n=grantPlayReward(base*enemyRewardMultiplier(battleRewardLevel()),battleRewardDifficulty); save();
   if(isTownLike(fieldZone)) updateTownFieldInfo();   // 通常起こらないが念のため（表示鮮度）
   updateBattleCoins();   // 弾R-1§1-4：右上の常設コイン表示もこの場で即更新
   return '<span class="meaning">＋'+yenHtml(n)+'</span>';   // 手直し_お金(7/25)：円のコイン風バッジ表示
@@ -15551,7 +15666,7 @@ function onEnemyDefeated(att){
       setEnemyFace('heart');   // 手直し(表情システム弾)§3：からだゲット＝heart
       if(enemyShiny) shiny.add(enemyIdx);   // 第15弾§9：色違いは倒した時点で記録
       // §7-2：最初のからだゲット → 次のくさむらエンカウントを強制的にその子のたましいに
-      if(firstBodyIdx===null){ firstBodyIdx=enemyIdx; forceTamashiiNext=true; }
+      if(firstBodyIdx===null&&newGamePlus.cycle===0){ firstBodyIdx=enemyIdx; forceTamashiiNext=true; }
       // §7-1：最初のフィールドバトル勝利だけ はかせのセリフを添える
       const hakaseWinMsg = firstFieldWin
         ? 'みごと！ あばれが おさまって からだを ゲットよ。たましいは フィールドに いるわ' : null;
@@ -15691,7 +15806,7 @@ function evoBlink(fromIdx,toIdx,done){ evoBlinkRaw(K[fromIdx].c, K[toIdx].c, 200
 
 function planLevelUp(att){
   const oldLv=levelOf(att);
-  const cap=capOfZone(curStage);   // ★弾LV-1：いまのゾーンの学年上限
+  const cap=trainingCapOfZone(curStage);   // ★弾LV-1：いまのゾーンの学年上限
   if(oldLv>=cap){
     // 手直し(7/18)§3・案A：上限でも進化条件を満たしていれば進化のみ行う（Lvはcapのまま）
     // 手直し(7/18朝)：進化先がすでにてもちにいる場合は発火しない（party[pi]=toで同じ字が
@@ -15699,14 +15814,14 @@ function planLevelUp(att){
     const e=EVO[att];
     if(!(e && e.lv<=cap) || party.includes(e.to)) return null;   // 進化なし＝従来どおり何も起きない
     const to=e.to;
-    levels[to]=Math.max(levelOf(to), cap);      // §2の下げ防止を適用
+    levels[to]=Math.max(levelOf(to), oldLv);      // §2の下げ防止を適用
     genki[to]=genkiMaxOf(to); delete genki[att];
     const pi=party.indexOf(att);
     if(pi>=0) party[pi]=to;
     if(selectedAttacker===att) selectedAttacker=to;
     caught.add(to);
     save();
-    return {from:att,to:to,newLv:cap};
+    return {from:att,to:to,newLv:levels[to]};
   }
   const newLv=oldLv+1;
   levels[att]=newLv;
@@ -15720,7 +15835,7 @@ function planLevelUp(att){
     if(selectedAttacker===att) selectedAttacker=to;
     caught.add(to);                          // しんか先をずかんに登録
     save();
-    return {from:att,to:to,newLv:newLv};
+    return {from:att,to:to,newLv:levels[to]};
   }
   genki[att]=genkiMaxOf(att);   // 弾3-11§9：レベルアップで満タン回復
   save();
@@ -15758,6 +15873,7 @@ function maybeIntrude(){
   return true;
 }
 function spawnIntruder(idx){
+  battleRewardDifficulty=normalizeDifficulty(difficulty);
   resetHeroVictoryPose();   // 弾R-2：乱入も新しい敵の出現なので後ろ姿へ戻す
   const seq=++spawnSeq;
   enemyIdx=idx; const k=K[idx]; enemyType=typeOf(idx);
@@ -15782,6 +15898,7 @@ function spawnIntruder(idx){
   phase='select';
   renderParty();
   answering=true; setMsg(''); $('bOptions').innerHTML=''; updateBattleHud();
+  if(tryStartWritingBattle())return;
   setTimeout(()=>{
     if(seq!==spawnSeq) return;
     wrap.classList.remove('intruding');
@@ -16256,6 +16373,7 @@ function spawnTamashii(){
   $('enemyInfo').style.display='none';   // タイプ・HPバーは表示しない（バトルではないため）
   const row=$('partyRow'); row.style.display='none'; row.innerHTML='';   // てもち選択なし
   answering=true; setMsg(''); $('bOptions').innerHTML='';
+  if(tryStartWritingBattle())return;
   setTimeout(()=>{
     if(seq!==spawnSeq) return;           // 「おわる」等で退出済み→古いタイマーは何もしない
     wrap.classList.remove('entering');
@@ -16438,9 +16556,9 @@ function onTamashiiWrong(btn, correctIdx, seq, onDone){
   }, TAMASHII_MISS_MS);
 }
 
-function stageClear(){
+function stageClear(writingLabOpened=false){
   resetHeroVictoryPose();   // 弾R-2：バトル画面を離れたら勝利ポーズ状態を持ち越さない
-  const justOpenedLab = (curStage===2 && !cleared.has(2) && !labSeen);  // このクリアでけんきゅうじょが開放
+  const justOpenedLab = (curStage===2 && !labSeen && (!cleared.has(2)||writingLabOpened));  // このクリアでけんきゅうじょが開放
   cleared.add(curStage);
   let nextMsg='';
   if(curStage<STAGE_COUNT){
@@ -16857,7 +16975,7 @@ function labSuccess(ji,a,b){
       [a,b].forEach(i=>{   // 素材+1（直接・しんかなし）★弾LV-1：上限はその子のホームゾーンのcap
         const lv=levelOf(i);
         const si=CHAR_STAGE[K[i].c]; const zone=(si!=null)?(si+1):curStage;
-        if(lv<capOfZone(zone)) levels[i]=lv+1;
+        if(lv<trainingCapOfZone(zone)) levels[i]=lv+1;
       });
       snd('get'); setTimeout(()=>sfxLevelup(),300);
     }else{ snd('get'); }
@@ -25202,6 +25320,7 @@ function fieldViewCoords(){
 /* フィールド画面へ（タイトル「フィールドで あそぶ」） */
 /* 第6弾§2：前回位置の自動再開は廃止。タイトル→ワールドマップ→ゾーン選択→Sから開始 */
 function goField(){
+  if(window.KanjimonStoryOutcome?.resume())return;
   window.openingMovieDismissed=true;window.OpeningMovie?.cancel();
   if(bgmOpeningTitleActive)bgmPlay('title');
   // 第5.5弾§4：完全な新規プレイヤー（起動時セーブ無し）で女の子画像あり → ちずの前に選択ポップ
@@ -25890,6 +26009,7 @@ function renderField(){
     const boss=zoneBossIdx(fieldZone);
     bossInfoHtml = bossGot ? 'ボスを たおした！ ゲートが ひらいた' : 'ボス：『'+K[boss].c+'』を さがせ';
   }
+  if(difficulty==='writing'&&!bossGot)bossInfoHtml='ボスを さがして ゲートを ひらこう';
   $('fieldInfo').innerHTML='ゾーン'+fieldZone+'　<span class="hl">'+bossInfoHtml+'</span>';
   }
   const wrap=$('fieldWrap');
@@ -31525,6 +31645,7 @@ function playBattleHakaseVoice(sndId){
    フィールドのhakase-talkと同じ構図だがバトル画面のレイアウトに合わせて常設の要素として置く（表示/非表示で切替）。
    タップ先送りは持たない＝バトルメッセージと同時に表示されたまま選択肢を選べる（従来のsetMsg併記と同じ体験）。 */
 function showBattleHakase(msg,sndId){
+  if(difficulty==='writing'&&window.KanjimonStoryBattle?.session)return;
   const box=$('battleHakase'); if(!box) return;
   box.innerHTML='';
   const face=document.createElement('div'); face.className='battle-hakase-face'+(hakaseFaceImgOK?' has-img':'');
@@ -33026,7 +33147,7 @@ function iceDungeonCamera(walking=false){
     const desired=base*(iceDungeon.floor===4?ICE_KING_LAYOUT.cameraZoom*1.6:2.35);
     scale=Math.min(desired,(vw-28)/(bounds.right-bounds.left),(bottom-22)/(bounds.bottom-bounds.top));
     x=(vw-(bounds.left+bounds.right)*scale)/2;y=bottom-bounds.bottom*scale;
-    x=Math.max(vw-1024*scale,Math.min(0,x));y=Math.max(vh-2048*scale,Math.min(0,y));
+    if(difficulty!=='writing'){x=Math.max(vw-1024*scale,Math.min(0,x));y=Math.max(vh-2048*scale,Math.min(0,y));}
   }
   const animate=!walking&&w.dataset.view===key&&w.dataset.cameraFloor===String(iceDungeon.floor);
   w.style.transition=animate?'':'none';w.style.transform=`translate(${x}px,${y}px) scale(${scale})`;
@@ -33347,7 +33468,7 @@ function iceDungeonSyncHp(){
   if(!iceDungeonBattle||!$('enemyWrap').classList.contains('icd-combat'))return;
   let h=$('icdEnemyHp');if(!h){h=document.createElement('div');h.id='icdEnemyHp';$('enemyWrap').appendChild(h);}
   h.style.whiteSpace='pre-line';h.textContent=iceDungeonBattle.floor===4?'★'.repeat(twinHp.isshin)+'\n'+'★'.repeat(twinHp.doutai):'★'.repeat(enemyHp);
-  const prog=$('bProgress');if(prog)prog.textContent=iceDungeonBattle.floor===4?'精神 ・ 統一':(iceDungeonBattle.n+1)+'／3';
+  const prog=$('bProgress');if(prog)prog.textContent=iceDungeonBattle.floor===4?(difficulty==='writing'?'せいしん ・ とういつ':'精神 ・ 統一'):(iceDungeonBattle.n+1)+'／3';
 }
 function iceDungeonRestoreEnemy(){
   const wrap=$('enemyWrap');if(!wrap||!wrap.classList.contains('icd-combat'))return;
@@ -33364,13 +33485,13 @@ async function iceDungeonWin(att){
   const first=b.floor===4?!iceDungeon.bossWon:!iceDungeon.won.includes(b.key);
   if(first){
     if(b.floor===4){iceDungeon.bossWon=true;eventBossDone.add(83);}else iceDungeon.won.push(b.key);
-    words.forEach(w=>jukugo.add(w));awardCoinsHtml(battleYen(b.floor===4));
+    words.forEach(w=>jukugo.add(w));b.rewardHtml=awardCoinsHtml(battleYen(b.floor===4));
     const evo=planLevelUp(att);if(evo&&evo.to){ // 既存の進化を次の画面へ持ち越さず完了させる。
       await new Promise(resolve=>playEvolution(evo.from,evo.to,resolve));
     }else if(evo)sfxLevelup();save();
   }
   if(iceDungeonBattle!==b)return;
-  const seq=iceDungeonSeq;setMsg('『'+words.join('』『')+'』を たおした！');snd('get');
+  const seq=iceDungeonSeq;setMsg('『'+words.join('』『')+'』を たおした！'+(b.rewardHtml||''));snd('get');
   if(!await iceDungeonWait(650,seq))return;
   $('enemyWrap').classList.remove('entering','defeated');
   const p={...b.pos},dest=b.floor===4?{x:8,y:p.y}:iceDungeonEnemyPos(b.floor,b.n,true),el=$('enemyWrap'),start=performance.now();
@@ -33431,6 +33552,7 @@ function zoneDescOf(zone){ return isTownLike(zone) ? (PSEUDO_DEFS[zone].desc||''
 /* カードの2行目＝そこで出る漢字。手書きせず STAGE_DEFS[].chars から作るので、
    漢字の割り当てを変えても説明が古くならない（＝食い違いが起きない）。 */
 function zoneKanjiHintOf(zone){
+  if(difficulty==='writing')return 'ことばを よんで、かんじを かこう。';
   if(isTownLike(zone)) return '';
   const cs=[...((STAGE_DEFS[zone-1]||{}).chars||'')];
   if(!cs.length) return '';
@@ -33935,7 +34057,7 @@ function beginSchoolQuestions(seq){
     return;
   }
   schoolTestState={seq:seq,phase:'question',questions:qs,pos:0,answerCorrect:0,answered:false,slideLocked:false,
-    marks:Array(10).fill(null),lastChoice:null,lastChoiceCorrect:false,scoreAnswered:false,scoreRevealDone:false,rewarded:false};
+    marks:Array(10).fill(null),lastChoice:null,lastChoiceCorrect:false,scoreAnswered:false,scoreRevealDone:false,rewarded:false,rewardDifficulty:normalizeDifficulty(difficulty)};
   $('schoolTestOverlay').classList.add('show');
   renderSchoolQuestion();
 }
@@ -34055,9 +34177,8 @@ function finishSchoolTest(seq){
   const s=schoolTestState;
   if(!s||seq!==schoolTestSeq||s.seq!==seq||s.phase!=='score'||!s.scoreAnswered)return;
   s.phase='result';
-  const reward=schoolRewardOf(s.answerCorrect,true);
-  if(!s.rewarded){s.rewarded=true;coins+=reward;save();updateTownFieldInfo();}
-  renderSchoolResult(reward);
+  if(!s.rewarded){s.rewarded=true;s.reward=grantPlayReward(schoolRewardOf(s.answerCorrect,true),s.rewardDifficulty);save();updateTownFieldInfo();}
+  renderSchoolResult(s.reward);
 }
 function renderSchoolResult(reward){
   const s=schoolTestState;if(!s||s.phase!=='result')return;
@@ -34620,7 +34741,7 @@ function startKakitoriTest(){
   kakitoriSeq++;
   const targets=ktBuildTestTargets(pool);
   kakitoriState={seq:kakitoriSeq, phase:'testQuestion', targets:targets, qpos:0, correctCount:0, coinsGained:0,
-    pool:pool, attempt:{strokes:[],drawing:false}, submitting:false};
+    pool:pool, attempt:{strokes:[],drawing:false}, submitting:false,rewardDifficulty:normalizeDifficulty(difficulty),bonusGained:0};
   $('kakitoriOverlay').classList.add('show');
   renderKtTestQuestion();
 }
@@ -34709,7 +34830,7 @@ function kttSubmit(){
     kakitoriTotalCorrect++;
     let coinText;
     // 手直し_お金(7/25)：1字せいかい＝学年×20円（1日1回まで＝日次制限はそのまま）
-    if(!ktDailyClaimed(targetIdx)){ const g=townYen(YEN_KAKITORI_PER_GRADE); ktDailyClaim(targetIdx); coins+=g; s.coinsGained+=g; coinText=' ＋'+yenHtml(g)+'！'; }
+    if(!ktDailyClaimed(targetIdx)){ ktDailyClaim(targetIdx); const g=grantPlayReward(townYen(YEN_KAKITORI_PER_GRADE),s.rewardDifficulty); s.coinsGained+=g; coinText=' ＋'+yenHtml(g)+'！'; }
     else coinText=' （きょうは れんしゅう あつかい・おかねなし）';
     save(); updateTownFieldInfo();
     ktSetMsg('せいかい！'+coinText);
@@ -34736,7 +34857,7 @@ function kttAdvance(){
   const s=kakitoriState; if(!s||s.phase!=='testQuestion') return;
   s.qpos++;
   if(s.qpos>=s.targets.length){
-    if(s.correctCount===s.targets.length){ const b=townYen(YEN_KAKITORI_BONUS_PER_GRADE); s.coinsGained+=b; coins+=b; save(); updateTownFieldInfo(); }   // 5問全問正解ボーナス＝学年×100円
+    if(s.correctCount===s.targets.length){ const b=grantPlayReward(townYen(YEN_KAKITORI_BONUS_PER_GRADE),s.rewardDifficulty); s.bonusGained=b; s.coinsGained+=b; save(); updateTownFieldInfo(); }   // 5問全問正解ボーナス＝学年×100円
     s.phase='testResult';
     renderKtTestResult();
     return;
@@ -34750,7 +34871,7 @@ function renderKtTestResult(){
   const perfect=s.correctCount===s.targets.length;
   let html='<div class="kt-done-emojis"><span class="confetti">🎉</span><span class="confetti" style="animation-delay:.3s">✨</span></div>'+
     '<div class="kt-done-msg">'+s.correctCount+'／'+s.targets.length+'もん せいかい！</div>'+
-    '<div class="kt-test-hint">'+yenHtml(s.coinsGained)+' ゲット'+(perfect?'（ぜんもん せいかい ボーナス＋'+yenHtml(townYen(YEN_KAKITORI_BONUS_PER_GRADE))+' こみ）':'')+'</div>'+
+    '<div class="kt-test-hint">'+yenHtml(s.coinsGained)+' ゲット'+(perfect?'（ぜんもん せいかい ボーナス＋'+yenHtml(s.bonusGained)+' こみ）':'')+'</div>'+
     '<div class="kt-actions">'+
       '<button class="btn btn-primary" onclick="startKakitoriTest()">もういちど</button>'+
       '<button class="btn btn-ghost" onclick="backToKakitoriGrid()">じを えらぶ がめんへ</button>'+
@@ -34900,7 +35021,7 @@ function renderClockSelect(){
 }
 function startClockHelp(mode){
   const rate=mode==='easy'?ODACHIN_EASY:(mode==='normal'?ODACHIN_NORMAL:ODACHIN_HARD);
-  otetsudaiState={kind:'clock',mode,rate,q:0,correct:0,options:[],answer:0,asked:new Set(),seq:++otetsudaiSeq};
+  otetsudaiState={kind:'clock',mode,rate,rewardDifficulty:normalizeDifficulty(difficulty),q:0,correct:0,options:[],answer:0,asked:new Set(),seq:++otetsudaiSeq};
   nextClockQuestion();
 }
 function otClockSvg(h,min){
@@ -34934,7 +35055,7 @@ function nextClockQuestion(){
 }
 function clockAnswer(i){ const st=otetsudaiState; if(!st||st.kind!=='clock') return; if(i===st.answer){ st.correct++; sfxCorrect(); }else sfxWrong(); st.q++; nextClockQuestion(); }
 function startMeatHelp(){
-  otetsudaiState={kind:'meat',rate:ODACHIN_NORMAL,q:0,correct:0,options:[],answer:0,seq:++otetsudaiSeq};
+  otetsudaiState={kind:'meat',rate:ODACHIN_NORMAL,rewardDifficulty:normalizeDifficulty(difficulty),q:0,correct:0,options:[],answer:0,seq:++otetsudaiSeq};
   nextMeatQuestion();
 }
 function meatSceneHtml(face){
@@ -34973,7 +35094,7 @@ function yomiPoolOpen(){
 }
 function startYomiateHelp(){
   const seq=++otetsudaiSeq;
-  otetsudaiState={kind:'yomi',correct:0,asked:0,pool:yomiPoolOpen(),seq,endsAt:Date.now()+YOMIATE_SEC*1000,options:[],answer:0,correctSet:new Set()};
+  otetsudaiState={kind:'yomi',rewardDifficulty:normalizeDifficulty(difficulty),correct:0,asked:0,pool:yomiPoolOpen(),seq,endsAt:Date.now()+YOMIATE_SEC*1000,options:[],answer:0,correctSet:new Set()};
   nextYomiQuestion(); otYomiTick(seq);
 }
 function otYomiTick(seq){
@@ -35004,14 +35125,16 @@ function otetsudaiQuit(){
   finishOtetsudai(st.kind==='clock'?'とけいやさん':'にくやさん',st.correct,st.rate,false);
 }
 function finishOtetsudai(title,correct,rate,canPerfect,extra){
+  const st=otetsudaiState;if(!st||st.rewarded)return;
+  st.rewarded=true;
   otClearTimer();
   const perfect=canPerfect && correct>=OTETSUDAI_QCOUNT;
   const g=progressGrade();   // 手直し_お金(7/25)：おだちんも「学年×○円」（町は進行度学年で計算）
   const bonus=perfect?ODACHIN_PERFECT*g:0;
-  const earn=correct*rate*g+bonus;
-  coins+=earn; save(); updateTownFieldInfo(); $('otetsudaiCoins').innerHTML=yenHtml(coins);
+  const earn=grantPlayReward(correct*rate*g+bonus,st.rewardDifficulty);
+  save(); updateTownFieldInfo(); $('otetsudaiCoins').innerHTML=yenHtml(coins);
   let html=(title==='にくやさん'?meatSceneHtml(perfect?'happy':'normal'):'')+'<div class="shop-msg">'+title+'の おてつだい おわり！<br>'+correct+'もん せいかい → おだちん '+yenHtml(earn)+'</div>';
-  if(perfect) html+='<div class="shop-msg">パーフェクト！ ボーナス '+yenHtml(ODACHIN_PERFECT*g)+'</div>';
+  if(perfect) html+='<div class="shop-msg">パーフェクト！ ボーナス '+yenHtml(playRewardYen(bonus,st.rewardDifficulty))+'</div>';
   if(extra) html+='<div class="shop-msg">'+extra+'</div>';
   html+=otetsudaiOrigin==='mall'
     ? '<button class="btn btn-primary" onclick="closeOtetsudai()">とじる</button>'
@@ -35292,11 +35415,12 @@ function walkAmamiEncounter(episode,word,label,done){
   const words=episode===1?AMAMI_EP1_WORDS:episode===2?AMAMI_EP2_WORDS:episode===3?AMAMI_EP3_WORDS:episode===4?AMAMI_EP4_WORDS:AMAMI_LATE_WORDS[episode];
   AmamiWalk.open({episode,word,index:words.indexOf(word),label,onArrive:done,onQuit:quitAmamiWalk});
 }
-function walkAmamiExit(episode,done){AmamiWalk.open({episode,exit:true,label:'ぜんぶ 読めた！ 出口へ すすもう',onArrive:done,onQuit:quitAmamiWalk});}
+function walkAmamiExit(episode,done){AmamiWalk.open({episode,exit:true,label:difficulty==='writing'?'ぜんぶ かけた！ 出口へ すすもう':'ぜんぶ 読めた！ 出口へ すすもう',onArrive:done,onQuit:quitAmamiWalk});}
 function quitAmamiWalk(){
   destroyAmamiEpisodeOneView();destroyAmamiEpisodeTwoView();destroyAmamiEpisodeThreeView();destroyAmamiEpisodeFourView();AmamiLate.abort();
 }
 function startAmamiContinuation(){
+  if(window.KanjimonStoryOutcome?.resume())return;
   if(sceneImages.gate(102,startAmamiContinuation))return;
   if(!amamiArrivalSeen){startAmamiArrival();return;}
   if(!amamiFinal.episode1Done){startAmamiEpisodeOne();return;}
@@ -35852,7 +35976,7 @@ function openTestSettings(){
   const z=(typeof cur.unlocked==='number')?Math.min(STAGE_COUNT,Math.max(1,cur.unlocked|0)):1;
   $('ts-zone').value=z; $('ts-zone-val').textContent=z;
   $('ts-coins').value=(typeof cur.coins==='number')?(cur.coins|0):200;
-  tsDifficulty=(cur.difficulty==='hard')?'hard':'easy';
+  tsDifficulty=normalizeDifficulty(cur.difficulty);
   setTsDiff(tsDifficulty);
   // ts-level は開くたび既定値3に戻す（前回値は引き継がない＝テスト用途）
   $('ts-level').value=3; $('ts-level-val').textContent=3;
@@ -35865,9 +35989,10 @@ function setTestZone(z){                 // 学年ボタン用：スライダー
   $('ts-zone').value=z; $('ts-zone-val').textContent=z;
 }
 function setTsDiff(d){                   // 既存 setDifficulty と同じ .on 作法（updateTitle は経由しない）
-  tsDifficulty=(d==='hard')?'hard':'easy';
+  tsDifficulty=normalizeDifficulty(d);
+  $('ts-diff-writing').classList.toggle('on',tsDifficulty==='writing');
   $('ts-diff-easy').classList.toggle('on',tsDifficulty==='easy');
-  $('ts-diff-hard').classList.toggle('on',tsDifficulty==='hard');
+  $('ts-diff-normal').classList.toggle('on',tsDifficulty==='normal');
 }
 /* ★中核：makeZoneStartSave(zone) の戻り値に levels/coins/difficulty を上書き。
    party は caught 内の idx 配列（load() 8597行で caught 外は弾かれる）なので、
@@ -35879,7 +36004,9 @@ function makeTestSave(opts){
   base.caught.forEach(i=>{ levelsObj[i]=lv; });
   base.levels=levelsObj;
   base.coins=Math.max(0,opts.coins|0);
-  base.difficulty=(opts.difficulty==='hard')?'hard':'easy';
+  base.difficulty=normalizeDifficulty(opts.difficulty);
+  base.writingState={version:1,receipt:null,quick:null,tutorial:false};
+  base.difficultyVersion=2;
   return base;
 }
 function applyTestSettings(){
@@ -37510,6 +37637,52 @@ function shipScenePlayS7(){
 /* ==============================
    初期化
 ================================ */
+let ngplusController=null,ngplusAction=null,ngplusFocus=null;
+function getNewGamePlusController(){
+  if(!ngplusController)ngplusController=KanjimonNewGamePlus.createController(localStorage,SAVE_KEY,{
+    characterCount:K.length,gradeForZone:gradeOfZone,
+    startPosition:{zone:1,...zoneStartOf(1)},amamiInitial:newAmamiFinal(),iceInitial:newIceDungeon()
+  });
+  return ngplusController;
+}
+function updateNewGamePlusTitle(){
+  const info=KanjimonNewGamePlus.normalizeInfo(getSaveData(),gradeOfZone);
+  $('ngplusCycle').textContent=(info.cycle+1)+'しゅうめの たび';
+  $('ngplusStart').hidden=!KanjimonNewGamePlus.canStart({amamiFinal});
+  try{$('ngplusRestore').hidden=!getNewGamePlusController().hasPrevious();}catch(e){$('ngplusRestore').hidden=true;}
+}
+function openNewGamePlus(action){
+  ngplusAction=action;ngplusFocus=document.activeElement;
+  $('ngplusPrompt').textContent=action==='start'
+    ?'なかま・レベル・もちものを のこして、にほんばしから たびを はじめるよ。いまの たびは ひかえに のこすよ。'
+    :'まえの たびに もどるよ。いまの たびも べつの ひかえに のこすよ。';
+  $('ngplusConfirm').textContent=action==='start'?'つよくて はじめから':'まえの たびに もどる';
+  $('ngplusError').textContent='';$('ngplusConfirm').disabled=false;
+  $('ngplusDialog').showModal();$('ngplusCancel').focus();
+}
+function closeNewGamePlus(){
+  $('ngplusDialog').close();ngplusAction=null;
+  if(ngplusFocus?.isConnected)ngplusFocus.focus();
+}
+function confirmNewGamePlus(){
+  if(!ngplusAction||$('ngplusConfirm').disabled)return;
+  $('ngplusConfirm').disabled=true;
+  let result;
+  try{
+    const controller=getNewGamePlusController(),current=getSaveData();
+    result=ngplusAction==='start'?controller.start(current):controller.restore(current);
+  }catch(e){result={ok:false};}
+  if(result.ok){ngplusTransitionCommitted=true;location.reload();return;}
+  $('ngplusConfirm').disabled=false;
+  $('ngplusError').textContent=result.recoveryFailed
+    ?'きろくを かくにんできなかったよ。ひかえは のこっているので、この がめんのまま まってね。'
+    :'きろくを ほぞんできなかったよ。いまの たびは そのまま。もういちど ためすか、たびを つづけてね。';
+}
+function trainingCapOfZone(zone){
+  const grade=newGamePlus.cycle>0?Math.max(gradeOfZone(zone),newGamePlus.maxGrade):gradeOfZone(zone);
+  return LV_CAP_BY_GRADE[grade]||9;
+}
+
 load();
 ensurePartnerIchii();   // 第10弾§2：あいぼう「一」を保証（新規=てもち設定・旧セーブ=黙って補完）
 $('soundBtn').textContent=soundOn?'🔊':'🔇';
