@@ -129,6 +129,7 @@
     }
     isTamashii=false;tamashiiIdx=null;isJukugoBoss=false;jukugoBossWordObj=null;isTwinBoss=false;twinBossZoneCur=null;isEventBoss=false;isReviewIntruder=false;isIntruder=false;
     if(r.kind==='quick'||r.kind==='clear'){
+      if(sceneImages.gate(r.stage,()=>runRoute(r,reloaded)))return;
       setupBattleCommon(r.stage,true);queue=[...r.queue];enemyPos=r.pos;intrudeCount=r.intrudeCount;showScreen('screen-battle');
       if(r.kind==='clear')stageClear(!!r.lab);else if(r.intruder!=null)spawnIntruder(r.intruder);else spawnEnemy();return;
     }
