@@ -18,7 +18,7 @@
   function clearHint(){clearTimeout(hintTimer);hintTimer=null;pad?.setGuide([]);}
   function cancel(){clearHint();pad?.destroy();pad=null;session=null;el('play')?.remove();$('screen-battle').classList.remove('writing-battle');}
   function controls(){
-    const busy=!session||session.phase!=='writing'||!isTamashii&&!simple()&&selectedAttacker==null;
+    const busy=!session||session.phase!=='writing'||itemUseMode||!isTamashii&&!simple()&&selectedAttacker==null;
     for(const name of ['submit','clear','undo'])if(el(name))el(name).disabled=busy;
     pad?.setEnabled(!busy);
   }
@@ -37,10 +37,22 @@
         fc.textContent=K[idx].y.split('／')[0];fc.parentElement.classList.add('writing-same-answer');
       }
       b.disabled=s.phase!=='writing';
-      b.onclick=()=>{if(s.phase!=='writing')return;if(itemUseMode){useGenkidamaOn(idx);roster();return;}if(genkiOf(idx)<=GENKI_TIRED&&curStage<=AUTO_SWAP_MAX_ZONE){genkiRejectTap(idx);return;}selectedAttacker=idx;roster();controls();};
+      b.onclick=()=>{if(s.phase!=='writing')return;if(itemUseMode){recover(idx);return;}if(genkiOf(idx)<=GENKI_TIRED&&curStage<=AUTO_SWAP_MAX_ZONE){genkiRejectTap(idx);return;}selectedAttacker=idx;roster();controls();};
+    }
+    if(!isTamashii&&battleMode==='party'&&items.genkidama>0){
+      const button=document.createElement('button');button.className='genki-item-btn'+(itemUseMode?' arming':'');
+      button.textContent='🍙×'+items.genkidama;button.setAttribute('aria-label','げんきだま '+items.genkidama+'こ');button.disabled=s.phase!=='writing';
+      button.onclick=()=>{if(!active(s)||s.phase!=='writing')return;itemUseMode=!itemUseMode;el('status').textContent=itemUseMode?'かいふくする なかまを えらんでね。':'つづきを かこう。';roster();controls();};
+      $('partyRow').append(button);
     }
     updateBattleHud();
     if(el('power'))el('power').textContent=isTamashii?'1もじ かいて たましいを もどそう':simple()?'かんじを かいて なかまに しよう':selectedAttacker==null?'こうげきする なかまを えらぼう':'こうげき '+damage(selectedAttacker);
+  }
+  function recover(idx){
+    const s=session;if(!s||!active(s)||s.phase!=='writing'||!itemUseMode||items.genkidama<=0)return;
+    if(genkiOf(idx)>=genkiMaxOf(idx)){el('status').textContent='この なかまは げんき いっぱいだよ。';return;}
+    s.phase='recovering';itemUseMode=false;items.genkidama--;genki[idx]=genkiMaxOf(idx);roster();controls();
+    KanjimonStoryOutcome.checkpoint(()=>{if(!active(s))return;s.phase='writing';choose();roster();controls();el('status').textContent='げんきに なった！ つづきを かこう。';});
   }
   function choose(){
     if(isTamashii||simple())return;
@@ -73,7 +85,7 @@
     if(s.misses<6){const cursor=s.cursor,turn=s.turn;hintTimer=setTimeout(()=>{if(active(s)&&cursor===s.cursor&&turn===s.turn)clearHint();},(s.misses-2)*1000);}
   }
   async function submit(){
-    const s=session;if(!s||s.phase!=='writing'||pad.isDrawing()||!isTamashii&&!simple()&&selectedAttacker==null)return;
+    const s=session;if(!s||s.phase!=='writing'||itemUseMode||pad.isDrawing()||!isTamashii&&!simple()&&selectedAttacker==null)return;
     s.phase='evaluating';controls();const cursor=s.cursor,strokes=pad.getStrokes();
     await wait(0);if(!active(s)||s.cursor!==cursor)return;
     const result=engine.judge(strokes,[...s.question.word][cursor]);

@@ -4489,9 +4489,9 @@ body.ice-dungeon #fieldInfo{display:none}
 <script src="writing/story-transaction.js?v=story-20261016" defer></script>
 <script src="writing/story-questions.js?v=story-20261016" defer></script>
 <script src="writing/story-outcome.js?v=story-20261016" defer></script>
-<script src="writing/story-battle.js?v=story-20261016" defer></script>
+<script src="writing/story-battle.js?v=story-20261016b" defer></script>
 <link rel="stylesheet" href="writing/prototype.css?v=story-20261016">
-<link rel="stylesheet" href="writing/story.css?v=story-20261016">
+<link rel="stylesheet" href="writing/story.css?v=story-20261016b">
 
 
 
@@ -27181,6 +27181,12 @@ function pickAutoTarget(){
     if(!pos) continue;
     if(pos.x===fieldHx && pos.y===fieldHy) return {x:pos.x,y:pos.y,letter:li,idx};   // 現在地＝到着
     if(bfsNextStep(fieldHx,fieldHy,pos.x,pos.y)) return {x:pos.x,y:pos.y,letter:li,idx}; // 到達可能
+  }
+  // Grass-only encounters are optional; completing every mapped den opens the boss route.
+  if(ZONE_GRASS_ONLY_EXTRA[fieldZone] && isTwinBossZone(fieldZone) && !eventBossDone.has(fieldZone) && !cleared.has(fieldZone)){
+    const densDone=inds.every((idx,li)=>!findLetterPos(fieldZone,String.fromCharCode(65+li)) || caught.has(idx) || bodies.has(idx));
+    const bp=densDone && findBossMonPos(fieldZone);
+    if(bp && ((bp.x===fieldHx && bp.y===fieldHy) || bfsNextStep(fieldHx,fieldHy,bp.x,bp.y))) return {...bp,gateBossKind:'twin'};
   }
   // 弾3-6§5-2／弾3-8§3-3：もんばん方式ゾーンは、全すみか制覇後の目的地をボスマス（ゲート隣接）にする
   if(isMonban){
