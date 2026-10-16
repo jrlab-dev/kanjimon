@@ -3758,7 +3758,7 @@ body.ice-dungeon #fieldInfo{display:none}
       <div class="mascot">⚔️👹✨</div>
       <h1 id="titleLogo" style="user-select:none;-webkit-user-select:none" onclick="onTitleTap()"><span class="c1">か</span><span class="c2">ん</span><span class="c3">じ</span><span class="c4">モ</span><span class="c5">ン</span><br><span class="rpg">RPG</span></h1>
       <div class="title-art" aria-hidden="true"></div>
-      <div class="sub">よみかたを えらんで かんじもんを ゲットしよう！</div>
+      <div class="sub">よんで、かいて。かんじもんを なかまに しよう！</div>
     </div>
     <div class="get-count" id="titleCount"></div>
     <div class="ngplus-title">
@@ -3791,7 +3791,7 @@ body.ice-dungeon #fieldInfo{display:none}
       <button class="diff-pill" id="diffEasy" onclick="setDifficulty('easy')">かんたん<br><small>こえで なのる・おかね ×1</small></button>
       <button class="diff-pill" id="diffNormal" onclick="setDifficulty('normal')">ふつう<br><small>なのらない・おかね ×1.5</small></button>
       <button class="diff-pill" id="diffWriting" onclick="setDifficulty('writing')">むずかしい<br><small>かきとり・おかね ×3</small></button>
-      <p id="writingAvailabilityNote" style="font-size:.75rem;color:var(--sub)">かきとりの バトルは じゅんびちゅうだよ。</p>
+      <p id="writingAvailabilityNote" style="font-size:.75rem;color:var(--sub)">よみと 文字を つないで、かんじもんを なかまに しよう。</p>
     </div>
     <!-- 発注_OP3 作業2-2：AUTOえらび切替。難易度ピルと同じ場所・同じ見た目の作法（.diff-toggle/.diff-pill流用） -->
     <div class="diff-toggle">
@@ -13068,6 +13068,59 @@ function showScreen(id){
     else bgmPlay(fieldSongFor(fieldZone));
   }
 }
+const STORY_BOND_LINES=[
+  {
+    "key": "cause",
+    "text": "よまれなくなった かんじは、よみを わすれて あばれてしまうの。",
+    "snd": "bond_cause_20261017",
+    "ms": 4960
+  },
+  {
+    "key": "bond",
+    "text": "かんじモンは、よみかたの たましいと、文字の からだが そろうと、なかまに なるの。",
+    "snd": "bond_bond_20261017",
+    "ms": 7243
+  },
+  {
+    "key": "ways",
+    "text": "文字から よみを みつける。よみから 文字を かく。どちらも ふたつを つなぐ ちからだよ。",
+    "snd": "bond_ways_20261017",
+    "ms": 8182
+  },
+  {
+    "key": "read",
+    "text": "まずは、文字の よみかたを えらんで、おちつかせて あげよう！",
+    "snd": "bond_read_20261017",
+    "ms": 5206
+  },
+  {
+    "key": "soul",
+    "text": "そのあと、たましいに あう 文字を えらぶと、なかまに なるよ。",
+    "snd": "bond_soul_20261017",
+    "ms": 6176
+  },
+  {
+    "key": "write",
+    "text": "この よみかたの 文字を かいて、からだを つくって あげよう！",
+    "snd": "bond_write_20261017",
+    "ms": 5654
+  },
+  {
+    "key": "invite",
+    "text": "きみにしか たのめない たびが あるの。いっしょに きてくれる？",
+    "snd": "bond_invite_20261017",
+    "ms": 5419
+  }
+];
+function storyBondLines(){
+  return STORY_BOND_LINES.filter(line=>difficulty==='writing'
+    ? line.key!=='read'&&line.key!=='soul' : line.key!=='write');
+}
+function storyMethodHint(){
+  return difficulty==='writing'
+    ? 'よみかたから 文字を かいて、からだを つくって あげよう！'
+    : 'よみかたを えらんで、たましいと からだを つなごう！';
+}
 function updateTitle(){
   updateNewGamePlusTitle();
   $('titleCount').innerHTML='ゲットした かんじもん<br><span class="big">'+caught.size+'／'+K.length+'</span>';
@@ -13084,7 +13137,7 @@ function updateTitle(){
   $('diffEasy').classList.toggle('on',difficulty==='easy');
   $('diffNormal').classList.toggle('on',difficulty==='normal');
   $('diffWriting').classList.toggle('on',difficulty==='writing');
-  $('writingAvailabilityNote').textContent='むずかしい：ぶんを よんで、かんじを かいて こうげき。';
+  $('writingAvailabilityNote').textContent=storyMethodHint();
   // 発注_OP3 作業2-2：AUTOえらびピル
   $('autoOn').classList.toggle('on',autoPick);
   $('autoOff').classList.toggle('on',!autoPick);
@@ -31733,7 +31786,7 @@ function scheduleHakaseAdvance(msg, fseq, isLast, onFinish, sndId){
   const charMs=Math.max(msg.length*HAKASE_MSG_MS_PER_CHAR + HAKASE_MSG_MS_BASE, HAKASE_MSG_MS_MIN);
   setTimeout(()=>{ if(mseq!==hakaseMsgSeq) return; charDone=true; tryAdvance(); },charMs);
   // 2026-09-22 音声仕上げ：初クリア説明bh23は実音声11.2秒。末尾を切らず0.4秒待つ。
-  const recordedMaxMs=sndId==='bh23'?11600:HAKASE_MAX_MS;
+  const recordedMaxMs=sndId==='bh23'?11600:Math.max(HAKASE_MAX_MS,(STORY_BOND_LINES.find(line=>line.snd===sndId)?.ms||0)+800);
   setTimeout(()=>{ if(mseq!==hakaseMsgSeq) return; finish(); },recordedMaxMs);   // 手直し はかせみため§4：表示時間の上限（ゲート無視で強制finish）
   if(sndId){
     playBattleHakaseVoice(sndId);
@@ -31803,13 +31856,7 @@ function hakaseTalk(){
     'わたしは マナ。アンドロイドの はかせだよ！',
     'なんでも けんきゅうして、ぜんぶの はかせに なったの。いまは かんじに むちゅう！',
     'きみに あいぼうの 『一』を あげよう！ いっしょに ぼうけんだ！',
-    // 第12弾§4-1：はかせが一をくれる場面の直後に世界観の導入（きみの一に宿るたましいの話）
-    // 手直し はかせみため§4：長文を3分割（文の区切りで分けただけ）
-    // 2026-08-14：この3文のうち1文目と3文目が old な老人口調（〜んじゃ／〜おるじゃろ）のまま残っていたので女性口調に直した。
-    // 　オープニング（op1ManaText「…見えているのね」）と30秒で人格が入れ替わって見えていたための修正。意味は変えていない。
-    'よみと いう たましいを なくした かんじは、こわくて あばれてしまうの。',
-    'ただしい よみを よんであげると、たましいの きおくが もどって おちつく。',
-    'きみの 一には、ちゃんと たましいが やどっているでしょ？',
+    ...storyBondLines().filter(line=>line.key!=='invite').map(line=>line.text),
     'かんじもんを つかまえて ずかんを かんせい させよう！',
     'あるいて さがして、きになる こに ちかづいてみよう！'
   ];
@@ -31818,7 +31865,7 @@ function hakaseTalk(){
   const fseq=fieldSeq;
   heroLock=true;   // 手直し はかせトーク2：ゾーン紹介バナー側のheroLock=false（2.2秒後の自動解除）と競合しないよう再度ロック
   showHakaseTalkWindow(msg);          // 手直し はかせトーク2§3：専用の会話ウィンドウ（黒帯バナーではない）
-  scheduleHakaseAdvance(msg,fseq,isLast,()=>{if(musicGeneration===hakaseIntroMusicGeneration)hakaseFinishCurrent(fseq,isLast);});   // 旧会話の送りは中断後にテーマを取り直さない
+  scheduleHakaseAdvance(msg,fseq,isLast,()=>{if(musicGeneration===hakaseIntroMusicGeneration)hakaseFinishCurrent(fseq,isLast);},STORY_BOND_LINES.find(line=>line.text===msg)?.snd);   // 旧会話の送りは中断後にテーマを取り直さない
   hakaseIntroMusicMsgSeq=hakaseMsgSeq;   // 自分の送りが現在の会話を所有するときだけduckを解放する
   hakaseStep++;
 }
@@ -36150,7 +36197,7 @@ function op1PlaySnd(key){
   op1StopAllSnd();
   let el=op1SndCache[key];
   if(el===undefined){
-    try{ el=new Audio('audio/op/op1_'+key+(key==='s0'?'_easy':'_mana')+'.mp3'); }catch(e){ el=null; }
+    try{ el=new Audio(key.startsWith('bond_')?'audio/battle/'+key+'.mp3':'audio/op/op1_'+key+(key==='s0'?'_easy':'_mana')+'.mp3'); }catch(e){ el=null; }
     if(el){ el.onerror=()=>{ op1SndFailed[key]=true; }; }
     op1SndCache[key]=el;
   }
@@ -36418,13 +36465,20 @@ function op1PlayS4Success(){
   },1600+OP1_VOICE_PAUSE_MS);
   setTimeout(()=>{ if(seq!==op1Seq) return; op1PlayS5(); },900+OP1_VOICE_MS.s4b+OP1_VOICE_PAUSE_MS);
 }
-/* ---- S5：種明かしと旅立ち（確定文言）。→退室演出（弾OP-5）→そのままフィールドへ（ゾーン1開始） ---- */
+/* ---- S5：読みと書きの共通設定と、現在の遊び方を伝えて旅立つ ---- */
 function op1PlayS5(){
-  const seq=op1Seq;
+  const seq=op1Seq,lines=storyBondLines();
   $('op1CharWrap').classList.remove('op1-brush-hop');
-  $('op1ManaText').innerHTML=talkText('よまれなくなった漢字は、よみを わすれて あばれてしまうの。<br>きみにしか たのめない 旅が あるの。……いっしょに きてくれる？',1);
-  op1PlaySnd('s5');   // OP-1b§3：台詞表示と同時にマナの声を再生
-  setTimeout(()=>{ if(seq!==op1Seq) return; op1PlayExit(); },OP1_VOICE_MS.s5+OP1_VOICE_PAUSE_MS);
+  let i=0;
+  const next=()=>{
+    if(seq!==op1Seq||!op1Active)return;
+    if(i>=lines.length){op1PlayExit();return;}
+    const line=lines[i++];
+    $('op1ManaText').innerHTML=talkText(line.text,1);
+    op1PlaySnd(line.snd);
+    setTimeout(next,Math.max(line.ms+OP1_VOICE_PAUSE_MS,line.text.length*HAKASE_MSG_MS_PER_CHAR+HAKASE_MSG_MS_BASE));
+  };
+  next();
 }
 
 /* ---- 弾OP-5 作業2：カメラ引きと同時に「一」を中央大表示→机の半紙上の小表示へ縮小移動、
