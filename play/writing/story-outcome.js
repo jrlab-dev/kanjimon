@@ -23,7 +23,7 @@
     if(!ok&&(tx.pending||tx.external))showFailure();return ok;
   }
   function capture(idx){
-    const isNew=!caught.has(idx);caught.add(idx);bodies.delete(idx);separated.delete(idx);delete soulZone[idx];
+    const isNew=!caught.has(idx);prepareNewCompanion(idx);caught.add(idx);bodies.delete(idx);separated.delete(idx);delete soulZone[idx];
     if(firstBodyIdx===idx){firstBodyIdx=null;forceTamashiiNext=false;}
     if(isNew&&party.length<4)party.push(idx);
     return isNew;
@@ -31,7 +31,7 @@
   function grow(att,times){
     if(att==null)return null;
     let current=att,evolution=null;
-    for(let i=0;i<times;i++){const old=levelOf(current),r=planLevelUp(current);if(!r)break;if(r.to!=null){evolution??=r;current=r.to;levels[current]=Math.max(levelOf(current),old);}}
+    for(let i=0;i<times;i++){const old=levelOf(current),r=planLevelUp(current,{deferEvolution:!!evolution});if(!r)break;if(r.to!=null){evolution??=r;current=r.to;levels[current]=Math.max(levelOf(current),old);}}
     // Evolution is another direct acquisition, with the same disjoint-set invariant.
     caught.forEach(i=>{bodies.delete(i);separated.delete(i);delete soulZone[i];});
     return evolution;

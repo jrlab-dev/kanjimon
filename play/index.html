@@ -4513,7 +4513,7 @@ body.ice-dungeon #fieldInfo{display:none}
 <script src="writing/questions-all.js?v=story-20261016" defer></script>
 <script src="writing/story-transaction.js?v=story-20261016" defer></script>
 <script src="writing/story-questions.js?v=story-20261016" defer></script>
-<script src="writing/story-outcome.js?v=story-20261016" defer></script>
+<script src="writing/story-outcome.js?v=growth-20261018" defer></script>
 <script src="writing/story-battle.js?v=story-20261016b" defer></script>
 <link rel="stylesheet" href="writing/prototype.css?v=story-20261016">
 <link rel="stylesheet" href="writing/story.css?v=story-20261016b">
@@ -7112,24 +7112,24 @@ function affinity(attType,defType){
    しんか（系統）
 ================================ */
 const EVO_LIST=[
-  ['木','林',4],['林','森',7],
-  ['一','十',3],['十','百',5],['百','千',7],
-  ['小','大',5],
+  ['木','林',6],['林','森',8],
+  ['一','十',6],['十','百',8],['百','千',9],
+  ['小','大',7],
   // 第18弾§3-2：小2の3系統のみ追加（他156字は進化なし）
-  ['弱','強',5],['少','多',4],['細','太',4],
+  ['弱','強',9],['少','多',11],['細','太',11],
   // 弾3-6§3-2：3年の1系統のみ追加（他198字は進化なし）
-  ['軽','重',5],
+  ['軽','重',21],
   // 弾4-6§3-2：4年の2系統追加（他200字は進化なし）
-  ['欠','満',5],  // かける→みちる
-  ['冷','熱',5],  // つめたい→あつい
+  ['欠','満',31],  // かける→みちる
+  ['冷','熱',27],  // つめたい→あつい
   // 手直し(7/18)§1：学年またぎ解禁ルール（進化先が既習ならOK・検討_学年またぎ進化ペア.md§5）で4年に3系統追加
-  ['低','高',5],  // ひくい→たかい（4年→2年）
-  ['浅','深',5],  // あさい→ふかい（4年→3年）
-  ['敗','勝',5],  // まけ→かち（4年→3年）
+  ['低','高',31],  // ひくい→たかい（4年→2年）
+  ['浅','深',31],  // あさい→ふかい（4年→3年）
+  ['敗','勝',27],  // まけ→かち（4年→3年）
   // 弾5-6§5：5年の3系統（小5素材表_下書き.md§3・同学年内完結の対義語ペア）
-  ['損','得',5],  // そこなう→える（損して得とれ）
-  ['減','増',5],  // へる→ふえる
-  ['仮','現',5]   // かり→あらわれる（仮の姿から現の姿へ＝RPGの変身・なまはげゾーン内）
+  ['損','得',49],  // そこなう→える（損して得とれ）
+  ['減','増',43],  // へる→ふえる
+  ['仮','現',43]   // かり→あらわれる（仮の姿から現の姿へ＝RPGの変身・なまはげゾーン内）
 ];
 const EVO={}; // fromIdx -> {lv, to}
 EVO_LIST.forEach(([from,to,lv])=>{ if(IDX[from]!=null&&IDX[to]!=null) EVO[IDX[from]]={lv:lv,to:IDX[to]}; });
@@ -11645,6 +11645,12 @@ function ensureCostumeForChar(){
 let hadSaveAtBoot=false;     // 起動時にセーブが存在したか（完全新規プレイヤー判定・セッション値）
 let heroSelectShownOnce=false; // 同一セッションで初回選択ポップを2回出さないための番人
 function levelOf(idx){ return levels[idx]||1; }
+// 初加入は敵の強さを引き継ぐ。再戦と魂の復帰では育成状態を変えない。
+function prepareNewCompanion(idx){
+  if(caught.has(idx)||separated.has(idx))return;
+  levels[idx]=Math.max(levelOf(idx),enemyLevelFor(idx,false));
+  genki[idx]=genkiMaxOf(idx);
+}
 function getSaveData(){
   return {
       caught:[...caught],bodies:[...bodies],unlocked:unlocked,cleared:[...cleared],
@@ -15779,11 +15785,11 @@ function onEnemyDefeated(att){
 function afterEnemyDefeatedProgress(att, seq){
   // 弾B2-1§6：経験値の難度連動。とどめを刺した時点のenemyMaxHp（9マス表の必要正解数）でレベルアップ回数を決める
   //   ＝HP1〜3=+1（従来どおり）／4〜6=+2／9=+3。planLevelUpの流儀（Lv9頭打ちガード・進化先てもち在籍ガード等）は
-  //   崩さず、そのまま複数回呼ぶだけにする。＋2以上でも進化演出は最大1回（2回目以降の進化はデータには反映するが再演出しない）
+  //   1勝の進化は最大1回。残りのレベルは育て、次の進化は次の勝利まで待つ。
   const upTimes = enemyMaxHp>=7 ? 3 : (enemyMaxHp>=4 ? 2 : 1);
   let cur=att, shownEvo=null, lastPlain=null;
   for(let i=0;i<upTimes;i++){
-    const r=planLevelUp(cur);
+    const r=planLevelUp(cur,{deferEvolution:!!shownEvo});
     if(!r) break;   // Lv9頭打ちで進化条件も満たさない＝これ以上は何も起きない（従来どおり）
     if(r.to){ if(!shownEvo) shownEvo=r; cur=r.to; lastPlain=null; }
     else{ lastPlain=r; }
@@ -15882,7 +15888,7 @@ function evoBlinkRaw(fromText,toText,total,done){
 }
 function evoBlink(fromIdx,toIdx,done){ evoBlinkRaw(K[fromIdx].c, K[toIdx].c, 2000, done); }
 
-function planLevelUp(att){
+function planLevelUp(att,opts){
   const oldLv=levelOf(att);
   const cap=trainingCapOfZone(curStage);   // ★弾LV-1：いまのゾーンの学年上限
   if(oldLv>=cap){
@@ -15890,7 +15896,7 @@ function planLevelUp(att){
     // 手直し(7/18朝)：進化先がすでにてもちにいる場合は発火しない（party[pi]=toで同じ字が
     // てもちに2体並ぶ破綻と、進化演出の繰り返し再生を防ぐガード。下の通常進化にも同じガード）
     const e=EVO[att];
-    if(!(e && e.lv<=cap) || party.includes(e.to)) return null;   // 進化なし＝従来どおり何も起きない
+    if(opts?.deferEvolution || !(e && e.lv<=cap) || party.includes(e.to)) return null;   // 進化なし＝従来どおり何も起きない
     const to=e.to;
     levels[to]=Math.max(levelOf(to), oldLv);      // §2の下げ防止を適用
     genki[to]=genkiMaxOf(to); delete genki[att];
@@ -15904,7 +15910,7 @@ function planLevelUp(att){
   const newLv=oldLv+1;
   levels[att]=newLv;
   const e=EVO[att];
-  if(e && newLv>=e.lv && !party.includes(e.to)){
+  if(!opts?.deferEvolution && e && newLv>=e.lv && !party.includes(e.to)){
     const to=e.to;
     levels[to]=Math.max(levelOf(to), newLv);   // Lv引き継ぎ（ただし育成済みの進化先は下げない・手直し7/18§2）
     genki[to]=genkiMaxOf(to); delete genki[att];   // 弾3-11§9：しんか時はげんき満タンで新しい字に引き継ぐ
@@ -16593,6 +16599,7 @@ function onTamashiiCorrect(btn, idx, seq, onDone){
       // 弾3-11§7：げんき魂分離からの復帰かどうかを、からだ削除の前に判定しておく
       const wasSeparated=separated.has(idx);
       // からだから削除・なかまに追加
+      prepareNewCompanion(idx);
       bodies.delete(idx);
       caught.add(idx); save();
       if(wasSeparated){ separated.delete(idx); delete soulZone[idx]; save(); }   // げんきはgenkiOfの遅延初期化で自動的に満タン
