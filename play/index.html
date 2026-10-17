@@ -745,6 +745,31 @@
   @media(max-width:374px){#itemsBody .shop-item{display:grid;grid-template-columns:28px minmax(0,1fr) auto}#itemsBody .shop-item-body{grid-column:2/4}#itemsBody .shop-item-price{grid-column:2}}
   .shop-none{font-size:.72rem;color:var(--sub);flex:0 0 auto}
   .ot-card{background:#fffbe6;border:3px solid var(--yellow);border-radius:14px;padding:10px;margin:8px 0}
+
+  #otetsudaiOverlay{padding:12px}
+  #otetsudaiOverlay .panel{max-width:480px;padding:20px 16px;max-height:calc(100dvh - 24px);overscroll-behavior:contain}
+  #otetsudaiOverlay .btn{min-height:44px;white-space:normal;overflow-wrap:anywhere}
+  #otetsudaiOverlay .ot-work-menu{min-height:76px}
+  #otetsudaiOverlay .ot-work-menu small{font-size:.82rem;line-height:1.5;margin-top:3px}
+  .ot-work-heading{font-weight:900;font-size:1.35rem;color:#34455a;margin:12px 0}
+  .ot-work-status{display:inline-block;background:#edf3ff;border-radius:20px;padding:6px 14px;font-weight:800;font-size:.9rem}
+  .ot-work-section{font-weight:900;color:#795124;margin:12px 0 8px}
+  .ot-work-context{font-size:.96rem;line-height:1.8;text-align:left;overflow-wrap:anywhere}
+  .ot-work-choices{display:grid;gap:8px;margin:12px 0}
+  #otetsudaiOverlay .ot-work-choice{background:#fff;border:2px solid #8da4ba;color:#24394b;box-shadow:0 3px 0 #d9e2ec;margin:0;padding:12px;font-size:1rem;line-height:1.55}
+  #otetsudaiOverlay .ot-work-choice:disabled{opacity:1;cursor:default}
+  #otetsudaiOverlay .ot-work-right{background:#e1f5e7;border-color:#278445;color:#124d27}
+  #otetsudaiOverlay .ot-work-right:before{content:'○ ';font-weight:900}
+  #otetsudaiOverlay .ot-work-wrong{background:#fff0e6;border-color:#b96330}
+  .ot-work-feedback{padding:14px;background:#edf6ff;border:2px solid #9abbd7;border-radius:14px;text-align:left;margin-top:12px;line-height:1.7}
+  #otetsudaiOverlay .ot-work-feedback p{font-size:.96rem;margin:8px 0 0;overflow-wrap:anywhere}
+  #otetsudaiOverlay .ot-work-note{font-size:.8rem;color:#506174;line-height:1.7;margin:14px 0}
+  .ot-work-facts>div{display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid #e6dba7;padding:3px 0;font-size:.88rem}
+  .ot-work-facts b{white-space:nowrap}
+  .ot-work-deadline{padding:8px 0;line-height:1.7}
+  .ot-work-context small{font-size:.78rem}
+  .ot-work-earned{font-weight:900;font-size:2rem;color:#8c5900}
+  #otetsudaiOverlay .ot-meat-scene{max-height:100px;margin:6px auto}
   .ot-clock{width:150px;height:150px;margin:8px auto;display:block}
   .ot-q{font-weight:900;color:var(--ink);font-size:1.05rem;line-height:1.5;margin:8px 0}
   .ot-meat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
@@ -35038,6 +35063,7 @@ function openOtetsudai(){
   if($('screen-field').classList.contains('active')){ stopAutoExplore(); autoPaused=true; }
 }
 function closeOtetsudai(){
+  if(otetsudaiState&&otetsudaiState.work&&!otetsudaiState.demo)finishOtWork(false);
   otetsudaiSeq++; otClearTimer(); otetsudaiState=null;
   $('otetsudaiOverlay').classList.remove('show');
   updateTownFieldInfo();
@@ -35060,22 +35086,10 @@ function renderOtetsudaiMenu(msg){
   $('otetsudaiCoins').innerHTML=yenHtml(coins);
   let html=otGuideHtml();
   if(msg) html+='<div class="shop-msg">'+msg+'</div>';
-  html+='<button class="shop-item" onclick="renderClockSelect()"><span class="shop-item-emoji">🕒</span><span class="shop-item-body"><b>とけいやさん</b><small>とけいの よみかたを こたえる</small></span><span class="shop-item-price">×1〜3</span></button>';
-  html+='<button class="shop-item" onclick="startMeatHelp()"><span class="shop-item-emoji">🥩</span><span class="shop-item-body"><b>にくやさん</b><small>グラムを みて にくを えらぶ</small></span><span class="shop-item-price">×2</span></button>';
+  html+='<button class="shop-item" onclick="renderClockSelect()"><span class="shop-item-emoji">🕒</span><span class="shop-item-body"><b>とけいやさん</b><small>とけい・じかん・はいたつの けいかく</small></span><span class="shop-item-price">5コース</span></button>';
+  html+='<button class="shop-item" onclick="startMeatHelp()"><span class="shop-item-emoji">🥩</span><span class="shop-item-body"><b>にくやさん</b><small>おもさ・りょうり・おかいもの</small></span><span class="shop-item-price">3コース</span></button>';
   html+='<button class="shop-item" onclick="startYomiateHelp()"><span class="shop-item-emoji">📚</span><span class="shop-item-body"><b>よみあて</b><small>30びょうで なんもん よめるかな</small></span><span class="shop-item-price">×1</span></button>';
   $('otetsudaiBody').innerHTML=html;
-}
-function renderClockSelect(){
-  $('otetsudaiBody').innerHTML='<div class="shop-msg">とけいやさんが とけいを ならべているよ。<br>「いま なんじか おしえて！」</div>'+ 
-    '<button class="shop-item" onclick="startClockHelp(\'easy\')"><span class="shop-item-emoji">🕐</span><span class="shop-item-body"><b>かんたん</b><small>ちょうどの じこく</small></span><span class="shop-item-price">×1</span></button>'+ 
-    '<button class="shop-item" onclick="startClockHelp(\'normal\')"><span class="shop-item-emoji">🕜</span><span class="shop-item-body"><b>ふつう</b><small>◯じ・◯じはん</small></span><span class="shop-item-price">×2</span></button>'+ 
-    '<button class="shop-item" onclick="startClockHelp(\'hard\')"><span class="shop-item-emoji">⏱️</span><span class="shop-item-body"><b>むずかしい</b><small>5ふん きざみ</small></span><span class="shop-item-price">×3</span></button>'+ 
-    '<button class="btn btn-ghost" onclick="renderOtetsudaiMenu()">もどる</button>';
-}
-function startClockHelp(mode){
-  const rate=mode==='easy'?ODACHIN_EASY:(mode==='normal'?ODACHIN_NORMAL:ODACHIN_HARD);
-  otetsudaiState={kind:'clock',mode,rate,rewardDifficulty:normalizeDifficulty(difficulty),q:0,correct:0,options:[],answer:0,asked:new Set(),seq:++otetsudaiSeq};
-  nextClockQuestion();
 }
 function otClockSvg(h,min){
   const hand=(deg,len,w,color)=>{ const r=(deg-90)*Math.PI/180; const x=75+Math.cos(r)*len, y=75+Math.sin(r)*len; return '<line x1="75" y1="75" x2="'+x.toFixed(1)+'" y2="'+y.toFixed(1)+'" stroke="'+color+'" stroke-width="'+w+'" stroke-linecap="round"/>'; };
@@ -35085,60 +35099,170 @@ function otClockSvg(h,min){
   s+=hand((h%12)*30+min*0.5,34,6,'#222')+hand(min*6,52,4,'#e03131')+'<circle cx="75" cy="75" r="5" fill="#222"/></svg>';
   return s;
 }
-function nextClockQuestion(){
-  const st=otetsudaiState; if(!st||st.kind!=='clock') return;
-  if(st.q>=OTETSUDAI_QCOUNT){ finishOtetsudai('とけいやさん',st.correct,st.rate,true); return; }
-  const mins=st.mode==='easy'?[0]:(st.mode==='normal'?[0,30]:[0,5,10,15,20,25,30,35,40,45,50,55]);
-  const remaining=[];
-  for(let h=1;h<=12;h++) mins.forEach(min=>{ if(!st.asked.has(h+':'+min)) remaining.push({h,min}); });
-  const {h,min}=remaining[Math.floor(Math.random()*remaining.length)];
-  st.asked.add(h+':'+min);
-  const answer=otClockLabel(h,min,st.mode);
-  const used=new Set([answer]), opts=[answer];
-  let guard=0;
-  while(opts.length<3 && guard++<100){
-    const hh=1+Math.floor(Math.random()*12), mm=mins[Math.floor(Math.random()*mins.length)], lab=otClockLabel(hh,mm,st.mode);
-    if(!used.has(lab)){ used.add(lab); opts.push(lab); }
-  }
-  otShuffle(opts); st.options=opts; st.answer=opts.indexOf(answer);
-  let html='<div class="shop-msg">とけい '+(st.q+1)+'／'+OTETSUDAI_QCOUNT+'</div>'+otClockSvg(h,min)+'<div class="ot-q">いま なんじ？</div><div class="shop-count-row">';
-  opts.forEach((v,i)=>{ html+='<button class="btn btn-yellow shop-count-btn" onclick="clockAnswer('+i+')">'+otEsc(v)+'</button>'; });
-  html+='</div><button class="btn btn-ghost" onclick="otetsudaiQuit()">やめる</button>';
-  $('otetsudaiBody').innerHTML=html;
-}
-function clockAnswer(i){ const st=otetsudaiState; if(!st||st.kind!=='clock') return; if(i===st.answer){ st.correct++; sfxCorrect(); }else sfxWrong(); st.q++; nextClockQuestion(); }
-function startMeatHelp(){
-  otetsudaiState={kind:'meat',rate:ODACHIN_NORMAL,rewardDifficulty:normalizeDifficulty(difficulty),q:0,correct:0,options:[],answer:0,seq:++otetsudaiSeq};
-  nextMeatQuestion();
-}
 function meatSceneHtml(face){
   if(!meatSceneOK) return '<div class="ot-chef-fallback">🧑‍🍳</div>';
   return '<div class="ot-meat-scene"><div class="ot-meat-person" id="otMeatPerson" style="background-image:url(\'images/nikuya-'+face+'.webp\')"></div></div>';
 }
 function setMeatFace(face){ const el=$('otMeatPerson'); if(el&&meatSceneOK) el.style.backgroundImage="url('images/nikuya-"+face+".webp')"; }
-function nextMeatQuestion(){
-  const st=otetsudaiState; if(!st||st.kind!=='meat') return;
-  if(st.q>=OTETSUDAI_QCOUNT){ finishOtetsudai('にくやさん',st.correct,st.rate,true, st.correct===OTETSUDAI_QCOUNT ? '1000グラムは 1キログラム と いうんじゃぞ' : ''); return; }
-  const meats=['ぶたにく','とりにく','ぎゅうにく'];
-  const weights=[]; while(weights.length<3){ const w=(1+Math.floor(Math.random()*9))*100; if(!weights.includes(w)) weights.push(w); }
-  const same=Math.random()<0.5;
-  let answer, order;
-  if(same){ answer=Math.floor(Math.random()*3); order=meats[Math.floor(Math.random()*meats.length)]+'を '+weights[answer]+'グラム ください'; }
-  else{ const wantHeavy=Math.random()<0.5; const target=wantHeavy?Math.max(...weights):Math.min(...weights); answer=weights.indexOf(target); order='いちばん '+(wantHeavy?'おもい':'かるい')+' にくを ください'; }
-  st.answer=answer; st.options=weights;
-  st.answering=false;
-  let html=meatSceneHtml('normal')+'<div class="shop-msg">にくやさんが いそがしそう。<br>おきゃくさんの ちゅうもんを とどけて あげよう！</div><div class="ot-card"><div class="ot-q">'+order+'</div></div><div class="shop-msg">グラム '+(st.q+1)+'／'+OTETSUDAI_QCOUNT+'</div><div class="ot-meat-row">';
-  weights.forEach((w,i)=>{ html+='<button class="btn btn-yellow ot-meat" onclick="meatAnswer('+i+')">🥩<br>'+w+'グラム</button>'; });
-  html+='</div><button class="btn btn-ghost" onclick="otetsudaiQuit()">やめる</button>';
-  $('otetsudaiBody').innerHTML=html;
+const OT_WORK_RATES={easy:10,normal:15,hard:20,beginner:20,middle:40,advanced:80};
+const OT_WORK_BONUS={easy:20,normal:20,hard:20,beginner:20,middle:50,advanced:100};
+function otTime(total){return Math.floor(total/60)+'じ'+(total%60?' '+otClockMinuteLabel(total%60):'');}
+function otWorkQuestion(kind,course,index,rng=Math.random){
+  const q=otWorkQuestionRaw(kind,course,index,rng);
+  const minutes=s=>s.replace(/(\d+)ふん/g,(_,n)=>Number(n)===0?'0ふん':otClockMinuteLabel(Number(n)));
+  ['prompt','context','explanation'].forEach(k=>q[k]=minutes(q[k]));q.options=q.options.map(minutes);return q;
 }
-function meatAnswer(i){
-  const st=otetsudaiState; if(!st||st.kind!=='meat'||st.answering) return;
-  st.answering=true; const correct=i===st.answer;
-  if(correct){ st.correct++; sfxCorrect(); setMeatFace('happy'); }else{ sfxWrong(); setMeatFace('oops'); }
-  st.q++; const seq=st.seq;
-  otetsudaiTimer=setTimeout(()=>{ if(seq!==otetsudaiSeq||otetsudaiState!==st) return; otetsudaiTimer=null; nextMeatQuestion(); },800);
+function otWorkQuestionRaw(kind,course,index,rng=Math.random){
+  const pick=a=>a[Math.floor(rng()*a.length)];
+  const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+  const numeric=(type,prompt,context,value,wrong,unit,explanation,meta,clock)=>{
+    const values=[...new Set([value,...wrong])].slice(0,3);
+    if(values.length!==3)throw Error('Question choices must be distinct');
+    shuffle(values);
+    return {type,prompt,context,options:values.map(v=>unit==='time'?otTime(v):v+unit),answer:values.indexOf(value),explanation,meta:{...meta,values,value},clock};
+  };
+  if(kind==='clock'&&['easy','normal','hard'].includes(course)){
+    const h=pick([1,2,3,4,5,6,7,8,9,10,11,12]),m=pick(course==='easy'?[0]:course==='normal'?[0,30]:[0,5,10,15,20,25,30,35,40,45,50,55]);
+    const value=h*60+m,wrong=[(h===12?1:h+1)*60+m,course==='easy'?(h<=2?h+2:h-2)*60+m:h*60+(course==='normal'?(m===0?30:0):(m+15)%60)];
+    const q=numeric('read','いま なんじ？','みじかい はりが「じ」、ながい はりが「ふん」。',value,wrong,'time','みじかい はりは '+h+' の'+(m?' つぎへ すすんでいるよ。':' ところ。')+' ながい はりは '+(m===0?'12':m/5)+'。'+(m===0?'ちょうど':m+'ふん')+'だね。',{h,m},{h,min:m});
+    q.options=q.meta.values.map(v=>otClockLabel(Math.floor(v/60),v%60,course));return q;
+  }
+  if(kind==='clock'&&course==='middle'){
+    const start=pick([8,9,10,13,14])*60+pick([35,40,45,50]),duration=pick([25,35,45,55]),end=start+duration;
+    const type=['after','elapsed','before','after','elapsed'][index%5];
+    if(type==='elapsed')return numeric(type,'なんぷん かかった？',otTime(start)+'に はじめて、'+otTime(end)+'に おわったよ。',duration,[duration+20,duration-10],'ふん',otTime(start)+'から '+otTime((Math.floor(start/60)+1)*60)+'まで '+(60-start%60)+'ふん。そこから '+(end%60)+'ふん。あわせて '+duration+'ふん。',{start,end,duration});
+    if(type==='before')return numeric(type,'なんじに はじめれば いい？',otTime(end)+'までに おわらせたい。おしごとは '+duration+'ふん かかるよ。',start,[start+20,start-20],'time',otTime(end)+'から '+duration+'ふん もどると '+otTime(start)+'。',{start,end,duration});
+    return numeric(type,'おわるのは なんじ？',otTime(start)+'から '+duration+'ふん おてつだい。',end,[end-20,end+20],'time',otTime(start)+'から '+(60-start%60)+'ふんで つぎの じかん。のこり '+(duration-(60-start%60))+'ふんで '+otTime(end)+'。',{start,end,duration});
+  }
+  if(kind==='clock'){
+    const start=pick([9,10,13,14])*60+pick([0,10,20]),a=pick([10,15,20]),b=pick([25,30,35]),between=pick([10,15,20]),service=5;
+    const closeA=start+a+service,closeB=closeA+between+service+5;
+    const context='いえから パンやへ '+a+'ふん、はなやへ '+b+'ふん。みせの あいだは '+between+'ふん。おとどけは それぞれ '+service+'ふん。パンやは '+otTime(closeA)+'、はなやは '+otTime(closeB)+'までに おとどけを おわらせよう。どちらも '+otTime(start-30)+'から あいているよ。';
+    if(index%2===0){
+      const value=start,wrong=[start+10,start-10];
+      return numeric('departure','パンや → はなや の じゅん。まにあう なかで、いちばん おそい しゅっぱつは？',context,value,wrong,'time','パンやの しめきりから '+a+'ふんと '+service+'ふんを ひくと '+otTime(start)+'。はなやも '+otTime(closeA+between+service)+'に おわるので まにあうよ。',{start,a,b,between,service,closeA,closeB});
+    }
+    const plans=shuffle([{order:'AB',start},{order:'BA',start},{order:'AB',start:start+15}]);
+    return {type:'route',prompt:'2けん とも まにあう プランは？',context,options:plans.map(p=>otTime(p.start)+' → '+(p.order==='AB'?'パンや → はなや':'はなや → パンや')),answer:plans.findIndex(p=>p.order==='AB'&&p.start===start),explanation:otTime(start)+'に でて パンやを さきにすると、'+otTime(closeA)+'と '+otTime(closeA+between+service)+'に おわるよ。はなやが さきだと パンやの しめきりを すぎてしまうね。',meta:{plans,start,a,b,between,service,closeA,closeB}};
+  }
+  if(course==='beginner'){
+    const weights=shuffle([100,200,300,400,500,600,700,800,900]).slice(0,3),type=['match','heavy','light','match','heavy'][index%5];
+    const value=type==='heavy'?Math.max(...weights):type==='light'?Math.min(...weights):pick(weights);
+    const q=numeric(type,type==='match'?value+'グラムの パックを えらぼう。':type==='heavy'?'いちばん おもい パックは？':'いちばん かるい パックは？','g（グラム）は おもさの たんい。',value,weights.filter(v=>v!==value),'g',type==='match'?'ちゅうもんと おなじ '+value+'gを えらぶよ。':weights.slice().sort((a,b)=>a-b).join('g ＜ ')+'g。'+(type==='heavy'?'いちばん おおきい':'いちばん ちいさい')+' かずが '+value+'gだね。',{weights});return q;
+  }
+  if(course==='middle'){
+    const type=['convert','missing','sum','convert','missing'][index%5],amount=pick([1200,1500,1800,2200,2500]),part=pick([200,300,500]);
+    if(type==='convert')return numeric(type,'なんグラムに なる？',amount/1000+'kg（キログラム）の おにくを よういしよう。',amount,[amount/10,amount+500],'g','1kgは 1000g。'+amount/1000+' × 1000 ＝ '+amount+'g。',{amount});
+    if(type==='missing')return numeric(type,'あと なんグラム ひつよう？',amount/1000+'kg ひつようで、いま '+part+'g あるよ。',amount-part,[amount+part,amount],'g',amount/1000+'kg ＝ '+amount+'g。'+amount+' − '+part+' ＝ '+(amount-part)+'g。',{amount,part});
+    const count=pick([3,4,5]);return numeric(type,'ぜんぶで なんグラム？',part+'gの パックが '+count+'こ あるよ。',part*count,[part*(count+1),part*(count-1)],'g',part+' × '+count+' ＝ '+part*count+'g。',{part,count});
+  }
+  const type=['servings','price','budget','servings','budget'][index%5];
+  if(type==='servings'){
+    const base=pick([2,3,4]),per=pick([80,100,120,150]),people=pick([5,6,8]),amount=base*per,value=per*people;
+    return numeric(type,people+'にんぶんは なんグラム？',base+'にんぶんで '+amount+'g つかう りょうり。ひとりぶんは おなじ りょうだよ。',value,[value+per,value-per],'g','ひとりぶんは '+amount+' ÷ '+base+' ＝ '+per+'g。'+people+'にんでは '+per+' × '+people+' ＝ '+value+'g。',{base,per,people,amount});
+  }
+  if(type==='price'){
+    const unit=pick([80,120,150,180]),amount=pick([300,500,700]),value=unit*amount/100;
+    return numeric(type,'だいきんは いくら？','100gで '+unit+'えんの おにくを '+amount+'g かうよ。',value,[value+unit,value-unit],'えん','100gが '+amount/100+'こぶん。'+unit+' × '+amount/100+' ＝ '+value+'えん。',{unit,amount});
+  }
+  const required=pick([600,800,1000]),unit=pick([100,120,150]),budget=required/200*unit+50;
+  const plans=shuffle([{grams:required,cost:required/200*unit,count:required/200,pack:200},{grams:required-200,cost:(required/200-1)*unit,count:required/200-1,pack:200},{grams:required+200,cost:(required/200+1)*unit,count:required/200+1,pack:200}]);
+  return {type:'budget',prompt:'りょうも おかねも たりる かいかたは？',context:'200gの パックが 1こ '+unit+'えん。'+required+'gいじょう ひつよう。つかえる おかねは '+budget+'えんまで。',options:plans.map(p=>p.count+'こ かう'),answer:plans.findIndex(p=>p.grams>=required&&p.cost<=budget),explanation:required/200+'こなら '+required+'gで '+required/200*unit+'えん。すくないと りょうが たりず、おおいと '+(required/200+1)*unit+'えんで おかねが たりないよ。',meta:{plans,required,unit,budget}};
 }
+function otWorkRate(course){return OT_WORK_RATES[course];}
+function otWorkReward(course,correct,complete){return otWorkRate(course)*correct+(complete&&correct===OTETSUDAI_QCOUNT?OT_WORK_BONUS[course]:0);}
+function otWorkCourseName(course){return {easy:'ちょうどの とけい',normal:'はんまでの とけい',hard:'5ふんの とけい',beginner:'はじめて',middle:'なれてきた',advanced:'うでだめし'}[course];}
+function otWorkMenuButton(kind,course,title,desc){
+  return '<button class="shop-item ot-work-menu" onclick="startOtWork(\''+kind+'\',\''+course+'\')"><span class="shop-item-body"><b>'+title+'</b><small>'+desc+'</small><small>1もん '+otWorkRate(course)+'えん ／ ぜんぶ せいかい '+otWorkReward(course,5,true)+'えん</small></span></button>';
+}
+function renderClockSelect(){
+  otClearTimer();otetsudaiState=null;
+  $('otetsudaiBody').innerHTML='<div class="ot-work-heading">🕒 とけいやさん</div><p class="shop-msg">とけいから はいたつの けいかくまで。<br>どれも 5もん・じかんせいげん なし。</p><div class="ot-work-section">はじめて：とけいを よもう</div>'+otWorkMenuButton('clock','easy','ちょうど','1じ、2じ…')+otWorkMenuButton('clock','normal','はんまで','ちょうど と はん')+otWorkMenuButton('clock','hard','5ふん きざみ','ながい はりも よもう')+otWorkMenuButton('clock','middle','なれてきた','なんぷんご？ なんぷん かかった？')+otWorkMenuButton('clock','advanced','うでだめし','2けんの はいたつを けいかくしよう')+otWorkMenuFooter();
+  otWorkScrollTop();
+}
+function renderMeatSelect(){
+  otClearTimer();otetsudaiState=null;
+  $('otetsudaiBody').innerHTML='<div class="ot-work-heading">🥩 にくやさん</div><p class="shop-msg">おもさから りょうりの じゅんびまで。<br>どれも 5もん・じかんせいげん なし。</p>'+otWorkMenuButton('meat','beginner','はじめて','おもさを えらぶ・くらべる')+otWorkMenuButton('meat','middle','なれてきた','kgとg・たりない りょう')+otWorkMenuButton('meat','advanced','うでだめし','にんずう・だいきん・おかねの けいかく')+otWorkMenuFooter();
+  otWorkScrollTop();
+}
+function otWorkMenuFooter(){return '<p class="ot-work-note">おだちんは この おしごとで きまるよ。<br>ぼうけんの むずかしさを かえても おなじ。</p><button class="btn btn-ghost" onclick="'+(otetsudaiOrigin==='mall'?'closeOtetsudai()':'renderOtetsudaiMenu()')+'">もどる</button>';}
+function otWorkScrollTop(){const p=$('otetsudaiOverlay').querySelector('.panel');if(p)p.scrollTop=0;}
+function otWorkContextHtml(q){
+  if(!['departure','route'].includes(q.type))return otEsc(q.context);
+  const m=q.meta,minute=n=>otClockMinuteLabel(n);
+  return '<div class="ot-work-facts"><div>いえ → パンや <b>'+minute(m.a)+'</b></div><div>いえ → はなや <b>'+minute(m.b)+'</b></div><div>パンや ↔ はなや <b>'+minute(m.between)+'</b></div><div>おとどけの じかん <b>1けん 5ふん</b></div></div><div class="ot-work-deadline">おとどけを おわる しめきり<br>🥐 パンや <b>'+otTime(m.closeA)+'</b><br>🌷 はなや <b>'+otTime(m.closeB)+'</b></div><small>どちらも '+otTime(m.start-30)+'から あいているよ。</small>';
+}
+function startClockHelp(mode){startOtWork('clock',mode);}
+function startMeatHelp(){renderMeatSelect();}
+function otWorkQuestionKey(q){
+  const m={...q.meta};delete m.values;
+  if(m.weights)m.weights=[...m.weights].sort((a,b)=>a-b);
+  if(m.plans)m.plans=[...m.plans].sort((a,b)=>JSON.stringify(a).localeCompare(JSON.stringify(b)));
+  return q.type+JSON.stringify(m);
+}
+function otWorkBuildQuestions(kind,course,rng=Math.random){
+  const questions=[],seen=new Set();
+  for(let i=0;i<OTETSUDAI_QCOUNT;i++){
+    let accepted=false;
+    for(let tries=0;tries<200;tries++){
+      let seed=(20261017^Math.imul(i*200+tries,0x9e3779b1))>>>0;
+      const fallback=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296);
+      const q=otWorkQuestion(kind,course,i,tries<50?rng:fallback),key=otWorkQuestionKey(q);
+      if(!seen.has(key)){seen.add(key);questions.push(q);accepted=true;break;}
+    }
+    if(!accepted)return null;
+  }
+  return questions;
+}
+function startOtWork(kind,course){
+  if(!((kind==='clock'&&['easy','normal','hard','middle','advanced'].includes(course))||(kind==='meat'&&['beginner','middle','advanced'].includes(course))))return;
+  otClearTimer();const seq=++otetsudaiSeq;
+  const questions=otWorkBuildQuestions(kind,course);
+  if(!questions){renderOtetsudaiMenu('もんだいを よういできなかったよ。もういちど えらんでね。');return;}
+  const st=otetsudaiState={kind,course,work:true,seq,q:0,correct:0,questions,answering:false,demo:true,rewarded:false};
+  st.example=otWorkQuestion(kind,course,0);renderOtWorkQuestion();
+  otetsudaiTimer=setTimeout(()=>{if(otetsudaiState!==st||st.seq!==otetsudaiSeq||!st.demo)return;otetsudaiTimer=null;otWorkShowFeedback(st.example.answer,true);},1100);
+}
+function renderOtWorkQuestion(){
+  const st=otetsudaiState;if(!st||!st.work)return;
+  const q=st.demo?st.example:st.questions[st.q];st.current=q;
+  const title=st.kind==='clock'?'🕒 とけいやさん':'🥩 にくやさん';
+  let html='<div class="ot-work-heading">'+title+'</div><div class="ot-work-status">'+otWorkCourseName(st.course)+' · '+(st.demo?'おてほん':(st.q+1)+' / 5')+'</div>';
+  if(st.demo)html+='<p class="shop-msg">まずは おてほん。こたえを えらぶよ。<br>ここでは おだちんは ふえないよ。</p>';
+  if(st.kind==='meat')html+=meatSceneHtml('normal');
+  html+='<div class="ot-card">'+(q.clock?otClockSvg(q.clock.h,q.clock.min):'')+'<div class="ot-work-context">'+otWorkContextHtml(q)+'</div><div class="ot-q">'+otEsc(q.prompt)+'</div></div><div class="ot-work-choices">';
+  q.options.forEach((v,i)=>{html+='<button class="btn ot-work-choice" data-choice="'+i+'" onclick="otWorkAnswer('+i+','+st.seq+','+st.q+')"'+(st.demo?' disabled':'')+'>'+otEsc(v)+'</button>';});
+  html+='</div><div id="otWorkFeedback" aria-live="polite"></div><button class="btn btn-ghost" onclick="otetsudaiQuit()">'+(st.demo?'コースへ もどる':'ここまでで おわる')+'</button>';
+  $('otetsudaiBody').innerHTML=html;otWorkScrollTop();
+}
+function otWorkAnswer(i,seq,pos){
+  const st=otetsudaiState;if(!st||!st.work||st.demo||st.answering||seq!==st.seq||pos!==st.q||!Number.isInteger(i)||!st.current.options[i])return;
+  st.answering=true;const correct=i===st.current.answer;if(correct){st.correct++;sfxCorrect();}else sfxWrong();
+  otWorkShowFeedback(i,false);
+}
+function otWorkShowFeedback(i,demo){
+  const st=otetsudaiState;if(!st||!st.work)return;const q=st.current;
+  $('otetsudaiBody').querySelectorAll('[data-choice]').forEach(b=>{b.disabled=true;if(Number(b.dataset.choice)===q.answer)b.classList.add('ot-work-right');else if(Number(b.dataset.choice)===i)b.classList.add('ot-work-wrong');});
+  $('otWorkFeedback').innerHTML='<div class="ot-work-feedback"><b>'+(demo?'こうやって かんがえるよ':i===q.answer?'せいかい！':'おしい！ いっしょに たしかめよう')+'</b><p>こたえ：'+otEsc(q.options[q.answer])+'</p><p>'+otEsc(q.explanation)+'</p></div><button class="btn btn-primary" onclick="otWorkNext('+st.seq+','+st.q+','+demo+')">'+(demo?'はじめる':st.q===4?'けっかを みる':'つぎへ')+'</button>';
+  const feedback=$('otWorkFeedback');feedback.scrollIntoView({block:'nearest',behavior:'smooth'});
+}
+function otWorkNext(seq,pos,fromDemo){
+  const st=otetsudaiState;if(!st||!st.work||st.seq!==seq||st.q!==pos||st.demo!==fromDemo)return;
+  if(st.demo){otClearTimer();st.demo=false;}else{if(!st.answering)return;st.q++;}
+  if(st.q>=OTETSUDAI_QCOUNT){finishOtWork(true);return;}
+  st.answering=false;renderOtWorkQuestion();
+}
+function finishOtWork(complete){
+  const st=otetsudaiState;if(!st||!st.work||st.rewarded)return;
+  if(st.demo){otClearTimer();st.kind==='clock'?renderClockSelect():renderMeatSelect();return;}
+  st.rewarded=true;otClearTimer();
+  const earned=otWorkReward(st.course,st.correct,complete),answered=st.q+(st.answering?1:0);
+  coins+=earned;save();updateTownFieldInfo();$('otetsudaiCoins').innerHTML=yenHtml(coins);
+  const title=st.kind==='clock'?'とけいやさん':'にくやさん',rank=st.correct===5?'たつじん':st.correct>=3?'いちにんまえ':'みならい';
+  $('otetsudaiBody').innerHTML='<div class="ot-work-heading">'+title+' おつかれさま！</div><div class="ot-card"><div class="ot-work-section">'+(complete?'こんかいは '+rank+'！':'ここまでの おだちん')+'</div><p>'+st.correct+' / '+Math.min(5,answered)+'もん せいかい</p><div class="ot-work-earned">'+yenHtml(earned)+'</div><p>'+(complete&&st.correct===5?'ぜんぶ せいかい！ ボーナス '+OT_WORK_BONUS[st.course]+'えんを ふくむよ。':'せいかい 1もんにつき '+otWorkRate(st.course)+'えん。')+'</p></div><button class="btn btn-primary" onclick="startOtWork(\''+st.kind+'\',\''+st.course+'\')">もういちど</button><button class="btn btn-ghost" onclick="'+(st.kind==='clock'?'renderClockSelect()':'renderMeatSelect()')+'">コースを えらぶ</button>'+otWorkMenuFooter();
+  otetsudaiState=null;otWorkScrollTop();
+}
+
 function yomiPoolOpen(){
   const max=Math.min(Math.max(unlocked,1),STAGE_COUNT), set=new Set();
   for(let z=1; z<=max; z++){ STAGE_DEFS[z-1].indices.forEach(i=>set.add(i)); }
@@ -35173,6 +35297,7 @@ function nextYomiQuestion(){
 function yomiAnswer(i){ const st=otetsudaiState; if(!st||st.kind!=='yomi') return; const txt=st.options[i]; if(st.correctSet.has(txt)){ st.correct++; sfxCorrect(); }else sfxWrong(); nextYomiQuestion(); }
 function finishYomi(){ const st=otetsudaiState; if(!st||st.kind!=='yomi') return; otClearTimer(); finishOtetsudai('よみあて',st.correct,ODACHIN_YOMIATE,false); }
 function otetsudaiQuit(){
+  if(otetsudaiState&&otetsudaiState.work){finishOtWork(false);return;}
   const st=otetsudaiState; if(!st) { renderOtetsudaiMenu(); return; }
   if(st.kind==='yomi'){ finishYomi(); return; }
   finishOtetsudai(st.kind==='clock'?'とけいやさん':'にくやさん',st.correct,st.rate,false);
