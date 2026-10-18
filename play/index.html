@@ -35122,7 +35122,15 @@ function otWorkQuestion(kind,course,index,rng=Math.random){
 function otWorkQuestionRaw(kind,course,index,rng=Math.random){
   const pick=a=>a[Math.floor(rng()*a.length)];
   const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+  const distractors=(value,step)=>{
+    const rank=pick([0,1,2]);
+    return (rank===0?[1,2]:rank===1?[-1,1]:[-2,-1]).map(n=>value+n*step);
+  };
   const numeric=(type,prompt,context,value,wrong,unit,explanation,meta,clock)=>{
+    if(course==='middle'||course==='advanced'){
+      const step=['convert','missing'].includes(type)?100:Math.min(...wrong.map(v=>Math.abs(v-value)).filter(v=>v>0));
+      wrong=distractors(value,step);
+    }
     const values=[...new Set([value,...wrong])].slice(0,3);
     if(values.length!==3)throw Error('Question choices must be distinct');
     shuffle(values);
@@ -35138,19 +35146,28 @@ function otWorkQuestionRaw(kind,course,index,rng=Math.random){
     const start=pick([8,9,10,13,14])*60+pick([35,40,45,50]),duration=pick([25,35,45,55]),end=start+duration;
     const type=['after','elapsed','before','after','elapsed'][index%5];
     if(type==='elapsed')return numeric(type,'なんぷん かかった？',otTime(start)+'に はじめて、'+otTime(end)+'に おわったよ。',duration,[duration+20,duration-10],'ふん',otTime(start)+'から '+otTime((Math.floor(start/60)+1)*60)+'まで '+(60-start%60)+'ふん。そこから '+(end%60)+'ふん。あわせて '+duration+'ふん。',{start,end,duration});
-    if(type==='before')return numeric(type,'なんじに はじめれば いい？',otTime(end)+'までに おわらせたい。おしごとは '+duration+'ふん かかるよ。',start,[start+20,start-20],'time',otTime(end)+'から '+duration+'ふん もどると '+otTime(start)+'。',{start,end,duration});
+    if(type==='before')return numeric(type,'まにあう なかで、いちばん おそい はじめる じこくは？',otTime(end)+'までに おわらせたい。おしごとは '+duration+'ふん かかるよ。',start,[start+20,start-20],'time',otTime(end)+'から '+duration+'ふん もどると '+otTime(start)+'。これより おそいと まにあわないよ。',{start,end,duration});
     return numeric(type,'おわるのは なんじ？',otTime(start)+'から '+duration+'ふん おてつだい。',end,[end-20,end+20],'time',otTime(start)+'から '+(60-start%60)+'ふんで つぎの じかん。のこり '+(duration-(60-start%60))+'ふんで '+otTime(end)+'。',{start,end,duration});
   }
   if(kind==='clock'){
-    const start=pick([9,10,13,14])*60+pick([0,10,20]),a=pick([10,15,20]),b=pick([25,30,35]),between=pick([10,15,20]),service=5;
-    const closeA=start+a+service,closeB=closeA+between+service+5;
+    const start=pick([9,10,13,14])*60+pick([0,10,20]),a=pick([10,15,20,25]),b=pick([10,15,20,25]),between=pick([10,15,20]),service=5;
+    const order=pick(['AB','BA']),binding=pick(['first','second']),travel=order==='AB'?a:b;
+    const first=start+travel+service,second=first+between+service;
+    const closeFirst=first+(binding==='first'?0:10),closeSecond=second+(binding==='second'?0:10);
+    const closeA=order==='AB'?closeFirst:closeSecond,closeB=order==='AB'?closeSecond:closeFirst;
+    const names=o=>o==='AB'?'パンや → はなや':'はなや → パンや';
+    const finish=p=>{const t=p.start+(p.order==='AB'?a:b)+service;return p.order==='AB'?[t,t+between+service]:[t+between+service,t];};
+    const fits=p=>{const [pa,pb]=finish(p);return pa<=closeA&&pb<=closeB;};
     const context='いえから パンやへ '+a+'ふん、はなやへ '+b+'ふん。みせの あいだは '+between+'ふん。おとどけは それぞれ '+service+'ふん。パンやは '+otTime(closeA)+'、はなやは '+otTime(closeB)+'までに おとどけを おわらせよう。どちらも '+otTime(start-30)+'から あいているよ。';
     if(index%2===0){
       const value=start,wrong=[start+10,start-10];
-      return numeric('departure','パンや → はなや の じゅん。まにあう なかで、いちばん おそい しゅっぱつは？',context,value,wrong,'time','パンやの しめきりから '+a+'ふんと '+service+'ふんを ひくと '+otTime(start)+'。はなやも '+otTime(closeA+between+service)+'に おわるので まにあうよ。',{start,a,b,between,service,closeA,closeB});
+      const limitFirst=closeFirst-travel-service,limitSecond=closeSecond-travel-service-between-service;
+      return numeric('departure',names(order)+' の じゅん。まにあう なかで、いちばん おそい しゅっぱつは？',context,value,wrong,'time','1けんめの しめきりから もどすと '+otTime(limitFirst)+'、2けんめから もどすと '+otTime(limitSecond)+'。りょうほうに まにあうには、はやいほうの '+otTime(start)+'までに でよう。',{start,a,b,between,service,closeA,closeB,order,binding});
     }
-    const plans=shuffle([{order:'AB',start},{order:'BA',start},{order:'AB',start:start+15}]);
-    return {type:'route',prompt:'2けん とも まにあう プランは？',context,options:plans.map(p=>otTime(p.start)+' → '+(p.order==='AB'?'パンや → はなや':'はなや → パンや')),answer:plans.findIndex(p=>p.order==='AB'&&p.start===start),explanation:otTime(start)+'に でて パンやを さきにすると、'+otTime(closeA)+'と '+otTime(closeA+between+service)+'に おわるよ。はなやが さきだと パンやの しめきりを すぎてしまうね。',meta:{plans,start,a,b,between,service,closeA,closeB}};
+    const candidates=['AB','BA'].flatMap(o=>[-15,-10,-5,0,5,10,15,20].map(offset=>({order:o,start:start+offset})));
+    const good=pick(candidates.filter(fits)),bad=shuffle(candidates.filter(p=>!fits(p))).slice(0,2),plans=shuffle([good,...bad]);
+    const [endA,endB]=finish(good);
+    return {type:'route',prompt:'2けん とも まにあう プランは？',context,options:plans.map(p=>otTime(p.start)+' → '+names(p.order)),answer:plans.indexOf(good),explanation:otTime(good.start)+'に でて '+names(good.order)+'。パンやは '+otTime(endA)+'、はなやは '+otTime(endB)+'に おわるので、どちらも しめきりに まにあうよ。ほかの プランは どちらかの しめきりを すぎるよ。',meta:{plans,start,a,b,between,service,closeA,closeB,order,binding}};
   }
   if(course==='beginner'){
     const weights=shuffle([100,200,300,400,500,600,700,800,900]).slice(0,3),type=['match','heavy','light','match','heavy'][index%5];
@@ -35173,7 +35190,7 @@ function otWorkQuestionRaw(kind,course,index,rng=Math.random){
     return numeric(type,'だいきんは いくら？','100gで '+unit+'えんの おにくを '+amount+'g かうよ。',value,[value+unit,value-unit],'えん','100gが '+amount/100+'こぶん。'+unit+' × '+amount/100+' ＝ '+value+'えん。',{unit,amount});
   }
   const required=pick([600,800,1000]),unit=pick([100,120,150]),budget=required/200*unit+50;
-  const plans=shuffle([{grams:required,cost:required/200*unit,count:required/200,pack:200},{grams:required-200,cost:(required/200-1)*unit,count:required/200-1,pack:200},{grams:required+200,cost:(required/200+1)*unit,count:required/200+1,pack:200}]);
+  const plans=shuffle([required/200,...distractors(required/200,1)].map(count=>({grams:count*200,cost:count*unit,count,pack:200})));
   return {type:'budget',prompt:'りょうも おかねも たりる かいかたは？',context:'200gの パックが 1こ '+unit+'えん。'+required+'gいじょう ひつよう。つかえる おかねは '+budget+'えんまで。',options:plans.map(p=>p.count+'こ かう'),answer:plans.findIndex(p=>p.grams>=required&&p.cost<=budget),explanation:required/200+'こなら '+required+'gで '+required/200*unit+'えん。すくないと りょうが たりず、おおいと '+(required/200+1)*unit+'えんで おかねが たりないよ。',meta:{plans,required,unit,budget}};
 }
 function otWorkRate(course){return OT_WORK_RATES[course];}
