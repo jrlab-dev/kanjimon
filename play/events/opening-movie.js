@@ -1,4 +1,4 @@
-/* OP27 起動PV。ゲーム進行/セーブ/名前入力には触れない。 */
+/* OP30 起動PV。ゲーム進行/セーブ/名前入力には触れない。 */
 (function(){
  'use strict';
  // 遅い読込み中に既にゲームへ進んだ場合、その画面へPVを割り込ませない。
@@ -62,6 +62,6 @@
  const watchdog=setInterval(()=>{if(active&&!document.hidden&&state!=='ready'&&performance.now()-lastProgress>15000)finish('timeout');},1000);
  window.OpeningMovie={isActive:()=>active,skip:()=>finish('skip'),cancel:()=>finish('navigation',false),syncSound};
  background.forEach(([el])=>{el.inert=true;});document.body.style.overflow='hidden';bgmPause();syncSound();setState('loading');host.focus({preventScroll:true});
- video.src='videos/opening-20261008-op27.mp4';
+ video.src='videos/opening-20261019-op30.mp4';
  if(document.hidden)resumeAfterHidden=true;else begin();
 })();

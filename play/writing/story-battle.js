@@ -112,7 +112,7 @@
     s.ink[cursor]=strokes;s.cursor++;s.misses=0;clearHint();
     if(s.cursor<s.question.word.length){el('status').textContent='かけた！ つぎの じへ。';prompt();return;}
     s.phase='attacking';answering=true;controls();el('status').textContent='せいかい！';
-    if(isTamashii||simple()){sfxCorrect();KanjimonStoryOutcome.win(s,null);return;}
+    if(isTamashii||simple()){sfxCorrect();finishWin(s,null);return;}
     const att=selectedAttacker;if(genkiOf(att)<=GENKI_TIRED){s.phase='writing';s.cursor=0;s.ink=[];el('status').textContent='つかれて こうげき できないよ。なかまを かえよう。';prompt();return;}
     genkiSpendAttack(att);roster();
     const target=isTwinBoss&&twinTurn==='doutai'?$('enemyChar2'):$('enemyChar');
@@ -120,21 +120,40 @@
     let contacted=false;
     playAttackDash(att,async()=>{
       if(contacted||!active(s))return;contacted=true;
-      sfxCorrect();playHitFx(target,false);setEnemyFace('pain');
+      const magic=affinity(typeOf(att),enemyType)>=2&&!isTwinBoss&&!isJukugoBoss&&!iceDungeonBattle&&!amamiEpisodeOneBattle&&!window.AmamiLate?.battle;
+      let finishDelay=950;
+      if(magic){
+        const level=magicLevelOf(att,enemyIdx,enemyIsBoss),timing=window.KanjimonMagic?.timing(level,typeOf(att));
+        const impact=timing?.impact??(level==='max'?1360:960);
+        setEnemyFace('surprised');playMagicFx(typeOf(att),level);
+        await wait(impact);if(!active(s))return;
+        finishDelay=Math.max(950,(timing?.duration??4000)-impact+80);
+      }else playHitFx(target,false);
+      sfxCorrect();setEnemyFace('pain');
       if(isTwinBoss){twinHp[twinTurn]=Math.max(0,twinHp[twinTurn]-dmg);renderTwinHp();}
       else{enemyHp=Math.max(0,enemyHp-dmg);renderEnemyHp();}
       const pop=isTwinBoss&&twinTurn==='doutai'?$('dmgPop2'):$('dmgPop');pop.textContent='⭐−'+dmg+'！';pop.className='dmg-pop show';
-      cheerParty(att,'wink',1000);await wait(950);if(!active(s))return;
+      cheerParty(att,'wink',1000);await wait(finishDelay);if(!active(s))return;
       if(window.AmamiLate?.battle){KanjimonStoryOutcome.win(s,att);return;}
       if(isTwinBoss){
-        if(twinHp.isshin<=0&&twinHp.doutai<=0){KanjimonStoryOutcome.win(s,att);return;}
+        if(twinHp.isshin<=0&&twinHp.doutai<=0){finishWin(s,att);return;}
         twinTurn=twinTurn==='isshin'?'doutai':'isshin';
         if(twinHp[twinTurn]<=0)twinHp[twinTurn]=1;
         twinBossUpdateHighlight();renderTwinHp();KanjimonStoryOutcome.checkpoint(()=>{if(active(s))nextQuestion();});return;
       }
-      if(enemyHp<=0){KanjimonStoryOutcome.win(s,att);return;}
+      if(enemyHp<=0){finishWin(s,att);return;}
       setEnemyFace(restExprHit());KanjimonStoryOutcome.checkpoint(()=>{if(active(s))nextQuestion();});
     });
+  }
+  async function finishWin(s,att){
+    if(!active(s))return;
+    if(!isTamashii){
+      s.phase='defeated';controls();
+      setEnemyFace('pain');
+      setMsg('たおした！');el('status').textContent='たおした！';
+      await wait(680);if(!active(s))return;
+    }
+    KanjimonStoryOutcome.win(s,att);
   }
   function hideAnswers(){
     const s=session;if(!s||s.phase==='won')return;

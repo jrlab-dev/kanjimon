@@ -1,15 +1,14 @@
 /* The reading game keeps its layout; these rules only apply during writing. */
-#screen-battle.tate.writing-battle[id="screen-battle"]{--wb-panel-height:calc(var(--wb-input-height) + 110px);height:calc(var(--wb-panel-height) + 450px);min-height:calc(var(--wb-panel-height) + 450px);overflow:visible}
+#screen-battle.tate.battle-responsive.writing-battle[id="screen-battle"]{height:max(100dvh,calc(var(--wb-ink-size) + 470px));min-height:calc(var(--wb-ink-size) + 470px);overflow:clip visible}
 #screen-battle.tate.writing-battle[id="screen-battle"] .options{height:auto;bottom:12px}
-#screen-battle.tate.writing-battle[id="screen-battle"] .msg{bottom:calc(var(--wb-panel-height) + 24px)}
-#screen-battle.tate.writing-battle[id="screen-battle"] .party-row{bottom:calc(var(--wb-panel-height) + 140px)}
 body:has(#screen-battle.writing-battle.active):not(.ice-dungeon-battle) #app{height:auto;overflow:visible}
-body:not(.ice-dungeon-battle) #screen-battle.tate.writing-battle #bScene{padding-top:64px}
 #screen-battle.writing-battle #enemyWrap.twin .writing-reading{font-size:min(32px,calc(110px / var(--wb-reading-length,2)))!important}
 #screen-battle.writing-battle #bOptions>.opt{display:none!important}
 #screen-battle.writing-battle #wb-play{grid-column:1/-1;flex-shrink:0}
 #screen-battle.writing-battle #wb-slots{display:flex;justify-content:center;gap:8px;min-height:0}
 #screen-battle.writing-battle #wb-slots:empty{display:none}
+#screen-battle.writing-battle #wb-question{display:block;text-wrap:balance}
+#screen-battle.writing-battle #bMsg #wb-question mark .ink-run{background:transparent}
 #screen-battle.writing-battle #wb-slots canvas{width:48px;height:48px;border:1px solid #87a28e;background:#fff}
 #screen-battle.writing-battle #wb-slots .wb-current{border:3px solid #205b43}
 #screen-battle.writing-battle #wb-status{font-size:14px;text-align:center;min-height:20px;color:#183f30;background:#fffef8;border-radius:8px;padding:4px 8px;margin:6px 0}
