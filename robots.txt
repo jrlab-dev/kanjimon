@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://kanjimon.jr-genius.jp/sitemap.xml
