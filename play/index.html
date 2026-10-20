@@ -12183,7 +12183,7 @@ function _bgmTitle(){
   if(window.OpeningMovie?.isActive())return;
   if(!bgmOpeningTitleActive){++bgmOpeningVisit;bgmOpeningTitleActive=true;bgmOpeningFinished=false;}
   bgmOpeningFinished=true; // 予告音楽は冒頭の動画だけで再生する。
-  bgmPlay(bgmOpeningFinished?'hero':'opening',{titleOpening:true});
+  bgmPlay('title',{titleOpening:true});
 }
 let bgmScene=null,bgmSceneSerial=0;
 function bgmSceneBegin(key,name){
@@ -13026,7 +13026,7 @@ function showScreen(id){
   if(id!=='screen-battle')window.KanjimonStoryBattle?.cancel();
   sceneImages.cancel();
   if(id!=='screen-title'){
-    const ownedTitle=bgmOpeningTitleActive&&(bgmWanted==='opening'||(bgmOpeningFinished&&bgmWanted==='hero'));
+    const ownedTitle=bgmOpeningTitleActive&&(bgmWanted==='title'||bgmWanted==='opening'||(bgmOpeningFinished&&bgmWanted==='hero'));
     _bgmCancelOpening();if(ownedTitle){_bgmPauseAll();bgmWanted=null;}
   }
   if(id!=='screen-field'){cancelHakaseIntroMusic();op1AbortMusic();}
@@ -25538,6 +25538,8 @@ function nmTapAdvance(){ if(nmAdvanceTrigger){ const f=nmAdvanceTrigger; nmClear
    済んだあと」に呼ぶコールバック（op1開始）。playerNameが既にある・オーバーレイ要素が無いときは
    画面を出さずafterCbだけ即呼ぶ（安全側＝この画面が原因でop1が始まらなくなる事故を防ぐ） */
 function nmOpen(afterCb){
+  window.openingMovieDismissed=true;window.OpeningMovie?.cancel();
+  bgmPlay('title');
   if(sceneImages.gate('opening',()=>nmOpen(afterCb)))return;
   nmAfterDone=(typeof afterCb==='function') ? afterCb : null;
   if(playerName || !$('nmOverlay')){
