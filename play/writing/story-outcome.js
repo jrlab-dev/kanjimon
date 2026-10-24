@@ -2,7 +2,7 @@
 (function(){
   'use strict';
   let batch=false,locked=false,checkpointId=0;
-  const tx=KanjimonWritingTransaction.create({read:()=>{try{return localStorage.getItem(SAVE_KEY);}catch(e){return '__storage_unavailable__';}},write:json=>localStorage.setItem(SAVE_KEY,json)});
+  const tx=KanjimonWritingTransaction.create({read:()=>{try{return gameStorage.getItem(SAVE_KEY);}catch(e){return '__storage_unavailable__';}},write:json=>gameStorage.setItem(SAVE_KEY,json)});
   function dialog(){
     let box=$('writing-save-dialog');if(!box){
       box=document.createElement('div');box.id='writing-save-dialog';box.setAttribute('role','dialog');box.setAttribute('aria-modal','true');

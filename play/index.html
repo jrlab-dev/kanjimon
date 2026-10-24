@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+<script src="pwa/game-storage.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>かんじモンRPG｜小1の かんじを あそんで おぼえる むりょうゲーム</title>
@@ -3768,10 +3769,60 @@ body.ice-dungeon #fieldInfo{display:none}
 <link rel="stylesheet" href="events/うどんの里会話.css?v=events-20261003">
 <script defer src="events/うどんの里会話.js?walk=20261003d"></script>
 <link rel="stylesheet" href="events/opening-movie.css?v=20261008b">
-<script defer src="events/opening-movie.js?v=20261019-op30"></script>
+<script defer src="events/opening-movie.js?v=pwa-20261024"></script>
 <script defer src="/km-analytics.js?v=20261021"></script>
 <script src="new-game-plus/core.js?v=story-20261016"></script>
 <link rel="stylesheet" href="new-game-plus/ui.css?v=story-20261016">
+<script src="pwa/game-bridge.js" defer></script>
+<style>
+/* 画面の高さに合わせて人物・仲間・回答を配置。氷の城は既存配置。 */
+body:has(#screen-battle.active.battle-responsive) #app{height:100dvh;overflow-y:auto}
+#screen-battle.tate.battle-responsive[id="screen-battle"]{height:100dvh;min-height:488px;padding-top:8px;padding-left:var(--battle-screen-padding,16px);padding-right:var(--battle-screen-padding,16px)}
+#screen-battle.tate.battle-responsive[id="screen-battle"] .scene.battle{padding-top:var(--battle-scene-padding,16px)}
+#screen-battle.tate.battle-responsive[id="screen-battle"] .enemy-wrap:not(.boss) .enemy-char{font-size:var(--battle-normal-font,124.8px)}
+#screen-battle.tate.battle-responsive[id="screen-battle"] .enemy-wrap{zoom:var(--battle-enemy-scale,1)}
+#screen-battle.tate.battle-responsive[id="screen-battle"] .options{bottom:calc(12px + env(safe-area-inset-bottom,0px));height:auto;gap:12px}
+#screen-battle.tate.battle-responsive[id="screen-battle"] .opt{min-height:48px;font-size:1.2rem;background:rgba(255,255,255,.40)}
+#screen-battle.tate.battle-responsive[id="screen-battle"] .opt:not(:disabled):hover{background:rgba(255,249,240,.40)}
+#screen-battle.tate.battle-responsive[id="screen-battle"] .opt.correct{background:rgba(240,253,244,.40)}
+#screen-battle.tate.battle-responsive[id="screen-battle"] .opt.wrong{background:rgba(254,242,242,.40)}
+#screen-battle.tate.battle-responsive[id="screen-battle"] .msg{bottom:var(--battle-message-bottom,188px);min-height:78px;background:rgba(255,255,255,.40)}
+#screen-battle.tate.battle-responsive[id="screen-battle"] .battle-hakase{bottom:var(--battle-message-bottom,188px);background:rgba(0,0,0,.20)}
+#screen-battle.tate.battle-responsive[id="screen-battle"] .party-row{bottom:var(--battle-party-bottom,274px);padding-left:var(--battle-party-left,142px);padding-right:var(--battle-party-right,14px);gap:var(--battle-party-gap,14px);margin:0;transform:none}
+#screen-battle.tate.battle-responsive[id="screen-battle"] .pbtn.pfield{flex:0 0 var(--battle-card-width,48px);min-width:var(--battle-card-width,48px);min-height:44px}
+#screen-battle.tate.battle-responsive[id="screen-battle"] .pbtn.pfield .pc{font-size:var(--battle-party-font,42.24px)}
+#screen-battle.tate.battle-responsive[id="screen-battle"] .pbtn.pfield .pfuda{padding-left:3px;padding-right:3px}
+#screen-battle.tate.battle-responsive[id="screen-battle"] .pbtn.pfield .pfuda.pfuda-wide{padding-left:var(--battle-label-padding,3px);padding-right:var(--battle-label-padding,3px)}
+#screen-battle.tate.battle-responsive[id="screen-battle"]:has(.hero-back.victory-pop) .pbtn.pfield .pfuda{padding-left:var(--battle-label-padding,3px);padding-right:var(--battle-label-padding,3px)}
+#screen-battle.tate.battle-responsive[id="screen-battle"] .hero-back{left:-15px;bottom:auto;top:var(--battle-hero-top,0px);pointer-events:none}
+#screen-battle.tate.battle-responsive[id="screen-battle"] .hero-back img{height:var(--battle-hero-height,288px);transform-origin:bottom left}
+#screen-battle.tate.battle-responsive[id="screen-battle"] .genki-item-btn{position:absolute;left:8px;bottom:0;min-width:44px;min-height:44px}
+#screen-battle.battle-responsive .ink-run{padding:2px 3px;margin:0 -3px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+#screen-battle.battle-responsive #bMsg .ink-run{background:rgba(255,255,255,.8833333333333333);border-radius:4px}
+#screen-battle.battle-responsive #bOptions .ink-run{display:inline-block;box-sizing:border-box;max-width:100%;text-align:center;background:white;border-radius:4px;margin:0}
+#screen-battle.battle-responsive #bOptions .ink-run.ink-wrap{line-height:1;padding-top:1px;padding-bottom:1px;vertical-align:top}
+#screen-battle.battle-responsive #bOptions .opt:not(:disabled):hover .ink-run{background:#fff9f0}
+#screen-battle.battle-responsive #bOptions .opt.correct .ink-run{background:#f0fdf4}
+#screen-battle.battle-responsive #bOptions .opt.wrong .ink-run{background:#fef2f2}
+#screen-battle.battle-responsive #battleHakase .ink-run{background:rgba(0,0,0,.775);border-radius:4px}
+.battle-hero-reference{position:absolute;left:0;top:0;visibility:hidden;pointer-events:none;font-weight:900;line-height:1}
+#screen-battle.tate.battle-responsive[id="screen-battle"] .msg{min-height:var(--battle-window-min,78px);max-height:var(--battle-window-cap,220px);overflow-y:auto;font-size:var(--battle-message-font,1.15rem);line-height:var(--battle-message-line,1.5);padding:var(--battle-msg-pady,14px) var(--battle-msg-padx,16px)}
+#screen-battle.tate.battle-responsive[id="screen-battle"] .battle-hakase{max-height:var(--battle-window-cap,220px);overflow-y:auto;padding:var(--battle-doctor-pady,8px) var(--battle-doctor-padx,14px) var(--battle-doctor-pady,8px) 8px}
+#screen-battle.tate.battle-responsive.battle-compact .battle-hakase{align-items:flex-start}
+#screen-battle.tate.battle-responsive[id="screen-battle"] .battle-hakase-face{width:var(--battle-doctor-face,56px);height:var(--battle-doctor-face,56px)}
+#screen-battle.tate.battle-responsive[id="screen-battle"] .battle-hakase-text{font-size:var(--battle-doctor-font,.92rem)}
+#screen-battle.tate.battle-responsive[id="screen-battle"] .enemy-wrap.twin .enemy-char{font-size:var(--battle-twin-font,51.2px)}
+#screen-battle.tate.battle-responsive[id="screen-battle"] .twin-hp{font-size:var(--battle-star-font,16px)}
+#screen-battle.tate.battle-responsive[id="screen-battle"] #enemyInfo{left:var(--battle-info-left,44%);top:var(--battle-info-top,10px);transform:translateX(var(--battle-info-shift,-50%));zoom:var(--battle-info-scale,1)}
+#screen-battle.tate.battle-responsive[id="screen-battle"] .cry-bubble{left:var(--battle-cry-left,60%);top:var(--battle-cry-top,12%);font-size:var(--battle-cry-font,1.25rem);padding:var(--battle-cry-pady,8px) var(--battle-cry-padx,18px);border-width:var(--battle-cry-border,3px)}
+@media(max-width:340px){
+ #screen-battle.tate.battle-responsive[id="screen-battle"]:has(.enemy-wrap.twin) .battle-top{display:flex;gap:4px}
+ #screen-battle.tate.battle-responsive[id="screen-battle"]:has(.enemy-wrap.twin) .battle-top-right{flex-direction:column;gap:4px}
+ #screen-battle.tate.battle-responsive[id="screen-battle"]:has(.enemy-wrap.twin) .stage-label{min-width:96px;padding:2px 4px;font-size:.82rem;line-height:1.2}
+ #screen-battle.tate.battle-responsive[id="screen-battle"]:has(.enemy-wrap.twin) .hp{font-size:1.05rem}
+ #screen-battle.tate.battle-responsive[id="screen-battle"] .pbtn.pfield .pfuda{padding-left:3px;padding-right:3px}
+}
+</style>
 </head>
 <body>
 <!-- 弾TB-1：タブレットでバトルの絵を画面いっぱいに敷くための層。#app の外（下）に置く。
@@ -4514,7 +4565,7 @@ body.ice-dungeon #fieldInfo{display:none}
 <script src="writing/questions-all.js?v=story-20261016" defer></script>
 <script src="writing/story-transaction.js?v=story-20261016" defer></script>
 <script src="writing/story-questions.js?v=story-20261016" defer></script>
-<script src="writing/story-outcome.js?v=growth-20261018" defer></script>
+<script src="writing/story-outcome.js?v=pwa-20261024" defer></script>
 <script src="writing/story-battle.js?v=20261019-defeat" defer></script>
 <link rel="stylesheet" href="writing/prototype.css?v=story-20261016">
 <link rel="stylesheet" href="writing/story.css?v=20261019-layout">
@@ -11737,11 +11788,11 @@ function save(){
   if(window.KanjimonStoryOutcome?.batch)return true;
   if(window.KanjimonStoryOutcome?.locked)return false;
   if(difficulty==='writing'&&window.KanjimonStoryOutcome&&!KanjimonStoryOutcome.canSave())return false;
-  try{localStorage.setItem(SAVE_KEY,JSON.stringify(getSaveData()));window.KanjimonStoryOutcome?.saved();return true;}catch(e){return false;}
+  try{gameStorage.setItem(SAVE_KEY,JSON.stringify(getSaveData()));window.KanjimonStoryOutcome?.saved();return true;}catch(e){window.KanjimonSaveNotice?.();return false;}
 }
 function load(){
   try{
-    const raw=localStorage.getItem(SAVE_KEY); if(!raw) return;
+    const raw=gameStorage.getItem(SAVE_KEY); if(!raw) return;
     hadSaveAtBoot=true;   // 第5.5弾：rawが存在すれば既存プレイヤー（旧セーブ含む）→ 初回選択ポップは出さない
     const d=JSON.parse(raw);
     newGamePlus=KanjimonNewGamePlus.normalizeInfo(d,gradeOfZone);
@@ -36077,7 +36128,7 @@ function onTitleTap(){
 }
 function closeResetConfirm(){ $('resetConfirmOverlay').classList.remove('show'); }
 function doFullReset(){
-  localStorage.removeItem(SAVE_KEY);   // 削除のみ（セーブ形式の変更なし）
+  gameStorage.removeItem(SAVE_KEY);   // 削除のみ（セーブ形式の変更なし）
   location.reload();                    // まっさらな状態で再開
 }
 
@@ -36144,13 +36195,13 @@ function makeZoneStartSave(startZone){                 // 任意ゾーンから�
 }
 function makeGradeStartSave(n){ return makeZoneStartSave(GRADE_ZONES.find(g=>g.grade===n).from); }
 function startFromGrade(n){
-  try{ localStorage.setItem(SAVE_KEY, JSON.stringify(makeGradeStartSave(n))); }catch(e){}
+  try{ gameStorage.setItem(SAVE_KEY, JSON.stringify(makeGradeStartSave(n))); }catch(e){}
   location.reload();
 }
 /* イベントシーン確認よう（弾6-1d）：指定ゾーンのSから開始 → そのゾーンをクリア → 次ゾーンのゲートで演出発動
    76=船(津軽海峡)・83=飛行機(チュウゴク)。各 seen フラグは startZone>77 / >84 で自動判定（初回発動する） */
 function startFromZone(z){
-  try{ localStorage.setItem(SAVE_KEY, JSON.stringify(makeZoneStartSave(z))); }catch(e){}
+  try{ gameStorage.setItem(SAVE_KEY, JSON.stringify(makeZoneStartSave(z))); }catch(e){}
   location.reload();
 }
 function startAmamiEpisodeTest(n){
@@ -36161,7 +36212,7 @@ function startAmamiEpisodeTest(n){
   for(let i=2;i<n;i++)Object.assign(af['episode'+i],{done:true,phase:'done',mainIndex:i<5?AMAMI_EP1_WORDS.length:AMAMI_LATE_WORDS[i].length,entrySeen:true,midSeen:true});
   af.episode=Math.min(n,12);
   d.nationalDepartureSeen=true;d.amamiArrivalSeen=true;d.amamiFinal=af;d.sound=false;
-  try{localStorage.setItem(SAVE_KEY,JSON.stringify(d));}catch(e){return;}
+  try{gameStorage.setItem(SAVE_KEY,JSON.stringify(d));}catch(e){return;}
   location.reload();
 }
 function startAmamiEpisodeOneTest(){startAmamiEpisodeTest(1);}
@@ -36177,7 +36228,7 @@ function openTestSettings(){
   $('resetConfirmOverlay').classList.remove('show');
   // 現在のセーブ状態から初期値を読む（未セーブならデフォルト）
   let cur={};
-  try{ const raw=localStorage.getItem(SAVE_KEY); if(raw) cur=JSON.parse(raw)||{}; }catch(e){ cur={}; }
+  try{ const raw=gameStorage.getItem(SAVE_KEY); if(raw) cur=JSON.parse(raw)||{}; }catch(e){ cur={}; }
   const z=(typeof cur.unlocked==='number')?Math.min(STAGE_COUNT,Math.max(1,cur.unlocked|0)):1;
   $('ts-zone').value=z; $('ts-zone-val').textContent=z;
   $('ts-coins').value=(typeof cur.coins==='number')?(cur.coins|0):200;
@@ -36221,7 +36272,7 @@ function applyTestSettings(){
     coins:Math.max(0,$('ts-coins').value|0),
     difficulty:tsDifficulty
   };
-  try{ localStorage.setItem(SAVE_KEY,JSON.stringify(makeTestSave(opts))); }catch(e){}
+  try{ gameStorage.setItem(SAVE_KEY,JSON.stringify(makeTestSave(opts))); }catch(e){}
   location.reload();
 }
 
@@ -37851,7 +37902,7 @@ function shipScenePlayS7(){
 ================================ */
 let ngplusController=null,ngplusAction=null,ngplusFocus=null;
 function getNewGamePlusController(){
-  if(!ngplusController)ngplusController=KanjimonNewGamePlus.createController(localStorage,SAVE_KEY,{
+  if(!ngplusController)ngplusController=KanjimonNewGamePlus.createController(gameStorage,SAVE_KEY,{
     characterCount:K.length,gradeForZone:gradeOfZone,
     startPosition:{zone:1,...zoneStartOf(1)},amamiInitial:newAmamiFinal(),iceInitial:newIceDungeon()
   });
@@ -43173,6 +43224,110 @@ var YojiFieldScene = (function(){
            render:render, _jump:_jump, _freeze:_freeze, _sfxPlan:_sfxPlan, _marks:_marks };
 })();
 /* YJF:JS:END */
+// battle-responsive-20261010
+/* 表示だけの更新。出題、HP、保存、イベント、アニメーションは既存処理を使用。 */
+(()=>{
+ const screen=document.getElementById('screen-battle'),row=document.getElementById('partyRow');
+ const msg=document.getElementById('bMsg'),options=document.getElementById('bOptions'),hakase=document.getElementById('battleHakase');
+ if(!screen||!row||!msg||!options)return;
+ const heroInk={"hero-back-boy-wafuku.webp":{"top":75,"height":1495},"hero-victory-boy-wafuku.webp":{"top":76,"height":1502},"hero-back-boy-robo.webp":{"top":84,"height":1683},"hero-victory-boy-robo.webp":{"top":71,"height":1392},"hero-back-girl-wafuku.webp":{"top":5,"height":1237},"hero-victory-boy-rpg.webp":{"top":49,"height":969},"hero-back-girl.webp":{"top":5,"height":1189},"hero-victory-girl-wafuku.webp":{"top":6,"height":1455},"hero-back-boy-space.webp":{"top":70,"height":1396},"hero-victory-boy-space.webp":{"top":73,"height":1452},"hero-victory-boy-suit.webp":{"top":66,"height":1315},"hero-back-boy-rpg.webp":{"top":48,"height":969},"hero-victory-girl.webp":{"top":4,"height":1272},"hero-back-boy-suit.webp":{"top":72,"height":1416},"hero-back-girl-rpg.webp":{"top":5,"height":1189},"hero-victory-girl-snow.webp":{"top":5,"height":1350},"hero-victory-girl-rpg.webp":{"top":5,"height":1272},"hero-back-girl-snow.webp":{"top":4,"height":1359},"hero-victory-boy.webp":{"top":48,"height":900},"hero-back-boy.webp":{"top":48,"height":900},"hero-back-girl-suit.webp":{"top":5,"height":1147},"hero-back-girl-pink.webp":{"top":6,"height":1634},"hero-victory-girl-pink.webp":{"top":5,"height":1289},"hero-victory-girl-suit.webp":{"top":5,"height":1347}};
+ const ref=document.createElement('span');ref.className='battle-hero-reference';ref.setAttribute('aria-hidden','true');ref.textContent='林';screen.append(ref);
+ const fontContext=document.createElement('canvas').getContext('2d');
+ let frame=0,updating=false;
+ const px=(name,value)=>{const v=value+'px';if(screen.style.getPropertyValue(name)!==v)screen.style.setProperty(name,v);};
+ function wrap(root){
+  let pending=[];
+  const flush=()=>{if(!pending.length)return;const nodes=pending;pending=[];if(!nodes.some(n=>n.textContent.trim()))return;
+   const span=document.createElement('span');span.className='ink-run';root.insertBefore(span,nodes[0]);nodes.forEach(n=>span.append(n));};
+  for(const n of [...root.childNodes]){
+   if(n.nodeType===1){if(n.classList.contains('ink-run')){flush();continue;}if(n.tagName==='BR'){flush();continue;}
+    if(['block','flex','grid','inline-block'].includes(getComputedStyle(n).display)){flush();wrap(n);continue;}}
+   pending.push(n);
+  }flush();
+ }
+ function watch(){
+  [msg,options,hakase,row].filter(Boolean).forEach(e=>mutation.observe(e,{childList:true,subtree:true,characterData:true}));
+  mutation.observe(screen,{attributes:true,attributeFilter:['class']});mutation.observe(document.body,{attributes:true,attributeFilter:['class']});
+ }
+ function update(){
+  frame=0;if(updating)return;updating=true;mutation.disconnect();
+  try{
+   const active=screen.classList.contains('tate')&&!document.body.classList.contains('ice-dungeon-battle');
+   screen.classList.toggle('battle-responsive',active);
+   screen.classList.toggle('battle-compact',active&&screen.clientHeight<568);
+   if(!active){screen.querySelectorAll('.ink-run').forEach(s=>s.replaceWith(...s.childNodes));return;}
+   if(!screen.getClientRects().length){document.getElementById('app').scrollTop=0;return;}
+   wrap(msg);if(hakase)wrap(hakase);options.querySelectorAll('.opt').forEach(wrap);
+   row.querySelectorAll('.pfuda').forEach(f=>f.classList.toggle('pfuda-wide',/Lv\d{2,}/.test(f.querySelector('.pfuda-lv')?.textContent||'')));
+   const choices=[...options.querySelectorAll('.opt')],spans=choices.map(b=>b.querySelector('.ink-run'));
+   spans.forEach(s=>{if(s){s.style.width='auto';s.classList.remove('ink-wrap');}});
+   if(choices.length&&spans.every(Boolean)){
+    const natural=spans.map(s=>{const r=document.createRange();r.selectNodeContents(s);return r.getBoundingClientRect().width+6;});
+    const limit=Math.min(...choices.map(b=>{const s=getComputedStyle(b);return b.clientWidth-parseFloat(s.paddingLeft)-parseFloat(s.paddingRight);}));
+    const width=Math.max(0,Math.min(Math.max(...natural),limit));
+    spans.forEach(s=>{s.style.width=width+'px';const r=document.createRange();r.selectNodeContents(s);s.classList.toggle('ink-wrap',new Set([...r.getClientRects()].map(x=>Math.round(x.top))).size>1);});
+   }
+   const w=screen.clientWidth,p=Math.max(0,Math.min(1,(w-320)/70)),q=Math.max(0,Math.min(1,(568-screen.clientHeight)/80)),victory=!!row.querySelector('.hero-back.victory-pop');
+   const mix=(a,b)=>a+(b-a)*q;
+   px('--battle-window-min',mix(78,52));px('--battle-window-cap',Math.max(52,Math.min(220,52+.6*(screen.clientHeight-488))));
+   px('--battle-message-font',mix(15.2+3.2*p,13.6));screen.style.setProperty('--battle-message-line',String(mix(1.4+.1*p,1.4)));
+   px('--battle-msg-pady',mix(8+6*p,6));px('--battle-msg-padx',mix(8+8*p,8));
+   px('--battle-doctor-face',mix(Math.max(56,Math.min(76,.16*w)),34));px('--battle-doctor-font',mix(14.72,13));
+   px('--battle-doctor-pady',mix(8,6));px('--battle-doctor-padx',mix(14,8));
+   px('--battle-twin-font',mix(Math.max(40,Math.min(68,.16*w)),40));px('--battle-star-font',mix(16,12.5));
+   screen.style.setProperty('--battle-info-left','calc('+44*(1-q)+'% + '+58*q+'px)');px('--battle-info-top',10*(1-q));
+   screen.style.setProperty('--battle-info-shift',-50*(1-q)+'%');screen.style.setProperty('--battle-info-scale',String(1-.1*q));
+   screen.style.setProperty('--battle-cry-left','calc('+60*(1-q)+'% + '+200*q+'px)');screen.style.setProperty('--battle-cry-top',12*(1-q)+'%');
+   const cry=screen.querySelector('.cry-bubble');px('--battle-cry-font',mix(cry?.classList.contains('boss')?24:20,12.8));
+   px('--battle-cry-pady',mix(8,4));px('--battle-cry-padx',mix(18,8));px('--battle-cry-border',mix(3,2));
+   const card=44+4*p,gap=victory?3+7*p:6+8*p,right=victory?7+3*p:6+8*p;
+   px('--battle-card-width',card);px('--battle-party-font',33.0832+9.1568*p);px('--battle-party-gap',gap);
+   px('--battle-party-right',right);px('--battle-party-left',w-right-4*card-3*gap);px('--battle-label-padding',1+2*p);
+   const sr=screen.getBoundingClientRect(),or=options.getBoundingClientRect();
+   const floor=sr.bottom-or.bottom,answerHeight=Math.max(168,or.height);
+   px('--battle-message-bottom',floor+answerHeight+8);
+   const message=hakase?.classList.contains('show')?hakase:msg,mr=message.getBoundingClientRect();
+   if(hakase)hakase.style.alignItems=hakase.scrollHeight>hakase.clientHeight?'flex-start':'';
+   [msg,hakase].filter(Boolean).forEach(e=>{if(e.scrollHeight>e.clientHeight)e.setAttribute('tabindex','0');else e.removeAttribute('tabindex');});
+   px('--battle-party-bottom',sr.bottom-mr.top+8);
+   // 通常戦闘の上部帯(3.4rem)、余白、漢字の字体寸法を基準にする。敵・HP・ツインには依存しない。
+   const font=w<=390?90+34.8*p:Math.min(160,.32*w),scenePadding=4+12*p;ref.style.fontSize=font+'px';
+   px('--battle-normal-font',font);px('--battle-scene-padding',scenePadding);px('--battle-screen-padding',8+8*p);
+   // 短い画面・長文で仲間と敵が重なるときだけ、場面の残り高さに収める。
+   const enemy=screen.querySelector('.enemy-wrap'),scene=screen.querySelector('.scene.battle');
+   screen.style.setProperty('--battle-enemy-scale','1');
+   if(enemy&&scene){
+    const natural=enemy.getBoundingClientRect().height,top=scene.getBoundingClientRect().top+scenePadding+6;
+    let scale=1;
+    for(let i=0;i<3;i++){
+     const er=enemy.getBoundingClientRect(),cards=[...row.querySelectorAll('.pbtn.pfield')].map(e=>e.getBoundingClientRect());
+     const relevant=cards.filter(r=>r.right>er.left&&r.left<er.right),ceiling=Math.min(...relevant.map(r=>r.top));
+     scale=Math.max(.2,Math.min(1,(ceiling-top-8)/natural));screen.style.setProperty('--battle-enemy-scale',String(scale));
+    }
+   }
+   const range=document.createRange();range.selectNodeContents(ref);
+   fontContext.font=getComputedStyle(ref).font;
+   const metrics=fontContext.measureText(ref.textContent);
+   const glyphBottom=range.getBoundingClientRect().top-ref.getBoundingClientRect().top+metrics.fontBoundingBoxAscent+metrics.actualBoundingBoxDescent;
+   const rootFont=parseFloat(getComputedStyle(document.documentElement).fontSize);
+   const height=Math.min(320,w*320/390)*.9;px('--battle-hero-height',height);
+   const normalAnchor=8+3.4*rootFont+scenePadding+10+glyphBottom;
+   const anchor=Math.min(normalAnchor,Math.max(8+3.4*rootFont+8,mr.top-sr.top-height*.35));
+   const image=row.querySelector('.hero-back img');
+   if(image){const name=image.getAttribute('src').split('/').pop().split('?')[0],ink=heroInk[name];
+    const inkTop=ink?ink.top/ink.height:0;
+    px('--battle-hero-top',anchor-(row.getBoundingClientRect().top-sr.top)-height*inkTop);
+   }
+  }finally{updating=false;watch();}
+ }
+ function schedule(){if(!frame)frame=requestAnimationFrame(update);}
+ const mutation=new MutationObserver(schedule),resize=new ResizeObserver(schedule);
+ [screen,msg,options,hakase,row].filter(Boolean).forEach(e=>resize.observe(e));
+ document.addEventListener('load',e=>{if(e.target.matches?.('.hero-back img'))schedule();},true);
+ window.addEventListener('resize',schedule);window.visualViewport?.addEventListener('resize',schedule);
+ document.fonts.ready.then(schedule);watch();schedule();
+})();
+
 </script>
 </body>
 </html>
