@@ -26,7 +26,7 @@
 .amami-easy.ase-tilt .interior-npc-visual{transform:rotate(-8deg);transform-origin:center bottom;transition:transform .3s ease}
 body.amami-episode1-mode #fieldControls,body.amami-episode1-mode #fieldModeBadge,body.amami-episode1-mode #fieldZoneName{pointer-events:none}
 body.amami-episode1-mode .field-h .btn,body.amami-episode1-mode .field-h .map-btn{visibility:hidden}
-#screen-battle.amami-episode1-battle{background-image:url('../images/battle-tate/amami-ashitoku-v1.png');background-position:99.07% 68.93%;background-size:auto 105.36%}
+#screen-battle.amami-episode1-battle{background-image:url('../images/battle-tate/amami-ashitoku-v1.webp');background-position:99.07% 68.93%;background-size:auto 105.36%}
 #screen-battle.amami-episode1-battle .battle-coins{display:none}
 #screen-battle.amami-episode1-battle .enemy-info .tbadge{background:#fff7cf;color:#6b4b00;border:2px solid #f4c84b}
 @media (min-width:481px){#amamiEpisode1Root{left:50%;right:auto;width:480px;transform:translateX(-50%)}}

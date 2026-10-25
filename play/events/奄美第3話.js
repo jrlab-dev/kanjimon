@@ -50,7 +50,7 @@
     function base(){
       closeCut();clearTimers();clearActors();resetTalk();
       if(!global.NationalDeparture||!global.AmamiArrival)throw new Error('奄美フィールド部品がありません');
-      const f=global.NationalDeparture.showField(102,{gender:gender(),hero:true,label:'名瀬の街',adults:0,mana:false,monsters:0,background:'amami-main-03-naze-town.png',point:{x:15,y:6}});
+      const f=global.NationalDeparture.showField(102,{gender:gender(),hero:true,label:'名瀬の街',adults:0,mana:false,monsters:0,background:'amami-main-03-naze-town.webp',point:{x:15,y:6}});
       document.body.classList.add('amami-episode3-mode');root.classList.add('active');
       q('#asnChapter',root)?.classList.remove('show');q('#asnProgress',root)?.classList.remove('show');
       const hero=$('fieldHero');if(hero){hero.style.transition='none';hero.style.setProperty('--hx',f.cx);hero.style.setProperty('--hy',f.cy+1.55);try{setHeroFacing(0,-1);}catch(e){}}

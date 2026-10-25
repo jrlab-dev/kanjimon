@@ -4,7 +4,7 @@
 #ayGear{position:absolute;right:8%;top:26%;width:64px;height:64px;animation:ayGear 35s linear infinite;pointer-events:none}@keyframes ayGear{to{transform:rotate(360deg)}}
 #ayGear,#ayBattleGear,.ay-gear-wheel{font-size:0;background:url('/play/images/amami-blocks/brass-gear.svg') center/contain no-repeat}
 #ayBattleGear{width:40px;height:40px}
-#ayGearCut{position:absolute;inset:72px 0 0;z-index:8;container-type:size;display:grid;place-items:center;background:url('/play/images/fullart/amami-toy-castle-floor2.png') center/cover;pointer-events:none}
+#ayGearCut{position:absolute;inset:72px 0 0;z-index:8;container-type:size;display:grid;place-items:center;background:url('/play/images/fullart/amami-toy-castle-floor2.webp') center/cover;pointer-events:none}
 .ay-gear-result{width:92%;display:flex;flex-direction:column;align-items:center;gap:24px;padding-bottom:8cqh}
 .ay-gear-wheel{width:min(68cqw,48cqh,280px);aspect-ratio:1;animation:ayGear 35s linear infinite;filter:drop-shadow(0 8px 5px #63391966);transition:filter .2s}
 #ayGearCut[data-beat=turning] .ay-gear-wheel,#ayGearCut[data-beat=settled] .ay-gear-wheel{filter:drop-shadow(0 0 14px #fff2af) drop-shadow(0 8px 5px #63391966)}
@@ -13,12 +13,12 @@
 @media(prefers-reduced-motion:reduce){#ayBattleGear,.ay-gear-wheel{animation:none}.ay-gear-wheel{transition:none}}
 #ayAlmost{position:absolute;left:62%;top:39%;padding:5px 12px;background:#fff;color:#3b4e68;border-radius:14px;font-weight:900}
 #ayDoorWrap{position:absolute;left:50%;top:25%;transform:translateX(-50%);pointer-events:auto}#ayDoor{border:2px solid #fff;border-radius:14px;background:#204565e8;color:#fff;font-size:1rem;font-weight:900;padding:12px 20px;white-space:nowrap;cursor:pointer}
-#ayCastlePan{position:absolute;inset:0;z-index:8;background:url('/play/images/fullart/amami-castle-pan-v2.png') center bottom/auto 145% no-repeat;opacity:1;transition:background-position 5.1s ease-in-out,opacity .9s;pointer-events:none}
+#ayCastlePan{position:absolute;inset:0;z-index:8;background:url('/play/images/fullart/amami-castle-pan-v2.webp') center bottom/auto 145% no-repeat;opacity:1;transition:background-position 5.1s ease-in-out,opacity .9s;pointer-events:none}
 #ayCastlePan.look-up{background-position:center top}#ayCastlePan.look-back{background-position:center bottom;opacity:0}
 #ayFocus{position:absolute;left:15%;right:15%;top:21%;height:28%;display:flex;justify-content:center;background:radial-gradient(ellipse,#fff9,transparent 70%);pointer-events:none}#ayFocus .ay-focus-sprite{width:55%;aspect-ratio:1;background-size:300% 200%;background-position:0 0;background-repeat:no-repeat}#ayFocus.both .ay-focus-sprite{width:48%}
 
 .ay-focus-easy{width:35%;object-fit:contain}#ayFocus.both .ay-focus-easy{width:42%}
-#amamiLateRoot.final-stage{background:#10251e}#amamiLateRoot.beach-stage{background:url('/play/images/fullart/amami-ending-beach.png') center/cover}
+#amamiLateRoot.final-stage{background:#10251e}#amamiLateRoot.beach-stage{background:url('/play/images/fullart/amami-ending-beach.webp') center/cover}
 #aySplit{position:absolute;top:4%;left:50%;transform:translateX(-50%);width:94%;height:min(82dvh,calc(100dvh - 95px));overflow:hidden;border-radius:12px;background:#13261e;isolation:isolate}
 #aySplit .ay-pane{position:absolute;inset:0;background-size:200% 200%;background-position:50% 100%;color:white}
 #aySplit .ay-pane:nth-child(1){clip-path:polygon(50% 50%,13.67% 0,86.33% 0)}

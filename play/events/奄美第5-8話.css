@@ -52,7 +52,7 @@ body.amami-late-mode .field-object{visibility:hidden}
 .ay-delayed-word{animation:ayWord .5s both}
 #ayWater.answer-wave{top:44%;height:90px}
 #ayWater.answer-wave i{width:60%;height:55px;left:20%}
-#ayCastleLight{position:absolute;left:calc(var(--castle-x)*var(--tile));top:calc(var(--castle-y)*var(--tile));width:calc(7*var(--tile));height:calc(4.67*var(--tile));transform:translateX(-50%);background:url('../images/fullart/amami-main-08-toy-castle.png') center top/100% 100%;mask-image:linear-gradient(#000 80%,transparent);opacity:0;transition:opacity .9s;pointer-events:none;z-index:7}
+#ayCastleLight{position:absolute;left:calc(var(--castle-x)*var(--tile));top:calc(var(--castle-y)*var(--tile));width:calc(7*var(--tile));height:calc(4.67*var(--tile));transform:translateX(-50%);background:url('../images/fullart/amami-main-08-toy-castle.webp') center top/100% 100%;mask-image:linear-gradient(#000 80%,transparent);opacity:0;transition:opacity .9s;pointer-events:none;z-index:7}
 #fieldGrid:has(>#ayCastleLight)>#fieldHero{z-index:100}
 #fieldGrid:has(>#ayCastleLight)>.amami-easy{z-index:101}
 #ayCastleLight.show{opacity:1}

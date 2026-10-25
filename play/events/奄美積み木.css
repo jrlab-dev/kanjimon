@@ -1,4 +1,4 @@
-.acb-scene{position:absolute;inset:72px 0 0;overflow:hidden;pointer-events:none;background:url('../images/fullart/amami-toy-castle-floor1.png') 50% 63%/220% 180%;z-index:6;opacity:1;transition:opacity .45s,transform .7s;isolation:isolate;box-shadow:inset 0 0 50px #a7751820}
+.acb-scene{position:absolute;inset:72px 0 0;overflow:hidden;pointer-events:none;background:url('../images/fullart/amami-toy-castle-floor1.webp') 50% 63%/220% 180%;z-index:6;opacity:1;transition:opacity .45s,transform .7s;isolation:isolate;box-shadow:inset 0 0 50px #a7751820}
 .acb-scene{container-type:size}
 .acb-board{position:absolute;left:50%;top:37%;width:min(100cqw,66cqh,410px);aspect-ratio:10/11;transform:translate(-50%,-50%);transform-origin:50% 65%;transition:transform .8s}
 .acb-scene.wide .acb-board{transform:translate(-50%,-50%) scale(.74)}

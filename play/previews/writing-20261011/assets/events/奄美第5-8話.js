@@ -33,10 +33,10 @@
   return{start,stop,stats,get active(){return !!active;},get playing(){return !!active?.source;},get volume(){return active?.source?active.volume:0;},get position(){return active?.buffer?(active.offset+(active.source?active.ctx.currentTime-active.startedAt:0))%active.buffer.duration:0;},get decodedBytes(){return active?.buffer?active.buffer.length*active.buffer.numberOfChannels*4:0;}};
  })();
  const CONFIG={
-  5:{name:'住用マングローブ',title:'組み合わせを作る',field:'amami-main-05-sumiyo-mangrove.png',battle:'amami-sumiyo-v2.png',pos:'81.20% 89.34%',size:'auto 150.51%',mid:4,entry:['こんどは、二つずつ。','合う ことばを 見つけて。'],ending:['ちがう 組み合わせも、つくれる。','……つぎも、あるよ。']},
-  6:{name:'ホノホシ海岸',title:'つぎ、これも',field:'amami-main-06-honohoshi.png',battle:'amami-honohoshi-v1.png',pos:'100% 100%',size:'auto 105.36%',mid:4,entry:['波が くるたび、一つ。','……ぼくが 順番を かえたよ。'],ending:['つぎ、これも！','……まだ、つづける？']},
-  7:{name:'最終決戦の森・入口',title:'何を出そう',field:'amami-main-07-final-forest.png',battle:'amami-final-forest-entrance-v2.png',pos:'82.85% 59.90%',size:'auto 150.51%',mid:3,entry:['こんどは……何を 出そう。'],ending:['ぜんぶ 知ってるのに、えらぶのは すぐじゃ ないんだね。','……まだ 出したい。']},
-  8:{name:'最終決戦の森・奥',title:'待っている側になる',field:'amami-main-07b-final-forest-depths.png',battle:'amami-final-forest-depths-v1.png',pos:'100% 100%',size:'auto 105.36%',mid:4,entry:[],ending:['はやく。つぎ、思いついた。']}
+  5:{name:'住用マングローブ',title:'組み合わせを作る',field:'amami-main-05-sumiyo-mangrove.webp',battle:'amami-sumiyo-v2.webp',pos:'81.20% 89.34%',size:'auto 150.51%',mid:4,entry:['こんどは、二つずつ。','合う ことばを 見つけて。'],ending:['ちがう 組み合わせも、つくれる。','……つぎも、あるよ。']},
+  6:{name:'ホノホシ海岸',title:'つぎ、これも',field:'amami-main-06-honohoshi.webp',battle:'amami-honohoshi-v1.webp',pos:'100% 100%',size:'auto 105.36%',mid:4,entry:['波が くるたび、一つ。','……ぼくが 順番を かえたよ。'],ending:['つぎ、これも！','……まだ、つづける？']},
+  7:{name:'最終決戦の森・入口',title:'何を出そう',field:'amami-main-07-final-forest.webp',battle:'amami-final-forest-entrance-v2.webp',pos:'82.85% 59.90%',size:'auto 150.51%',mid:3,entry:['こんどは……何を 出そう。'],ending:['ぜんぶ 知ってるのに、えらぶのは すぐじゃ ないんだね。','……まだ 出したい。']},
+  8:{name:'最終決戦の森・奥',title:'待っている側になる',field:'amami-main-07b-final-forest-depths.webp',battle:'amami-final-forest-depths-v1.webp',pos:'100% 100%',size:'auto 105.36%',mid:4,entry:[],ending:['はやく。つぎ、思いついた。']}
  };
  const NEW_READINGS={'起死回生':['きし','かいせい'],'臨機応変':['りんき','おうへん'],'温故知新':['おんこ','ちしん'],'有言実行':['ゆうげん','じっこう'],'心機一転':['しんき','いってん'],'前代未聞':['ぜんだい','みもん'],'電光石火':['でんこう','せっか']};
  function definition(word){
@@ -93,7 +93,7 @@
   }
   function forestCut(){
    AmamiMotion.stop();const cut=document.createElement('div');cut.className='ay-cinema';
-   cut.innerHTML='<img class="ay-cinema-bg" src="images/fullart/amami-main-07-final-forest.png" alt="光が差し込むアマミの森の入口"><div class="ay-cut-location">アマミ・森の入口</div><button class="ay-cut-close" type="button" aria-label="会話を中断してタイトルへ戻る">とじる</button><div class="ay-cinema-stage"><img class="ay-shoulder" alt="イージーに向き合って話を聞く主人公"><img class="ay-close-easy easy3d-frame" src="images/easy-motion/poster.png" alt="イージー"></div>';
+   cut.innerHTML='<img class="ay-cinema-bg" src="images/fullart/amami-main-07-final-forest.webp" alt="光が差し込むアマミの森の入口"><div class="ay-cut-location">アマミ・森の入口</div><button class="ay-cut-close" type="button" aria-label="会話を中断してタイトルへ戻る">とじる</button><div class="ay-cinema-stage"><img class="ay-shoulder" alt="イージーに向き合って話を聞く主人公"><img class="ay-close-easy easy3d-frame" src="images/easy-motion/poster.png" alt="イージー"></div>';
    cut.querySelector('.ay-shoulder').src=heroImage('back');
    const images=[...cut.querySelectorAll('img')];
    for(const img of images)img.addEventListener('error',()=>{if(cut.isConnected)closeCut();},{once:true});
@@ -171,7 +171,7 @@
   function afterWord(done){if(episode!==6){done();return;}base();const word=AMAMI_LATE_WORDS[6][Math.max(0,state().mainIndex-1)],peer=seaCut(word,true);seaMotion(peer,'08');later(()=>finish(()=>{closeCut();done?.();}),1450);}
   async function castleVista(done){
    const g=generation,cut=document.createElement('div');cut.className='ay-cinema ay-vista';
-   cut.innerHTML='<img class="ay-cinema-bg" src="images/fullart/amami-main-07b-final-forest-depths.png" alt="森の奥へ続く道"><div class="ay-cut-location">アマミ・森の奥</div><button class="ay-cut-close" type="button" aria-label="会話を中断してタイトルへ戻る">とじる</button><div class="ay-vista-stage"><img class="ay-vista-castle" src="images/fullart/amami-main-08-toy-castle.png" alt="目の前にそびえるおもちゃの城"><div class="ay-vista-hero" role="img" aria-label="イージーを向く主人公"></div><div class="ay-vista-easy"><img class="easy3d-frame" alt="主人公を向くイージー"></div></div>';
+   cut.innerHTML='<img class="ay-cinema-bg" src="images/fullart/amami-main-07b-final-forest-depths.webp" alt="森の奥へ続く道"><div class="ay-cut-location">アマミ・森の奥</div><button class="ay-cut-close" type="button" aria-label="会話を中断してタイトルへ戻る">とじる</button><div class="ay-vista-stage"><img class="ay-vista-castle" src="images/fullart/amami-main-08-toy-castle.webp" alt="目の前にそびえるおもちゃの城"><div class="ay-vista-hero" role="img" aria-label="イージーを向く主人公"></div><div class="ay-vista-easy"><img class="easy3d-frame" alt="主人公を向くイージー"></div></div>';
    root.prepend(cut);root.classList.add('cinematic');root.dataset.beat='loading';
    cut.querySelector('button').onclick=e=>{e.stopPropagation();destroy();global.showScreen('screen-title');};
    const stage=cut.querySelector('.ay-vista-stage'),hero=cut.querySelector('.ay-vista-hero'),peer=cut.querySelector('.ay-vista-easy img'),sheet=new Image(),up=new Image(),left=new Image();

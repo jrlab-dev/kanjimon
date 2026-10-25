@@ -30,7 +30,7 @@
 @keyframes asnEnemyFloat{50%{margin-top:-6px}}
 body.amami-episode3-mode #fieldControls,body.amami-episode3-mode #fieldModeBadge,body.amami-episode3-mode #fieldZoneName{pointer-events:none}
 body.amami-episode3-mode .field-h .btn,body.amami-episode3-mode .field-h .map-btn{visibility:hidden}
-#screen-battle.amami-episode3-battle{background-image:url('/play/images/battle-tate/amami-naze-v2.png');background-position:93.31% 87.52%;background-size:auto 150.51%}
+#screen-battle.amami-episode3-battle{background-image:url('/play/images/battle-tate/amami-naze-v2.webp');background-position:93.31% 87.52%;background-size:auto 150.51%}
 #screen-battle.amami-episode3-battle .battle-coins{display:none}
 #screen-battle.amami-episode3-battle .enemy-info .tbadge{background:#e6fbff;color:#07526b;border:2px solid #67d6ea}
 @media (min-width:481px){#amamiEpisode3Root{left:50%;right:auto;width:480px;transform:translateX(-50%)}}

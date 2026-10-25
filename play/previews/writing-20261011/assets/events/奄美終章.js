@@ -122,7 +122,7 @@
  }
  function e3(){
   const places=[
-   {zone:102,label:'オキナワ',count:3,background:'okinawa-ferry-entrance-field-20260921.png',mana:true,monsters:4},
+   {zone:102,label:'オキナワ',count:3,background:'okinawa-ferry-entrance-field-20260921.webp',mana:true,monsters:4},
    {zone:1,label:'トウキョウ',count:3,mana:true,monsters:6},
    {zone:102,label:'別の町',count:3,background:'town-bg-south.webp',mana:false,monsters:4},
    {zone:83,label:'ホッカイドウ',count:5,mana:true,adults:0,hokkaido:true,monsters:16}
@@ -153,7 +153,7 @@
   const source=$('fieldHero')?.querySelector('.hero-sprite');if(source){global.AmamiArrival.heroWalkFrame(source,false);const sprite=document.createElement('span'),cs=getComputedStyle(source);sprite.className='aen-hero-copy';for(const k of ['backgroundImage','backgroundSize','backgroundPosition','width','height'])sprite.style[k]=cs[k];actor.appendChild(sprite);}return actor;
  }
  function showMontage(){
-  const art=$('aenMontage');art.innerHTML='<img src="images/fullart/amami-toy-castle-floor1.png" alt="城の遊び"><img src="images/fullart/amami-main-03-naze-town.png" alt="主人公が歩いた町"><img src="images/title/title-hero-field.webp" alt="かんじモンのゲーム画面">';
+  const art=$('aenMontage');art.innerHTML='<img src="images/fullart/amami-toy-castle-floor1.webp" alt="城の遊び"><img src="images/fullart/amami-main-03-naze-town.webp" alt="主人公が歩いた町"><img src="images/title/title-hero-field.webp" alt="かんじモンのゲーム画面">';
   art.classList.add('show');let i=0;const imgs=[...art.querySelectorAll('img')];
   imgs[0].classList.add('on');[1500,3000].forEach(ms=>later(()=>{imgs[i].classList.remove('on');imgs[++i].classList.add('on');},ms));
   const reader=copyHero('aen-making-reader'),answer=document.createElement('span');answer.className='aen-making-reading';answer.textContent=global.AmamiLate.definition(AMAMI_LATE_WORDS[5][0]).y;reader.appendChild(answer);art.appendChild(reader);
@@ -173,7 +173,7 @@
   }
   ensureRoot();root.dataset.phase=phase;
   if(phase==='E1'||phase==='E2'){
-   const f=scene(102,{label:'おもちゃの城 4階',background:'amami-toy-castle-floor4.png',hero:true,scene:'castle'});placeEasies(f,1,[{x:f.cx+1.75,y:f.cy-.35}],phase!=='E1');
+   const f=scene(102,{label:'おもちゃの城 4階',background:'amami-toy-castle-floor4.webp',hero:true,scene:'castle'});placeEasies(f,1,[{x:f.cx+1.75,y:f.cy-.35}],phase!=='E1');
    if(phase==='E2'){
     const memory=document.createElement('div');memory.className='aen-memory-frame';memory.innerHTML='<img src="images/sprites/mana-farewell-20260920.png" alt="出発時のマナを思い出す">';root.appendChild(memory);
     later(()=>memory.classList.add('show'),250);
@@ -192,14 +192,14 @@
   }
   if(phase==='E3'){e3();return;}
   if(phase==='E4'){
-   scene(102,{label:'かえりの船',background:'ship-view-okinawa-20260920.png',hero:false,mana:false,scene:'sailing'});
+   scene(102,{label:'かえりの船',background:'ship-view-okinawa-20260920.webp',hero:false,mana:false,scene:'sailing'});
                                             
    const sea=document.createElement('div');sea.className='aen-voyage-scene';root.appendChild(sea);
    voyageResize=()=>{const wr=$('fieldWrap').getBoundingClientRect(),rr=root.getBoundingClientRect();Object.assign(sea.style,{left:(wr.left-rr.left)+'px',top:(wr.top-rr.top-10)+'px',width:wr.width+'px',height:(wr.height+10)+'px'});};
    voyageResize();window.addEventListener('resize',voyageResize);
    const voyage=document.createElement('img');voyage.className='aen-picture aen-voyage';voyage.src='images/fullart/ship-side-clear.webp';voyage.alt='奄美から沖縄へ戻る船';sea.appendChild(voyage);
    later(()=>voyage.classList.add('show'),100);
-   later(()=>{if(voyageResize){window.removeEventListener('resize',voyageResize);voyageResize=null;}sea.remove();const f=scene(102,{label:'フェリーのりば',background:'okinawa-ferry-entrance-field-20260921.png',hero:true,mana:true,scene:'return'});placeEasies(f,1,[{x:f.cx+2.4,y:f.cy+.25}]);talk(storyRows(phase),advance,row=>{if(row?.id==='E401')musicToken=global.bgmSceneBegin('amami-ending-E4','mana');});},2600);
+   later(()=>{if(voyageResize){window.removeEventListener('resize',voyageResize);voyageResize=null;}sea.remove();const f=scene(102,{label:'フェリーのりば',background:'okinawa-ferry-entrance-field-20260921.webp',hero:true,mana:true,scene:'return'});placeEasies(f,1,[{x:f.cx+2.4,y:f.cy+.25}]);talk(storyRows(phase),advance,row=>{if(row?.id==='E401')musicToken=global.bgmSceneBegin('amami-ending-E4','mana');});},2600);
    return;
   }
   if(phase==='E5'){
@@ -216,7 +216,7 @@
    });return;
   }
   if(phase==='E6'){
-   const f=scene(102,{label:'あたらしい遊び',background:'amami-toy-castle-floor1.png',hero:true,scene:'making'});placeEasies(f,1,[{x:f.cx+1.5,y:f.cy-.2}]);showMontage();
+   const f=scene(102,{label:'あたらしい遊び',background:'amami-toy-castle-floor1.webp',hero:true,scene:'making'});placeEasies(f,1,[{x:f.cx+1.5,y:f.cy-.2}]);showMontage();
                                    
    const phoneAppearsAt=performance.now()+4100;
    talk(storyRows(phase),()=>later(advance,Math.max(800,phoneAppearsAt+1500-performance.now())));return;

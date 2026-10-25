@@ -131,7 +131,7 @@
     const plan=[
       ()=>auto('A00_AMAMI_MAP',3600,showMap),
       // 船は描かれていないため、主人公は港の陸地を左から歩いて入る。
-      ()=>auto('A01_AKAKINA_PORT',1900,()=>{root.classList.add('active');heroChar=gender;const f=showField('amami-side-01-akakina-port.png','赤木名港',gender);hero=walkHero({x:f.cx-3,y:f.cy-.65},{x:f.cx,y:f.cy-.65},1700);later(()=>{stopWalk(hero);setHeroFacing(0,1);},1740);}),
+      ()=>auto('A01_AKAKINA_PORT',1900,()=>{root.classList.add('active');heroChar=gender;const f=showField('amami-side-01-akakina-port.webp','赤木名港',gender);hero=walkHero({x:f.cx-3,y:f.cy-.65},{x:f.cx,y:f.cy-.65},1700);later(()=>{stopWalk(hero);setHeroFacing(0,1);},1740);}),
       // イージーは港の広場で主人公を待つ。
       ()=>auto('A02_EASY_APPEAR',1300,()=>{const f=global.__ND_FIELD;easy=placeEasy(f.cx+1.65,f.cy+1.65,1.25,'up');if(easy){easy.style.opacity='0';requestAnimationFrame(()=>requestAnimationFrame(()=>{easy.style.transition='opacity .8s ease';easy.style.opacity='1';}));}}),
       ()=>line(0),
@@ -139,7 +139,7 @@
       ()=>line(2),
       // 会話後は海へ戻らず、画面下の陸地へイージーが先導し、主人公が続く。
       ()=>auto('A04_FOLLOW_EASY',3000,()=>{const f=global.__ND_FIELD;if(!f)return;walkEasy(easy,{x:f.cx+1.65,y:f.cy+4.6},2350);hero=walkHero({x:f.cx,y:f.cy-.65},{x:f.cx,y:f.cy+2.2},2350);later(()=>stopWalk(hero),2400);}),
-      ()=>auto('A05_ASHITOKU',2600,()=>{const f=showField('amami-main-01-ashitoku.png','芦徳・海辺の宿場',gender);hero=$('fieldHero');try{setHeroFacing(0,-1);}catch(e){}easy=placeEasy(f.cx+1.65,f.cy-2.05,1.25);}),
+      ()=>auto('A05_ASHITOKU',2600,()=>{const f=showField('amami-main-01-ashitoku.webp','芦徳・海辺の宿場',gender);hero=$('fieldHero');try{setHeroFacing(0,-1);}catch(e){}easy=placeEasy(f.cx+1.65,f.cy-2.05,1.25);}),
       ()=>finish()
     ];
     function run(){if(!running)return;index++;if(index>=plan.length)return finish();plan[index]();}

@@ -135,7 +135,7 @@
   }
 
   function setupRoot(host){let root=$('ndEventRoot');if(root)root.remove();root=document.createElement('div');root.id='ndEventRoot';root.innerHTML='<div id="ndIceFlash" aria-hidden="true"></div><div id="ndPlace"></div><div id="ndMapRegion"></div><div id="ndIncoming"><span>●</span><b>トウキョウから　つうしん</b></div><div id="ndTalk"><img id="ndFace" alt=""><div><b id="ndWho"></b><p id="ndText"></p><small id="ndNext">▼ つづく</small></div></div>';(host||document.body).appendChild(root);return root;}
-  function shipAssets(){q('#spBgTerminal img').src='images/fullart/ship-terminal-okinawa-20260920.png';q('#spBgPier img').src='images/fullart/ship-pier-okinawa-20260920.png';$('spHeroCut').src='images/fullart/ship-hero-okinawa-20260920.png';q('#spBgMt img').src='images/fullart/ship-bg-okinawa-20260920.png';}
+  function shipAssets(){q('#spBgTerminal img').src='images/fullart/ship-terminal-okinawa-20260920.webp';q('#spBgPier img').src='images/fullart/ship-pier-okinawa-20260920.webp';$('spHeroCut').src='images/fullart/ship-hero-okinawa-20260920.webp';q('#spBgMt img').src='images/fullart/ship-bg-okinawa-20260920.webp';}
   function startShipS0(done,alive){
     shipAssets();document.body.classList.add('nd-ship-mode');shipSceneSeq++;const seq=shipSceneSeq;shipSceneActive=true;shipSceneResetLayers();$('shipSceneOverlay').classList.add('show');$('spBgTerminal').classList.add('show');spHarborStart(.09);spChime();
     const bh=$('spBoardHero'),mw=$('spManaWalk'),put=(x,y,w,d)=>{bh.style.transitionDuration=d+'s,'+d+'s,'+d+'s,.35s';bh.style.left=x+'%';bh.style.top=y+'%';bh.style.width=w+'%';},mput=(x,y,w,d)=>{mw.style.transitionDuration=d+'s,'+d+'s,'+d+'s,.4s';mw.style.left=x+'%';mw.style.top=y+'%';mw.style.width=w+'%';};
@@ -189,7 +189,7 @@
     }
     function finish(){endMusic();state.ready=false;state.done=true;state.running=false;state.line=null;cut('DONE');if(!doneSent){doneSent=true;if(options.onDone)options.onDone();}}
     const plan=[
-      ()=>auto('C01_FERRY_ENTRANCE',2400,()=>showField(102,{gender,hero:true,label:'フェリーのりば',adults:0,mana:true,background:'okinawa-ferry-entrance-field-20260921.png',point:{x:15,y:6}})),
+      ()=>auto('C01_FERRY_ENTRANCE',2400,()=>showField(102,{gender,hero:true,label:'フェリーのりば',adults:0,mana:true,background:'okinawa-ferry-entrance-field-20260921.webp',point:{x:15,y:6}})),
       ()=>auto('C01A_TOKYO_INCOMING',1700,showIncoming),()=>auto('C01B_MANA_NOTICE',1500,showManaNotice),()=>line(0),
       ()=>auto('C02_TOKYO_MAP',3400,()=>showMap('tokyo',1,'トウキョウ')),()=>auto('C02_TOKYO_FIELD',4200,()=>showField(1,{gender,label:'トウキョウ',monsters:6,adults:1,mana:true,pressure:true})),()=>line(1),()=>line(2),()=>line(3),
       ()=>auto('C03_KANTO_MAP',3400,()=>showMap('kanto',9,'カントウ')),()=>auto('C04_KANTO_FIELD',4400,()=>showField(9,{gender,label:'カントウ',monsters:7,adults:2,mana:true,pressure:true})),()=>line(4),
@@ -197,13 +197,13 @@
       ()=>auto('C07_CHUBU_MAP',3400,()=>showMap('chubu',45,'チュウブ')),()=>auto('C08_CHUBU_FIELD',5200,()=>showField(45,{gender,label:'チュウブ',monsters:9,adults:2,mana:true,pressure:true})),()=>line(6),
       ()=>auto('C09_TOHOKU_MAP',3400,()=>showMap('tohoku',65,'トウホク')),()=>auto('C10_TOHOKU_FIELD',5000,()=>showField(65,{gender,label:'トウホク',monsters:10,adults:2,mana:true,pressure:true})),()=>line(7),
       ()=>auto('C11_KANTO_RETURN_MAP',3400,()=>showMap('kanto',12,'カントウ')),()=>auto('C12_KANTO_RETURN_FIELD',3600,()=>showField(12,{gender,label:'カントウ',monsters:8,adults:2,mana:true,pressure:true})),()=>line(8),
-      ()=>auto('C14_OKINAWA_FIELD',2800,()=>showField(102,{gender,hero:true,label:'フェリーのりば',monsters:0,adults:0,mana:true,background:'okinawa-ferry-entrance-field-20260921.png',point:{x:15,y:6}})),()=>line(9),()=>line(10),
+      ()=>auto('C14_OKINAWA_FIELD',2800,()=>showField(102,{gender,hero:true,label:'フェリーのりば',monsters:0,adults:0,mana:true,background:'okinawa-ferry-entrance-field-20260921.webp',point:{x:15,y:6}})),()=>line(9),()=>line(10),
       ()=>auto('C15_HOKKAIDO_MAP',3400,()=>showMap('tohoku',83,'ホッカイドウ')),()=>auto('C16_HOKKAIDO_APPROACH',5600,()=>showField(83,{gender,label:'ホッカイドウ',monsters:29,adults:2,mana:true,pressure:true,hokkaido:true})),()=>line(11),
       ()=>auto('C17_HOKKAIDO_RETREAT',3600,()=>{const f=global.__ND_FIELD;if(f){f.actors.forEach((a,i)=>moveActor(a,Number(a.dataset.x)-(a.classList.contains('nd-field-adult')?0:.5),f.cy+2+(i%2)*.15,3000));f.mobs.forEach(m=>moveMonster(m,Number(m.dataset.x),Number(m.dataset.y)+1.1,3000));}}),
       ()=>auto('C18_HOKKAIDO_FREEZE',4200,freezeHokkaido),
       ()=>auto('C19_MAROS_WALK',5600,()=>{const f=global.__ND_FIELD;if(f){const m=placeActor({kind:'maros',x:f.cx,y:f.cy-8.2,extra:'nd-hokkaido-maros'});global.__ND_MAROS=m;global.__ND_MAROS_SAMPLES=[];const sample=()=>{const r=m.getBoundingClientRect(),sprite=q('.nd-maros-sprite',m),sr=sprite.getBoundingClientRect(),cs=getComputedStyle(sprite),mx=new DOMMatrix(cs.transform);global.__ND_MAROS_SAMPLES.push({t:performance.now(),left:+r.left.toFixed(2),top:+r.top.toFixed(2),right:+r.right.toFixed(2),bottom:+r.bottom.toFixed(2),width:+r.width.toFixed(2),height:+r.height.toFixed(2),spriteLeft:+sr.left.toFixed(2),spriteRight:+sr.right.toFixed(2),spriteBottom:+sr.bottom.toFixed(2),spriteHeight:+sr.height.toFixed(2),x:m.dataset.x,y:m.dataset.y,bg:cs.backgroundPosition,duration:cs.animationDuration,flip:Math.sign(mx.a)||1,moving:m.dataset.moving==='true'});};sample();later(()=>moveActor(m,f.cx,f.cy-4,4200),250);[360,540,720,900,1080,1440,2400,3300,4300,4800].forEach(t=>later(sample,t));}}),
       ()=>line(12),()=>line(13),()=>line(14),
-      ()=>auto('C21_OKINAWA_FAREWELL',2800,()=>showField(102,{gender,hero:true,label:'フェリーのりば',monsters:0,adults:0,mana:true,background:'okinawa-ferry-entrance-field-20260921.png',point:{x:15,y:6}})),()=>line(15),()=>line(16),
+      ()=>auto('C21_OKINAWA_FAREWELL',2800,()=>showField(102,{gender,hero:true,label:'フェリーのりば',monsters:0,adults:0,mana:true,background:'okinawa-ferry-entrance-field-20260921.webp',point:{x:15,y:6}})),()=>line(15),()=>line(16),
       ()=>{const g=generation;cut('C22_SHIP_S0_S3');state.ready=false;state.line=null;hideTalk();startShipS0(()=>{if(g===generation)finish();},alive(g));}
     ];
     function run(){if(!state.running)return;index++;if(index>=plan.length)return finish();plan[index]();}

@@ -71,7 +71,7 @@ body.amami-ending-mode:has(#amamiEndingRoot[data-scene="sailing"]) #fieldWrap{vi
 .aen-memory-frame{position:absolute;left:11%;right:11%;top:13%;height:54%;z-index:5;display:grid;place-items:center;overflow:hidden;border:3px solid #fffde5cc;border-radius:28px;background:radial-gradient(ellipse,#f9ffffdc 0%,#c9e8f3bd 44%,#e1f9ff65 75%);box-shadow:0 0 36px #fffbdcae,inset 0 0 30px #fff;opacity:0;transform:scale(.96);transition:opacity .45s,transform .45s;pointer-events:none}
 .aen-memory-frame.show{opacity:1;transform:scale(1)}
 .aen-memory-frame img{height:88%;width:80%;object-fit:contain;object-position:center;mask-image:linear-gradient(#000 0 65%,transparent 100%);filter:brightness(1.14) saturate(.78)}
-.aen-voyage-scene{position:absolute;z-index:4;overflow:hidden;border-radius:14px;background:#0874b1 url('/play/images/fullart/ship-view-okinawa-20260920.png') center bottom/auto 120% no-repeat}
+.aen-voyage-scene{position:absolute;z-index:4;overflow:hidden;border-radius:14px;background:#0874b1 url('/play/images/fullart/ship-view-okinawa-20260920.webp') center bottom/auto 120% no-repeat}
 .aen-voyage{left:8%;top:auto;bottom:8%;width:84%;height:auto;filter:drop-shadow(0 8px 12px #0007)}
 .aen-time-pause{position:absolute;inset:0;z-index:8;display:grid;place-items:center;background:#102334;animation:aenTimeFade 1.5s ease forwards;pointer-events:none}
 .aen-time-pause span{font-size:clamp(1rem,4.6vw,1.4rem);font-weight:900;letter-spacing:.12em;color:#fff5d2;text-shadow:0 2px 5px #000}

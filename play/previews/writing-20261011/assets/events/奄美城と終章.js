@@ -2,10 +2,10 @@
 (function(global){
  'use strict';const $=id=>document.getElementById(id);let endingAudio=null;
  Object.assign(AmamiLate.config,{
-  9:{name:'おもちゃの城1F',title:'問題が遊びになる',field:'amami-toy-castle-floor1.png',battle:'amami-toy-castle-floor1-v1.png',pos:'73.98% 100%',size:'auto 105.36%',mid:2,entry:['ここは、ぼくが つくった。','どこまで 当てられるかな。'],ending:['つぎの階は、もう少し……。']},
-  10:{name:'おもちゃの城2F',title:'答えを奪わない',field:'amami-toy-castle-floor2.png',battle:'amami-toy-castle-floor2-v2.png',pos:'99.87% 50%',size:'auto 150.51%',mid:2,entry:['こんどは、くらしの ことば。','知ってるだけじゃ、えらべないよ。'],ending:['……言わない。','自分で 見つけたいんだよね。']},
-  11:{name:'おもちゃの城3F',title:'まだ知らない楽しさ',field:'amami-toy-castle-floor3.png',battle:'amami-toy-castle-floor3-v1.png',pos:'98.82% 100%',size:'auto 105.36%',mid:2,entry:[],ending:['きみと あそんでると、まだ しらないことが でてくる。']},
-  12:{name:'おもちゃの城4F',title:'もう一つ、やってみたい',field:'amami-toy-castle-floor4.png',battle:'amami-toy-castle-floor4-v1.png',pos:'100% 94.34%',size:'auto 105.36%',mid:2,entry:['さいごは、二人の ことば。'],ending:['……もう、おわりなんだね。','……もう一つ、やってみたい。']}
+  9:{name:'おもちゃの城1F',title:'問題が遊びになる',field:'amami-toy-castle-floor1.webp',battle:'amami-toy-castle-floor1-v1.webp',pos:'73.98% 100%',size:'auto 105.36%',mid:2,entry:['ここは、ぼくが つくった。','どこまで 当てられるかな。'],ending:['つぎの階は、もう少し……。']},
+  10:{name:'おもちゃの城2F',title:'答えを奪わない',field:'amami-toy-castle-floor2.webp',battle:'amami-toy-castle-floor2-v2.webp',pos:'99.87% 50%',size:'auto 150.51%',mid:2,entry:['こんどは、くらしの ことば。','知ってるだけじゃ、えらべないよ。'],ending:['……言わない。','自分で 見つけたいんだよね。']},
+  11:{name:'おもちゃの城3F',title:'まだ知らない楽しさ',field:'amami-toy-castle-floor3.webp',battle:'amami-toy-castle-floor3-v1.webp',pos:'98.82% 100%',size:'auto 105.36%',mid:2,entry:[],ending:['きみと あそんでると、まだ しらないことが でてくる。']},
+  12:{name:'おもちゃの城4F',title:'もう一つ、やってみたい',field:'amami-toy-castle-floor4.webp',battle:'amami-toy-castle-floor4-v1.webp',pos:'100% 94.34%',size:'auto 105.36%',mid:2,entry:['さいごは、二人の ことば。'],ending:['……もう、おわりなんだね。','……もう一つ、やってみたい。']}
  });
  const FINAL_LINE='だいじょうぶ。なにも おぼえなくて いいよ。たのしむだけで いいんだ。イージーだよ';
  function createView(episode){
@@ -36,7 +36,7 @@
   }
   function entry(done){
    if(episode!==9||state().castleDoorSeen){normalEntry(done);return;}
-   const f=s.base('amami-main-08-toy-castle.png','おもちゃの城');
+   const f=s.base('amami-main-08-toy-castle.webp','おもちゃの城');
    const choiceMotion=AmamiMotion.play($('amamiEasy'),'10');
    s.moveHero(f.cx-.2,f.cy+1.15,950);
    const pan=add('ayCastlePan','');s.later(()=>pan.classList.add('look-up'),1450);s.later(()=>pan.classList.add('look-back'),6650);s.later(()=>{pan.remove();s.talk(global.AmamiStoryUI.castle(['ここで おわっても いいよ。']),()=>{
