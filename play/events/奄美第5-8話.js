@@ -108,7 +108,7 @@
    document.body.classList.add('amami-late-mode');
    root=document.createElement('div');root.id='amamiLateRoot';root.dataset.episode=episode;
    root.innerHTML='<div id="ayChapter"><small>第'+episode+'話</small><b></b></div><div id="ayProgress"></div><div id="ayWater"><i></i><i></i></div><div id="ayGlow"></div><div id="ayTalk"><img src="images/bust/easy.webp" alt="イージー"><div><b>イージー</b><p id="ayText"></p><small id="ayNext">▼ つづく</small></div></div>';
-   root.querySelector('#ayChapter b').textContent=c.title;document.body.appendChild(root);root.addEventListener('click',()=>{if(ready&&!root.dataset.inputLocked&&!AmamiMotion.busy&&!global.AmamiVoice.busy)showLine();});
+   root.querySelector('#ayChapter b').textContent=c.title;document.body.appendChild(root);root.addEventListener('click',advanceLine);
    const h=$('fieldHero');h.style.transition='none';h.style.setProperty('--hx',f.cx);h.style.setProperty('--hy',f.cy+1.55);setHeroFacing(0,-1);
    easy=AmamiArrival.placeEasy(f.cx+1.35,episode>=7?f.cy+1.55:f.cy-.4,1.25,episode>=7?'up':'down');return f;
   }
@@ -135,7 +135,8 @@
     if(zoom){const grid=$('fieldGrid'),wrap=$('fieldWrap'),gr=grid.getBoundingClientRect(),scale=gr.width/grid.offsetWidth,boxes=[hero,img,...nodes].map(n=>n.getBoundingClientRect()),left=Math.min(...boxes.map(r=>r.left)),right=Math.max(...boxes.map(r=>r.right)),top=Math.min(...boxes.map(r=>r.top)),bottom=Math.max(...boxes.map(r=>r.bottom)),z=Math.min(1.8,wrap.clientWidth*.9/((right-left)/scale),wrap.clientHeight*.75/((bottom-top)/scale));forestCamera=grid;grid.style.transition='none';grid.style.transformOrigin='0 0';grid.style.transform=`translate(${wrap.clientWidth*.5-((left+right)/2-gr.left)/scale*z}px,${wrap.clientHeight*.45-((top+bottom)/2-gr.top)/scale*z}px) scale(${z})`;}
    }catch(e){/* 読込失敗では既存の引き画面で進行する。 */}finally{clearTimeout(timeout);if(g===generation&&actor?.isConnected)done();}
   }
-  function showLine(){global.AmamiVoice.stop();ready=false;if(nextLine>=lines.length){$('ayTalk').classList.remove('show');const cb=afterTalk;afterTalk=null;if(cb)cb();return;}const box=$('ayTalk'),row=lines[nextLine++];global.AmamiStoryUI.display(row,box,box.querySelector('img'),box.querySelector('b'),$('ayText'));if(episode===5&&row.speaker==='hero')box.querySelector('img').src=heroImage('victory');cutLine(row);$('ayNext').classList.remove('ready');later(()=>{ready=true;$('ayNext').classList.add('ready');},520);}
+  function advanceLine(){if(!ready||root.dataset.inputLocked||AmamiMotion.busy||global.AmamiVoice.busy)return false;if(global.AmamiStoryUI.advance($('ayTalk')))return true;showLine();return true;}
+  function showLine(){global.AmamiVoice.stop();ready=false;if(nextLine>=lines.length){$('ayTalk').classList.remove('show');const cb=afterTalk;afterTalk=null;if(cb)cb();return;}const box=$('ayTalk'),row=lines[nextLine++];global.AmamiStoryUI.display(row,box,box.querySelector('img'),box.querySelector('b'),$('ayText'),advanceLine);if(episode===5&&row.speaker==='hero')box.querySelector('img').src=heroImage('victory');cutLine(row);$('ayNext').classList.remove('ready');later(()=>{ready=true;$('ayNext').classList.add('ready');},520);}
   function talk(texts,done){musicToken=global.bgmSceneBegin('amami-'+episode+'-talk',episode>=9?'amami-boss':'easy');lines=texts;nextLine=0;afterTalk=()=>{global.bgmSceneEnd(musicToken);musicToken=null;done?.();};showLine();}
   function pair(word,f){const nodes=[];[word.slice(0,2),word.slice(2)].forEach((w,i)=>{const n=document.createElement('span');n.className='ay-field-word';AmamiMotion.fieldMonster(n,w);n.style.setProperty('--ax',f.cx+(i?1.5:-.6));n.style.setProperty('--ay',f.cy-2.5);n.style.animationDelay=(episode===7?0:i*180)+'ms';$('fieldGrid').appendChild(n);nodes.push(n);});return nodes;}
   function water(){if(episode<=6)$('ayWater').classList.add('show');}
@@ -247,7 +248,7 @@
   btn.classList.add(correct?'correct':'wrong');combo=0;
   if(!correct){battle.hadMistake=true;sfxWrong();document.querySelectorAll('#bOptions .opt').forEach(n=>{if(curCorrectSet.has(n.textContent))n.classList.add('correct');});
    if(!battle.isRetry){if(!s.retryWords.includes(battle.word))s.retryWords.push(battle.word);s.retryMasks[battle.word]=(s.retryMasks[battle.word]||0)|(part?2:1);save();}
-   setMsg('『'+word+'』は 『'+y+'』と よむよ！');setTimeout(()=>{if(seq===spawnSeq)finishHalf();},1500);return;
+   setMsg('『'+word+'』は 『'+y+'』と よむよ！');battleResultAdvance(()=>{if(seq===spawnSeq)finishHalf();},1500,seq,true);return;
   }
   playAttackDash(selectedAttacker,()=>{if(seq!==spawnSeq)return;sfxCorrect();const target=$('enemyChar'+(part?'2':''));target.classList.add('attacked');playHitFx(target,false);setTimeout(()=>{if(seq!==spawnSeq)return;target.classList.remove('attacked');finishHalf();},650);});
  };
@@ -256,8 +257,8 @@
   if(part===0&&(mask&2)){s.partIndex=1;save();twinTurn='doutai';twinBossUpdateHighlight();answering=false;phase='select';$('bOptions').innerHTML='';setMsg('つぎは 『'+b.def.second+'』！<br>かんじもんを えらぼう');renderParty();return;}
   s.partIndex=0;if(b.isRetry)s.retryIndex++;else s.mainIndex++;save();
   $('enemyWrap').classList.add('defeated');const entry=YOJIJUKUGO[YOJIJUKUGO_BY_KEY[b.word]];
-  setMsg('『'+b.word+'』<br>'+b.def.y+(entry?'<br><span class="meaning">'+entry.mean+'</span>':''));
-  const seq=spawnSeq;setTimeout(()=>{if(seq!==spawnSeq)return;bgmResumeFieldOnce=true;clearBattle();if(!b.isRetry&&view?.afterWord&&(current===9||!s.retryMasks[b.word]))view.afterWord(next);else next();},1000);
+  setMsg('『'+b.word+'』<br>'+b.def.y+(entry?'<br><span class="meaning">'+compoundMeaningHtml(entry)+'</span>':''));
+  const seq=spawnSeq;battleResultAdvance(()=>{if(seq!==spawnSeq)return;bgmResumeFieldOnce=true;clearBattle();if(!b.isRetry&&view?.afterWord&&(current===9||!s.retryMasks[b.word]))view.afterWord(next);else next();},1000,seq);
  }
  api.prepareWritingWin=function(){
   const b=api.battle,s=amamiFinal['episode'+b.episode],part=s.partIndex,mask=b.isRetry?s.retryMasks[b.word]:3;

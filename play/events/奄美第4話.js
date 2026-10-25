@@ -70,13 +70,13 @@
       $('fieldGrid').appendChild(wordEl);return wordEl;
     }
     function showLine(){global.AmamiVoice.stop();
-      const box=q('#askTalk',root),next=q('#askNext',root);ready=false;next.classList.remove('ready');
+      const box=q('#askTalk',root),nextCue=q('#askNext',root);ready=false;nextCue.classList.remove('ready');
       if(lineIndex>=lines.length){box.classList.remove('show');const cb=afterTalk;afterTalk=null;if(cb)cb();return;}
-      const row=lines[lineIndex++];global.AmamiStoryUI.display(row,box,q('#askFace',root),q('#askWho',root),q('#askText',root));cutLine(row);
-      later(()=>{ready=true;next.classList.add('ready');},520);
+      const row=lines[lineIndex++];global.AmamiStoryUI.display(row,box,q('#askFace',root),q('#askWho',root),q('#askText',root),next);cutLine(row);
+      later(()=>{ready=true;nextCue.classList.add('ready');},520);
     }
     function talk(texts,done){musicToken=global.bgmSceneBegin('amami-4-talk','easy');lines=texts.slice();lineIndex=0;afterTalk=()=>{global.bgmSceneEnd(musicToken);musicToken=null;done?.();};showLine();}
-    function next(){if(!ready||global.AmamiMotion.busy||global.AmamiVoice.busy)return false;showLine();return true;}
+    function next(){if(!ready||global.AmamiMotion.busy||global.AmamiVoice.busy)return false;if(global.AmamiStoryUI.advance(q('#askTalk',root)))return true;showLine();return true;}
     root.addEventListener('click',next);
     function entry(done){
       generation++;root=setupRoot(host);root.addEventListener('click',next);const f=base(),g=generation;

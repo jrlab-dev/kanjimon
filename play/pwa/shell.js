@@ -1,20 +1,25 @@
 (function(){
   'use strict';
+  const L=window.KanjimonLanguage||{t:(_k,p,s)=>s.replace(/\{(p\d+)\}/g,(_,k)=>String(p[k])),error:e=>e?.message||String(e)};
   const $=id=>document.getElementById(id),B=KanjimonBackup;
   let owned=false,available=false,recoveryBlocked=false,epoch=0,gameActive=false,busy=false,registration=null;
   let manifestFailed=false;
   let expected=null,release=null,manifest=null,pending=null,downloadId=0,downloadJob=null,installPrompt=null;
   const status=text=>{$('status').textContent=text;};
-  const notify=error=>status(error?.message||String(error));
+  const notify=error=>status(L.error(error));
   const channel=typeof BroadcastChannel==='function'?new BroadcastChannel('kanjimon-save-state'):null;
   const migrationKey='kanjimon-pwa-migration-ack-v1';
   try{$('closed').checked=localStorage.getItem(migrationKey)==='1';}catch(e){}
   $('migration').hidden=$('closed').checked;
   function readyStatus(){
-    if(owned&&available&&!gameActive)status(manifest?.game?($('closed').checked?'じゅんびが できたよ！':'はじめの かくにんを してね。'):manifestFailed?'ゲームの準備情報を読み込めませんでした。通信を確認して、この画面を開き直してください。':'ゲームの じゅんび中だよ。少しまってね。');
+    if(owned&&available&&!gameActive&&L.locale==='en'&&!L.gameReady()){
+      status('English save settings are ready. The adventure is not available in English yet.');return;
+    }
+    if(owned&&available&&!gameActive)status(manifest?.game?($('closed').checked?L.t("shell.7af7bb1c4d0938c8",{},"じゅんびが できたよ！"):L.t("shell.da81c69d1f91557f",{},"はじめの かくにんを してね。")):manifestFailed?L.t("shell.977f948fbd830825",{},"ゲームの準備情報を読み込めませんでした。通信を確認して、この画面を開き直してください。"):L.t("shell.7ff47b87f14d2743",{},"ゲームの じゅんび中だよ。少しまってね。"));
   }
   function refresh(){
-    $('start').disabled=!manifest?.game||!owned||!available||!$('closed').checked||busy||!!downloadJob;
+    $('start').disabled=!manifest?.game||!owned||!available||!$('closed').checked||busy||!!downloadJob||!!L.busy||!!(L.gameReady&&!L.gameReady());
+    L.sync?.();
     $('import').disabled=!owned||!(available||recoveryBlocked)||!$('closed').checked||busy||!!downloadJob;
     $('export').disabled=busy||!!downloadJob;
     $('update').disabled=busy||!!downloadJob;
@@ -22,23 +27,23 @@
     $('retry').hidden=owned&&available;
     try{
       const raw=localStorage.getItem(B.KEY);
-      if(raw===null){$('summary').textContent='この端末には、まだ記録がありません。';return;}
+      if(raw===null){$('summary').textContent=L.t("shell.23e29b1f626cce9a",{},"この端末には、まだ記録がありません。");return;}
       const d=B.validateSave(JSON.parse(raw));
-      $('summary').textContent=`なかま ${d.caught.length}体・到達した場所 ${d.unlocked}・${(d.newGamePlus?.cycle||0)+1}しゅうめの たび`;
-    }catch(e){$('summary').textContent='記録を確認できません。ファイルから復元できます。';}
+      $('summary').textContent=L.t("shell.bfc95f210a1ba82d",{p0:(d.caught.length),p1:(d.unlocked),p2:((d.newGamePlus?.cycle||0)+1)},"なかま {p0}体・到達した場所 {p1}・{p2}しゅうめの たび");
+    }catch(e){$('summary').textContent=L.t("shell.243b93effd6301f2",{},"記録を確認できません。ファイルから復元できます。");}
   }
   function assertOwner(token,repair=false){
-    if(!owned||!(available||repair&&recoveryBlocked&&!gameActive)||token!==epoch)throw Error('記録の編集権がありません。ゲームを開き直してください。');
+    if(!owned||!(available||repair&&recoveryBlocked&&!gameActive)||token!==epoch)throw Error(L.t("shell.7ef48ca2cbf06103",{},"記録の編集権がありません。ゲームを開き直してください。"));
     for(const k of B.KEYS)if(localStorage.getItem(k)!==expected[k]){
       available=false;saveFailed(epoch);refresh();
-      throw Error('別の画面で記録が変わりました。今の記録をファイルに保存してください。');
+      throw Error(L.t("shell.780f3f7624560f69",{},"別の画面で記録が変わりました。今の記録をファイルに保存してください。"));
     }
   }
   function saveFailed(token){
     if(token!==epoch||!gameActive)return;
     $('game').inert=true;$('save-error').hidden=false;
     setTimeout(()=>{
-      if(token===epoch&&$('game').contentWindow.KanjimonStoryOutcome?.locked)$('retry-save').textContent='ゲームの保存画面へ もどる';
+      if(token===epoch&&$('game').contentWindow.KanjimonStoryOutcome?.locked)$('retry-save').textContent=L.t("shell.ec5e9b6327e82bf6",{},"ゲームの保存画面へ もどる");
     },0);
     $('rescue').focus();
   }
@@ -49,7 +54,7 @@
     write(token,k,v){
       if(!B.KEYS.includes(k)||!gameActive)throw Error('Game is not active');
       assertOwner(token);
-      try{B.validateSave(JSON.parse(v));localStorage.setItem(k,v);if(localStorage.getItem(k)!==v)throw Error('記録を保存できませんでした。');expected[k]=v;}
+      try{B.validateSave(JSON.parse(v));localStorage.setItem(k,v);if(localStorage.getItem(k)!==v)throw Error(L.t("shell.08e2591afde55edc",{},"記録を保存できませんでした。"));expected[k]=v;}
       catch(e){saveFailed(token);throw e;}
     },
     remove(token,k){
@@ -63,7 +68,7 @@
   function initialize(){
     try{
       B.recover(localStorage);
-      if(localStorage.getItem(B.JOURNAL)!==null)throw Error('中断した復元の控えを確認できませんでした。');
+      if(localStorage.getItem(B.JOURNAL)!==null)throw Error(L.t("shell.0c66773b6e5ba37f",{},"中断した復元の控えを確認できませんでした。"));
       expected=B.read(localStorage);
       for(const raw of Object.values(expected))if(raw!==null)B.validateSave(JSON.parse(raw));
       available=true;recoveryBlocked=false;
@@ -79,12 +84,12 @@
   }
   async function acquire(){
     if(owned){initialize();return;}
-    if(!navigator.locks?.request){status('このブラウザでは記録を安全に編集できません。新しいSafariまたはChromeで開いてください。記録の書き出しはできます。');refresh();return;}
+    if(!navigator.locks?.request){status(L.t("shell.9bed01e8bf9e67c4",{},"このブラウザでは記録を安全に編集できません。新しいSafariまたはChromeで開いてください。記録の書き出しはできます。"));refresh();return;}
     $('retry').disabled=true;
     try{
       await navigator.locks.request('kanjimon-save-writer',{mode:'exclusive',ifAvailable:true},async lock=>{
         $('retry').disabled=false;
-        if(!lock){status('別の画面で開いています。そちらを閉じてから「もういちど かくにん」を押してください。');refresh();return;}
+        if(!lock){status(L.t("shell.50f4af7dd93bed41",{},"別の画面で開いています。そちらを閉じてから「もういちど かくにん」を押してください。"));refresh();return;}
         owned=true;initialize();channel?.postMessage('owned');
         await new Promise(resolve=>{release=resolve;});
         available=false;owned=false;release=null;refresh();channel?.postMessage('released');
@@ -100,7 +105,7 @@
     try{
       if(localStorage.getItem(B.JOURNAL)!==null&&!emergency){
         download(localStorage.getItem(B.JOURNAL),'kanjimon-recovery.json');
-        status('中断した復元の控えを保存しました。通常の引き継ぎファイルではありません。');return;
+        status(L.t("shell.877421919f4666d6",{},"中断した復元の控えを保存しました。通常の引き継ぎファイルではありません。"));return;
       }
       let storage=localStorage;
       if(emergency){
@@ -109,8 +114,8 @@
         storage={getItem:k=>k===B.KEY?JSON.stringify(current):localStorage.getItem(k)};
       }
       download(B.exportText(storage,manifest?.version||''),'kanjimon-backup.json');
-      if(!emergency)status('記録ファイルの保存を開きました。端末の保存先を確認してください。');
-    }catch(e){notify(e);if(emergency)$('save-error').querySelector('p').textContent='書き出しできませんでした。この画面を閉じずに、もう一度保存してください。';}
+      if(!emergency)status(L.t("shell.01e5288159c912c7",{},"記録ファイルの保存を開きました。端末の保存先を確認してください。"));
+    }catch(e){notify(e);if(emergency)$('save-error').querySelector('p').textContent=L.t("shell.53986c8a84b4e896",{},"書き出しできませんでした。この画面を閉じずに、もう一度保存してください。");}
   }
   function closeGame(){
     const bridge=$('game').contentWindow.KanjimonPwaGame;
@@ -120,22 +125,28 @@
     $('settings').open=true;
     $('migration').hidden=$('closed').checked;
   }
-  $('start').onclick=()=>{
+  $('start').onclick=async()=>{
     if($('start').disabled||gameActive)return;
     try{
       assertOwner(epoch);
-      if(!manifest?.game)throw Error('ゲームの準備情報を読み込めませんでした。通信を確認して、この画面を開き直してください。');
+      if(!manifest?.game)throw Error(L.t("shell.977f948fbd830825",{},"ゲームの準備情報を読み込めませんでした。通信を確認して、この画面を開き直してください。"));
       for(const raw of Object.values(expected))if(raw!==null)B.validateSave(JSON.parse(raw));
+      busy=true;refresh();
+      if(L.locale==='en'){
+        const raw=expected[B.KEY],record=raw?JSON.parse(raw):null;
+        await KanjimonGamePacks.ensure(Math.max(record?.field?.zone||record?.fieldZone||1,record?.unlocked||1));
+        assertOwner(epoch);window.KanjimonGameLanguage=KanjimonGamePacks.bundle;
+      }else window.KanjimonGameLanguage=null;
       epoch++;gameActive=true;$('manage').disabled=true;$('home').hidden=true;$('play').hidden=false;
       $('game').src=manifest.game+(location.search||'')+(location.hash||'');
       navigator.storage?.persist?.().catch(()=>{});
-    }catch(e){notify(e);}
+    }catch(e){notify(e);}finally{busy=false;refresh();}
   };
   $('manage').onclick=()=>{
     try{
       const bridge=$('game').contentWindow.KanjimonPwaGame;
-      if(!bridge?.safe()){alert('ゲームのタイトル画面へもどってから開いてください。');return;}
-      bridge.snapshot();closeGame();status('記録を保存しました。');
+      if(!bridge?.safe()){alert(L.t("shell.eeefb0fc53cee472",{},"ゲームのタイトル画面へもどってから開いてください。"));return;}
+      bridge.snapshot();closeGame();status(L.t("shell.34254de9bb3fca48",{},"記録を保存しました。"));
     }catch(e){saveFailed(epoch);}
   };
   $('rescue').onclick=()=>exportSave(true);
@@ -147,7 +158,7 @@
       const d=child.KanjimonPwaGame.emergency();B.validateSave(d);
       KanjimonShell.write(epoch,B.KEY,JSON.stringify(d));
       $('game').inert=false;$('save-error').hidden=true;
-    }catch(e){$('save-error').querySelector('p').textContent=e.message;}
+    }catch(e){$('save-error').querySelector('p').textContent=L.error(e);}
   };
   $('export').onclick=()=>exportSave();
   $('retry').onclick=()=>acquire();
@@ -162,16 +173,16 @@
     busy=true;refresh();
     try{
       assertOwner(epoch,true);
-      if(file.size>B.MAX)throw Error('記録ファイルは8MBまでです。');
+      if(file.size>B.MAX)throw Error(L.t("shell.78dcbbf56ef974b2",{},"記録ファイルは8MBまでです。"));
       const text=await file.text();assertOwner(epoch,true);
       const doc=B.parse(text);pending=text;
-      $('restore-summary').textContent=`なかま ${doc.records[B.KEY].caught.length}体・場所 ${doc.records[B.KEY].unlocked}までの記録に戻します。`;
-      if(recoveryBlocked&&localStorage.getItem(B.JOURNAL)!==null)$('restore-summary').textContent+=' 中断した復元の控えをファイルに退避し、この記録で置き換えます。';
+      $('restore-summary').textContent=L.t("shell.cd17c2b0e52d8c84",{p0:(doc.records[B.KEY].caught.length),p1:(doc.records[B.KEY].unlocked)},"なかま {p0}体・場所 {p1}までの記録に戻します。");
+      if(recoveryBlocked&&localStorage.getItem(B.JOURNAL)!==null)$('restore-summary').textContent+=L.t("shell.3a94b67f5c56ce62",{}," 中断した復元の控えをファイルに退避し、この記録で置き換えます。");
       $('restore').hidden=false;
     }catch(e){pending=null;notify(e);}
     finally{busy=false;refresh();}
   };
-  $('cancel-restore').onclick=()=>{pending=null;$('restore').hidden=true;};
+  $('cancel-restore').onclick=()=>{pending=null;$('restore').hidden=true;refresh();};
   $('confirm-restore').onclick=()=>{
     if(!pending||busy||gameActive)return;
     busy=true;refresh();
@@ -181,7 +192,7 @@
       B.restore(localStorage,pending,{replaceInterrupted:recoveryBlocked});
       pending=null;$('restore').hidden=true;expected=B.read(localStorage);
       available=true;recoveryBlocked=false;
-      status('記録を戻しました。「ゲームを はじめる」から続けられます。');
+      status(L.t("shell.bc8713919911c816",{},"記録を戻しました。「ゲームを はじめる」から続けられます。"));
     }catch(e){
       try{B.recover(localStorage);expected=B.read(localStorage);if(localStorage.getItem(B.JOURNAL)!==null)available=false;}catch(recovery){available=false;}
       notify(e);
@@ -189,20 +200,20 @@
   };
   addEventListener('storage',e=>{
     if(owned&&B.KEYS.includes(e.key)&&e.newValue!==expected?.[e.key]){
-      available=false;saveFailed(epoch);status('別の画面で記録が変わりました。先に開いていたゲームを閉じてください。');refresh();
+      available=false;saveFailed(epoch);status(L.t("shell.5625ada67b7d723d",{},"別の画面で記録が変わりました。先に開いていたゲームを閉じてください。"));refresh();
     }
   });
   addEventListener('pagehide',()=>{epoch++;gameActive=false;release?.();});
   addEventListener('pageshow',e=>{if(e.persisted)location.reload();});
   function message(worker,type,extra={}){
     return new Promise((resolve,reject)=>{
-      if(!worker){reject(Error('保存の準備ができていません。'));return;}
-      const port=new MessageChannel(),timer=setTimeout(()=>{port.port1.close();reject(Error('通信が途切れました。もう一度試してください。'));},180000);
+      if(!worker){reject(Error(L.t("shell.161f29359890724d",{},"保存の準備ができていません。")));return;}
+      const port=new MessageChannel(),timer=setTimeout(()=>{port.port1.close();reject(Error(L.t("shell.88ca2a8bad7ccfa2",{},"通信が途切れました。もう一度試してください。")));},180000);
       port.port1.onmessage=e=>{
         const d=e.data;
-        if(d.progress!==undefined){if(extra.id===downloadId){$('progress').value=d.progress;$('download-status').textContent=`${Math.round(d.progress*100)}% 保存中`;}return;}
+        if(d.progress!==undefined){if(extra.id===downloadId){$('progress').value=d.progress;$('download-status').textContent=L.t("shell.6bc84aa43689f571",{p0:(Math.round(d.progress*100))},"{p0}% 保存中");}return;}
         clearTimeout(timer);port.port1.close();
-        if(d.ok)resolve(d);else reject(Error(d.error||'保存できませんでした。'));
+        if(d.ok)resolve(d);else reject(Error(d.error||L.t("shell.7806e5bb59b4312c",{},"保存できませんでした。")));
       };
       worker.postMessage({type,...extra},[port.port2]);
     });
@@ -210,7 +221,7 @@
   async function prepare(group){
     if(downloadJob||busy)return;
     const id=++downloadId,job={id,cancelled:false};downloadJob=job;refresh();
-    const check=()=>{if(job.cancelled||id!==downloadId)throw Error('ダウンロードを停止しました。途中までの素材は次回に利用できます。');};
+    const check=()=>{if(job.cancelled||id!==downloadId)throw Error(L.t("shell.83d00474e059f79f",{},"ダウンロードを停止しました。途中までの素材は次回に利用できます。"));};
     $('download').disabled=true;$('movie').disabled=true;$('cancel-download').hidden=false;
     $('progress').hidden=false;$('progress').value=0;$('cancel-download').disabled=false;
     try{
@@ -221,10 +232,10 @@
         check();
         const worker=registration.installing||registration.waiting;
         if(worker&&worker.state!=='activated')await new Promise((resolve,reject)=>{
-          const timer=setTimeout(()=>reject(Error('保存に時間がかかっています。通信を確認して再試行してください。')),180000);
+          const timer=setTimeout(()=>reject(Error(L.t("shell.9193c0bed8f634f6",{},"保存に時間がかかっています。通信を確認して再試行してください。"))),180000);
           const check=()=>{
             if(worker.state==='activated'){clearTimeout(timer);resolve();}
-            if(worker.state==='redundant'){clearTimeout(timer);reject(Error('基本の保存を完了できませんでした。途中までの素材は再試行に利用できます。'));}
+            if(worker.state==='redundant'){clearTimeout(timer);reject(Error(L.t("shell.e31cd8d1ff2984f5",{},"基本の保存を完了できませんでした。途中までの素材は再試行に利用できます。")));}
           };
           worker.addEventListener('statechange',check);check();
         });
@@ -232,8 +243,11 @@
       check();
       await message(registration?.active,'CACHE',{group,id});
       check();
-      if(id===downloadId)$('download-status').textContent='保存が完了しました。';
-    }catch(e){if(id===downloadId)$('download-status').textContent=e.message;}
+      if(group==='core'&&L.locale==='en'){
+        for(const languageGroup of KanjimonGamePacks.groups){await message(registration?.active,'CACHE',{group:languageGroup,id});check();}
+      }
+      if(id===downloadId)$('download-status').textContent=L.t("shell.a9dba977b43f0315",{},"保存が完了しました。");
+    }catch(e){if(id===downloadId)$('download-status').textContent=L.error(e);}
     finally{if(downloadJob===job){downloadJob=null;$('download').disabled=false;$('movie').disabled=false;$('cancel-download').hidden=true;$('progress').hidden=true;refresh();}}
   }
   $('download').onclick=()=>prepare('core');
@@ -244,13 +258,13 @@
     registration?.installing?.postMessage({type:'CANCEL_INSTALL'});
     registration?.active?.postMessage({type:'CANCEL',id:cancelledId});
     $('cancel-download').disabled=true;
-    $('download-status').textContent='ダウンロードを停止しました。途中までの素材は次回に利用できます。';
+    $('download-status').textContent=L.t("shell.83d00474e059f79f",{},"ダウンロードを停止しました。途中までの素材は次回に利用できます。");
   };
   $('check-update').onclick=async()=>{
     if(downloadJob||busy||gameActive||!registration)return;
     $('check-update').disabled=true;
-    try{await registration.update();$('update').hidden=!registration.waiting;$('update-status').textContent=registration.waiting?'新しい版の準備ができました。':'更新の確認を開始しました。';}
-    catch(e){$('update-status').textContent='通信できませんでした。今の版はそのまま使えます。';}
+    try{await registration.update();$('update').hidden=!registration.waiting;$('update-status').textContent=registration.waiting?L.t("shell.6990f5bb0d3e8569",{},"新しい版の準備ができました。"):L.t("shell.03f4d76f9af411b1",{},"更新の確認を開始しました。");}
+    catch(e){$('update-status').textContent=L.t("shell.b337d41031fc028a",{},"通信できませんでした。今の版はそのまま使えます。");}
     finally{$('check-update').disabled=false;}
   };
   $('update').onclick=async()=>{
@@ -261,33 +275,34 @@
       const worker=registration.waiting;
       await message(worker,'ACTIVATE');
       if(worker.state!=='activated')await new Promise((resolve,reject)=>{
-        const timer=setTimeout(()=>reject(Error('更新の準備を待っています。少し後でもう一度お試しください。')),15000);
+        const timer=setTimeout(()=>reject(Error(L.t("shell.f8b58f574d635550",{},"更新の準備を待っています。少し後でもう一度お試しください。"))),15000);
         worker.addEventListener('statechange',()=>{if(worker.state==='activated'){clearTimeout(timer);resolve();}});
       });
       location.reload();
-    }catch(e){$('update-status').textContent=e.message;$('update').disabled=false;}
+    }catch(e){$('update-status').textContent=L.error(e);$('update').disabled=false;}
   };
   addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;$('install').hidden=false;});
   $('install').onclick=async()=>{if(!installPrompt)return;await installPrompt.prompt();installPrompt=null;$('install').hidden=true;};
   async function setup(){
     try{const r=await fetch('pwa/assets.json',{cache:'no-store'});if(!r.ok)throw Error();manifest=await r.json();if(!manifest?.game)throw Error();}
-    catch(e){manifest=null;manifestFailed=true;$('download-status').textContent='通信できないため、保存の準備ができませんでした。';}
+    catch(e){manifest=null;manifestFailed=true;$('download-status').textContent=L.t("shell.1751cb26aabfa67a",{},"通信できないため、保存の準備ができませんでした。");}
+    if(manifest)await L.connect?.(manifest,()=>!gameActive&&!busy&&!downloadJob&&!pending);
     readyStatus();refresh();
     if('serviceWorker' in navigator&&isSecureContext){
       try{
         registration=await navigator.serviceWorker.getRegistration('pwa.html');
         $('download').disabled=false;$('movie').disabled=false;
         if(registration)observeRegistration();
-        $('download-status').textContent=manifest?`基本の画面は約${(manifest.files.filter(f=>f.group==='core').reduce((n,f)=>n+f.bytes,0)/1000000).toFixed(1)}MB、動画は約18.8MBです。`:'保存を始めると基本画面をダウンロードします。';
-      }catch(e){$('download-status').textContent='保存の準備に失敗しました。通信を確認して、この画面を開き直してください。';}
-    }else $('download-status').textContent='この開き方では素材を保存できません。公開後のHTTPS画面で利用できます。';
+        $('download-status').textContent=manifest?L.t("shell.bb00683f31c99c01",{p0:((manifest.files.filter(f=>f.group==='core').reduce((n,f)=>n+f.bytes,0)/1000000).toFixed(1))},"基本の画面は約{p0}MB、動画は約18.8MBです。"):L.t("shell.aa6ea18641ff5423",{},"保存を始めると基本画面をダウンロードします。");
+      }catch(e){$('download-status').textContent=L.t("shell.9e07464fd78e6c8d",{},"保存の準備に失敗しました。通信を確認して、この画面を開き直してください。");}
+    }else $('download-status').textContent=L.t("shell.bc44033f404580c4",{},"この開き方では素材を保存できません。公開後のHTTPS画面で利用できます。");
   }
   function observeRegistration(){
     const state=()=>{
       $('check-update').disabled=!registration.active||!!downloadJob;
       $('update').hidden=!registration.waiting;
-      if(registration.waiting)$('update-status').textContent='新しい版の準備ができました。ゲームを閉じたこの画面で更新できます。';
-      else if($('update-status').textContent==='新しい版の準備ができました。ゲームを閉じたこの画面で更新できます。')$('update-status').textContent='';
+      if(registration.waiting)$('update-status').textContent=L.t("shell.d817612063a5f1c3",{},"新しい版の準備ができました。ゲームを閉じたこの画面で更新できます。");
+      else if($('update-status').textContent===L.t("shell.d817612063a5f1c3",{},"新しい版の準備ができました。ゲームを閉じたこの画面で更新できます。"))$('update-status').textContent='';
     };
     registration.addEventListener('updatefound',()=>registration.installing?.addEventListener('statechange',state));
     registration.installing?.addEventListener('statechange',state);state();
@@ -296,8 +311,10 @@
     if(e.source!==registration?.installing||downloadJob?.cancelled)return;
     if(e.data?.type==='INSTALL_PROGRESS'){
       $('progress').value=e.data.progress;
-      $('download-status').textContent=`基本の画面 ${Math.round(e.data.progress*100)}% 保存中`;
+      $('download-status').textContent=L.t("shell.43c819bfd8bb8135",{p0:(Math.round(e.data.progress*100))},"基本の画面 {p0}% 保存中");
     }
   });
+  addEventListener('kanjimon-language-change',()=>{readyStatus();refresh();});
+  addEventListener('kanjimon-language-busy',()=>refresh());
   acquire();setup();
 })();

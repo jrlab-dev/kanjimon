@@ -1,6 +1,7 @@
 /* OP30 起動PV。ゲーム進行/セーブ/名前入力には触れない。 */
 (function(){
  'use strict';
+ if(window.KanjimonGameI18n?.active)return;
  // 遅い読込み中に既にゲームへ進んだ場合、その画面へPVを割り込ませない。
  if(window.openingMovieDismissed||!document.getElementById('screen-title')?.classList.contains('active')||document.getElementById('worldmapOverlay')?.classList.contains('show'))return;
  const host=document.createElement('div');

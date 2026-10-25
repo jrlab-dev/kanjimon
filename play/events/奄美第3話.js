@@ -70,18 +70,18 @@
       $('fieldGrid').appendChild(wordEl);return wordEl;
     }
     function showLine(){global.AmamiVoice.stop();
-      const box=q('#asnTalk',root),next=q('#asnNext',root);ready=false;next.classList.remove('ready');
+      const box=q('#asnTalk',root),nextCue=q('#asnNext',root);ready=false;nextCue.classList.remove('ready');
       if(lineIndex>=lines.length){box.classList.remove('show');const cb=afterTalk;afterTalk=null;if(cb)cb();return;}
       const row=lines[lineIndex++],shown=row?.speaker==='hero'?{...row,portrait:'images/battle-tate/hero-victory-'+gender()+(typeof costumeSuffix==='function'?costumeSuffix():'')+'.webp'}:row;
-      global.AmamiStoryUI.display(shown,box,q('#asnFace',root),q('#asnWho',root),q('#asnText',root));
+      global.AmamiStoryUI.display(shown,box,q('#asnFace',root),q('#asnWho',root),q('#asnText',root),next);
       const hasCut=cutLine(row);
       if(!hasCut&&row?.id==='C03b'&&field)walkHero({x:field.cx+.25,y:field.cy+.7},480);
       if(!hasCut&&row?.id==='C03c'&&easy)global.AmamiMotion.play(easy,'06');
       if((typeof row==='string'?row:row.text)==='……もどっても いいよ。'&&easy)global.AmamiMotion.play(easy,'05');
-      later(()=>{ready=true;next.classList.add('ready');},520);
+      later(()=>{ready=true;nextCue.classList.add('ready');},520);
     }
     function talk(texts,done){musicToken=texts.length?global.bgmSceneBegin('amami-3-talk','hero'):null;lines=texts.slice();lineIndex=0;afterTalk=()=>{global.bgmSceneEnd(musicToken);musicToken=null;done?.();};showLine();}
-    function next(){if(!ready||global.AmamiMotion.busy||global.AmamiVoice.busy)return false;showLine();return true;}
+    function next(){if(!ready||global.AmamiMotion.busy||global.AmamiVoice.busy)return false;if(global.AmamiStoryUI.advance(q('#asnTalk',root)))return true;showLine();return true;}
     root.addEventListener('click',next);
     function entry(done){
       generation++;root=setupRoot(host);root.addEventListener('click',next);const f=base(),g=generation;

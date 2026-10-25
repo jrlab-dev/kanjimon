@@ -30,7 +30,7 @@
   let live=true,ready=false,index=0,scene=false,cut=-1,running=false,raf=0,deadline=0,watch=0,onDone=null,frames=[];
   const valid=()=>live&&fieldSeq===seq&&fieldZone===40&&evActive;
   function restore(){const box=slot.querySelector('#evBox');if(box)$id('evOverlay').appendChild(box);}
-  function close(){if(!live)return;live=false;clearTimeout(deadline);clearInterval(watch);cancelAnimationFrame(raf);document.removeEventListener('keydown',key,true);restore();root.remove();if(current===api)current=null;}
+  function close(){if(!live)return;live=false;global.KanjimonGameI18n?.clearStory(root.querySelector('.ud-dialog'));clearTimeout(deadline);clearInterval(watch);cancelAnimationFrame(raf);document.removeEventListener('keydown',key,true);restore();root.remove();if(current===api)current=null;}
   function abort(){abortAll();}
   function key(e){if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();abort();showScreen('screen-title');}}
   function line(n){if(!live)return;index=n;root.dataset.beat=n===0?'arrival':n===1?'gather':'after';speaker.textContent='マナ';root.dataset.scene='false';if(ready)slot.appendChild($id('evBox'));}
@@ -38,6 +38,7 @@
    if(!valid())return;cut=n;const row=EV_CUT_SCENES.udon40.cuts[n];root.dataset.cut=String(n);root.dataset.beat=n===2?'after':'gather';root.dataset.scene='true';
    speaker.innerHTML=global.talkText?global.talkText(row.maros?'かさの おとこ':row.who,40):(row.maros?'かさの おとこ':row.who);cutText.innerHTML=global.talkText?global.talkText(row.text,40):row.text;
    if(row.snd)playBattleHakaseVoice(row.snd);else stopBattleHakaseVoice();
+   if(global.KanjimonGameI18n?.active)global.KanjimonGameI18n.story(root.querySelector('.ud-dialog'),cutText,next,valid,()=>!running);
   }
   function escapeKids(){
    running=true;root.dataset.running='true';root.dataset.beat='run';cutText.textContent='';stopBattleHakaseVoice();
@@ -56,6 +57,7 @@
   }
   function next(){
    if(!valid()||!ready||running)return;
+   if(global.KanjimonGameI18n?.advanceStory(root.querySelector('.ud-dialog')))return;
    if(!scene){evAdvance();return;}
    if(cut===0){showCut(1);return;}
    if(cut===1){escapeKids();return;}

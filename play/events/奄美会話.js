@@ -21,7 +21,7 @@
   const value=global.AmamiStory?.ending?.[section];
   return Array.isArray(value)?value:fallback.map((text,i)=>({id:section+'-'+i,speaker:'easy',text}));
  }
- function display(raw,box,face,who,text){
+ function display(raw,box,face,who,text,advance){
   const row=typeof raw==='string'?{speaker:'easy',text:raw}:raw||{speaker:'easy',text:''};
   const speaker=names[row.speaker]?row.speaker:'easy';
   global.AmamiVoice?.stop();
@@ -33,6 +33,10 @@
   face.src=row.portrait||faces[speaker]||(speaker==='hero'?heroFace():'images/bust/easy.webp');
   face.alt=names[speaker];
   box.classList.add('show');
+  if(global.KanjimonGameI18n?.active&&advance){
+   text.parentElement.dataset.languageStory='amami';
+   global.KanjimonGameI18n.story(text.parentElement,text,advance,()=>box.isConnected&&box.classList.contains('show'));
+  }
   if(speaker==='easy'||speaker==='mana'){
    if(global.AmamiVoice?.playRow)return global.AmamiVoice.playRow(row,box);
    return global.AmamiVoice?.play(row.text||'',box);
@@ -77,5 +81,6 @@
   hero.addEventListener('load',calibrate,{once:true});
   if(hero.complete)calibrate();
  }
- global.AmamiStoryUI={rows,arrival,castle,ending,display,crisisCut,sizeConversation};
+ function advance(box){return global.KanjimonGameI18n?.advanceStory(box?.querySelector('[data-language-story="amami"]'))||false;}
+ global.AmamiStoryUI={rows,arrival,castle,ending,display,advance,crisisCut,sizeConversation};
 })(window);

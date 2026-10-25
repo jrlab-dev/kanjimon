@@ -57,7 +57,7 @@ self.addEventListener('message',event=>{
   event.waitUntil((async()=>{
     try{
       if(data.type==='CACHE'){
-        if(!['core','movie'].includes(data.group)||jobs.size)throw Error('別の保存が終わってから試してください。');
+        if(!(['core','movie','locale-en'].includes(data.group)||/^locale-en-region-[1-6]$/.test(data.group))||jobs.size)throw Error('別の保存が終わってから試してください。');
         const controller=new AbortController();jobs.set(jobKey,controller);
         try{await cacheGroup(data.group,controller.signal,progress=>port?.postMessage({progress}));}
         finally{jobs.delete(jobKey);}
@@ -95,7 +95,7 @@ self.addEventListener('fetch',event=>{
     if(entry.group==='movie')return fetch(event.request);
     try{
       const response=await fetchVerified(entry);
-      if(entry.group==='core')try{await cache.put(url(entry.path),response.clone());}catch(e){}
+      if(entry.group==='core'||/^locale-en(?:-region-[1-6])?$/.test(entry.group))try{await cache.put(url(entry.path),response.clone());}catch(e){}
       return event.request.headers.has('Range')?core.partial(response,event.request.headers.get('Range')):response;
     }catch(e){
       return new Response('通信できませんでした。オンラインで開き直してください。',{status:503,headers:{'Content-Type':'text/plain; charset=utf-8'}});

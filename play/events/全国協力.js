@@ -163,13 +163,13 @@
   function create(host,options={}){
     let root=setupRoot(host),timers=[],audio=null,musicToken=null,generation=0,index=-1,doneSent=false,gender=options.gender==='girl'?'girl':'boy',sound=options.sound!==false,linePlayerName=typeof options.playerName==='string'?options.playerName.trim():'';
     const state={ready:false,done:false,line:null,cut:null,running:false};
-    function playerNameForLine(){let name=linePlayerName;if(!name)try{name=typeof playerName==='string'?playerName.trim():'';}catch(e){}return name||'君';}
+    function playerNameForLine(){let name=linePlayerName;if(!name)try{name=typeof playerName==='string'?playerName.trim():'';}catch(e){}return name||(global.KanjimonGameI18n?.active?'friend':'君');}
     const later=(fn,ms,g=generation)=>{const t=setTimeout(()=>{if(g===generation)fn();},ms);timers.push(t);return t;},alive=g=>()=>g===generation&&state.running;
     function hideCue(){q('#ndIncoming',root)?.classList.remove('show');qa('.nd-field-mana.nd-notice').forEach(n=>n.classList.remove('nd-notice'));qa('.nd-mana-attention').forEach(n=>n.remove());}
     function showIncoming(){hideCue();q('#ndIncoming',root)?.classList.add('show');if(sound)try{spTone(880,0,.1,'sine',.08);spTone(1174,.18,.14,'sine',.08);}catch(e){}}
     function showManaNotice(){q('#ndIncoming',root)?.classList.remove('show');const mana=q('.nd-field-mana');if(mana){mana.classList.add('nd-notice');const bang=document.createElement('i');bang.className='nd-mana-attention';bang.textContent='！';mana.appendChild(bang);}}
     function freezeHokkaido(){const f=global.__ND_FIELD,flash=q('#ndIceFlash',root),flashAt=performance.now();global.__ND_FREEZE_FX={flashAt,soundAt:flashAt,freezeAt:null,sound:'magic-mizu-max',soundRequested:sound};if(flash){flash.classList.remove('show');void flash.offsetWidth;flash.classList.add('show');}if(sound){try{if(typeof sePlay==='function')sePlay('magic-mizu-max',{volume:.55});else snd('magicmax');}catch(e){}}later(()=>{if(f){setMonsterMood(f.mobs,'sleeping');global.__ND_FREEZE_FX.freezeAt=performance.now();}},260);}
-    function hideTalk(){q('#ndTalk',root)?.classList.remove('show');if(audio){try{audio.pause();audio.currentTime=0;}catch(e){}audio=null;}}
+    function hideTalk(){global.KanjimonGameI18n?.clearStory(q('#ndText',root)?.parentElement);q('#ndTalk',root)?.classList.remove('show');if(audio){try{audio.pause();audio.currentTime=0;}catch(e){}audio=null;}}
     function cleanupVisuals(){hideTalk();hideCue();hideMapRegion();clearEventActors();closeWorldMap();document.body.classList.remove('nd-map-mode','nd-ship-mode');if($('fieldHero'))$('fieldHero').style.visibility='';try{stopAutoExplore();autoExploring=false;heldKeys.clear();heroLock=true;shipSceneSeq++;shipSceneActive=false;spBusKill();shipSceneStopWalkAnims();$('shipSceneOverlay').classList.remove('show');shipSceneResetLayers();}catch(e){}}
     function endMusic(){global.bgmSceneEnd(musicToken);musicToken=null;}
     function clear(){endMusic();generation++;timers.forEach(clearTimeout);timers=[];cleanupVisuals();state.ready=false;state.running=false;}
@@ -184,6 +184,10 @@
     function auto(name,ms,fn){cut(name);state.ready=false;state.line=null;hideTalk();fn&&fn();later(run,ms);}
     function line(i){
       const row=LINES[i],g=generation,text=row[2].replace('{name}',playerNameForLine());cut(row[0]);state.line=i;state.ready=false;hideTalk();hideCue();const box=q('#ndTalk',root),who=q('#ndWho',root),txt=q('#ndText',root),face=q('#ndFace',root);who.innerHTML=global.talkText?global.talkText(row[1],102):row[1];txt.innerHTML=global.talkText?global.talkText(text,102):text;face.src=row[1].includes('マローズ')?FACES.maros:(row[1].includes('先生')?FACES.adult:FACES.mana);box.classList.add('show');
+      if(global.KanjimonGameI18n?.active){
+        txt.textContent=KanjimonGameI18n.t(row[2]).replace('{name}',()=>playerNameForLine());
+        KanjimonGameI18n.story(txt.parentElement,txt,next,()=>g===generation&&state.running&&state.line===i,()=>state.ready);
+      }
       let marked=false;const mark=()=>{if(marked||g!==generation)return;marked=true;later(()=>{if(g===generation){state.ready=true;q('#ndNext',root).classList.add('ready');}},2000,g);};
       if(sound&&row[3]){try{audio=new Audio('audio/battle/'+row[3]+'.mp3');audio.addEventListener('ended',mark,{once:true});audio.addEventListener('error',()=>later(mark,4200,g),{once:true});const p=audio.play();if(p&&p.catch)p.catch(()=>later(mark,4200,g));later(mark,14000,g);}catch(e){later(mark,4200,g);}}else later(mark,Math.max(4200,text.length*115),g);
     }
@@ -208,9 +212,9 @@
     ];
     function run(){if(!state.running)return;index++;if(index>=plan.length)return finish();plan[index]();}
     function start(cfg={}){clear();generation++;const g=generation;index=-1;doneSent=false;gender=cfg.gender==='girl'?'girl':(cfg.gender==='boy'?'boy':gender);sound=cfg.sound==null?sound:!!cfg.sound;if(typeof cfg.playerName==='string')linePlayerName=cfg.playerName.trim();state.done=false;state.running=true;state.line=null;state.cut=null;root=setupRoot(host);root.addEventListener('click',()=>next());restoreEventAudio(sound);const no=$('nmOverlay');if(no)no.classList.remove('show');try{nmActive=false;nmClearAdvanceTimer();}catch(e){}waitAssets(102,()=>{if(g===generation&&state.running)run();});}
-    function next(){if(!state.running||!state.ready)return false;state.ready=false;q('#ndNext',root)?.classList.remove('ready');run();return true;}
+    function next(){if(!state.running||!state.ready)return false;if(global.KanjimonGameI18n?.advanceStory(q('#ndText',root)?.parentElement))return true;state.ready=false;q('#ndNext',root)?.classList.remove('ready');run();return true;}
     root.addEventListener('click',()=>next());
-    return{state,start,restart:start,next,stop:clear,destroy(){clear();root.remove();},setSound(v){sound=!!v;restoreEventAudio(sound);if(!sound)hideTalk();},get lines(){return LINES;}};
+    return{state,start,restart:start,next,stop:clear,destroy(){clear();root.remove();},setSound(v){sound=!!v;restoreEventAudio(sound);if(!sound){if(global.KanjimonGameI18n?.active){if(audio)try{audio.pause();audio.currentTime=0;}catch(e){}}else hideTalk();}},get lines(){return LINES;}};
   }
   global.NationalDeparture={create,lines:LINES,mountFieldHarness,placeActor,cloneFieldMonster,metrics,showField,showMap};
 })(window);

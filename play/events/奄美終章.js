@@ -52,12 +52,12 @@
   if(lineIndex>=lines.length){box.classList.remove('show');const callback=afterTalk;afterTalk=null;lineHook=null;callback?.();return;}
   // 主人公の言葉を受けてから気づく。連打では飛ばさず、退出時は既存のlaterで取り消す。
   if(!afterPause&&lines[lineIndex]?.id==='E103'){e1Pose('pause');later(()=>showLine(true),1000);return;}
-  const row=lines[lineIndex++];global.AmamiStoryUI.display(row,box,$('aenFace'),$('aenWho'),$('aenText'));lineHook?.(row);
+  const row=lines[lineIndex++];global.AmamiStoryUI.display(row,box,$('aenFace'),$('aenWho'),$('aenText'),nextLine);lineHook?.(row);
   later(()=>{ready=true;if(!staging)$('aenNext')?.classList.add('ready');},Math.min(1400,Math.max(500,$('aenText').textContent.length*25)));
  }
  function talk(rows,done,hook=null){lines=rows||[];lineIndex=0;afterTalk=done;lineHook=hook;showLine();}
  // 背景の首振りは会話と独立。発話中だけを待ち、無限演技で送りを止めない。
- function nextLine(){if(!ready||staging||global.AmamiVoice?.busy)return;showLine();}
+ function nextLine(){if(!ready||staging||global.AmamiVoice?.busy)return false;if(global.AmamiStoryUI.advance($('aenTalk')))return true;showLine();return true;}
  function animateEasies(items){
   const ticket=++ambientSerial;let clip='13';
   function cycle(){
@@ -90,7 +90,7 @@
   document.querySelectorAll('.aen-monster-reading').forEach(n=>n.remove());
   zoneObserver?.disconnect();zoneObserver=null;
   const field=global.NationalDeparture.showField(zone,{gender:heroChar,hero:opts.hero!==false,label:opts.label||'',monsters:opts.monsters||0,adults:opts.adults||0,mana:!!opts.mana,hokkaido:!!opts.hokkaido,background:opts.background||'',point:{x:15,y:6}});
-  const label=$('fieldZoneName');if(label&&opts.label){label.textContent=opts.label;zoneObserver=new MutationObserver(()=>{if(running&&label.textContent!==opts.label)label.textContent=opts.label;});zoneObserver.observe(label,{childList:true,characterData:true,subtree:true});}
+  const label=$('fieldZoneName'),labelText=global.KanjimonGameI18n?.t(opts.label)||opts.label;if(label&&labelText){label.textContent=labelText;zoneObserver=new MutationObserver(()=>{if(running&&label.textContent!==labelText)label.textContent=labelText;});zoneObserver.observe(label,{childList:true,characterData:true,subtree:true});}
   document.body.classList.add('amami-ending-mode','nd-event-mode');if(root)root.dataset.scene=opts.scene||'';
   return field;
  }
@@ -245,7 +245,11 @@
     global.AmamiVoice?.playRow(row,opening);
     const readableMs=Math.max(6200,((global.AmamiVoiceRows?.E701?.duration||5.81)+.9)*1000);
     const finishWhenQuiet=()=>{if(!running)return;const voice=global.AmamiVoice?.current;if(voice?.busy)voice.done.then(r=>{if(r.reason!=='cancelled')later(finishWhenQuiet,80);});else advance();};
-    later(finishWhenQuiet,readableMs);
+    if(global.KanjimonGameI18n?.active){
+     const text=$('aenOpeningText');
+     text.textContent=global.KanjimonGameI18n.t(row.displayText||row.text);
+     global.KanjimonGameI18n.story(opening,text,finishWhenQuiet,()=>running&&opening.isConnected,()=>!global.AmamiVoice?.busy);
+    }else later(finishWhenQuiet,readableMs);
    },1900);
   }
  }

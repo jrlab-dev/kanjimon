@@ -75,6 +75,15 @@
     setMsg('<span id="wb-question"></span><small id="wb-instruction"></small>');
     const focus=document.createElement('mark');focus.textContent=q.focus;
     el('question').replaceChildren(document.createTextNode(q.before),focus,document.createTextNode(q.after));
+    const english=window.KanjimonGameI18n?.writingContext(q);
+    if(english){
+      focus.lang='ja';focus.dataset.languageOriginal='';focus.setAttribute('aria-label',q.focus+' ('+window.KanjimonGameI18n.romaji(q.focus)+')');
+      const original=document.createElement('span');original.lang='ja';original.dataset.languageOriginal='';original.className='language-writing-original';
+      original.append(document.createTextNode(q.before),focus,document.createTextNode(q.after));
+      const help=document.createElement('span');help.lang='en';help.className='language-writing-help';
+      help.textContent=english+' ('+window.KanjimonGameI18n.romaji(q.focus)+')';
+      el('question').replaceChildren(original,help);
+    }
     el('instruction').textContent=(q.word.length>1?(s.cursor+1)+'もじめを かこう。':'かんじを 1もじ かこう。')+(q.note?' '+q.note:'');
     slots();choose();roster();controls();hideAnswers();
   }

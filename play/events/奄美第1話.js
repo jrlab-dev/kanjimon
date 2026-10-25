@@ -70,15 +70,15 @@
       $('fieldGrid').appendChild(wordEl);return wordEl;
     }
     function showLine(){global.AmamiVoice.stop();
-      const box=q('#aseTalk',root),next=q('#aseNext',root);ready=false;next.classList.remove('ready');
+      const box=q('#aseTalk',root),nextCue=q('#aseNext',root);ready=false;nextCue.classList.remove('ready');
       if(lineIndex>=lines.length){box.classList.remove('show');const cb=afterTalk;afterTalk=null;if(cb)cb();return;}
       const row=lines[lineIndex++];
       const shown=row?.speaker==='hero'?{...row,portrait:'images/battle-tate/hero-victory-'+gender()+(typeof costumeSuffix==='function'?costumeSuffix():'')+'.webp'}:row;
-      global.AmamiStoryUI.display(shown,box,q('#aseFace',root),q('#aseWho',root),q('#aseText',root));cutLine(row);
-      later(()=>{ready=true;next.classList.add('ready');},520);
+      global.AmamiStoryUI.display(shown,box,q('#aseFace',root),q('#aseWho',root),q('#aseText',root),next);cutLine(row);
+      later(()=>{ready=true;nextCue.classList.add('ready');},520);
     }
     function talk(texts,done){musicToken=global.bgmSceneBegin('amami-1-talk','easy');lines=texts.slice();lineIndex=0;afterTalk=()=>{global.bgmSceneEnd(musicToken);musicToken=null;done?.();};showLine();}
-    function next(){if(!ready||global.AmamiMotion.busy||global.AmamiVoice.busy)return false;showLine();return true;}
+    function next(){if(!ready||global.AmamiMotion.busy||global.AmamiVoice.busy)return false;if(global.AmamiStoryUI.advance(q('#aseTalk',root)))return true;showLine();return true;}
     root.addEventListener('click',next);
     function entry(done){
       generation++;root=setupRoot(host);root.addEventListener('click',next);const f=base(),g=generation;

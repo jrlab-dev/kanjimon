@@ -118,7 +118,7 @@
       const row=global.AmamiStoryUI.arrival(LINES)[i],g=generation;
       setCut(row.id);state.line=i;hideTalk();
       const box=q('#amamiTalk',root);
-      global.AmamiStoryUI.display(row,box,q('#amamiFace',root),q('#amamiWho',root),q('#amamiText',root));
+      global.AmamiStoryUI.display(row,box,q('#amamiFace',root),q('#amamiWho',root),q('#amamiText',root),next);
       if(easy&&i<2)global.AmamiMotion.play(easy,i===0?'04':'14');
       later(()=>{if(g===generation){ready=true;state.ready=true;q('#amamiNext',root).classList.add('ready');}},Math.max(900,row.text.length*65),g);
     }
@@ -147,7 +147,7 @@
       cleanup();generation++;index=-1;doneSent=false;gender=cfg.gender==='girl'?'girl':(cfg.gender==='boy'?'boy':gender);heroChar=gender;
       root=setupRoot(host);root.addEventListener('click',next);running=true;ready=false;state.cut=null;state.line=null;state.ready=false;state.running=true;state.done=false;run();
     }
-    function next(){if(!running||!ready||global.AmamiMotion.busy||global.AmamiVoice.busy)return false;ready=false;state.ready=false;q('#amamiNext',root)?.classList.remove('ready');run();return true;}
+    function next(){if(!running||!ready||global.AmamiMotion.busy||global.AmamiVoice.busy)return false;if(global.AmamiStoryUI.advance(q('#amamiTalk',root)))return true;ready=false;state.ready=false;q('#amamiNext',root)?.classList.remove('ready');run();return true;}
     root.addEventListener('click',next);
     return{state,start,restart:start,next,stop(){global.bgmSceneEnd(musicToken);musicToken=null;generation++;running=false;cleanup();state.running=false;},destroy(){global.bgmSceneEnd(musicToken);musicToken=null;generation++;running=false;cleanup();root.remove();},get lines(){return global.AmamiStoryUI.arrival(LINES);}};
   }

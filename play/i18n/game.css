@@ -1,0 +1,120 @@
+html.game-english .hakase-talk-text,html.game-english .op1-mana-text{line-height:1.5;overflow-wrap:anywhere;word-break:normal}
+html.game-english .hakase-talk{flex-wrap:wrap;max-height:min(65vh,420px);overflow:auto}
+html.game-english .hakase-talk-text{flex:1;min-width:0}
+html.game-english .hakase-talk .language-next{flex-basis:100%;margin:8px 0 0}
+.language-next{display:block;min-height:44px;min-width:88px;margin:8px 0 0 auto;padding:8px 18px;border:2px solid #d36b1f;border-radius:14px;background:#fff0c2;color:#472407;font:inherit;font-weight:700;cursor:pointer}
+.language-loading{position:fixed;inset:0;z-index:2147483001;display:grid;place-items:center;padding:24px;background:#10283f;color:white;font:18px/1.6 system-ui;text-align:center}
+.language-loading>div{max-width:520px}.language-loading button{font:inherit;min-height:44px;padding:8px 16px;margin:8px;border-radius:10px}
+html.game-english [data-romaji]::after{content:attr(data-romaji);display:block;font:500 .75rem/1.3 sans-serif;letter-spacing:0;color:#50576a;margin-top:3px}
+html.game-english .title-btns{flex-wrap:wrap}
+html.game-english .diff-pill{min-height:44px;white-space:normal;overflow-wrap:anywhere}
+html.game-english .diff-pill small{font-size:.65rem}
+html.game-english .stage-label,html.game-english .zone-name{white-space:normal}
+html.game-english #sjOverlay .sj-title{letter-spacing:normal;text-indent:0;white-space:normal}
+html.game-english .nh-talk-slot .hakase-talk{max-height:48vh}
+html.game-english #nihonbashiScene #hakaseTalkWin{display:block;padding-bottom:12px}
+html.game-english #nihonbashiScene #hakaseTalkWin:before{content:'Mana'}
+html.game-english #nihonbashiScene #hakaseTalkWin:after{content:none}
+html.game-english #nmKeys{display:block}
+html.game-english .nm-talk{flex-wrap:wrap}
+.language-name{display:block;width:100%;max-width:320px;margin:12px auto;padding:12px;border:2px solid #d36b1f;border-radius:12px;font:inherit;font-size:1.15rem}
+.language-intro{position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;background:#fff7e8;overflow:auto;color:#493827;text-align:center}
+.language-intro img{width:140px;height:180px;object-fit:contain}
+.language-intro h1{font-size:1.5rem}
+.language-intro p{max-width:460px;font-size:1.15rem;line-height:1.65;min-height:100px}
+.language-intro .language-next{margin:8px auto}
+.language-intro small{font-size:.8rem;color:#675f53}
+.language-sound{min-height:44px;padding:8px 18px;border:1px solid #b9a88d;border-radius:12px;background:white;color:#493827;font:inherit;cursor:pointer}
+html.game-english .evo-stage{box-sizing:border-box;min-width:0;margin-top:64px;transform:none;padding:16px;max-height:calc(100dvh - 64px);overflow:auto}
+html.game-english .evo-msg{box-sizing:border-box;width:100%;min-width:0;white-space:normal;overflow-wrap:anywhere;font-size:1.1rem}
+html.game-english .evo-msg .language-next{margin:10px auto 0}
+.language-sources{font-size:.75rem;margin:8px 0}
+.language-sources a{display:inline-flex;align-items:center;min-height:44px;color:#365b83}
+.language-writing-original,.language-writing-help{display:block;line-height:1.5;overflow-wrap:anywhere}
+.language-writing-help{margin-top:6px;font-size:.9em}
+html.game-english #evText,html.game-english #gfText{word-break:normal;overflow-wrap:anywhere;line-height:1.5;letter-spacing:normal}
+html.game-english #evNext,html.game-english #gfNext{display:none}
+html.game-english #evBox,html.game-english #gfBox{max-height:calc(100dvh - 80px);overflow:auto;box-sizing:border-box}
+html.game-english #gfClues{overflow:auto;justify-content:flex-start}
+html.game-english .gf-clue{flex-shrink:0;overflow-wrap:anywhere}
+html.game-english #gfOverlay[data-language-clues] #gfBox{display:block;position:absolute;left:12px;right:12px;bottom:12px;width:auto;margin:0;min-height:0;padding:8px 12px;max-height:none}
+html.game-english #gfOverlay[data-language-clues] #gfBox:before{content:none}
+html.game-english #gfOverlay[data-language-clues] #gfClues{bottom:100px;pointer-events:auto;justify-content:flex-start;align-content:start}
+html.game-english #gfOverlay.grade2-finale #gfBox:before{content:'Mana'}
+html.game-english #gradeOneStory .ig-dialog:after,html.game-english #utsunomiyaStory .uq-dialog:after,html.game-english #tsukubaStory .tq-dialog:after{content:none}
+html.game-english .g4-next{display:none}
+html.game-english .ud-next{display:none}
+html.game-english #ecText{line-height:1.5;overflow-wrap:anywhere;word-break:normal}
+html.game-english #ecNext{display:none}
+html.game-english #ecBox{max-height:calc(100dvh - 140px);overflow:auto}
+html.game-english [data-language-story="amami"]{flex:1;min-width:0}
+html.game-english [data-language-story="amami"] p{line-height:1.5;word-break:normal;overflow-wrap:anywhere}
+html.game-english [data-language-story="amami"] small[id$="Next"]{display:none}
+html.game-english [data-language-story="amami"] .language-next{font-size:16px}
+html.game-english #aenOpening .language-next{position:absolute;bottom:24px;right:24px;z-index:5}
+html.game-english #aenOpeningText{line-height:1.5;word-break:normal;max-height:calc(100% - 130px);overflow:auto}
+html.game-english [class$="-cut-location"]{max-width:calc(100% - 110px);font-size:12px}
+html.game-english #gradeOneStory .ig-dialog,html.game-english #utsunomiyaStory .uq-dialog,html.game-english #tsukubaStory .tq-dialog{padding-bottom:12px}
+html.game-english #gradeOneStory .ig-location,html.game-english #utsunomiyaStory .uq-location,html.game-english #tsukubaStory .tq-location{max-width:calc(100% - 150px);letter-spacing:normal}
+html.game-english .school-paper-reading:after{content:attr(data-romaji);display:block;font-family:system-ui;font-size:.75em;letter-spacing:normal;overflow-wrap:anywhere}
+html.game-english #schoolTestBody>.language-next{margin:8px auto}
+html.game-english .school-paper-head{line-height:1.4}
+html.game-english #ndNext{display:none}
+html.game-english #ndTalk{max-height:calc(100dvh - 80px);overflow:auto}
+html.game-english #ndText{word-break:normal;overflow-wrap:anywhere}
+html.game-english .school-test-panel{box-sizing:border-box;width:calc(100vw - 16px);max-width:720px;padding:8px;max-height:calc(100dvh - 16px)}
+html.game-english .school-msg,html.game-english .school-q{word-break:normal;overflow-wrap:anywhere}
+html.game-english .school-paper-reading{white-space:nowrap;letter-spacing:normal}
+html.game-english .school-sheet .school-paper-reading{font-size:.9rem}
+html.game-english #schoolTestBody{display:flex;flex-direction:column;max-height:calc(100dvh - 36px);min-height:0}
+html.game-english #schoolTestBody>.school-stage{overflow:auto;min-height:0;flex-shrink:1}
+html.game-english #schoolTestBody>.school-actions,html.game-english #schoolTestBody>.language-next{flex-shrink:0}
+html.game-english .ts-talk-next,html.game-english .sp-talk-next,html.game-english .ps-talk-next{display:none}
+html.game-english #tsTalk,html.game-english #spTalk,html.game-english #icTalk,html.game-english #psTalk{flex-wrap:wrap;max-height:calc(100dvh - 100px);overflow:auto;box-sizing:border-box}
+html.game-english #tsTalk .language-next,html.game-english #spTalk .language-next,html.game-english #icTalk .language-next,html.game-english #psTalk .language-next{flex-basis:100%}
+html.game-english .ts-talk-text,html.game-english .sp-talk-text,html.game-english .ps-talk-text,html.game-english .ic-talk-msg,html.game-english #icdText{word-break:normal;overflow-wrap:anywhere;min-width:0;line-height:1.5}
+html.game-english #icdTalk{max-height:calc(100dvh - 90px);overflow:auto}
+html.game-english #tsTalk,html.game-english #spTalk,html.game-english #psTalk{top:auto;bottom:12px;display:none;grid-template-columns:64px minmax(0,1fr);padding:10px;gap:10px}
+html.game-english #tsTalk.show,html.game-english #spTalk.show,html.game-english #psTalk.show{display:grid}
+html.game-english .train-scene-stage,html.game-english .ship-scene-stage{overflow:clip}
+html.game-english .ts-talk-face,html.game-english .sp-talk-face,html.game-english .ps-talk-face{width:64px}
+html.game-english #tsTalk>.language-next,html.game-english #spTalk>.language-next,html.game-english #psTalk>.language-next{grid-column:1/-1;justify-self:end}
+html.game-english #icdTalk{flex-wrap:wrap}
+html.game-english #icdTalk>.language-next{margin-left:auto}
+html.game-english .icd-next{display:none}
+html.game-english body.nd-event-mode .field-h{visibility:hidden}
+html.game-english .school-board{justify-content:flex-start;min-height:0;gap:6px}
+html.game-english .school-paper-page{min-height:130px;padding:8px 6px}
+html.game-english .school-paper-head{margin-bottom:6px;padding-bottom:6px}
+html.game-english .school-paper-focus{min-height:70px;padding:5px}
+html.game-english .school-answer-area{min-height:68px;width:100%}
+html.game-english .school-answer-area .school-actions{flex-wrap:nowrap;width:100%}
+html.game-english .school-mark-btn{min-width:0;flex:1;padding:8px;min-height:44px}
+html.game-english #schoolTestBody>.school-actions .btn{padding:8px;min-height:44px}
+html.game-english .school-sheet{max-height:180px;overflow:auto;flex-shrink:0}
+@media(max-height:450px) and (min-width:431px){
+ html.game-english .school-stage{min-height:0;padding:4px 6px 4px 12%;border-width:5px}
+ html.game-english .school-teacher{width:10%;height:100%}
+ html.game-english .school-board{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.8fr);gap:6px;align-items:center}
+ html.game-english .school-qno{grid-column:1/-1;padding:2px;font-size:12px}
+ html.game-english .school-paper-page{min-height:104px;padding:3px}
+ html.game-english .school-paper-head{font-size:11px;margin-bottom:2px;padding-bottom:2px}
+ html.game-english .school-paper-focus{min-height:65px;grid-template-columns:16px 32px minmax(0,1fr) 30px;gap:3px;padding:2px}
+ html.game-english .school-paper-reading{font-size:17px}
+ html.game-english .school-mark-stack{width:28px}
+ html.game-english .school-msg{font-size:14px;padding:5px}
+ html.game-english #schoolTestBody>.school-actions .btn{min-height:36px;padding:4px}
+ html.game-english #schoolTestBody>.language-next{margin:3px auto;min-height:38px;padding:5px 18px}
+}
+@media(max-width:430px){
+ html.game-english .school-stage{border-width:6px;padding:52px 6px 8px;min-height:0}
+ html.game-english .school-teacher{width:48px;height:48px}
+ html.game-english .school-board{min-height:0}
+ html.game-english .school-paper-page{padding:8px 6px;min-height:130px}
+ html.game-english .school-paper-focus{grid-template-columns:20px 32px minmax(0,1fr) 44px;gap:3px}
+ html.game-english .school-paper-char{font-size:1.8rem}
+ html.game-english .school-mark-stack{width:40px;padding-left:0}
+ html.game-english .school-answer-area{min-height:68px}
+ html.game-english .school-sheet{padding:8px 4px 54px}
+ html.game-english .school-sheet-row{grid-template-columns:20px 28px minmax(0,1fr) 28px;gap:3px}
+}
