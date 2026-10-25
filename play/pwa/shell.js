@@ -2,6 +2,7 @@
   'use strict';
   const $=id=>document.getElementById(id),B=KanjimonBackup;
   let owned=false,available=false,recoveryBlocked=false,epoch=0,gameActive=false,busy=false,registration=null;
+  let manifestFailed=false;
   let expected=null,release=null,manifest=null,pending=null,downloadId=0,downloadJob=null,installPrompt=null;
   const status=text=>{$('status').textContent=text;};
   const notify=error=>status(error?.message||String(error));
@@ -9,8 +10,11 @@
   const migrationKey='kanjimon-pwa-migration-ack-v1';
   try{$('closed').checked=localStorage.getItem(migrationKey)==='1';}catch(e){}
   $('migration').hidden=$('closed').checked;
+  function readyStatus(){
+    if(owned&&available&&!gameActive)status(manifest?.game?($('closed').checked?'じゅんびが できたよ！':'はじめの かくにんを してね。'):manifestFailed?'ゲームの準備情報を読み込めませんでした。通信を確認して、この画面を開き直してください。':'ゲームの じゅんび中だよ。少しまってね。');
+  }
   function refresh(){
-    $('start').disabled=!owned||!available||!$('closed').checked||busy||!!downloadJob;
+    $('start').disabled=!manifest?.game||!owned||!available||!$('closed').checked||busy||!!downloadJob;
     $('import').disabled=!owned||!(available||recoveryBlocked)||!$('closed').checked||busy||!!downloadJob;
     $('export').disabled=busy||!!downloadJob;
     $('update').disabled=busy||!!downloadJob;
@@ -64,7 +68,7 @@
       for(const raw of Object.values(expected))if(raw!==null)B.validateSave(JSON.parse(raw));
       available=true;recoveryBlocked=false;
       // A corrupt record may be restored, but must never boot as a new game.
-      status($('closed').checked?'じゅんびが できたよ！':'はじめの かくにんを してね。');
+      readyStatus();
     }catch(e){
       available=false;recoveryBlocked=false;
       try{expected=B.read(localStorage);recoveryBlocked=true;}catch(readError){}
@@ -149,7 +153,7 @@
   $('retry').onclick=()=>acquire();
   $('closed').onchange=()=>{
     try{localStorage.setItem(migrationKey,$('closed').checked?'1':'0');}catch(e){}
-    if(owned&&available)status($('closed').checked?'じゅんびが できたよ！':'はじめの かくにんを してね。');
+    if(owned&&available)readyStatus();
     refresh();
   };
   $('import').onclick=()=>{if(!$('import').disabled)$('file').click();};
@@ -266,8 +270,9 @@
   addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;$('install').hidden=false;});
   $('install').onclick=async()=>{if(!installPrompt)return;await installPrompt.prompt();installPrompt=null;$('install').hidden=true;};
   async function setup(){
-    try{const r=await fetch('pwa/assets.json',{cache:'no-store'});if(!r.ok)throw Error();manifest=await r.json();}
-    catch(e){$('download-status').textContent='通信できないため、保存の準備ができませんでした。';}
+    try{const r=await fetch('pwa/assets.json',{cache:'no-store'});if(!r.ok)throw Error();manifest=await r.json();if(!manifest?.game)throw Error();}
+    catch(e){manifest=null;manifestFailed=true;$('download-status').textContent='通信できないため、保存の準備ができませんでした。';}
+    readyStatus();refresh();
     if('serviceWorker' in navigator&&isSecureContext){
       try{
         registration=await navigator.serviceWorker.getRegistration('pwa.html');
