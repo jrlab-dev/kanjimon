@@ -19,6 +19,9 @@
     if(Object.hasOwn(messages,source))return messages[source];
     const trim=source.trim();
     if(Object.hasOwn(messages,trim))return source.slice(0,source.indexOf(trim))+messages[trim]+source.slice(source.indexOf(trim)+trim.length);
+    const iceFloor=source.match(/^こおりの しろ ([1-4])階$/);
+    if(iceFloor)return t('こおりの しろ '+iceFloor[1]+'かい');
+    if(source==='王の間')return t('こおりの しろ 王の間');
     const badge=source.match(/^(\S+ (?:みず|ひ|き|岩|かみなり|ふつう))　(👑ボス|👹おじゃま)$/);
     if(badge){
       const base=t(badge[1]),parts=badge[1].split(' ');
@@ -26,6 +29,8 @@
     }
     const chapter=source.match(/^だい(\d+)わ「([^」]+)」 おしまい$/);
     if(chapter)return 'Episode '+chapter[1]+': '+t(chapter[2])+' — Complete';
+    const damage=source.match(/^(クリティカル！ )?(あいしょう バッチリ！ )?(⭐−\d+！)$/);
+    if(damage&&(damage[1]||damage[2]))return [damage[1]&&t(damage[1].trim()),damage[2]&&t(damage[2].trim()),damage[3]].filter(Boolean).join(' ');
     for(const {re,target,names}of patterns){const m=re.exec(source);if(m)return target.replace(/\{([pcw]\d+)\}/g,(_,k)=>m[names.indexOf(k)+1]);}
     if(/[ぁ-ヶ一-鿿]/.test(source)&&!/[A-Za-z]/.test(source)&&source.length>2&&missing.size<5000)missing.add(source);
     return source;
@@ -55,7 +60,9 @@
     const el=node.parentElement;if(!el||el.closest(protectedSelector)||el.closest('.school-paper-reading,.school-paper-char'))return;
     // Answer text is also used by the original grading and highlighting code.
     if(el.closest('.opt')&&node.nodeValue!=='つぎへ')return;
-    const translated=t(node.nodeValue);if(translated!==node.nodeValue){node.nodeValue=translated;translatedNodes.set(node,translated);}
+    const translated=t(node.nodeValue);
+    if(el.matches('.dmg-pop'))el.classList.toggle('language-damage',/[A-Za-z]/.test(translated));
+    if(translated!==node.nodeValue){node.nodeValue=translated;translatedNodes.set(node,translated);}
   }
   function reading(el){
     const text=el.textContent.trim();
@@ -84,8 +91,27 @@
     const template=document.createElement('template');template.innerHTML=source;
     const plain=template.content.textContent,translated=t(plain);
     if(translated!==plain)return escape(translated);
-    const walker=document.createTreeWalker(template.content,NodeFilter.SHOW_TEXT);
-    while(walker.nextNode())nodeText(walker.currentNode);
+    function translateRuns(parent){
+      let run=[];
+      const flush=()=>{
+        if(!run.length)return;
+        const plain=run.map(node=>node.textContent).join(''),translated=t(plain);
+        if(translated!==plain){
+          parent.insertBefore(document.createTextNode(translated),run[0]);
+          run.forEach(node=>node.remove());
+        }else for(const node of run){
+          if(node.nodeType===3)nodeText(node);
+          else if(node.nodeType===1&&!node.matches(protectedSelector))translateRuns(node);
+        }
+        run=[];
+      };
+      for(const node of [...parent.childNodes]){
+        if(node.nodeType===1&&node.tagName==='BR')flush();
+        else run.push(node);
+      }
+      flush();
+    }
+    translateRuns(template.content);
     return template.innerHTML;
   }
   function clearNext(host){host?.querySelector(':scope > .language-next')?.remove();}

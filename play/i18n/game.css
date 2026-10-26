@@ -7,6 +7,9 @@ html.game-english .hakase-talk .language-next{flex-basis:100%;margin:8px 0 0}
 .language-loading>div{max-width:520px}.language-loading button{font:inherit;min-height:44px;padding:8px 16px;margin:8px;border-radius:10px}
 html.game-english [data-romaji]::after{content:attr(data-romaji);display:block;font:500 .75rem/1.3 sans-serif;letter-spacing:0;color:#50576a;margin-top:3px}
 html.game-english .title-btns{flex-wrap:wrap}
+html.game-english .dmg-pop.language-damage{top:100%;left:auto!important;right:0;width:max-content;max-width:160px;white-space:normal;text-align:right;font-size:18px;line-height:1.2;transform-origin:right center;zoom:calc(1 / var(--battle-enemy-scale,1))}
+html.game-english .dmg-pop.language-damage.show{animation-name:languageDamagePop}
+@keyframes languageDamagePop{0%{opacity:0;transform:translateY(4px) scale(.6)}25%{opacity:1;transform:translateY(-18px) scale(1.1)}100%{opacity:0;transform:translateY(-52px) scale(1)}}
 html.game-english .diff-pill{min-height:44px;white-space:normal;overflow-wrap:anywhere}
 html.game-english .diff-pill small{font-size:.65rem}
 html.game-english .stage-label,html.game-english .zone-name{white-space:normal}
