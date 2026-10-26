@@ -25492,6 +25492,7 @@ function fieldViewCoords(){
 /* フィールド画面へ（タイトル「フィールドで あそぶ」） */
 /* 第6弾§2：前回位置の自動再開は廃止。タイトル→ワールドマップ→ゾーン選択→Sから開始 */
 function goField(){
+  if(needsInitialOpening()){nmOpen(startOp1Event);return;}
   if(window.KanjimonStoryOutcome?.resume())return;
   window.openingMovieDismissed=true;window.OpeningMovie?.cancel();
   if(bgmOpeningTitleActive)bgmPlay('title');
@@ -27846,6 +27847,7 @@ function enterNextZoneAfterCeremony(){
 
 /* バナー（各ゾーン初訪問） */
 function ensureFieldIntro(){
+  if(fieldZone===1&&!introSeen)return;
   if(ice83NeedsEnding(fieldZone)){maybeStartZoneEvent(fieldZone);return;}
   if(settleZone102FinalVictory())return;
   if(isTownLike(fieldZone)) return;   // 弾3-15：疑似ゾーンには通常ゾーンのバナーを出さない
@@ -30197,6 +30199,7 @@ function startPasserby(zone, onDone){
 }
 
 function maybeStartZoneEvent(zone){
+  if(zone===1&&!introSeen)return;
   if(zone===83){
     if(ice83NeedsEnding(zone)){const seq=fieldSeq;setTimeout(()=>{if(seq===fieldSeq&&fieldZone===83&&ice83NeedsEnding(83)&&!ice83Run&&$('screen-field').classList.contains('active')&&!$('freeOverlay').classList.contains('show'))startIce83Ending(openWorldMapAfterZoneOut);},EV_BANNER_WAIT_MS);}
     return; // 城内の会話は入場時には始めない。
@@ -30222,7 +30225,7 @@ function maybeStartZoneEvent(zone){
   if(needsFujiPan) fuji52PanPendingSeq=seq;
   setTimeout(()=>{
     // ここへ来るまでにワープ・タイトルへ離脱していたら出さない（既存の誤発火防止と同じ流儀）
-    if(seq!==fieldSeq || fieldZone!==zone || evActive || ztActive || (evSeen[zone]&&!needsFujiPan && !(zone===52 && !fuji52ChaseReady) && !needsNagoyaResume)) {
+    if(seq!==fieldSeq || fieldZone!==zone || (zone===1&&!introSeen) || evActive || ztActive || (evSeen[zone]&&!needsFujiPan && !(zone===52 && !fuji52ChaseReady) && !needsNagoyaResume)) {
       if(fuji52PanPendingSeq===seq) fuji52PanPendingSeq=0;
       return;
     }
@@ -32011,31 +32014,7 @@ function hakaseTalkOnce(msg, onDone, sndId){
 let hakaseIntroMusicToken=null,hakaseIntroMusicGeneration=0,hakaseIntroMusicMsgSeq=null;
 function cancelHakaseIntroMusic(){if(hakaseIntroMusicMsgSeq===hakaseMsgSeq)hakaseDuckRelease();hakaseIntroMusicMsgSeq=null;bgmSceneEnd(hakaseIntroMusicToken);hakaseIntroMusicToken=null;++hakaseIntroMusicGeneration;}
 function hakaseTalk(){
-  const musicGeneration=hakaseIntroMusicGeneration;
-  if(hakaseStep===1||hakaseStep===2)hakaseIntroMusicToken=bgmSceneBegin('mana-intro','mana');
-  else{bgmSceneEnd(hakaseIntroMusicToken);hakaseIntroMusicToken=null;}
-  hakaseDuckAcquire();   // 手直し 夜間みがき§1：イントロ中はBGMダッキングを持続ホールド（冪等なので毎セリフ呼んでも最初の1回だけ効く）
-  if(hakaseStartTimer){ clearTimeout(hakaseStartTimer); hakaseStartTimer=null; }   // 自動開始待ちタイマーは役目終了
-  const msgs=[
-    'かんじもんの せかいへ ようこそ！',
-    // 2026-08-14 作者裁定：ここで初めて「マナ」と名乗る（それまでゲーム内に名前が一度も出ていなかった）。
-    // 設定＝アンドロイドのマナ／あらゆることを研究して「ぜんぶの はかせ」になった／いまは漢字にハマっている。
-    // ねらい＝ラスボスのイージー（生まれたときから全知・学んだ経験がない）との差を、説明でなく自己紹介で立てる。正本＝設計書\世界観_1枚紙.md §4
-    'わたしは マナ。アンドロイドの はかせだよ！',
-    'なんでも けんきゅうして、ぜんぶの はかせに なったの。いまは かんじに むちゅう！',
-    'きみに あいぼうの 『一』を あげよう！ いっしょに ぼうけんだ！',
-    ...storyBondLines().filter(line=>line.key!=='invite').map(line=>line.text),
-    'かんじもんを つかまえて ずかんを かんせい させよう！',
-    'あるいて さがして、きになる こに ちかづいてみよう！'
-  ];
-  const isLast = hakaseStep>=msgs.length-1;
-  const msg=msgs[Math.min(hakaseStep,msgs.length-1)];
-  const fseq=fieldSeq;
-  heroLock=true;   // 手直し はかせトーク2：ゾーン紹介バナー側のheroLock=false（2.2秒後の自動解除）と競合しないよう再度ロック
-  showHakaseTalkWindow(msg);          // 手直し はかせトーク2§3：専用の会話ウィンドウ（黒帯バナーではない）
-  scheduleHakaseAdvance(msg,fseq,isLast,()=>{if(musicGeneration===hakaseIntroMusicGeneration)hakaseFinishCurrent(fseq,isLast);},STORY_BOND_LINES.find(line=>line.text===msg)?.snd);   // 旧会話の送りは中断後にテーマを取り直さない
-  hakaseIntroMusicMsgSeq=hakaseMsgSeq;   // 自分の送りが現在の会話を所有するときだけduckを解放する
-  hakaseStep++;
+  if(!introSeen)nmOpen(startOp1Event);
 }
 
 /* 十字ボタン（長押し連続移動） */
@@ -32615,6 +32594,7 @@ function renderWorldMap(regionOverride){
   wmPlayIntroZoom(scale, centerCoord.x, centerCoord.y);
 }
 function warpZone(z){
+  if(z===1&&needsInitialOpening()){nmOpen(startOp1Event);return;}
   if(sceneImages.gate(z===84&&cleared.has(83)&&!iceDungeon.complete?[84,83]:z,()=>warpZone(z)))return;
   cancelHakaseIntroMusic();op1AbortMusic();
   if(typeof EvCutScene!=='undefined')EvCutScene.cancelMusic();
@@ -36397,6 +36377,7 @@ function op1EndMusic(){bgmSceneEnd(op1MusicToken);op1MusicToken=null;}
 function op1AbortMusic(){
   if(!op1Active)return;
   op1Seq++;op1Active=false;op1EndMusic();op1StopAllSnd();op1StopWalkAnims();
+  window.KanjimonGameI18n?.cancelIntro();
   $('op1GateBtn')?.classList.remove('show');$('op1Overlay')?.classList.remove('show');
 }
 let op1Seq=0;             // 世代カウンタ：とばす/完走のたびに増やし、残っている古いsetTimeoutを無効化する（既存spawnSeq流儀と同じ）
@@ -36516,8 +36497,14 @@ function op1PlaySnd(key){
 
 /* 新規プレイヤーの起動時にだけ呼ばれる（呼び出し元＝本ファイル末尾の初期化ブロック） */
 function startOp1Event(){
+  if(op1Active)return;
+  if(sceneImages.gate('opening',startOp1Event))return;
+  stopAutoExplore();cancelHakaseIntroMusic();
+  if(hakaseStartTimer){clearTimeout(hakaseStartTimer);hakaseStartTimer=null;}
+  hakaseMsgSeq++;hakaseTapTrigger=null;
+  stopBattleHakaseVoice();window.speechSynthesis?.cancel();hideHakaseTalkWindow();
   if(window.KanjimonGameI18n?.active){
-    if(op1Active)return;op1Active=true;
+    op1Active=true;
     window.KanjimonGameI18n.intro([
       {text:'わたしは マナ。アンドロイドの はかせだよ！',opSound:'s3b'},
       {text:'なんでも けんきゅうして、ぜんぶの はかせに なったの。いまは かんじに むちゅう！',opSound:'s3c'},
@@ -36527,8 +36514,6 @@ function startOp1Event(){
     ],op1Finish);
     return;
   }
-  if(sceneImages.gate('opening',startOp1Event))return;
-  if(op1Active) return;
   op1Active=true;
   bgmStop();   // 開始時は無音。2026-10-04採用のマナ名乗りS3b/cだけ人物曲を入れる（タイトル曲は止める）
   $('op1Overlay').classList.add('show');
@@ -36560,6 +36545,8 @@ function op1EnterFromGate(){
    スキップしても失われるものがなく、完走時の着地点と統一するのが最も単純で安全（検品項目3に対応） */
 function op1Skip(){ if(op1Active) op1Finish(); }
 function op1Finish(){
+  if(!op1Active)return;
+  window.KanjimonGameI18n?.cancelIntro();
   op1EndMusic();
   op1Seq++;              // 残っている古いシーンのsetTimeoutを無効化
   op1Active=false;
@@ -38143,11 +38130,14 @@ kakitoriTestSelfTest(); // 発注W-2：ヒント生成・出題組み立て・�
    弾NM-2：作者のご指示の順（オープニングPV→なまえ・せいべつ→今あるオープニングop1）にあわせ、
    まずnmOpen()でなまえ・せいべつを済ませてから、そのコールバックとしてstartOp1Event()を呼ぶ。
    playerNameが既にある等の安全側の分岐に入ってもnmOpen内でstartOp1Eventはちゃんと呼ばれる。 */
+function needsInitialOpening(){
+  return !introSeen&&(!hadSaveAtBoot||(unlocked===1&&cleared.size===0));
+}
 let openingBootContinued=false;
 function continueAfterOpeningMovie(){
   if(openingBootContinued)return;
   openingBootContinued=true;
-  if(!hadSaveAtBoot){ nmOpen(startOp1Event); }
+  if(needsInitialOpening()){ nmOpen(startOp1Event); }
 }
 document.addEventListener('DOMContentLoaded',()=>{
   if(!window.OpeningMovie?.isActive())continueAfterOpeningMovie();

@@ -138,7 +138,10 @@
     host.append(button);
     queueMicrotask(()=>{if(button.isConnected&&!used)button.focus({preventScroll:true});});
   }
+  let activeIntro=null;
+  function cancelIntro(){activeIntro?.();}
   function intro(lines,onFinish){
+    cancelIntro();
     const host=document.createElement('section');host.className='language-intro';host.setAttribute('role','dialog');host.setAttribute('aria-label','Welcome to KanjiMon');
     host.innerHTML='<img src="images/sprites/hakase.webp" alt="Mana"><h1>Welcome to KanjiMon</h1><p class="language-intro-text"></p><small>English text · Japanese voices</small><button type="button" class="language-sound"></button>';
     document.body.append(host);let index=0,closed=false;
@@ -146,9 +149,11 @@
     const label=()=>{mute.textContent=syncMute()?'Mute':'Unmute';};
     mute.onclick=()=>{root.toggleSound?.();label();};label();
     const saved=Array.from(document.body.children).filter(el=>el!==host).map(el=>[el,el.inert]);saved.forEach(([el])=>{el.inert=true;});
+    const close=()=>{if(closed)return;closed=true;root.stopBattleHakaseVoice?.();root.op1StopAllSnd?.();root.speechSynthesis?.cancel();host.remove();saved.forEach(([el,inert])=>{el.inert=inert;});activeIntro=null;};
+    activeIntro=close;
     function show(){
       if(closed)return;
-      if(index>=lines.length){closed=true;root.stopBattleHakaseVoice?.();root.op1StopAllSnd?.();host.remove();saved.forEach(([el,inert])=>{el.inert=inert;});onFinish();return;}
+      if(index>=lines.length){close();onFinish();return;}
       const line=lines[index++];host.querySelector('p').textContent=t(line.text);
       root.stopBattleHakaseVoice?.();root.op1StopAllSnd?.();
       if(line.opSound)root.op1PlaySnd?.(line.opSound);else if(line.snd)root.playBattleHakaseVoice?.(line.snd);
@@ -300,7 +305,7 @@
     if(!options)options=m.values.map(v=>['read','after','before','departure'].includes(q.type)?time(v):q.type==='elapsed'?v+' min':q.type==='price'?'¥'+v:v+' g');
     return {...q,prompt,context,explanation,options};
   }
-  root.KanjimonGameI18n={active,t,html,escape,romaji,localize,next,clearNext,intro,battleMessage,dialogue,story,advanceStory,clearStory,workQuestion,gate,cancelLoad,
+  root.KanjimonGameI18n={active,t,html,escape,romaji,localize,next,clearNext,intro,cancelIntro,battleMessage,dialogue,story,advanceStory,clearStory,workQuestion,gate,cancelLoad,
     writingContext:q=>{
       if(!active)return null;
       const sentence=bundle.writingById?.[(q.id||'').replace(/-alternate$/,'')];

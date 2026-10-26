@@ -142,3 +142,15 @@ html.game-english .school-sheet{max-height:180px;overflow:auto;flex-shrink:0}
  html.game-english .school-sheet{padding:8px 4px 54px}
  html.game-english .school-sheet-row{grid-template-columns:20px 28px minmax(0,1fr) 28px;gap:3px}
 }
+
+.language-intro{justify-content:safe center}
+.language-intro>*{flex-shrink:0}
+@media(max-height:500px){
+.language-intro{display:grid;grid-template-columns:120px minmax(0,460px);grid-template-rows:auto minmax(0,1fr) auto auto;align-content:center;gap:8px 18px;padding:12px}
+.language-intro img{grid-column:1;grid-row:1 / 4;width:120px;height:160px;max-height:55vh}
+.language-intro h1{grid-column:2;grid-row:1;font-size:1.2rem;margin:0}
+.language-intro p{grid-column:2;grid-row:2;min-height:0;margin:0;font-size:1rem;line-height:1.45}
+.language-intro small{grid-column:2;grid-row:3}
+.language-intro .language-sound{grid-column:1;grid-row:4}
+.language-intro .language-next{grid-column:2;grid-row:4;margin:0;justify-self:center}
+}
