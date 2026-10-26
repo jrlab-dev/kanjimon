@@ -19,6 +19,13 @@
     if(Object.hasOwn(messages,source))return messages[source];
     const trim=source.trim();
     if(Object.hasOwn(messages,trim))return source.slice(0,source.indexOf(trim))+messages[trim]+source.slice(source.indexOf(trim)+trim.length);
+    const badge=source.match(/^(\S+ (?:みず|ひ|き|岩|かみなり|ふつう))　(👑ボス|👹おじゃま)$/);
+    if(badge){
+      const base=t(badge[1]),parts=badge[1].split(' ');
+      return (base===badge[1]?parts[0]+' '+t(parts[1]):base)+' '+t(badge[2]);
+    }
+    const chapter=source.match(/^だい(\d+)わ「([^」]+)」 おしまい$/);
+    if(chapter)return 'Episode '+chapter[1]+': '+t(chapter[2])+' — Complete';
     for(const {re,target,names}of patterns){const m=re.exec(source);if(m)return target.replace(/\{([pcw]\d+)\}/g,(_,k)=>m[names.indexOf(k)+1]);}
     if(/[ぁ-ヶ一-鿿]/.test(source)&&!/[A-Za-z]/.test(source)&&source.length>2&&missing.size<5000)missing.add(source);
     return source;
