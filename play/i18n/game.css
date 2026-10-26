@@ -5,7 +5,27 @@ html.game-english .hakase-talk .language-next{flex-basis:100%;margin:8px 0 0}
 .language-next{display:block;min-height:44px;min-width:88px;margin:8px 0 0 auto;padding:8px 18px;border:2px solid #d36b1f;border-radius:14px;background:#fff0c2;color:#472407;font:inherit;font-weight:700;cursor:pointer}
 .language-loading{position:fixed;inset:0;z-index:2147483001;display:grid;place-items:center;padding:24px;background:#10283f;color:white;font:18px/1.6 system-ui;text-align:center}
 .language-loading>div{max-width:520px}.language-loading button{font:inherit;min-height:44px;padding:8px 16px;margin:8px;border-radius:10px}
-html.game-english [data-romaji]::after{content:attr(data-romaji);display:block;font:500 .75rem/1.3 sans-serif;letter-spacing:0;color:#50576a;margin-top:3px}
+html.game-english [data-romaji]{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+html.game-english [data-romaji]::after{content:attr(data-romaji);display:block;order:-1;font:700 1.2rem/1.2 system-ui,sans-serif;letter-spacing:0;color:inherit;margin:0;overflow-wrap:anywhere;max-width:100%}
+html.game-english .opt[data-romaji]{font-size:13px!important;line-height:1.2;font-weight:500;padding:4px 10px;min-height:52px}
+html.game-english .opt[data-romaji]::after{font-size:22px;line-height:1.15;font-weight:750}
+html.game-english body.ice-dungeon-battle #screen-battle .options{height:82px}
+html.game-english body.ice-dungeon-battle #screen-battle .opt{height:82px;min-height:82px}
+html.game-english body.ice-dungeon-battle #screen-battle .opt[data-romaji]::after{font-size:20px}
+html.game-english body.ice-dungeon-battle #screen-battle .msg,html.game-english body.ice-dungeon-battle #screen-battle .battle-hakase{bottom:98px}
+html.game-english body.ice-dungeon-battle #screen-battle .party-row{bottom:162px}
+html.game-english .zdetail .dy[data-romaji]{font-size:14px;letter-spacing:0}
+html.game-english .zdetail .dy[data-romaji]::after{font-size:22px}
+html.game-english .zcell .jr[data-romaji]{font-size:10px;line-height:1.2;white-space:normal;overflow-wrap:anywhere}
+html.game-english .zcell .jr[data-romaji]::after{font-size:12px;line-height:1.2}
+html.game-english .title-hero{background:#102b3e;border:1px solid #c6ac70;border-radius:18px;padding:0 0 10px;box-shadow:0 8px 24px #102b3e24}
+html.game-english #titleLogo{width:100%;margin:0;padding:25px 12px 21px;color:#f7f2e7;line-height:1;text-shadow:none;letter-spacing:normal;box-sizing:border-box}
+html.game-english #titleLogo::before{content:'';display:block;width:7px;height:7px;border:1px solid #d8bb78;transform:rotate(45deg);margin:0 auto 15px}
+html.game-english #titleLogo .language-logo-word{display:flex;justify-content:center;font:700 clamp(28px,8.5vw,42px)/1 Georgia,'Times New Roman',serif;letter-spacing:.035em;white-space:nowrap}
+html.game-english #titleLogo .language-logo-word>span:last-child{color:#e6c77f}
+html.game-english #titleLogo .language-logo-caption{display:block;color:#c9d3d8;font:600 10px/1.4 system-ui,sans-serif;letter-spacing:.22em;margin-top:12px}
+html.game-english .title-art{margin-top:0;border-top:1px solid #bd9d5c80;border-bottom:1px solid #bd9d5c80}
+html.game-english .title-hero .sub{background:transparent;color:#d4e1e7;font-family:system-ui,sans-serif;font-size:12px;font-weight:500;letter-spacing:.02em}
 html.game-english .title-btns{flex-wrap:wrap}
 html.game-english .dmg-pop.language-damage{top:100%;left:auto!important;right:0;width:max-content;max-width:160px;white-space:normal;text-align:right;font-size:18px;line-height:1.2;transform-origin:right center;zoom:calc(1 / var(--battle-enemy-scale,1))}
 html.game-english .dmg-pop.language-damage.show{animation-name:languageDamagePop}
@@ -59,7 +79,8 @@ html.game-english #aenOpeningText{line-height:1.5;word-break:normal;max-height:c
 html.game-english [class$="-cut-location"]{max-width:calc(100% - 110px);font-size:12px}
 html.game-english #gradeOneStory .ig-dialog,html.game-english #utsunomiyaStory .uq-dialog,html.game-english #tsukubaStory .tq-dialog{padding-bottom:12px}
 html.game-english #gradeOneStory .ig-location,html.game-english #utsunomiyaStory .uq-location,html.game-english #tsukubaStory .tq-location{max-width:calc(100% - 150px);letter-spacing:normal}
-html.game-english .school-paper-reading:after{content:attr(data-romaji);display:block;font-family:system-ui;font-size:.75em;letter-spacing:normal;overflow-wrap:anywhere}
+html.game-english .school-paper-reading[data-romaji]{font-size:12px!important;white-space:normal;text-align:center}
+html.game-english .school-paper-reading:after{content:attr(data-romaji);display:block;font-family:system-ui;font-size:17px;letter-spacing:normal;overflow-wrap:anywhere}
 html.game-english #schoolTestBody>.language-next{margin:8px auto}
 html.game-english .school-paper-head{line-height:1.4}
 html.game-english #ndNext{display:none}

@@ -68,7 +68,7 @@
     const text=el.textContent.trim();
     if(!/^[ぁ-ゖァ-ヶー／・]+$/.test(text)||text==='つぎへ')return;
     const roman=romaji(text);el.dataset.romaji=roman;el.lang='ja';
-    el.setAttribute('aria-label',text+' ('+roman+')');
+    el.setAttribute('aria-label',roman+' ('+text+')');
   }
   function localize(node){
     if(!active||!node)return;
@@ -325,6 +325,11 @@
   if(!active)return;
   document.documentElement.classList.add('game-english');
   document.addEventListener('DOMContentLoaded',()=>{
+    const logo=document.getElementById('titleLogo');
+    if(logo){
+      logo.setAttribute('aria-label','KanjiMon — Kanji Adventure RPG');
+      logo.innerHTML='<span class="language-logo-word"><span>KANJI</span><span>MON</span></span><span class="language-logo-caption">KANJI ADVENTURE RPG</span>';
+    }
     localize(document.body);
     document.documentElement.lang='en';
     document.getElementById('soundBtn')?.addEventListener('click',syncMute);
