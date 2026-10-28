@@ -290,6 +290,7 @@
      内側に収まる（バトル画面(.battle-top-right)限定の調整・#soundBtn自体は無変更） */
   .battle-top-right{display:flex;flex-direction:column;align-items:flex-end;gap:3px;margin-right:48px}
   .hp{font-size:1.4rem;letter-spacing:2px;line-height:1}
+  #bHp>span{white-space:nowrap}
   .hp .dim{filter:grayscale(1);opacity:.45}
   .hp:empty{display:none}
   .battle-coins{font-weight:900;font-size:.78rem;color:#7c4a03;background:#fffbe6;border:2px solid var(--yellow);
@@ -35212,6 +35213,7 @@ function closeOtetsudai(){
 }
 function startMallMeatHelp(){
   closeInteriorCard(); otetsudaiOrigin='mall';
+  $('otetsudaiCoins').innerHTML=yenHtml(coins);
   otetsudaiSeq++; otClearTimer(); $('otetsudaiOverlay').classList.add('show');
   if($('screen-field').classList.contains('active')){ stopAutoExplore(); autoPaused=true; }
   startMeatHelp();
