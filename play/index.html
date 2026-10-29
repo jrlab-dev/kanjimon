@@ -724,7 +724,16 @@
   }
 
   /* ===== 弾3-12：町とお金（道具屋・やど・どうぐ・バトル中げんきだま） ===== */
-  .tile.t-town-door .town-door-emoji{font-size:22px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.35))}
+  .tile.t-town-door{color:#263348;overflow:visible;z-index:60}
+  .tile.t-town-door .town-door-emoji{color:#263348;font-size:22px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.35));pointer-events:none}
+  .town-door-label{position:absolute;left:50%;top:calc(100% - 3px);transform:translateX(calc(-50% + var(--door-shift,0px)));
+    display:block;padding:3px 6px;border:1px solid #b89b63;border-radius:7px;background:rgba(255,253,244,.97);color:#433419;
+    font-size:12px;font-weight:900;line-height:1.3;white-space:nowrap;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.18);pointer-events:none}
+  .town-door-label small{display:block;font-size:10px;font-weight:700;line-height:1.25;color:#685431}
+  .field-grid.has-fullart .tile.t-path.t-town-door:has(.town-door-label):not(:has(.town-door-emoji)){background:transparent}
+  .hakase-talk.has-town-guide{flex-wrap:wrap}
+  .hakase-talk.has-town-guide>.hakase-talk-text{flex:1;min-width:0}
+  .town-guide-note{flex-basis:100%;border-top:1px solid rgba(255,255,255,.45);padding-top:5px;font-size:12px;line-height:1.4;color:#fff1bd}
   /* ※fullartの「.tile.t-path{background:transparent}」（後方定義）に負けないよう.t-pathを重ねて特異性を上げる（t-spotの白半透明と同じ見た目の言語） */
   .field-grid.has-fullart .tile.t-path.t-town-door{background:rgba(255,255,255,.35);border-radius:12px;display:flex;align-items:center;justify-content:center}
   .field-grid:not(.has-fullart) .tile.t-town-door{display:flex;align-items:center;justify-content:center}
@@ -15021,6 +15030,7 @@ function onCorrectSimple(btn){
       if(enemyShiny) shiny.add(idx);   // 第15弾§9：色違いは倒した時点で記録
       // §7-2：最初のからだゲット → 次のくさむらエンカウントを強制的にその子のたましいに
       if(firstBodyIdx===null&&newGamePlus.cycle===0){ firstBodyIdx=idx; forceTamashiiNext=true; }
+      save();
       // §7-1：最初のフィールドバトル勝利だけ はかせのセリフを添える
       const hakaseWinMsg = firstFieldWin
         ? 'みごと！ あばれが おさまって からだを ゲットよ。たましいは フィールドに いるわ' : null;
@@ -15830,6 +15840,7 @@ function onEnemyDefeated(att){
       if(enemyShiny) shiny.add(enemyIdx);   // 第15弾§9：色違いは倒した時点で記録
       // §7-2：最初のからだゲット → 次のくさむらエンカウントを強制的にその子のたましいに
       if(firstBodyIdx===null&&newGamePlus.cycle===0){ firstBodyIdx=enemyIdx; forceTamashiiNext=true; }
+      save();
       // §7-1：最初のフィールドバトル勝利だけ はかせのセリフを添える
       const hakaseWinMsg = firstFieldWin
         ? 'みごと！ あばれが おさまって からだを ゲットよ。たましいは フィールドに いるわ' : null;
@@ -25794,7 +25805,48 @@ function updateCamera(instant,stepMs){
   const cam=normalFieldCamera();
   if(!cam) return null;
   applyFieldCamera(cam.x,cam.y,instant,stepMs);
+  alignFieldDoorLabels(cam);
   return cam;
+}
+function alignFieldDoorLabels(cam){
+  if(!isTownLike(fieldZone)) return;
+  const grid=$('fieldGrid'),bounds=grid.getBoundingClientRect();
+  const actors=[...grid.querySelectorAll('#fieldHero,#fieldHero .hero-sprite,.interior-npc')].map(actor=>{
+    const r=actor.getBoundingClientRect();return {left:r.left-bounds.left+cam.x,right:r.right-bounds.left+cam.x,top:r.top-bounds.top+cam.y,bottom:r.bottom-bounds.top+cam.y};
+  });
+  const wrap=$('fieldWrap'),viewport=wrap.getBoundingClientRect();
+  wrap.querySelectorAll('.dpad button').forEach(button=>{if(getComputedStyle(button).visibility==='hidden')return;const r=button.getBoundingClientRect();actors.push({left:r.left-viewport.left,right:r.right-viewport.left,top:r.top-viewport.top,bottom:r.bottom-viewport.top});});
+  const placedLabels=[];
+  grid.querySelectorAll('.town-door-label').forEach(label=>{
+    const x=Number(label.dataset.x),y=Number(label.dataset.y),cx=cam.x+(x+.5)*cam.tile,cy=cam.y+(y+.5)*cam.tile;
+    const visible=cx>=0&&cx<=cam.vw&&cy>=0&&cy<=cam.vh;
+    label.style.visibility=visible?'':'hidden';
+    if(!visible) return;
+    const half=label.offsetWidth/2,height=label.offsetHeight,clamp=x=>Math.max(half+4,Math.min(cam.vw-half-4,x));
+    const centers=[clamp(cx),clamp(cx+cam.tile/2+half+5),clamp(cx-cam.tile/2-half-5)];
+    const positions=[false,true].flatMap(above=>centers.map(center=>({center,top:Math.max(4,Math.min(cam.vh-height-4,above?cam.y+y*cam.tile-height+3:cam.y+(y+1)*cam.tile-3))}))).sort((a,b)=>(Math.abs(a.center-cx)+Math.abs(a.top+height/2-cy))-(Math.abs(b.center-cx)+Math.abs(b.top+height/2-cy)));
+    const fits=p=>p.top>=4&&p.top+height<=cam.vh-4;
+    const covers=p=>actors.concat(placedLabels).some(r=>p.center-half<r.right+2&&p.center+half>r.left-2&&p.top<r.bottom+2&&p.top+height>r.top-2);
+    const placed=positions.find(p=>fits(p)&&!covers(p))||positions.find(fits)||positions[0];
+    label.style.setProperty('--door-shift',(placed.center-cx)+'px');
+    label.style.top=(placed.top-cam.y-y*cam.tile)+'px';
+    placedLabels.push({left:placed.center-half,right:placed.center+half,top:placed.top,bottom:placed.top+height});
+  });
+}
+function fieldDoorLabel(ch){
+  const en=window.KanjimonGameI18n?.active,t=source=>window.KanjimonGameI18n?.t(source)||source;
+  const title=source=>t(source).replace(/^[^A-Za-z]*/,'');
+  if(fieldZone===TOWN_ZONE){
+    const names={L:['けんきゅうじょ'],D:['どうぐや'],Y:['やど','むりょう'],H:['おてつだい'],M:['モール','にくや・ふくや'],K:['みんか'],G:['がっこう'],F:['しょどうきょうしつ'],N:['とけいとう','じゅんびちゅう'],O:['じぶんの いえ'],P:['えき',STATION_OPEN?'':'じゅんびちゅう'],Q:['ゲームセンター','じゅんびちゅう'],V:['むらへ',unlocked>=STAGE2_COUNT+1?'':'まだ とおれない']};
+    if(en){const english={L:[t('けんきゅうじょ')],D:[title('🛍️ どうぐや')],Y:[title('🛏️ やど'),'Free'],H:[title('📋 おてつだい')],M:[t('ショッピングモール'),'Butcher / Clothes'],K:['House'],G:['School'],F:[t('しょどうきょうしつ')],N:['Clock Tower','Coming soon'],O:[title('🏡 じぶんの いえ')],P:['Station',STATION_OPEN?'':'Coming soon'],Q:['Game Center','Coming soon'],V:['To the Village',unlocked>=STAGE2_COUNT+1?'':'Keep adventuring']};return english[ch]||null;}
+    return names[ch]||null;
+  }
+  if(fieldZone<0){
+    if(ch==='E') return [en?'To Town':'まちへ'];
+    if(fieldZone===MALL_ZONE&&ch==='M') return en?[t('にくやさん'),title('📋 おてつだい')]:['にくや','おてつだい'];
+    if(fieldZone===MALL_ZONE&&ch==='U') return en?['Clothes Shop','Buy clothes']:['ふくや','ふくを かう'];
+  }
+  return null;
 }
 
 /* ===== 富士山§41：子どもの退場後、広場入口到着→全体確認→主人公へ帰還 =====
@@ -26387,6 +26439,15 @@ function renderField(){
       tile.className=cls;
       /* 弾3-12：町のY（やど）は/[A-L]/に一致しないため、town-doorはspan描画のためinnerHTML扱いに明示追加 */
       if(/[A-L]/.test(ch)||ch===','||ch==='.'||cls.indexOf('t-town-door')>=0) tile.innerHTML=txt; else tile.textContent=txt;   /* 第19弾§4：道(.)にふちspanを追加するためinnerHTML扱いに変更（実装順序の罠：この代入は必ずspan追加の後） */
+      if(cls.indexOf('t-town-door')>=0){
+        const name=fieldDoorLabel(ch);
+        if(name){
+          const label=document.createElement('span');label.className='town-door-label';label.dataset.x=x;label.dataset.y=y;
+          label.textContent=name[0];
+          if(name[1]){const detail=document.createElement('small');detail.textContent=name[1];label.appendChild(detail);}
+          tile.appendChild(label);
+        }
+      }
       grid.appendChild(tile);
     }
   }
@@ -32848,7 +32909,7 @@ function townBuildingFrontRow(b){
   return front===-Infinity ? (Math.round(b.y+b.h)-1) : front;
 }
 const MALL_DEF={ zone:MALL_ZONE, name:'ショッピングモール', bg:'interior-mall.webp',
-  returnTo:{x:19,y:28},
+  returnTo:{x:22,y:25},
   /* 手直し_着替え第1弾（7/25）：U＝ふくやさん（中央の店舗の前）。肉屋Mと同じ「什器の下に立つ」流儀。
      記号Uは壁T/R/W・すみかA〜L・既存のS/E/M/N/F/C/K・町のL/D/Y/H/G/O/P/Q/Vのどれとも重ならない */
   grid:[
@@ -32865,7 +32926,7 @@ const MALL_DEF={ zone:MALL_ZONE, name:'ショッピングモール', bg:'interio
 'T........E.......T',
 'TTTTTTTTTTTTTTTTTT']};
 const HOUSE1_DEF={ zone:HOUSE1_ZONE, name:'みんか', bg:'interior-house.webp',
-  returnTo:{x:6,y:34},
+  returnTo:{x:9,y:32},
   grid:[
 'TTTTTTTTTTTTTTT',
 'T....TTT......T',
@@ -33873,6 +33934,12 @@ function warpTown(){
   if(!townGuideSeen){
     townGuideSeen=true; save();
     hakaseTalkOnce('ここが みんなの まちよ！ どうぐやで かいものが できるわ。つかれたら やどで やすんでね',null,'bh27');
+    const guide=$('hakaseTalkWin');
+    if(guide){
+      guide.classList.add('has-town-guide');const note=document.createElement('div');note.className='town-guide-note';
+      note.textContent=window.KanjimonGameI18n?.active?'Directions: The item shop is to the north, on the right.':'みちあんない：どうぐやは きたの みぎがわ';
+      guide.appendChild(note);positionHakaseTalkWindow(guide,$('fieldWrap'));
+    }
   }
 }
 /* §4：町にいる間のコインバッジ（fieldInfoを流用＝常設は町のみ） */
