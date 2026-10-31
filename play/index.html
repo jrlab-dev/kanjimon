@@ -1005,15 +1005,13 @@
   .zdetail .dk-pair{display:flex;justify-content:center;align-items:flex-end;gap:16px;margin-bottom:6px}
   .zdetail .dk-one{display:flex;flex-direction:column;align-items:center}
   .zdetail .dk-pair .dk{font-size:2.5rem;margin-bottom:4px}
-  .zdetail .dk-pair .dk.shiny{filter:drop-shadow(0 0 8px #fde047) drop-shadow(0 0 4px #f59e0b) brightness(1.05) saturate(1.15);
-    animation:shinySparkle 1.4s ease-in-out infinite}
+  .zdetail .dk-pair .dk.shiny{filter:none;animation:none}
   .dk-alt-label{font-size:.68rem;font-weight:900;color:#7c4a03;background:#fff3bf;padding:2px 8px;border-radius:50px;white-space:nowrap}
   /* 第17弾§1：じゅくごずかん詳細＝材料2字を色違いタイルで並べる（dk-pair/dk-oneをコピペで新クラス化・既存dk-pairは変更しない） */
   .zdetail .jd-pair{display:flex;justify-content:center;align-items:flex-start;gap:14px;margin-bottom:8px;flex-wrap:wrap}
   .zdetail .jd-one{display:flex;flex-direction:column;align-items:center;gap:4px}
   .zdetail .jd-pair .dk{font-size:2.2rem;margin-bottom:2px}
-  .zdetail .jd-pair .dk.shiny{filter:drop-shadow(0 0 8px #fde047) drop-shadow(0 0 4px #f59e0b) brightness(1.05) saturate(1.15);
-    animation:shinySparkle 1.4s ease-in-out infinite}
+  .zdetail .jd-pair .dk.shiny{filter:none;animation:none}
   .jd-alt{font-size:.68rem;font-weight:900;color:#7c4a03;background:#fff3bf;padding:1px 7px;border-radius:50px;white-space:nowrap}
   .zdetail .dy{font-size:1.5rem;font-weight:900;color:var(--red);margin-bottom:4px}
   /* 発注_残り改善4件・作業4：色違い2体並び表示のときだけ使う、机ごとの小さめよみ表示。
@@ -1184,9 +1182,14 @@
     font-size:.85rem;color:#7c2d12;line-height:1.5}
 
   /* ===== 第3弾：色違い（オンヨミフォーム） ===== */
-  .enemy-char.shiny{filter:drop-shadow(0 0 8px #fde047) drop-shadow(0 0 4px #f59e0b) brightness(1.05) saturate(1.15);
-    animation:efloat 3s ease-in-out infinite, shinySparkle 1.4s ease-in-out infinite}
-  @keyframes shinySparkle{0%,100%{filter:drop-shadow(0 0 6px #fde047) brightness(1.03)}50%{filter:drop-shadow(0 0 14px #fff3a8) brightness(1.15)}}
+  .enemy-char.shiny{filter:none;animation:efloat 3s ease-in-out infinite}
+  .enemy-char.shiny>.fc,.zdetail .dk.shiny>.fc{
+    -webkit-text-stroke:1px #fff;paint-order:stroke fill;
+    filter:drop-shadow(0 0 3px #fde04755);animation:shinySparkle 1.4s ease-in-out infinite}
+  @keyframes shinySparkle{0%,100%{filter:drop-shadow(0 0 3px #fde04755)}50%{filter:drop-shadow(0 0 7px #fde04799)}}
+  @media(prefers-reduced-motion:reduce){
+    .enemy-char.shiny>.fc,.zdetail .dk.shiny>.fc{animation:none}
+    .enemy-wrap .shiny-sparkle{animation:none;opacity:.7}}
   .shiny-sparkle{position:absolute;font-size:1.4rem;pointer-events:none;z-index:25;animation:spk 1.6s ease-in-out infinite}
   @keyframes spk{0%,100%{opacity:0;transform:scale(.4)}50%{opacity:1;transform:scale(1)}}
 
@@ -7294,6 +7297,10 @@ const ALT={}; // 漢字→ALTよみ（この表に無い漢字は色違いにな
  '窓=ソウ 暖=ダン 敬=ケイ 就=シュウ 誠=セイ 紅=コウ 己=コ 我=ガ'
 ).split(' ').forEach(p=>{ const kv=p.split('='); ALT[kv[0]]=kv[1]; });
 function altReadingOf(idx){ return ALT[K[idx].c]||null; }
+const SHINY_TYPE_COLOR={'ひ':'#8b5cf6','みず':'#ed6b20','き':'#b52ac5','岩':'#94532f','かみなり':'#087f78'};
+function monsterColor(idx,isShiny){
+  return isShiny&&altReadingOf(idx)?SHINY_TYPE_COLOR[typeOf(idx)]:K[idx].cl;
+}
 function isKata(s){ return /[ァ-ヶ]/.test(s); }
 function hira2kata(s){ return s.replace(/[ぁ-ゖ]/g,c=>String.fromCharCode(c.charCodeAt(0)+0x60)); }
 
@@ -14783,7 +14790,7 @@ function spawnEnemy(){
   wrap.querySelectorAll('.shiny-sparkle,.intrude-tag').forEach(e=>e.remove());
   const ch=$('enemyChar'); ch.className='enemy-char face-host'+(enemyShiny?' shiny':'');
   $('enemyCharText').textContent=k.c;
-  ch.style.color=k.cl;
+  ch.style.color=monsterColor(idx,enemyShiny);
   setEnemyFace(restExpr());
   if(enemyShiny){                                                  // 周囲に✨
     [{t:'10%',l:'6%'},{t:'16%',l:'84%'},{t:'68%',l:'2%'},{t:'62%',l:'90%'}].forEach((p,si)=>{
@@ -16855,7 +16862,7 @@ function showJukugoDetail(i){
   cs.forEach(c=>{
     const ki=IDX[c]; if(ki==null) return;
     const alt=altReadingOf(ki);   // 既存呼び出し（かんじずかん側showZukanDetail）と同じ使い方
-    html+='<div class="jd-one"><div class="dk face-host shiny"><span class="fc" style="color:'+K[ki].cl+'">'+c+'</span>'+
+    html+='<div class="jd-one"><div class="dk face-host shiny"><span class="fc" style="color:'+monsterColor(ki,true)+'">'+c+'</span>'+
       '<span class="face shiny"><span class="eyes"><span class="eye"></span><span class="eye"></span></span><span class="mouth"></span></span></div>'+
       (alt?'<span class="jd-alt">オンヨミ：'+alt+'</span>':'')+   // altが無ければ行ごと省略（空欄にしない）
       '<span class="tbadge t-'+typeOf(ki)+'">'+TYPE_EMOJI[typeOf(ki)]+' '+c+'</span>'+
@@ -16903,7 +16910,7 @@ function showZukanDetail(i){
       '<div class="dk-one"><div class="dk face-host zd-tap" onclick="zdRandomFace(this,'+i+')"><span class="fc" style="color:'+k.cl+'">'+k.c+'</span>'+
         '<span class="face normal"><span class="eyes"><span class="eye"></span><span class="eye"></span></span><span class="mouth"></span><span class="cheek l"></span><span class="cheek r"></span></span></div>'+
         '<div class="dy">'+k.y.replace(/／/g,'／')+'</div></div>'+
-      '<div class="dk-one"><div class="dk face-host shiny"><span class="fc" style="color:'+k.cl+'">'+k.c+'</span>'+
+      '<div class="dk-one"><div class="dk face-host shiny"><span class="fc" style="color:'+monsterColor(i,true)+'">'+k.c+'</span>'+
         '<span class="face shiny"><span class="eyes"><span class="eye"></span><span class="eye"></span></span><span class="mouth"></span></span></div>'+
         '<div class="dy dy-noc">'+k.y.replace(/／/g,'／')+'</div>'+
         '<span class="dk-alt-label">✨ オンヨミフォーム（'+altReadingOf(i)+'）</span></div>'+
