@@ -4,6 +4,7 @@
   if(!contract)return;
   const localeKey='kanjimon-display-language-v1';
   const preview=new URLSearchParams(root.location.search).get('languagePreview')==='1';
+  const entryLanguage=new URLSearchParams(root.location.search).get('lang');
   const original=contract.source,englishKeys=Object.keys(original);
   const reverse=new Map(Object.entries(original).map(([key,value])=>[value,key]));
   let locale='ja',messages=null,manifest=null,changing=false,canChange=()=>false,connected=false;
@@ -111,13 +112,18 @@
       }
       if(!canChange())throw Error('Language change is no longer safe');
       if(next==='en')validatePage();
-      if(persist)localStorage.setItem(localeKey,next);
+      if(persist){
+        localStorage.setItem(localeKey,next);
+        const url=new URL(root.location.href);url.searchParams.delete('lang');
+        try{root.history.replaceState(root.history.state,'',url.href);}catch(e){}
+      }
       if(nextMessages)messages=nextMessages;
       locale=next;render();root.dispatchEvent(new CustomEvent('kanjimon-language-change'));
       return true;
     }catch(e){
       if($('language-choice'))$('language-choice').value=locale;
       if($('language-error'))$('language-error').textContent='English could not be enabled. Check your connection and select English to retry. / 英語に切り替えられませんでした。再度選び直してください。';
+      if($('settings'))$('settings').open=true;
       return false;
     }finally{changing=false;sync();root.dispatchEvent(new CustomEvent('kanjimon-language-busy'));}
   }
@@ -134,9 +140,10 @@
       const note=document.createElement('p');note.id='language-note';
       const problem=document.createElement('p');problem.id='language-error';problem.setAttribute('role','status');
       const back=document.createElement('button');back.id='language-back';back.textContent='Play in Japanese / 日本語で遊ぶ';back.onclick=()=>change('ja');
-      panel.append(label,select,note,problem,back);$('home').insertBefore(panel,$('status'));
+      panel.append(label,select,note,problem,back);$('settings').append(panel);
     }
     render();let preference='ja';try{preference=localStorage.getItem(localeKey)||'ja';}catch(e){}
+    if(entryLanguage==='en'||entryLanguage==='ja')preference=entryLanguage;
     if(preference==='en'&&(preview||contract.gameLocales.includes('en'))){
       if(canChange())await change('en',false);else deferredPreference='en';
     }
