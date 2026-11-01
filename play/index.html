@@ -3731,10 +3731,10 @@ body.ice-dungeon #fieldInfo{display:none}
 <link rel="stylesheet" href="events/奄美第2話.css?assets=20261025-lossless">
 <script src="events/全国協力.js?walk=20261003d&music=20261004-release&assets=20261025-lossless&v=en-20261025" defer></script>
 <link rel="stylesheet" href="events/イージー演技.css">
-<script src="events/奄美音声台帳.js?v=amami1112-20261001" defer></script>
+<script src="events/奄美音声台帳.js?v=ending-20261101" defer></script>
 <script src="events/奄美音声.js" defer></script>
-<script src="events/奄美物語台本.js?v=amami1112-20261001" defer></script>
-<script src="events/奄美会話.js?walk=20261003d&v=en-20261025" defer></script>
+<script src="events/奄美物語台本.js?v=ending-20261101" defer></script>
+<script src="events/奄美会話.js?v=ending-20261101" defer></script>
 <script src="events/イージー演技.js?walk=20261003d" defer></script>
 <script src="events/奄美入口.js?walk=20261003d&music=20261004-release&assets=20261025-lossless&v=en-20261025" defer></script>
 <script src="events/奄美第1話.js?music=20261004-release&assets=20261025-lossless&v=en-20261025" defer></script>
@@ -3759,8 +3759,10 @@ body.ice-dungeon #fieldInfo{display:none}
 <link rel="stylesheet" href="events/奄美積み木.css?assets=20261025-lossless">
 <script src="events/奄美積み木.js" defer></script>
 <script src="events/奄美城と終章.js?walk=20261003d&assets=20261025-lossless" defer></script>
-<link rel="stylesheet" href="events/奄美終章.css?walk=20261011-size&assets=20261025-lossless">
-<script src="events/奄美終章.js?music=20261011-size&assets=20261025-lossless&v=en-20261025" defer></script>
+<link rel="stylesheet" href="events/終章の暮らし.css?v=ending-20261101">
+<script src="events/終章の暮らし.js?v=ending-20261101" defer></script>
+<link rel="stylesheet" href="events/奄美終章.css?v=ending-20261101">
+<script src="events/奄美終章.js?v=ending-20261101" defer></script>
 <link rel="stylesheet" href="events/奄美歩行.css">
 <script src="events/奄美通行データ.js?assets=20261025-lossless" defer></script>
 <script src="events/奄美歩行.js?walk=20261003d" defer></script>
@@ -7075,9 +7077,9 @@ const TALK_CANONICAL_TEXT={
    引用符は読みを分断しない（例＝「調」べる／電「車」）。「学」「校」のような
    独立した引用どうしはまとめない。図鑑toHiraの語幹推測・既習字のかな化は使わない。 */
 let TALK_LEXICON=null;
-function talkText(text,zone){
+function talkText(text,zone,quoted=false,completedPrimary=false){
   if(window.KanjimonGameI18n?.active)return window.KanjimonGameI18n.textHTML(text);
-  const grade=talkGradeForZone(zone),raw=String(text==null?'':text),source=TALK_CANONICAL_TEXT[raw]||raw;
+  const grade=completedPrimary?7:talkGradeForZone(zone),raw=String(text==null?'':text),source=TALK_CANONICAL_TEXT[raw]||raw;
   if(!TALK_LEXICON){
     TALK_LEXICON=Object.create(null);
     for(const word of Object.keys(TALK_WORD_READINGS)){
@@ -12246,7 +12248,7 @@ const BGM_TRACKS={
   field7:{path:'audio/music/field7.mp3'},field8:{path:'audio/music/field8.mp3'},
   lastzone:{path:'audio/music/lastzone.mp3'},battle:{path:'audio/music/battle.mp3'},
   boss:{path:'audio/music/boss.mp3'},hero:{path:'audio/music/hero.mp3',loopStart:1.2},
-  opening:{path:'audio/music/opening.mp3'},
+  opening:{path:'audio/music/opening.mp3'},endingLife:{path:'audio/music/ending-life.mp3'},
   easy:{path:'audio/music/easy.mp3'},mana:{path:'audio/music/mana.mp3'},'amami-boss':{path:'audio/music/amami-boss.mp3'},
   hageshima:{path:'audio/music/hageshima.mp3'},
   'maros-boss':{path:'audio/music/maros-boss.mp3',loopStart:31.202895833333333},

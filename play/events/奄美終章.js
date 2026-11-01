@@ -6,7 +6,7 @@
  let root=null,splitView=null,zoneObserver=null,voyageResize=null,generation=0,ambientSerial=0,timers=[],lines=[],lineIndex=0,ready=false,afterTalk=null,lineHook=null,running=false;
  const heroSheet=()=>heroChar==='girl'?'hero-girl.webp':'hero.webp';
  let closePair=null,staging=false;
- let musicToken=null;
+ let musicToken=null,lifeCleanup=null;
  // E1だけの寄り。床と人物を同じfieldGridで動かし、会話の実寸を避ける。
  function focusPair(){
   const grid=$('fieldGrid'),wrap=$('fieldWrap'),hero=$('fieldHero'),easy=grid?.querySelector('.aen-easy');
@@ -39,8 +39,8 @@
   if(easy){easy.src=kind==='realize'?'images/easy-motion/easy_12_settle/frame-030.webp':'images/easy-motion/easy_15_walk_left/stand.png';easy.style.setProperty('--motion-x','0%');easy.style.setProperty('--motion-y','0%');}
  }
  function later(fn,ms){const g=generation,id=setTimeout(()=>{timers=timers.filter(t=>t!==id);if(g===generation&&running)fn();},ms);timers.push(id);return id;}
- function stopTimers(){timers.forEach(clearTimeout);timers=[];}
- function cleanup(){global.bgmSceneEnd(musicToken);musicToken=null;generation++;ambientSerial++;running=false;staging=false;closePair?.();stopTimers();zoneObserver?.disconnect();zoneObserver=null;lineHook=null;if(voyageResize){window.removeEventListener('resize',voyageResize);voyageResize=null;}global.AmamiVoice?.stop();global.AmamiMotion?.stop();splitView?.destroy();splitView=null;root?.remove();root=null;$('aenOpening')?.remove();document.querySelectorAll('.aen-easy,.aen-child,.aen-monster-reading').forEach(n=>n.remove());document.body.classList.remove('amami-ending-mode');if($('fieldHero'))$('fieldHero').style.visibility='';}
+ function stopTimers(){lifeCleanup?.();timers.forEach(clearTimeout);timers=[];}
+ function cleanup(keepMusic=false){if(!keepMusic){global.bgmSceneEnd(musicToken);musicToken=null;}generation++;ambientSerial++;running=false;staging=false;closePair?.();stopTimers();zoneObserver?.disconnect();zoneObserver=null;lineHook=null;if(voyageResize){window.removeEventListener('resize',voyageResize);voyageResize=null;}global.AmamiVoice?.stop();global.AmamiMotion?.stop();splitView?.destroy();splitView=null;root?.remove();root=null;$('aenOpening')?.remove();document.querySelectorAll('.aen-easy,.aen-child,.aen-monster-reading').forEach(n=>n.remove());document.body.classList.remove('amami-ending-mode');if($('fieldHero'))$('fieldHero').style.visibility='';}
  function ensureRoot(){
   root=document.createElement('div');root.id='amamiEndingRoot';
   root.innerHTML='<div id="aenMontage" aria-hidden="true"></div><div id="aenPhone" aria-hidden="true"><div class="aen-screen"><div class="aen-title">かんじモン<small>RPG</small></div></div></div><div id="aenTalk"><img id="aenFace" alt=""><div><b id="aenWho"></b><p id="aenText"></p><small id="aenNext">▼ つづく</small></div></div><button id="aenQuit" type="button" aria-label="タイトルへ戻る">とじる</button>';
@@ -89,7 +89,7 @@
   ambientSerial++;global.AmamiMotion?.stop();
   document.querySelectorAll('.aen-monster-reading').forEach(n=>n.remove());
   zoneObserver?.disconnect();zoneObserver=null;
-  const field=global.NationalDeparture.showField(zone,{gender:heroChar,hero:opts.hero!==false,label:opts.label||'',monsters:opts.monsters||0,adults:opts.adults||0,mana:!!opts.mana,hokkaido:!!opts.hokkaido,background:opts.background||'',point:{x:15,y:6}});
+  const field=global.NationalDeparture.showField(zone,{gender:heroChar,hero:opts.hero!==false,label:opts.label||'',monsters:opts.monsters||0,adults:opts.adults||0,mana:!!opts.mana,hokkaido:!!opts.hokkaido,background:opts.background||'',point:opts.point||{x:15,y:6}});
   const label=$('fieldZoneName'),labelText=global.KanjimonGameI18n?.t(opts.label)||opts.label;if(label&&labelText){label.textContent=labelText;zoneObserver=new MutationObserver(()=>{if(running&&label.textContent!==labelText)label.textContent=labelText;});zoneObserver.observe(label,{childList:true,characterData:true,subtree:true});}
   document.body.classList.add('amami-ending-mode','nd-event-mode');if(root)root.dataset.scene=opts.scene||'';
   return field;
@@ -162,12 +162,20 @@
   const making=document.createElement('div');making.id='aenMakingWords';const word=AMAMI_LATE_WORDS[5][0];making.innerHTML='<span></span><span></span><i class="aen-making-hand"></i>';making.children[0].textContent=word.slice(0,2);making.children[1].textContent=word.slice(2);root.appendChild(making);
   later(()=>making.classList.add('together'),700);later(()=>making.classList.add('chosen'),1200);later(()=>making.classList.add('read'),1700);later(()=>making.classList.add('into-phone'),2900);later(()=>making.remove(),3900);
  }
+ // 後日談は独立舞台で描き、冒険記録とフィールド位置を変更しない。
+ function showLifeMontage(done,startAt=0){
+  ready=false;staging=true;afterTalk=null;ambientSerial++;global.AmamiMotion?.stop();
+  $("aenTalk").classList.remove("show");$("aenMontage").classList.remove("show");$("aenMontage").replaceChildren();$("aenPhone").classList.remove("show");$("aenMakingWords")?.remove();
+  musicToken=global.bgmSceneBegin("amami-ending-life","endingLife");
+  lifeCleanup=global.AmamiLifeScenes.mount(root,{later,startAt,done:()=>{lifeCleanup=null;staging=false;done();}});
+ }
  function runPhase(){
   const phase=amamiFinal?.story?.phase;if(!phases.includes(phase)||phase==='done')return;
-  cleanup();running=true;
+  const keepMusic=musicToken!==null&&(phase==="E7"||phase==="E8")&&bgmScene?.name==="endingLife";
+  cleanup(keepMusic);running=true;
   global.bgmAmamiEpisode=null;
-  const theme=({E1:'easy',E2:'hero',E3:'easy',E5:'easy',E6:'easy',E7:'easy',E8:'easy'})[phase];
-  musicToken=global.bgmSceneBegin('amami-ending-'+phase,theme);
+  const theme=({E1:'easy',E2:'hero',E3:'easy',E5:'easy',E6:'easy',E7:'endingLife',E8:'endingLife'})[phase];
+  if(!keepMusic)musicToken=global.bgmSceneBegin('amami-ending-'+phase,theme);
   if(phase==='split'){
    splitView=global.AmamiCastle.createView(12);splitView.epilogue(()=>{splitView?.destroy();splitView=null;advance();});return;
   }
@@ -219,15 +227,15 @@
    const f=scene(102,{label:'あたらしい遊び',background:'amami-toy-castle-floor1.webp',hero:true,scene:'making'});placeEasies(f,1,[{x:f.cx+1.5,y:f.cy-.2}]);showMontage();
    // フェードが終わって実際に読める状態から1.5秒を確保する。
    const phoneAppearsAt=performance.now()+4100;
-   talk(storyRows(phase),()=>later(advance,Math.max(800,phoneAppearsAt+1500-performance.now())));return;
+   talk(storyRows(phase),()=>later(()=>showLifeMontage(advance),Math.max(800,phoneAppearsAt+1500-performance.now())));return;
   }
   if(phase==='E7'||phase==='E8'){
    const f=scene(102,{label:'オキナワの町',background:'town-bg-south.webp',hero:phase==='E7',scene:'handoff'});
    if(phase==='E7'){
-    root.dataset.scene='later';const observer=copyHero('aen-observer');root.appendChild(observer);$('fieldHero').style.visibility='hidden';
+    root.dataset.scene='later';$('fieldHero').style.visibility='hidden';
     const pair=document.createElement('div');pair.id='aenE7Pair';pair.innerHTML='<img id="aenE7Easy" src="images/easy-motion/poster.png" alt="イージー"><img id="aenE7Child" src="images/sprites/kid-scared-front-m-a.webp" alt="不安そうな子ども">';root.appendChild(pair);
     const showHandoff=()=>{if($('aenHandoff'))return;pair.remove();const handoff=document.createElement('img');handoff.id='aenHandoff';handoff.src='images/amami-cast/phone-handoff-v2.png';handoff.alt='イージーが子どもへスマホを差し出す';root.appendChild(handoff);const screen=$('aenPhone');screen.classList.add('show','handoff');screen.setAttribute('aria-label','渡すスマホの画面：かんじモンRPG');screen.removeAttribute('aria-hidden');};
-    const pause=document.createElement('div');pause.className='aen-time-pause';pause.innerHTML='<span>それから、あるひ。</span>';root.appendChild(pause);later(()=>{pause.remove();talk(storyRows(phase),advance,row=>{
+    const pause=document.createElement('div');pause.className='aen-time-pause';pause.innerHTML='';root.appendChild(pause);later(()=>{pause.remove();talk(storyRows(phase),advance,row=>{
      if(row?.id==='E713'){const child=$('aenE7Child');if(child){child.src='images/sprites/kid-front-m-a.webp';child.alt='話を聞く子ども';child.classList.add('calming');}}
      if(row?.id==='E714')showHandoff();
      if(row?.id==='E715')$('aenHandoff')?.classList.add('receiving');
@@ -238,7 +246,7 @@
    $('aenFinalChild').classList.add('tapping');
    later(()=>{
     ambientSerial++;global.AmamiMotion?.stop();
-    const opening=document.createElement('div');opening.id='aenOpening';opening.innerHTML='<div class="op1-voice" id="aenOpeningText">だいじょうぶ。なにも おぼえなくて いいよ。たのしむだけで いいんだ。<span class="op1-key">イージーだよ</span></div><button type="button" id="aenOpeningQuit" aria-label="タイトルへ戻る">とじる</button>';
+    const opening=document.createElement('div');opening.id='aenOpening';opening.innerHTML='<div class="op1-voice" id="aenOpeningText"><span class="aen-final-line">だいじょうぶ。何も覚えなくていいよ。</span><span class="aen-final-line">楽しむだけでいいんだ。</span><span class="op1-key aen-final-line">イージーだよ</span></div><button type="button" id="aenOpeningQuit" aria-label="タイトルへ戻る">とじる</button>';
     document.body.appendChild(opening);$('aenOpeningQuit').addEventListener('click',abort);
     later(()=>$('aenOpeningText')?.classList.add('show'),100);
     const row=storyRows('E8').find(r=>r.id==='E701');
@@ -262,5 +270,11 @@
  }
  function abort(){cleanup();showScreen('screen-title');}
  function beforeScreen(id){if(id!=='screen-field'&&id!=='screen-battle'&&running)cleanup();}
- global.AmamiEnding={start,preview,abort,beforeScreen,get active(){return running;}};
+ function previewLife(index=0){
+  cleanup();running=true;amamiFinal.episode12={...(amamiFinal.episode12||{}),done:true};
+  amamiFinal.story={version:2,phase:'E6',legacy:false};
+  musicToken=global.bgmSceneBegin('amami-ending-E6','easy');ensureRoot();root.dataset.phase='E6';
+  showLifeMontage(advance,index);return true;
+ }
+ global.AmamiEnding={start,preview,previewLife,abort,beforeScreen,get active(){return running;}};
 })(window);

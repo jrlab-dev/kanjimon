@@ -106,3 +106,32 @@ body.amami-ending-mode:has(#amamiEndingRoot[data-scene="sailing"]) #fieldWrap{vi
 
 body:has(#amamiEndingRoot[data-scene="rescue-hokkaido"]) #fieldGrid .nd-event-spot .spot-char{font-size:calc(var(--tile)*.85)}
 body:has(#amamiEndingRoot[data-scene="rescue-hokkaido"]) #fieldGrid .aen-easy{--easy-size:calc(var(--tile)*1.76)!important}
+/* フィールド上で続く暮らし。人物と背景は同じカメラで拡縮する。 */
+#amamiEndingRoot.aen-life{pointer-events:auto}
+.aen-life #aenQuit,.aen-life-next{pointer-events:auto}
+.aen-life-caption{position:absolute;left:18px;right:18px;bottom:58px;text-align:center;color:#fff9e8;font:600 16px/1.7 sans-serif;text-shadow:0 2px 4px #000;background:linear-gradient(90deg,transparent,#15281edd 20%,#15281edd 80%,transparent);padding:12px 3px;letter-spacing:.04em}
+.aen-life-next{position:absolute;right:18px;bottom:10px;border:1px solid #f7ebbd88;border-radius:20px;background:#1d392eee;color:#fff8de;min-height:40px;padding:6px 20px;font:600 14px sans-serif;cursor:pointer}
+.aen-life-next:disabled{visibility:hidden}
+.aen-life-shade{position:absolute;inset:0;background:#13251c;opacity:0;pointer-events:none;transition:opacity .6s ease}
+.aen-life-shade.on{opacity:1}
+#fieldGrid .aen-life-actor{position:absolute;z-index:80;transform:translate(-50%,-100%);transform-origin:center bottom}
+#fieldGrid.aen-life-field>:not(.aen-life-actor){visibility:hidden!important}
+#fieldGrid .aen-life-child{height:var(--tile);width:var(--tile);max-width:none;image-rendering:pixelated}
+#fieldGrid .aen-life-mon{width:var(--tile);height:var(--tile);animation:none}
+#fieldGrid .aen-life-hero{width:var(--tile);height:var(--tile)}
+#fieldGrid .aen-life-reading{font:600 calc(var(--tile)*.32)/1.4 sans-serif;white-space:nowrap;color:#334c31;background:#fffdf2;border:1px solid #b5c7a1;border-radius:5px;padding:2px 5px;z-index:90}
+#fieldGrid .aen-life-actor.aen-life-joy{animation:aenLifeJoy .65s ease-in-out 2!important}
+#fieldGrid .aen-life-walking:not(.nd-field-maros){animation:aenLifeStep .4s ease-in-out infinite}
+.aen-life-book{position:absolute;left:19%;bottom:26%;width:45%;height:22%;background:linear-gradient(90deg,#fff8d4 48%,#9c7c4b 50%,#fff8d4 52%);border:1px solid #816944;transform:rotate(-8deg);box-shadow:0 1px 1px #3f4539;opacity:0;transition:opacity .5s}
+.aen-life-writing .aen-life-book{opacity:1}
+.aen-life-book i{position:absolute;left:10%;right:10%;top:25%;height:45%;background:repeating-linear-gradient(transparent 0 2px,#bcba9c 2px 3px)}
+.aen-life-book b{position:absolute;width:2px;height:90%;background:#57658a;right:18%;top:-40%;transform:rotate(30deg);transform-origin:bottom;animation:aenLifePen .35s ease-in-out infinite alternate}
+@keyframes aenLifeJoy{0%,100%{transform:translate(-50%,-100%) rotate(0)}50%{transform:translate(-50%,-104%) rotate(4deg)}}
+@keyframes aenLifeStep{0%,100%{transform:translate(-50%,-100%)}50%{transform:translate(-50%,-103%)}}
+@keyframes aenLifePen{to{transform:translateX(-4px) rotate(15deg)}}
+@media(max-height:430px){.aen-life-caption{font-size:13px;bottom:45px;padding:6px 2px}.aen-life-next{min-height:32px;bottom:5px}}
+@media(prefers-reduced-motion:reduce){#fieldGrid .aen-life-actor,#fieldGrid .aen-life-actor.aen-life-joy,.aen-life-book b{animation:none!important}.aen-life-shade{transition:none}.aen-life-book{transition:none}}
+
+#aenOpeningText .aen-final-line{display:block;white-space:nowrap}
+#aenOpeningText{width:100%;max-width:620px;font-size:clamp(11px,3.25vw,18px);line-height:2.6}
+#aenOpeningText .op1-key{font-size:1.4em;margin-top:.2em}
