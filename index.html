@@ -1,206 +1,39 @@
 <!doctype html>
 <html lang="ja">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>かんじモンRPG｜あそんで おぼえる かんじゲーム（むりょう）</title>
-<meta name="description" content="かんじモンRPG——漢字がモンスターになって登場！よみクイズで倒して、つかまえて、育てて進化。あそぶだけで漢字が覚えられる無料ブラウザゲームです。">
-<!--
-  ■ このファイルは「かんじモンのトップページ（玄関）」の作業正本（HTMLモック段階）
-  ■ 公開時のURL構成（2026-07-12ユーザー決定）：
-      top.html      → kanjimon-site/index.html   （kanjimon.jr-genius.jp/）
-      kanjimon.html → kanjimon-site/play/index.html（kanjimon.jr-genius.jp/play/）
-      ※下の「あそぶ」ボタンの href は公開コピー時に play/ に書き換えること
-  ■ 公開（コピー→commit→push）はユーザー指示があったときだけ
--->
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>かんじモンRPG｜漢字が仲間になる、無料の冒険ゲーム</title>
+<meta name="description" content="漢字が仲間になる、日本をめぐる冒険へ。かんじモンRPGは小学1〜6年生の漢字を読み・書き・熟語で楽しむ無料ブラウザゲーム。バトル、図鑑、進化、街のお手伝いも。登録・インストール不要。">
+<link rel="canonical" href="https://kanjimon.jr-genius.jp/">
+<meta property="og:type" content="website"><meta property="og:locale" content="ja_JP"><meta property="og:title" content="かんじモンRPG｜漢字が仲間になる冒険へ。">
+<meta property="og:description" content="読んで、書いて、仲間にして。日本を旅する無料の漢字RPG。登録不要で今すぐ遊べます。">
+<meta property="og:url" content="https://kanjimon.jr-genius.jp/"><meta property="og:image" content="https://kanjimon.jr-genius.jp/home-assets/hero.webp">
+<meta name="twitter:card" content="summary_large_image"><meta name="theme-color" content="#112d35">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"VideoGame","name":"かんじモンRPG","url":"https://kanjimon.jr-genius.jp/","description":"漢字が仲間になる、日本を旅する無料ブラウザRPG。","inLanguage":"ja","genre":["RPG","漢字学習"],"gamePlatform":"Web browser","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"JPY"},"image":"https://kanjimon.jr-genius.jp/home-assets/hero.webp"}</script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700;900&display=swap');
-  :root{
-    --red:#ff6b6b;--orange:#ffa94d;--yellow:#ffd43b;--cream:#fef9ef;
-    --ink:#495057;--sub:#868e96;--line:#e9ecef;--ok:#4ade80;
-  }
-  *{margin:0;padding:0;box-sizing:border-box}
-  body{
-    font-family:'Zen Maru Gothic',sans-serif;color:var(--ink);background:var(--cream);
-    line-height:1.7;-webkit-font-smoothing:antialiased;
-  }
-  .wrap{max-width:520px;margin:0 auto;padding:0 18px}
-
-  /* ① ロゴ＋キャッチ */
-  .hero{text-align:center;padding:34px 0 10px}
-  .hero .catch{font-size:.95rem;font-weight:700;color:var(--sub);letter-spacing:.06em}
-  .hero h1{font-size:2.2rem;font-weight:900;letter-spacing:.02em;line-height:1.3;margin:2px 0 4px}
-  .hero h1 .kanji{color:var(--orange)}
-  .hero .sub{font-size:.9rem;font-weight:700;color:var(--sub)}
-  .free-badge{display:inline-block;background:var(--yellow);color:#7c4a03;font-weight:900;
-    font-size:.85rem;padding:3px 14px;border-radius:50px;margin-top:10px}
-
-  /* 看板モンスター（ゲーム本体と同じ描き方＝漢字キャラに顔を重ねる。.face-hostのfont-sizeが顔の基準） */
-  .mons{display:flex;justify-content:center;align-items:flex-end;gap:26px;margin:26px 0 10px}
-  .mons .face-host{animation:bob 2.6s ease-in-out infinite;font-size:76px}
-  .mons .face-host:nth-child(2){font-size:96px;animation-delay:.4s}
-  .mons .face-host:nth-child(3){animation-delay:.8s}
-  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
-  .face-host{position:relative;display:inline-block;line-height:1}
-  .face-host .fc{font-weight:900;line-height:1;display:inline-block;text-shadow:2px 2px 0 rgba(0,0,0,.12)}
-  .face{position:absolute;inset:0;z-index:20;pointer-events:none}
-  .face .eyes{display:flex;gap:.15em;position:absolute;top:38%;left:50%;transform:translateX(-50%)}
-  .face .eye{width:.1em;height:.125em;background:#1a1a1a;border-radius:50%;position:relative}
-  .face .eye::after{content:'';position:absolute;width:.032em;height:.032em;background:#fff;border-radius:50%;top:.02em;right:.012em}
-  .face .mouth{width:.165em;height:.08em;border-bottom:.02em solid #1a1a1a;border-radius:0 0 50% 50%;
-    position:absolute;top:54%;left:50%;transform:translateX(-50%);background:transparent}
-
-  /* ② あそぶボタン */
-  .playzone{text-align:center;padding:8px 0 30px}
-  .btn-play{display:inline-block;text-decoration:none;background:var(--orange);color:#fff;
-    font-weight:900;font-size:1.6rem;padding:18px 54px;border-radius:50px;
-    box-shadow:0 6px 0 #e8871e;transition:transform .12s}
-  .btn-play:active{transform:translateY(4px);box-shadow:0 2px 0 #e8871e}
-  .btn-play .s{display:block;font-size:.8rem;font-weight:700;opacity:.9}
-  .playzone .note{font-size:.8rem;color:var(--sub);font-weight:700;margin-top:12px}
-
-  /* 共通セクション */
-  section{padding:26px 0}
-  .sec-title{text-align:center;font-size:1.25rem;font-weight:900;margin-bottom:16px}
-  .sec-title .mark{color:var(--orange)}
-  .card{background:#fff;border:3px solid var(--line);border-radius:18px;padding:16px 18px;margin-bottom:12px}
-  .soon{display:inline-block;background:#fff3bf;color:#7c4a03;font-weight:900;font-size:.72rem;
-    padding:2px 10px;border-radius:50px;vertical-align:middle;margin-left:6px}
-
-  /* ③ カードコーナー */
-  .cardzone .card{border-color:var(--yellow);background:#fffdf5;text-align:center}
-  .cardzone p{font-size:.92rem;font-weight:700}
-  .minicards{display:flex;justify-content:center;gap:10px;margin:14px 0 6px}
-  .minicard{width:64px;height:88px;background:#fff;border:3px solid var(--orange);border-radius:10px;
-    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-weight:900;
-    box-shadow:0 3px 8px rgba(0,0,0,.08);transform:rotate(-4deg)}
-  .minicard:nth-child(2){transform:rotate(0);border-color:var(--red)}
-  .minicard:nth-child(3){transform:rotate(4deg);border-color:#38bdf8}
-  .minicard .face-host{font-size:34px}
-  .minicard .n{font-size:.6rem;color:var(--sub)}
-
-  /* ④ どんなゲーム？ */
-  .feat{display:flex;align-items:flex-start;gap:12px}
-  .feat .ico{flex:0 0 auto;width:46px;height:46px;background:var(--cream);border-radius:14px;
-    display:flex;align-items:center;justify-content:center;font-size:1.5rem}
-  .feat h3{font-size:1rem;font-weight:900;margin-bottom:2px}
-  .feat p{font-size:.88rem;color:var(--sub);font-weight:700}
-
-  /* ⑤ おうちの方へ（親ゾーン） */
-  .parents{background:#fff;border-top:3px solid var(--line);margin-top:16px}
-  .parents .sec-title{margin-top:6px}
-  .parents .card{background:#fafbfc}
-  .parents h3{font-size:.98rem;font-weight:900;margin-bottom:4px;color:#3b4550}
-  .parents p,.parents li{font-size:.9rem;line-height:1.9}
-  .parents ul{padding-left:1.3em}
-  .pricebox{border:3px dashed var(--orange);border-radius:16px;padding:14px 16px;background:#fff9f0}
-
-  /* ⑥ ドリル・教材コーナー */
-  .drill .card{text-align:center}
-  .drill p{font-size:.9rem}
-  .drill .avail{display:inline-block;background:#fff3bf;color:#7c4a03;font-weight:900;font-size:.72rem;
-    padding:2px 10px;border-radius:50px;vertical-align:middle;margin-left:6px}
-  .btn-drill{display:inline-block;text-decoration:none;background:var(--orange);color:#fff;
-    font-weight:900;font-size:1rem;padding:13px 26px;border-radius:50px;margin-top:12px;
-    box-shadow:0 5px 0 #e8871e;transition:transform .12s}
-  .btn-drill:active{transform:translateY(3px);box-shadow:0 2px 0 #e8871e}
-  .btn-drill .s{display:block;font-size:.72rem;font-weight:700;opacity:.9;margin-top:2px}
-  .ad-slot{border:3px dashed var(--line);border-radius:16px;padding:22px 16px;text-align:center;
-    color:#adb5bd;font-weight:900;font-size:.85rem;background:#fafbfc}
-
-  /* ⑦ フッター */
-  footer{background:#f4efe4;margin-top:30px;padding:26px 0 34px;text-align:center}
-  footer p{font-size:.8rem;color:var(--sub);font-weight:700}
-  footer a{color:var(--sub)}
-</style>
-</head>
-<body>
-
-<!-- ① ロゴ＋キャッチ -->
-<header class="hero wrap">
-  <p class="catch">あそんで おぼえる かんじRPG</p>
-  <h1><span class="kanji">かんじ</span>モンRPG</h1>
-  <p class="sub">かんじが モンスターに なって とうじょう！</p>
-  <span class="free-badge">とうろく なし・むりょうで あそべる</span>
-  <div class="mons" aria-hidden="true">
-    <span class="face-host"><span class="fc" style="color:#15803d">木</span><span class="face"><span class="eyes"><span class="eye"></span><span class="eye"></span></span><span class="mouth"></span></span></span>
-    <span class="face-host"><span class="fc" style="color:#7f1d1d">火</span><span class="face"><span class="eyes"><span class="eye"></span><span class="eye"></span></span><span class="mouth"></span></span></span>
-    <span class="face-host"><span class="fc" style="color:#1e3a8a">水</span><span class="face"><span class="eyes"><span class="eye"></span><span class="eye"></span></span><span class="mouth"></span></span></span>
-  </div>
-</header>
-
-<!-- ② あそぶボタン -->
-<div class="playzone wrap">
-  <!-- 公開時は href="play/" に書き換え -->
-  <a class="btn-play" href="play/">▶ ゲームで あそぶ<span class="s">タップして すぐ スタート！</span></a>
-  <p class="note">とちゅうから つづきも できるよ（きろくは じどうで のこるよ）</p>
-</div>
-
-<!-- ③ カードコーナー -->
-<section class="cardzone wrap">
-  <h2 class="sec-title"><span class="mark">◆</span> かんじモンカード <span class="soon">じゅんびちゅう</span></h2>
-  <div class="card">
-    <div class="minicards" aria-hidden="true">
-      <div class="minicard"><span class="face-host"><span class="fc" style="color:#5b3a1a">山</span><span class="face"><span class="eyes"><span class="eye"></span><span class="eye"></span></span><span class="mouth"></span></span></span><span class="n">やま</span></div>
-      <div class="minicard"><span class="face-host"><span class="fc" style="color:#7f1d1d">火</span><span class="face"><span class="eyes"><span class="eye"></span><span class="eye"></span></span><span class="mouth"></span></span></span><span class="n">ひ</span></div>
-      <div class="minicard"><span class="face-host"><span class="fc" style="color:#1e40af">川</span><span class="face"><span class="eyes"><span class="eye"></span><span class="eye"></span></span><span class="mouth"></span></span></span><span class="n">かわ</span></div>
-    </div>
-    <p>つかまえた かんじモンを、おうちで いんさつして<br>ほんものの カードに できるよ！　おたのしみに！</p>
-  </div>
-</section>
-
-<!-- ④ どんなゲーム？ -->
-<section class="wrap">
-  <h2 class="sec-title"><span class="mark">◆</span> どんな ゲーム？</h2>
-  <div class="card feat"><div class="ico">⚔️</div>
-    <div><h3>よみクイズで バトル！</h3><p>かんじの「よみ」を あてると こうげき！　まちがえても だいじょうぶ。</p></div></div>
-  <div class="card feat"><div class="ico">🎒</div>
-    <div><h3>つかまえて ずかんを あつめよう</h3><p>たおした かんじモンは なかまに なるよ。ずかん コンプリートを めざせ！</p></div></div>
-  <div class="card feat"><div class="ico">✨</div>
-    <div><h3>そだてて しんか！</h3><p>なかまを そだてると、もっと つよい すがたに しんかするよ。</p></div></div>
-</section>
-
-<!-- ⑤ おうちの方へ（ここから親ゾーン・ですます調） -->
-<section class="parents">
-  <div class="wrap">
-    <h2 class="sec-title">🏠 おうちの方へ</h2>
-    <div class="card">
-      <h3>学年別配当漢字に完全準拠しています</h3>
-      <p>登場する漢字は文部科学省の「学年別漢字配当表」に沿っています。現在は小学1・2年生の全240字を公開中で、小学3年生（200字）も制作中です。</p>
-    </div>
-    <div class="card">
-      <h3>「勉強しなさい」と言わなくていい設計</h3>
-      <p>漢字の読みがそのままゲームの攻撃になるため、遊んでいる時間がまるごと反復学習になります。登録・アプリのインストールは不要で、ブラウザだけで動きます。</p>
-    </div>
-    <div class="card pricebox">
-      <h3>料金について</h3>
-      <p>小学1〜3年生の内容は<strong>無料</strong>でお使いいただけます。小学4年生以降の内容は、学年ごとの買い切り（お手頃な価格を予定）として準備中です。</p>
-    </div>
-  </div>
-</section>
-
-<!-- ⑥ ドリル・教材コーナー（将来枠＋アフィリ枠） -->
-<section class="drill wrap">
-  <h2 class="sec-title"><span class="mark">◆</span> もっと しっかり 学ぶなら <span class="avail">1年生ぶん こうかい中</span></h2>
-  <div class="card">
-    <p>小学1年生で習うかんじ81字ぶんの書きとり練習プリントを、無料で印刷できます。筆順つきのお手本と書き込み欄つきで、A4で8ページになります。</p>
-    <a class="btn-drill" href="drill/grade1.html">📝 1年生の かんじドリル<span class="s">むりょう印刷・とうろく不要</span></a>
-  </div>
-  <div class="ad-slot">（教材紹介スペース・準備中）</div>
-</section>
-
-<!-- ⑦ フッター -->
-<footer>
-  <div class="wrap">
-    <p>かんじモンRPG ｜ あそびラボ</p>
-    <p style="margin-top:6px">お問い合わせ・運営者情報（準備中）</p>
-    <p style="margin-top:6px;font-size:.7rem;font-weight:400">音声：VOICEVOX:白上虎太郎／四国めたん／満別花丸／春歌ナナ／櫻歌ミコ／青山龍星／WhiteCUL</p>
-    <p style="margin-top:6px;font-size:.7rem;font-weight:400">筆順データ：KanjiVG (CC BY-SA)</p>
-    <p style="margin-top:6px;font-size:.7rem;font-weight:400">効果音：効果音ラボ</p>
-    <p style="margin-top:6px;font-size:.7rem;font-weight:400">このサイトはアクセス解析（Google アナリティクス）を使っています。個人を特定する情報は集めていません。</p>
-  </div>
-</footer>
-
-<script defer src="/km-analytics.js?v=20261021"></script>
-</body>
-</html>
+:root{--ink:#112d35;--paper:#f8f6ef;--yellow:#ffe073;--green:#267260;--muted:#51656a}*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:90px}body{margin:0;background:var(--paper);color:var(--ink);font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;line-height:1.8}a{color:inherit}button,a{-webkit-tap-highlight-color:transparent}a:focus-visible,button:focus-visible,summary:focus-visible,video:focus-visible{outline:3px solid #e27914;outline-offset:5px}img{display:block;width:100%;height:auto}p,h1,h2,h3{margin:0}p{color:var(--muted)}.container{width:min(1160px,calc(100% - 64px));margin:auto}.skip{position:absolute;left:16px;top:-80px;z-index:20;background:white;padding:10px}.skip:focus{top:10px}header{background:var(--paper);position:sticky;top:0;z-index:10;border-bottom:1px solid #173d3917}.nav{height:78px;display:flex;align-items:center;justify-content:space-between;gap:24px}.brand{font-size:23px;font-weight:900;text-decoration:none;letter-spacing:-1px;white-space:nowrap}.brand span{font-size:12px;letter-spacing:1px;margin-left:5px;color:var(--green)}nav{display:flex;gap:28px;align-items:center;font-size:13px;font-weight:700}nav a{text-decoration:none}.button{display:inline-flex;align-items:center;justify-content:center;gap:20px;min-height:56px;padding:14px 28px;border-radius:8px;background:var(--yellow);color:var(--ink);font-weight:800;text-decoration:none;box-shadow:0 3px 0 #122c3520;transition:transform .2s}.button:hover{transform:translateY(-2px)}.button.small{min-height:43px;padding:9px 18px;font-size:13px}.button.outline{background:transparent;box-shadow:none;border:1px solid #a4b3b4;color:inherit}.eyebrow{font-size:11px;letter-spacing:.16em;font-weight:800;color:var(--green);margin-bottom:18px}.hero{padding:40px 0 0}.hero-grid{display:grid;grid-template-columns:.9fr 1.1fr;gap:30px;align-items:center}.hero-copy{padding:25px 0 38px}.pill{display:inline-block;border:1px solid #bacfc5;border-radius:50px;padding:5px 13px;font-size:12px;font-weight:700;margin-bottom:22px}h1{font-size:clamp(34px,4.3vw,60px);letter-spacing:-.055em;line-height:1.32;font-weight:900}h1 em{font-style:normal;color:var(--green)}.lead{margin:24px 0 26px;font-size:15px;line-height:2}.actions{display:flex;gap:12px;flex-wrap:wrap}.under{font-size:11px;margin-top:14px}.hero-art{position:relative;align-self:stretch;min-height:520px;border-radius:120px 16px 16px 16px;overflow:hidden;background:#d4e2c0}.hero-art img{height:100%;object-fit:cover;object-position:52% center}.art-label{position:absolute;bottom:20px;left:20px;color:white;font-size:11px;background:#112d35d9;padding:6px 12px;border-radius:30px}.facts{display:flex;justify-content:center;gap:0;border-bottom:1px solid #bdc9c5;margin-top:32px;padding:22px 0}.facts div{flex:1;text-align:center;border-right:1px solid #bdc9c5;font-size:12px;color:var(--muted)}.facts div:last-child{border:0}.facts strong{font-size:20px;color:var(--ink);display:block}.section{padding:90px 0}.section h2{font-size:clamp(27px,3.3vw,40px);line-height:1.5;letter-spacing:-.04em}.section-intro{max-width:650px;margin-top:18px;font-size:15px}.movie{background:var(--ink);color:white;margin-top:76px;overflow:hidden}.movie-grid{display:grid;grid-template-columns:1fr .7fr;gap:90px;align-items:center;padding-top:55px;padding-bottom:55px}.movie .eyebrow{color:var(--yellow)}.movie p{color:#c6d5d7}.movie h2{font-size:38px;line-height:1.55}.movie-text{max-width:500px}.movie-text p{margin-top:22px;font-size:15px}.movie-text .eyebrow{margin-top:0;font-size:11px}.movie video{display:block;width:100%;max-width:300px;max-height:570px;background:#050c14;border-radius:12px;box-shadow:0 15px 55px #0006;margin:auto;aspect-ratio:390/844}.movie-note{font-size:11px!important;margin-top:12px!important;text-align:center}.chapter{display:flex;align-items:center;justify-content:space-between;gap:20px}.chapter-num{font-size:64px;font-weight:900;color:#c5d2cb;line-height:1}.screen-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;margin-top:38px}.screen-card img{aspect-ratio:390/844;object-fit:contain;background:#e6e9df;border:7px solid #fff;border-radius:18px;box-shadow:0 8px 24px #11332910}.screen-card h3{font-size:17px;margin:21px 0 8px}.screen-card p{font-size:13px}.screen-card .tag{font-size:10px;letter-spacing:.16em;color:var(--green);font-weight:800;margin-top:20px}.screen-card .tag+h3{margin-top:5px}.world{background:#e8eee4}.world-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:54px;align-items:center}.world-photos{position:relative;padding-bottom:55px}.world-photos img{border-radius:12px;aspect-ratio:4/3;object-fit:cover}.world-photos img+img{width:58%;aspect-ratio:3/2;margin-top:-55px;margin-left:auto;position:relative;border:7px solid #e8eee4}.world-list{margin-top:28px}.world-list article{padding:18px 0;border-top:1px solid #b8c8bb}.world-list h3{font-size:17px;margin-bottom:7px}.world-list p{font-size:13px}.parents{display:grid;grid-template-columns:.8fr 1.2fr;gap:70px}.parents .section-intro{font-size:14px}.free{display:inline-block;background:var(--yellow);padding:12px 24px;border-radius:8px;margin:26px 0;font-size:18px;font-weight:800}details{border-top:1px solid #bbc7bf;padding:20px 0}details:last-child{border-bottom:1px solid #bbc7bf}summary{font-size:15px;font-weight:800;cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:16px}summary::-webkit-details-marker{display:none}summary:after{content:'＋';flex:none;color:var(--green)}details[open] summary:after{content:'−'}details p{font-size:13px;margin-top:13px;line-height:1.95}.drill{border:1px solid #b8c8bb;border-radius:12px;padding:28px;display:flex;justify-content:space-between;align-items:center;gap:25px;margin-top:48px}.drill h3{font-size:19px}.drill p{font-size:13px;margin-top:7px}.end{background:var(--ink);text-align:center;color:white;padding:65px 24px}.end h2{font-size:32px;margin-bottom:24px;line-height:1.6}.end p{color:#c6d5d7;font-size:12px;margin-top:18px}footer{padding:40px 0;font-size:11px}footer .brand{display:block;margin-bottom:15px}footer p{margin:6px 0}footer a{text-underline-offset:3px}.fine{color:#51656a;font-size:11px;margin-top:18px}.credit-row{display:flex;justify-content:space-between;align-items:baseline;gap:20px}.credit-row>a{white-space:nowrap}.hero,.section,.movie{scroll-margin-top:80px}
+@media(min-width:1400px){.hero-art{min-height:565px}}@media(max-width:900px){.container{width:calc(100% - 40px)}nav{gap:18px}nav .nav-parent{display:none}.hero-grid{grid-template-columns:1fr 1fr;gap:20px}.hero-art{min-height:460px}.hero-copy{padding:15px 0}h1{font-size:38px}.lead{font-size:13px}.actions{gap:8px}.button{padding:12px 18px;font-size:14px}.movie-grid{gap:35px}.screen-grid{gap:15px}.screen-card h3{font-size:15px}.world-grid{gap:30px}.parents{gap:35px}.section{padding:65px 0}}
+@media(max-width:600px){.container{width:calc(100% - 36px)}.nav{height:66px;gap:12px}.brand{font-size:20px}.brand span{font-size:10px}nav>a:not(.button){display:none}.button.small{font-size:12px;padding:8px 12px;min-height:40px}.hero{padding-top:24px}.hero-grid{display:flex;flex-direction:column;gap:24px}.hero-copy{width:100%;padding:0}.pill{font-size:10px;margin-bottom:16px}h1{font-size:42px;line-height:1.28}.lead{font-size:13px;margin:18px 0 20px}.hero-art{min-height:0;height:auto;aspect-ratio:4/3;width:100%;border-radius:65px 12px 12px 12px}.hero-art img{object-position:center}.art-label{bottom:12px;left:12px;font-size:9px}.actions .button{flex:1;font-size:13px;gap:10px;padding:13px 10px}.under{font-size:10px}.facts{margin-top:18px;padding:18px 0}.facts strong{font-size:16px}.facts div{font-size:10px}.movie{margin-top:45px}.movie-grid{display:flex;flex-direction:column;padding-top:40px;padding-bottom:40px;gap:28px}.movie h2{font-size:28px}.movie-text p{font-size:13px}.movie video{max-width:270px;max-height:none}.movie-frame{width:100%}.section{padding:52px 0}.eyebrow{margin-bottom:12px}.section-intro{font-size:13px}.chapter-num{font-size:45px}.screen-grid{grid-template-columns:1fr 1fr;gap:30px 16px;margin-top:26px}.screen-card img{border-width:4px;border-radius:12px}.screen-card h3{font-size:15px;line-height:1.5}.screen-card p{font-size:12px}.screen-card .tag{margin-top:14px;font-size:9px}.world-grid{display:flex;flex-direction:column-reverse;gap:30px}.world-photos{padding-bottom:0;width:100%}.parents{display:block}.parents>div:first-child{margin-bottom:18px}.free{margin:20px 0 10px;font-size:16px}.drill{display:block;padding:23px;margin-top:32px}.drill .button{margin-top:20px;width:100%}.end h2{font-size:26px}.credit-row{display:block}.credit-row>a{display:inline-block;margin:15px 0}summary{font-size:14px}footer{padding-bottom:30px}}@media(max-width:350px){h1{font-size:36px}.brand{font-size:18px}.brand span{font-size:9px;margin-left:2px}.container{width:calc(100% - 28px)}.screen-grid{gap:24px 12px}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.button{transition:none}}
+@media(max-width:900px){.movie h2{font-size:28px}}@media(max-width:600px){.chapter-num{display:none}}@media(max-width:350px){.screen-card h3{font-size:14px}}
+</style></head>
+<body><a class="skip" href="#main">本文へ</a>
+<header><div class="container nav"><a class="brand" href="#">かんじモン<span>RPG</span></a><nav aria-label="メインメニュー"><a href="#adventure">どんなゲーム？</a><a href="#movie">ムービー</a><a class="nav-parent" href="#parents">おうちの方へ</a><a class="button small" href="play/">無料であそぶ ↗</a></nav></div></header>
+<main id="main">
+<section class="hero container"><div class="hero-grid"><div class="hero-copy"><span class="pill">登録なし・インストールなし・すべて無料</span><h1>その漢字が、<br><em>旅の仲間に</em><br>なる。</h1><p class="lead">読んで、書いて、仲間にして。<br>漢字のモンスターと、日本をめぐる大冒険。<br>きみの「わかった！」が、次の景色をひらく。</p><div class="actions"><a class="button" href="play/">冒険をはじめる <span aria-hidden="true">↗</span></a><a class="button outline" href="#movie">▶ ムービーを見る</a></div><p class="under">スマホ・タブレット・パソコンのブラウザで遊べます</p></div><div class="hero-art"><img src="home-assets/hero.webp" alt="主人公と漢字の仲間、一と木が緑の道を冒険する" width="1440" height="960" fetchpriority="high"><span class="art-label">かんじモンRPG ／ 冒険の世界へ</span></div></div><div class="facts"><div><strong>小学1〜6年生</strong>の漢字が登場</div><div><strong>読む・書く・熟語</strong>冒険しながらふれる</div><div><strong>自分のペース</strong>途中から続けられる</div></div></section>
+<section class="movie" id="movie"><div class="container movie-grid"><div class="movie-text"><p class="eyebrow">OPENING MOVIE</p><h2>文字だけじゃ伝わらない、<br>この冒険を見てほしい。</h2><p>町を歩き、海を渡り、不思議な仲間と出会う。<br>まずはオープニングで、かんじモンの世界へ。</p><p>実際のゲーム画面も登場します。<br>再生ボタンを押して、お楽しみください。</p></div><div class="movie-frame"><video controls playsinline preload="none" poster="home-assets/movie.webp" aria-label="かんじモンRPG オープニングムービー" src="play/videos/opening-20261019-op30.mp4">動画に対応したブラウザでご覧ください。</video><p class="movie-note">約3分・音が出ます。音量・全画面表示は操作ボタンから。</p></div></div></section>
+<section class="section container" id="adventure"><div class="chapter"><div><p class="eyebrow">PLAY & DISCOVER</p><h2>「もうひとつ先へ」が、<br>学ぶきっかけになる。</h2></div><span class="chapter-num" aria-hidden="true">01</span></div><p class="section-intro">ただ答えるだけでは終わらない。新しい土地、新しい仲間、新しいことば。遊びの中に、いろいろな出会いが待っています。</p><div class="screen-grid">
+<article class="screen-card"><a href="home-assets/battle.webp" target="_blank" rel="noopener" aria-label="ゲーム画面を大きく開く"><img src="home-assets/battle.webp" alt="日本橋のバトルで、手書きの漢字を答えるゲーム画面" width="390" height="844" loading="lazy"></a><p class="tag">BATTLE</p><h3>読めた！ 書けた！<br>それが攻撃になる。</h3><p>読みのクイズでバトル。書き取りに挑戦する遊び方も。漢字の知識が、仲間と進む力になります。</p></article>
+<article class="screen-card"><a href="home-assets/collection.webp" target="_blank" rel="noopener" aria-label="ゲーム画面を大きく開く"><img src="home-assets/collection.webp" alt="仲間になった千の読みや意味を調べる図鑑の画面" width="375" height="667" loading="lazy"></a><p class="tag">COLLECTION</p><h3>集めて、調べて。<br>自分だけの仲間たち。</h3><p>出会ったかんじモンは図鑑へ。読みや意味を確かめて、好きな仲間をチームに。育てると進化する仲間もいます。</p></article>
+<article class="screen-card"><a href="home-assets/journey.webp" target="_blank" rel="noopener" aria-label="ゲーム画面を大きく開く"><img src="home-assets/journey.webp" alt="富士山の道を進み、漢字のモンスターと出会うフィールド画面" width="390" height="844" loading="lazy"></a><p class="tag">JOURNEY</p><h3>次の町、その先へ。<br>日本をめぐる旅。</h3><p>町や山、海辺へ。道を歩き、船や列車で移動しながら、土地ごとに変わる景色と物語を楽しめます。</p></article>
+<article class="screen-card"><a href="home-assets/town.webp" target="_blank" rel="noopener" aria-label="ゲーム画面を大きく開く"><img src="home-assets/town.webp" alt="時計屋のお手伝いで時刻の問題を考える画面" width="390" height="844" loading="lazy"></a><p class="tag">TOWN LIFE</p><h3>冒険の合間も、<br>おもしろい。</h3><p>町でお手伝いをしたり、時計の問題を考えたり。バトル以外にも、立ち寄りたい場所が見つかります。</p></article>
+</div><p class="fine">画像をタップすると大きく開けます。掲載画像はゲーム画面です。進み具合によって、出会う場所や使える機能が変わります。</p></section>
+<section class="world section"><div class="container world-grid"><div class="world-photos"><img src="home-assets/sea.webp" alt="海辺を旅する主人公とかんじモンの冒険イラスト" loading="lazy"><img src="home-assets/words.webp" alt="熟語の仲間たちが登場するゲームのタイトルイラスト" loading="lazy"></div><div><p class="eyebrow">MORE THAN A BATTLE</p><h2>ひと文字から、<br>ことばの世界へ。</h2><div class="world-list"><article><h3>漢字を合わせて、熟語を発見。</h3><p>研究所では仲間の漢字を組み合わせ、熟語を探せます。旅が進むと、四字熟語の仲間にも出会います。</p></article><article><h3>書道教室で、書くことにも挑戦。</h3><p>お手本をなぞる練習や書き取りへ。読みだけでなく、漢字の形にもふれられます。</p></article><article><h3>仲間と進む、物語のある冒険。</h3><p>出会い、会話、そして新しい土地へ。景色や音楽と一緒に、漢字の世界を楽しんでください。</p></article></div></div></div></section>
+<section class="section container" id="parents"><div class="parents"><div><p class="eyebrow">FOR PARENTS</p><h2>おうちの方へ。</h2><p class="section-intro">漢字にふれる時間が、楽しみになるように。<br>かんじモンRPGは、読み・書き・ことばを冒険の中で楽しむゲームです。</p><div class="free">すべて無料で遊べます。</div><p class="section-intro">会員登録やアプリのインストールも不要です。まずはお子さんと一緒に、最初の冒険をのぞいてみてください。</p></div><div>
+<details open><summary>どの学年の漢字が登場しますか？</summary><p>小学1〜6年生の漢字が登場します。やさしい漢字から旅を進め、熟語や四字熟語にもふれていきます。学校の進度やお子さんの得意・不得意に合わせ、無理のない範囲でお楽しみください。</p></details>
+<details><summary>途中で料金がかかりますか？</summary><p>料金は無料です。小学4年生以降の内容も含め、無料で遊べます。</p></details>
+<details><summary>スマホでも遊べますか？</summary><p>スマートフォン・タブレット・パソコンのブラウザで遊べます。ゲーム内の音は切り替えられます。初回は画像や音声の読み込みに時間がかかることがあるため、通信の安定した環境がおすすめです。</p></details>
+<details><summary>続きから遊べますか？ 記録はどこに残りますか？</summary><p>冒険の記録は、遊んでいる端末のブラウザに保存されます。続きから遊ぶときは、同じ端末・同じブラウザを使ってください。別の端末には自動で引き継がれません。ブラウザのサイトデータを削除すると記録も消えることがあります。プライベートブラウズでの利用は避けてください。</p></details>
+<details><summary>漢字が苦手でも始められますか？</summary><p>最初はやさしい漢字から始まります。読みや意味を図鑑で確かめたり、書道教室で練習したりしながら、自分のペースで進められます。最初の操作は、おうちの方と一緒にお試しください。</p></details>
+</div></div><div class="drill"><div><p class="eyebrow">PRINT & PRACTICE</p><h3>紙に書いて練習したいときは。</h3><p>小学1年生向けの漢字ドリルも無料で印刷できます。<br>筆順のお手本と、書き込み欄つき。</p></div><a class="button outline" href="drill/grade1.html">無料ドリルを開く ↗</a></div></section>
+<section class="end"><h2>さあ、最初の一文字と<br>冒険に出かけよう。</h2><a class="button" href="play/">無料で冒険をはじめる ↗</a><p>登録不要 ／ ブラウザですぐに遊べます</p></section>
+</main><footer class="container"><div class="credit-row"><div><span class="brand">かんじモン<span>RPG</span></span><p>運営：あそびラボ</p></div><a href="#parents">おうちの方へ ↑</a></div><p>音声：VOICEVOX:白上虎太郎／四国めたん／満別花丸／春歌ナナ／櫻歌ミコ／青山龍星／WhiteCUL</p><p>筆順データ：<a href="https://kanjivg.tagaini.net/">KanjiVG</a>（CC BY-SA）　効果音：効果音ラボ</p><p>このサイトは利用状況の把握にGoogle アナリティクスを使用しています。</p></footer><script defer src="/km-analytics.js?v=20261021"></script></body></html>
