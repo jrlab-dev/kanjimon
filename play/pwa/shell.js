@@ -9,17 +9,38 @@
   const notify=error=>status(L.error(error));
   const channel=typeof BroadcastChannel==='function'?new BroadcastChannel('kanjimon-save-state'):null;
   const migrationKey='kanjimon-pwa-migration-ack-v1';
+  const entryParams=new URLSearchParams(location.search);
+  let autoStart=entryParams.get('autostart')==='1',entryReady=false,languageReady=false,autoQueued=false;
+  const homeConfirmed=entryParams.get('migration')==='confirmed';
+  const requestedLanguage=['ja','en'].includes(entryParams.get('lang'))?entryParams.get('lang'):null;
+  if(autoStart||homeConfirmed){
+    const clean=new URL(location.href);clean.searchParams.delete('autostart');clean.searchParams.delete('migration');
+    try{history.replaceState(history.state,'',clean.href);}catch(e){autoStart=false;}
+  }
   try{$('closed').checked=localStorage.getItem(migrationKey)==='1';}catch(e){}
   $('migration').hidden=$('closed').checked;
   function readyStatus(){
+    if(owned&&available&&entryReady&&!languageReady){
+      status('English could not be loaded. Select English in settings to retry. ');
+      const link=document.createElement('a');
+      link.href='pwa.html?lang=ja&autostart=1';link.textContent='Play in Japanese / 日本語ではじめる';
+      $('status').append(link);return;
+    }
     if(owned&&available&&!gameActive&&L.locale==='en'&&!L.gameReady()){
       status('English save settings are ready. The adventure is not available in English yet.');return;
     }
     if(owned&&available&&!gameActive)status(manifest?.game?($('closed').checked?L.t("shell.7af7bb1c4d0938c8",{},"じゅんびが できたよ！"):L.t("shell.da81c69d1f91557f",{},"はじめの かくにんを してね。")):manifestFailed?L.t("shell.977f948fbd830825",{},"ゲームの準備情報を読み込めませんでした。通信を確認して、この画面を開き直してください。"):L.t("shell.7ff47b87f14d2743",{},"ゲームの じゅんび中だよ。少しまってね。"));
   }
   function refresh(){
-    $('start').disabled=!manifest?.game||!owned||!available||!$('closed').checked||busy||!!downloadJob||!!L.busy||!!(L.gameReady&&!L.gameReady());
+    $('start').disabled=!entryReady||!languageReady||!manifest?.game||!owned||!available||!$('closed').checked||busy||!!downloadJob||!!L.busy||!!(L.gameReady&&!L.gameReady());
     L.sync?.();
+    if(autoStart&&entryReady&&!autoQueued&&!$('start').disabled&&(!requestedLanguage||requestedLanguage===L.locale)){
+      autoQueued=true;queueMicrotask(()=>{
+        autoQueued=false;
+        if(!autoStart||$('start').disabled||gameActive)return;
+        autoStart=false;$('start').click();
+      });
+    }
     $('import').disabled=!owned||!(available||recoveryBlocked)||!$('closed').checked||busy||!!downloadJob;
     $('export').disabled=busy||!!downloadJob;
     $('update').disabled=busy||!!downloadJob;
@@ -72,6 +93,9 @@
       expected=B.read(localStorage);
       for(const raw of Object.values(expected))if(raw!==null)B.validateSave(JSON.parse(raw));
       available=true;recoveryBlocked=false;
+      if(homeConfirmed){
+        localStorage.setItem(migrationKey,'1');$('closed').checked=true;$('migration').hidden=true;
+      }
       // A corrupt record may be restored, but must never boot as a new game.
       readyStatus();
     }catch(e){
@@ -118,6 +142,7 @@
     }catch(e){notify(e);if(emergency)$('save-error').querySelector('p').textContent=L.t("shell.53986c8a84b4e896",{},"書き出しできませんでした。この画面を閉じずに、もう一度保存してください。");}
   }
   function closeGame(){
+    autoStart=false;
     const bridge=$('game').contentWindow.KanjimonPwaGame;
     bridge?.stop();epoch++;gameActive=false;
     $('game').src='about:blank';$('play').hidden=true;$('home').hidden=false;
@@ -127,6 +152,7 @@
   }
   $('start').onclick=async()=>{
     if($('start').disabled||gameActive)return;
+    autoStart=false;
     try{
       assertOwner(epoch);
       if(!manifest?.game)throw Error(L.t("shell.977f948fbd830825",{},"ゲームの準備情報を読み込めませんでした。通信を確認して、この画面を開き直してください。"));
@@ -287,6 +313,14 @@
     try{const r=await fetch('pwa/assets.json',{cache:'no-store'});if(!r.ok)throw Error();manifest=await r.json();if(!manifest?.game)throw Error();}
     catch(e){manifest=null;manifestFailed=true;$('download-status').textContent=L.t("shell.1751cb26aabfa67a",{},"通信できないため、保存の準備ができませんでした。");}
     if(manifest)await L.connect?.(manifest,()=>!gameActive&&!busy&&!downloadJob&&!pending);
+    entryReady=true;
+    languageReady=!requestedLanguage||requestedLanguage===L.locale;
+    if(requestedLanguage&&requestedLanguage!==L.locale){
+      autoStart=false;
+      $('settings').open=true;
+      status('English could not be loaded. Select English in settings to retry, or choose 日本語.');
+      refresh();
+    }
     readyStatus();refresh();
     if('serviceWorker' in navigator&&isSecureContext){
       try{
@@ -314,7 +348,7 @@
       $('download-status').textContent=L.t("shell.43c819bfd8bb8135",{p0:(Math.round(e.data.progress*100))},"基本の画面 {p0}% 保存中");
     }
   });
-  addEventListener('kanjimon-language-change',()=>{readyStatus();refresh();});
+  addEventListener('kanjimon-language-change',()=>{if(entryReady)languageReady=true;readyStatus();refresh();});
   addEventListener('kanjimon-language-busy',()=>refresh());
   acquire();setup();
 })();
