@@ -27503,7 +27503,7 @@ function bfsNextStep(sx,sy,tx,ty){
       const nx=x+dx,ny=y+dy;
       if(nx<0||ny<0||nx>=W||ny>=H) continue;
       if(prev.has(key(nx,ny))) continue;
-      if(!isPassableTile(g[ny][nx],fieldZone)) continue;
+      if(!isPassableTile(g[ny][nx],fieldZone)||fieldActorBlocks(fieldZone,nx,ny)) continue;
       prev.set(key(nx,ny),[x,y]); q.push([nx,ny]);
     }
   }
@@ -27600,6 +27600,15 @@ function tryFineStep(dx,dy,def){
   },stepMs);
   return stepMs;
 }
+/* ★2026-11-04：町・建物の中に立っている人（INTERIOR_ACTORS）は、すり抜けないよう通せんぼにする。
+   話しかける店員さん（M・U・Nなど特別なマスの上に立つ人）は今までどおり踏んで話しかけられるよう、
+   ただの床（.）に立っている人だけを対象にする。絵が読めず表示されていない人は通せんぼしない。 */
+function fieldActorBlocks(zone,x,y){
+  if(zone>0) return false;
+  const g=zoneGridOf(zone);
+  if(!g[y]||g[y][x]!=='.') return false;
+  return INTERIOR_ACTORS.some(a=>a.zone===zone&&a.x===x&&a.y===y&&(interiorActorSheetOK.has(a.key)||interiorActorImgOK.has(a.key)));
+}
 function tryStep(dx,dy){
   if(isAmamiEventField())return;
   if(isIceDungeon(fieldZone))return;
@@ -27617,7 +27626,7 @@ function tryStep(dx,dy){
   const ch=g[ny][nx];
   // 斜め先が床でも、両隣の縦横マスのどちらかが壁なら進めない（岩角のすり抜け防止）。
   const cornerBlocked=diagonal&&(!isPassableTile(g[fieldHy][nx],fieldZone)||!isPassableTile(g[ny][fieldHx],fieldZone));
-  if(!isPassableTile(ch,fieldZone)||cornerBlocked){
+  if(!isPassableTile(ch,fieldZone)||cornerBlocked||fieldActorBlocks(fieldZone,nx,ny)){
     const grid=$('fieldGrid');            // 壁：ぷるっ
     grid.classList.add('shake');
     ensureAudio(); sfxWrong();
@@ -32780,8 +32789,8 @@ function warpZone(z){
    tile=51.2で換算(+20込み)。returnToはentranceの1マス下(通行可能なことを確認済み)。 */
 const SCHOOL_TOWN_CONFIG={
   building:{x:6.54,y:20.5,w:4.03,h:4.03},
-  entrance:{x:8,y:24},
-  returnTo:{x:8,y:25}
+  entrance:{x:8,y:23},   // ★2026-11-04 入口の印が建物の1マス下に出ていたため、戸口の行へ1マス上げた（旧(8,24)）
+  returnTo:{x:8,y:24}
 };
 /* 発注T-1：書道教室の町配置。がっこうと同じ流儀＝調整はこの1か所だけ。
    発注_町南側と駅：ユーザーが配置ツールで作った新レイアウトに合わせて更新（南側グリッド変換.js参照）。
@@ -32789,8 +32798,8 @@ const SCHOOL_TOWN_CONFIG={
    tile=51.2で換算(+20込み)。returnToはentranceの1マス下(通行可能なことを確認済み)。 */
 const SHODO_TOWN_CONFIG={
   building:{x:1.05,y:21.83,w:2.93,h:2.93},
-  entrance:{x:2,y:24},
-  returnTo:{x:2,y:25}
+  entrance:{x:2,y:23},   // ★2026-11-04 学校と同じ理由で1マス上げた（旧(2,24)）
+  returnTo:{x:2,y:24}
 };
 const TOWN_DEF={
   name:'はじまりの まち',
@@ -32809,37 +32818,37 @@ const TOWN_DEF={
      発注_村1：ここにV（むらへの入口・3年生＝unlocked>=STAGE2_COUNT+1で解禁）を配置した。 */
   grid:[
     'TTTTTTTTTTTTT...TTTTTTTTTTTTTT',
-    'TTT.........T...TT.........TTT',
-    'TT..................TTTTTT.TTT',
+    'TTTTTTTTTTTTT...TTTTTTTTTTTTTT',
     'TT....TTT...........TTTTTT.TTT',
-    'TT....TNT............LTTTT.TTT',
-    'TT..........................TT',
-    'TT..........................TT',
-    'T...........TTTTT.............',
-    '............TTTTTT............',
-    '............TTTTT.............',
-    'T..TTTTT......TT.......TTTTT.T',
+    'TT....TTT...........TTTTTT.TTT',
+    'TT....TTT...........TLTTTT.TTT',
+    'TT....TNT...................TT',
+    'TT...........TTTT...........TT',
+    'T....T......TTTTT........T....',
+    '....TTTT...TTTTTTT......TTT...',
+    '...TTTTT...TTTTTTT.....TTTTT..',
+    'T..TTTTT....TTTTT......TTTTT.T',
     'T..TTTTT...............TTDTT.T',
-    'T..TTOTT...............T..TT.T',
-    'T.........TT.................T',
-    'T.........TT......TT.........T',
-    'T.........TT......TTT......TTT',
-    'TT.......TTT.......TTTTTTTTTTT',
+    'T..TTOTT...............TT.TT.T',
+    'T..TT.TT..TT...........TT.TT.T',
+    'T.........TT......TTT........T',
+    'T.........TT......TTTTTTTTTTTT',
+    'TTTTTTTTTTTTTT..TTTTTTTTTTTTTT',
     'TTTTTTTTTTTTTT..TTTTTTTTTTTTTT',
     'TTTTTTTTTTTTTT..TTTTTTTTTTTTTT',
     'TTTTT.........S...............',
+    '...................TTTTTTTT.T.',
+    '.......TTTT........TTTTTTTT.T.',
+    '.TTT...TTTT........TTTTTTTT.T.',
+    '.T.T...TTTT........TTTTTTTT.T.',
+    '...................TT.M.TTT.T.',
     '..............................',
     '..............................',
-    'TTTTTTTTTTTT.......TTTTTTTT...',
-    'TTTTTTTTTTTT.......TTTTTTTT.T.',
-    'TT.TTTTT.TTT.......TT.M.TTT.T.',
-    '..............................',
-    '..............................',
-    'P.............................',
-    '..............................',
-    '.....TTTTTT...................',
-    'T....TTTTTTT..................',
-    'TT....TTTKTTT.......TTTTTT..TT',
+    'P....TT.......................',
+    '.....TTTTTTT........TTTTTT....',
+    '.....TTTTTTT........TTTTTT....',
+    'T....TTTTTTTT.......TTTTTT....',
+    'TT...TTTTKTTT.......TTTTTT..TT',
     'TTT.................TTQ.TT.TTT',
     'TTTT......................TTTT',
     'TTTTT.............T.......TTTT',
@@ -32949,44 +32958,44 @@ const MALL_DEF={ zone:MALL_ZONE, name:'ショッピングモール', bg:'interio
      記号Uは壁T/R/W・すみかA〜L・既存のS/E/M/N/F/C/K・町のL/D/Y/H/G/O/P/Q/Vのどれとも重ならない */
   grid:[
 'TTTTTTTTTTTTTTTTTT',
+'TTTTTTTTTTTTTTTTTT',
+'TTTTTTTTTTTTTTTTTT',
+'TTTMTTTTU.TT....TT',
 'T................T',
-'T.TTT..TTT..TTT..T',
-'T..M....U........T',
-'T................T',
-'T................T',
-'T................T',
+'TT..............TT',
+'TT..............TT',
 'T................T',
 'T................T',
 'T........S.......T',
-'T........E.......T',
+'TTTTTTTTTETTTTTTTT',
 'TTTTTTTTTTTTTTTTTT']};
 const HOUSE1_DEF={ zone:HOUSE1_ZONE, name:'みんか', bg:'interior-house.webp',
   returnTo:{x:9,y:32},
   grid:[
 'TTTTTTTTTTTTTTT',
-'T....TTT......T',
-'T....TTT..N...T',
-'T.............T',
-'T..TT.........T',
-'T..TT.........T',
-'T.............T',
+'TTTTTTTTTTTTTTT',
+'TTTTTTT...NTTTT',
+'TTTTT........TT',
+'TT...........TT',
+'T.TTT........TT',
+'T.TTT........TT',
 'T......S......T',
-'T......E......T',
+'TTTTTTTETTTTTTT',
 'TTTTTTTTTTTTTTT']};
 const SCHOOL_DEF={ zone:SCHOOL_ZONE, name:'がっこう', bg:'interior-school.webp',
   returnTo:SCHOOL_TOWN_CONFIG.returnTo,
   grid:[
 'TTTTTTTTTTTTTTTTTT',
-'T................T',
-'T.......N........T',
-'T................T',
-'T..TT..TT..TT....T',
-'T................T',
-'T..TT..TT..TT....T',
-'T................T',
-'T................T',
+'TTTTTTTTTTTTTTTTTT',
+'TTTTT...NT....TTTT',
+'TT......TT......TT',
+'TT..............TT',
+'TT..TT..TT..TTT.TT',
+'T...TT..TT..TTT..T',
+'T..TTT..TT..TTT..T',
+'T..TTT..TT..TTT..T',
 'T........S.......T',
-'T........E.......T',
+'TTTTTTTTTETTTTTTTT',
 'TTTTTTTTTTTTTTTTTT']};
 /* 発注T-1：しょどうきょうしつ（がっこうと同寸法18×12）。畳の間＝机3つ(T)＋正面奥の先生の席(T)。
    先生NPCは裁定待ちのため今回は置かない（新キャラ生成は裁定まで禁止）＝N文字は使わない。 */
@@ -32994,16 +33003,16 @@ const SHODO_DEF={ zone:SHODO_ZONE, name:'しょどうきょうしつ', bg:'inter
   returnTo:SHODO_TOWN_CONFIG.returnTo,
   grid:[
 'TTTTTTTTTTTTTTTTTT',
-'T................T',
-'T........T.......T',
-'T................T',
-'T................T',
-'T...T...T...T....T',
-'T................T',
-'T................T',
-'T................T',
+'TTTTTTTTTTTTTTTTTT',
+'TTTTTTTTTTTTTTTTTT',
+'TTTTTT..TT....TTTT',
+'TT.....TTTT.....TT',
+'TT.TTT..TT.TTT..TT',
+'T..TTT..TT.TTT...T',
+'T..TTT..TT..TTT..T',
+'T..TTT..TT..TTT..T',
 'T........S.......T',
-'T........E.......T',
+'TTTTTTTTTETTTTTTTT',
 'TTTTTTTTTTTTTTTTTT']};
 /* 発注_町南側と駅：えき（待合室・15×10＝HOUSE1_DEFと同じ広さ）。STATION_OPEN=falseの間はonArriveTownTileの
    P分岐でロックメッセージのみ表示し、warpInterior自体を呼ばない＝このゾーンには今回まだ入れない。
@@ -33017,14 +33026,14 @@ const STATION_DEF={ zone:STATION_ZONE, name:'えき', bg:'station-concourse.webp
   returnTo:{x:1,y:27},
   grid:[
 'TTTTTTTTTTTTTTT',
-'T.............T',
-'T....KKKKK....T',
-'T.............T',
-'T.............T',
+'TTTTTTTTTTTTTTT',
+'TTT..KKKKK..TTT',
+'TTT.........TTT',
+'TTT.........TTT',
+'TTT..........TT',
 'TT...........TT',
-'TT...........TT',
-'T......S......T',
-'T......E......T',
+'TTTTTTTSTTTTTTT',
+'TTTTTTTETTTTTTT',
 'TTTTTTTTTTTTTTT']};
 /* 発注_村1：むら ひろば よてい地（15×10＝HOUSE1_DEF/STATION_DEFと同じ広さ）。3年生（unlocked>=STAGE2_COUNT+1）で
    町のV入口から入れる村づくり第1弾の拠点。F=不動産屋（空き地・森の話を聞ける）・C=大工兄弟（購入後の会話のみ・
@@ -33822,17 +33831,17 @@ const INTERIOR_ACTORS=[
        子ども＝scale 1.0（主人公と同じ115%）／大人＝scale 1.4／マナも1.40（CSSの #hakaseNpc）。
        マローズ（ボス）は .passerby で210%＝いちばん大きい。
      ★絵は `素材\キャラクター基準\モブ歩行シート\` が正本。立ち絵48枚（images\bust\mob_*.webp）と同じ顔ぶれ。
-     ★**通行判定には関わらない**（画面に重ねるだけ＝マローズの .passerby と同じ考え方）。
-       だからグリッドの文字は足していない＝既存101ゾーンと室内の通行は1マスも変わらない。
+     ★2026-11-04：すり抜けると不自然なので、立っているマスは通れないようにした（fieldActorBlocks）。
+       グリッドの文字は足していない（人のいるマスだけを歩くときに別に判定する）。
      ★静止画（顔カード用）は持たせていない＝`img` なし。会話もまだ付けていない（立たせているだけ）。 */
   /* ★2026-11-04 2人を外した＝時計台の横(5,5)の大人と、自分の家の前(5,13)の子ども。
      すり抜けるうえ話しかけても何もないため。 */
-  {zone:TOWN_ZONE,   key:'mobOtonaFA', sheet:'npc-mob-otona-f-a.webp', x:20,y:6,  dir:'down', frame:'a', scale:1.4},
-  {zone:TOWN_ZONE,   key:'mobObaaA',   sheet:'npc-mob-obaa-a.webp',    x:25,y:13, dir:'down', frame:'a', scale:1.4},
+  {zone:TOWN_ZONE,   key:'mobOtonaFA', sheet:'npc-mob-otona-f-a.webp', x:18,y:3,  dir:'down', frame:'a', scale:1.4},   // ★2026-11-04 研究所の入口前(20,6)から外した
+  {zone:TOWN_ZONE,   key:'mobObaaA',   sheet:'npc-mob-obaa-a.webp',    x:21,y:13, dir:'down', frame:'a', scale:1.4},   // ★2026-11-04 どうぐやの入口前(25,13)から外した
   {zone:MALL_ZONE,   key:'mobOtonaFB', sheet:'npc-mob-otona-f-b.webp', x:5, y:6,  dir:'down', frame:'a', scale:1.4},
   {zone:MALL_ZONE,   key:'mobKodomoFA',sheet:'npc-mob-kodomo-f-a.webp',x:13,y:5,  dir:'down', frame:'a', scale:1.0},
-  {zone:SCHOOL_ZONE, key:'mobKodomoMB',sheet:'npc-mob-kodomo-m-b.webp',x:5, y:7,  dir:'down', frame:'a', scale:1.0},
-  {zone:SCHOOL_ZONE, key:'mobKodomoFB',sheet:'npc-mob-kodomo-f-b.webp',x:14,y:5,  dir:'down', frame:'a', scale:1.0},
+  {zone:SCHOOL_ZONE, key:'mobKodomoMB',sheet:'npc-mob-kodomo-m-b.webp',x:2, y:6,  dir:'down', frame:'a', scale:1.0},   // ★2026-11-04 机の上(5,7)から通路へ
+  {zone:SCHOOL_ZONE, key:'mobKodomoFB',sheet:'npc-mob-kodomo-f-b.webp',x:15,y:7,  dir:'down', frame:'a', scale:1.0},   // ★2026-11-04 机の上(14,5)から通路へ
   /* 駅と村は、とうちゃく地点S(7,7)のすぐ上に置く。
      ★離れたところに置くと、入った瞬間の画面に入らず「いない」ように見える（2026-08-22に実際そうなった）。 */
   {zone:STATION_ZONE,key:'mobOtonaMB', sheet:'npc-mob-otona-m-b.webp', x:5, y:6,  dir:'down', frame:'a', scale:1.4},
