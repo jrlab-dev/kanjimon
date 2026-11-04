@@ -2546,6 +2546,18 @@
     display:flex;align-items:center;justify-content:center;font-size:1.8rem}
   .op1-mana-text{font-weight:900;font-size:.98rem;line-height:1.42;text-align:left}
   .op1-answers{margin-top:16px;width:min(90vw,420px)}
+  /* 2026-11-04：スマホ横向き（高さ約270〜290px）では3択が画面の下へはみ出して押せず、OPから先へ進めなかった。
+     背の低い横向きだけ「一」の絵を高さに合わせて縮め、3択を横並びにして全部を画面内に収める。 */
+  @media (orientation:landscape) and (max-height:520px){
+    .op1-stage{padding:8px 14px;gap:3px}
+    .op1-charwrap,.op1-brush-clip img{width:min(78vw,520px,max(150px,calc((100vh - 150px)*1.5)))}
+    #op1CharWrap .op1-kanji-face{font-size:clamp(64px,calc((100vh - 150px)*.7),170px)}
+    .op1-mana{margin-top:2px;padding:5px 12px 5px 5px;gap:8px}
+    .op1-mana-face{width:44px;height:44px}
+    .op1-mana-text{font-size:.9rem;line-height:1.3}
+    .op1-answers{margin-top:6px;width:min(94vw,600px);flex-direction:row;gap:8px}
+    .op1-answers .opt{flex:1 1 0;min-height:46px;font-size:1.15rem;padding:0 8px}
+  }
   /* OP-1b§3：音声の自動再生制限対応「タップして はじめる」入口ボタン（.btn.btn-primaryの見た目に、
      タップを誘う軽いパルスだけ足す）。表示/非表示は.showの付け外しで制御（初期状態はdisplay:none）。 */
   .op1-gate-btn{display:none;animation:op1GatePulse 1.6s ease-in-out infinite}
