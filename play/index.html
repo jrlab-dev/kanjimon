@@ -7064,7 +7064,7 @@ const TALK_CANONICAL_TEXT={
   "ようこそ カンサイ・シコクへ！ ここからは ボスが じゅくごモンに なるわよ！": "ようこそ カンサイ・シコクへ！ ここからは ボスが 熟語モンに なるわよ！",
   "ようこそ チュウブへ！ やまと ゆきの くにの かんじが まっているわ！": "ようこそ チュウブへ！ 山と 雪の 国の 漢字が 待っているわ！",
   "つぎは とおい みなみの くに。ひこうきで いっきに とぶわよ！": "次は 遠い 南の 国。飛行機で 一気に 飛ぶわよ！",
-  "ここが みんなの まちよ！ どうぐやで かいものが できるわ。つかれたら やどで やすんでね": "ここが みんなの 町よ！ 道具屋で 買い物が できるわ。疲れたら 宿で 休んでね",
+  "ここが みんなの まちよ！ どうぐやで かいものが できるわ。": "ここが みんなの 町よ！ 道具屋で 買い物が できるわ。",
   "ここは しょどうきょうしつ。じが うまれる ばしょよ。せんせいの せきの まえで かきとりの れんしゅうが できるよ": "ここは 書道教室。字が 生まれる 場所よ。先生の 席の 前で 書き取りの 練習が できるよ",
   "たてものの なかにも はいれるように なったわ！ 🚪の マークを ふむと そとに でられるの": "建物の 中にも 入れるように なったわ！ 🚪の マークを 踏むと 外に 出られるの",
   "ここが えきだよ！ ここから しんかんせんに のれるんだ。ついてきて！": "ここが 駅だよ！ ここから 新幹線に 乗れるんだ。ついてきて！",
@@ -13651,7 +13651,7 @@ function sendHomeAllTired(source){
   fieldHx=f.x; fieldHy=f.y;
   showScreen('screen-field');
   renderField();
-  showFieldBanner('みんな つかれちゃった… まちの やどに とうちゃく！');
+  showFieldBanner('みんな つかれちゃった… じぶんの いえに とうちゃく！');
   // バナー（2.2秒）を見せ終えてから、やどオーバーレイを自動で開く（fieldSeq世代ガード＝ちず等で離脱済みなら開かない）
   const seq=fieldSeq;
   setTimeout(()=>{
@@ -13659,7 +13659,7 @@ function sendHomeAllTired(source){
     if(fieldZone!==TOWN_ZONE) return;
     const scr=$('screen-field');
     if(!scr || !scr.classList.contains('active')) return;
-    openInn(true);
+    openHome();
   },2300);
 }
 function genkiSelfTest(){
@@ -25860,8 +25860,8 @@ function fieldDoorLabel(ch){
   const en=window.KanjimonGameI18n?.active,t=source=>window.KanjimonGameI18n?.t(source)||source;
   const title=source=>t(source).replace(/^[^A-Za-z]*/,'');
   if(fieldZone===TOWN_ZONE){
-    const names={L:['けんきゅうじょ'],D:['どうぐや'],Y:['やど','むりょう'],H:['おてつだい'],M:['モール','にくや・ふくや'],K:['みんか'],G:['がっこう'],F:['しょどうきょうしつ'],N:['とけいとう','じゅんびちゅう'],O:['じぶんの いえ'],P:['えき',STATION_OPEN?'':'じゅんびちゅう'],Q:['ゲームセンター','じゅんびちゅう'],V:['むらへ',unlocked>=STAGE2_COUNT+1?'':'まだ とおれない']};
-    if(en){const english={L:[t('けんきゅうじょ')],D:[title('🛍️ どうぐや')],Y:[title('🛏️ やど'),'Free'],H:[title('📋 おてつだい')],M:[t('ショッピングモール'),'Butcher / Clothes'],K:['House'],G:['School'],F:[t('しょどうきょうしつ')],N:['Clock Tower','Coming soon'],O:[title('🏡 じぶんの いえ')],P:['Station',STATION_OPEN?'':'Coming soon'],Q:['Game Center','Coming soon'],V:['To the Village',unlocked>=STAGE2_COUNT+1?'':'Keep adventuring']};return english[ch]||null;}
+    const names={L:['けんきゅうじょ'],D:['どうぐや'],Y:['やど','むりょう'],H:['おてつだい'],M:['モール','にくや・ふくや'],K:['みんか'],G:['がっこう'],F:['しょどうきょうしつ'],N:['とけいとう','おてつだい'],O:['じぶんの いえ'],P:['えき',STATION_OPEN?'':'じゅんびちゅう'],Q:['ゲームセンター','じゅんびちゅう'],V:['むらへ',unlocked>=STAGE2_COUNT+1?'':'まだ とおれない']};
+    if(en){const english={L:[t('けんきゅうじょ')],D:[title('🛍️ どうぐや')],Y:[title('🛏️ やど'),'Free'],H:[title('📋 おてつだい')],M:[t('ショッピングモール'),'Butcher / Clothes'],K:['House'],G:['School'],F:[t('しょどうきょうしつ')],N:['Clock Tower',title('📋 おてつだい')],O:[title('🏡 じぶんの いえ')],P:['Station',STATION_OPEN?'':'Coming soon'],Q:['Game Center','Coming soon'],V:['To the Village',unlocked>=STAGE2_COUNT+1?'':'Keep adventuring']};return english[ch]||null;}
     return names[ch]||null;
   }
   if(fieldZone<0){
@@ -32809,13 +32809,13 @@ const TOWN_DEF={
     'T..TTTTT......TT.......TTTTT.T',
     'T..TTTTT...............TTDTT.T',
     'T..TTOTT...............T..TT.T',
-    'T.........TT........Y........T',
+    'T.........TT.................T',
     'T.........TT......TT.........T',
     'T.........TT......TTT......TTT',
     'TT.......TTT.......TTTTTTTTTTT',
     'TTTTTTTTTTTTTT..TTTTTTTTTTTTTT',
     'TTTTTTTTTTTTTT..TTTTTTTTTTTTTT',
-    'TTTTT.........SH..............',
+    'TTTTT.........S...............',
     '..............................',
     '..............................',
     'TTTTTTTTTTTT.......TTTTTTTT...',
@@ -33813,9 +33813,9 @@ const INTERIOR_ACTORS=[
      ★**通行判定には関わらない**（画面に重ねるだけ＝マローズの .passerby と同じ考え方）。
        だからグリッドの文字は足していない＝既存101ゾーンと室内の通行は1マスも変わらない。
      ★静止画（顔カード用）は持たせていない＝`img` なし。会話もまだ付けていない（立たせているだけ）。 */
-  {zone:TOWN_ZONE,   key:'mobOtonaMA', sheet:'npc-mob-otona-m-a.webp', x:5, y:5,  dir:'down', frame:'a', scale:1.4},
+  /* ★2026-11-04 2人を外した＝時計台の横(5,5)の大人と、自分の家の前(5,13)の子ども。
+     すり抜けるうえ話しかけても何もないため。 */
   {zone:TOWN_ZONE,   key:'mobOtonaFA', sheet:'npc-mob-otona-f-a.webp', x:20,y:6,  dir:'down', frame:'a', scale:1.4},
-  {zone:TOWN_ZONE,   key:'mobKodomoMA',sheet:'npc-mob-kodomo-m-a.webp',x:5, y:13, dir:'down', frame:'a', scale:1.0},
   {zone:TOWN_ZONE,   key:'mobObaaA',   sheet:'npc-mob-obaa-a.webp',    x:25,y:13, dir:'down', frame:'a', scale:1.4},
   {zone:MALL_ZONE,   key:'mobOtonaFB', sheet:'npc-mob-otona-f-b.webp', x:5, y:6,  dir:'down', frame:'a', scale:1.4},
   {zone:MALL_ZONE,   key:'mobKodomoFA',sheet:'npc-mob-kodomo-f-a.webp',x:13,y:5,  dir:'down', frame:'a', scale:1.0},
@@ -33895,7 +33895,7 @@ let townFullartOK=false;
 /* §7：やど前（Yの1マス手前＝Yの真下）の座標。送還のワープ先 */
 function townInnFront(){
   const g=TOWN_DEF.grid;
-  for(let y=0;y<g.length;y++){ const x=g[y].indexOf('Y'); if(x>=0) return {x,y:Math.min(y+1,g.length-1)}; }
+  for(let y=0;y<g.length;y++){ const x=g[y].indexOf('O'); if(x>=0) return {x,y:Math.min(y+1,g.length-1)}; }   // ★2026-11-04 やど(Y)を外したので、送還先は自分の家(O)の前
   return {x:1,y:1};
 }
 /* §5-1：townSelfTest（既存セルフテストの流儀・起動時にコンソール出力） */
@@ -33904,7 +33904,7 @@ function townSelfTest(){
   const fails=[];
   if(!(g.length===40 && g.every(r=>r.length===30))) fails.push('サイズ30x40でない');
   const all=g.join('');
-  ['S','L','D','Y','H','M','K','G','F','N','O','P','Q','V'].forEach(c=>{ if((all.split(c).length-1)!==1) fails.push(c+'が1個でない'); });   // 発注T-1：Fを追加／発注_町北側：N(時計塔)・O(自分の家)を追加／発注_町南側と駅：P(駅いりぐち)・Q(ゲームセンター)を追加／発注_村1：V(むらへの入口)を追加
+  ['S','L','D','M','K','G','F','N','O','P','Q','V'].forEach(c=>{ if((all.split(c).length-1)!==1) fails.push(c+'が1個でない'); });   // 発注T-1：Fを追加／発注_町北側：N(時計塔)・O(自分の家)を追加／発注_町南側と駅：P(駅いりぐち)・Q(ゲームセンター)を追加／発注_村1：V(むらへの入口)を追加
   // 検品修正弾3-14：/[,A-J>]/ だと町の正規記号D(どうぐや)・H(けいじばん)がA-J範囲に含まれ誤検知するため、D/Hを除外
   if(/[,>]/.test(all) || /[ABCEIJ]/.test(all)) fails.push('くさむら/すみか/ゲートあり');   // 発注T-1：Fを町の正規記号にしたためA-Jの除外対象からも外す
   if(/[^SLDYHMKGFTRNOPQV.]/.test(all)) fails.push('不正な記号あり');   // 発注T-1：Fを追加／発注_町北側：N・Oを追加／発注_町南側と駅：P・Qを追加／発注_村1：Vを追加
@@ -33927,7 +33927,7 @@ function townSelfTest(){
       seen.add(ny*W+nx); q.push([nx,ny]);
     });
   }
-  ['L','D','Y','H','M','K','G','F','N','O','P','Q','V'].forEach(c=>{ if(!reached[c]) fails.push('S→'+c+'到達不能'); });
+  ['L','D','M','K','G','F','N','O','P','Q','V'].forEach(c=>{ if(!reached[c]) fails.push('S→'+c+'到達不能'); });
   const ep=SCHOOL_TOWN_CONFIG.entrance,rp=SCHOOL_TOWN_CONFIG.returnTo,bp=SCHOOL_TOWN_CONFIG.building;
   if(g[ep.y]&&g[ep.y][ep.x]!=='G') fails.push('学校入口設定とGが不一致');
   if(Math.abs(ep.x-rp.x)+Math.abs(ep.y-rp.y)!==1) fails.push('学校入口とreturnToが隣接していない');
@@ -33956,7 +33956,7 @@ function warpTown(){
   renderField();
   if(!townGuideSeen){
     townGuideSeen=true; save();
-    hakaseTalkOnce('ここが みんなの まちよ！ どうぐやで かいものが できるわ。つかれたら やどで やすんでね',null,'bh27');
+    hakaseTalkOnce('ここが みんなの まちよ！ どうぐやで かいものが できるわ。',null,'bh27');
     const guide=$('hakaseTalkWin');
     if(guide){
       guide.classList.add('has-town-guide');const note=document.createElement('div');note.className='town-guide-note';
@@ -33981,7 +33981,7 @@ function onArriveTownTile(ch){
   if(ch==='G'){ warpInterior(SCHOOL_ZONE); return; }
   if(ch==='F'){ warpInterior(SHODO_ZONE); return; }   // 発注T-1
   if(ch==='O'){ openHome(); return; }   // 発注_町北側：自分の家（新規・やどとは別施設）
-  if(ch==='N'){ showFieldBanner('とけいとうは まだ なかに はいれないみたい…'); return; }   // 発注_町北側：時計塔（機能未実装・タップで軽い反応のみ）
+  if(ch==='N'){ openOtetsudai(); return; }   // ★2026-11-04 草地に浮いていたおてつだい掲示板(H)を外し、中身を時計台へ引越し
   if(ch==='P'){ if(STATION_OPEN){ warpInterior(STATION_ZONE); }else{ showFieldBanner('えきは まだ りようできないみたい。もうすこし まってね'); } return; }   // 発注_町南側と駅：駅いりぐち（ロック中はNと同じ軽い反応パターン）
   if(ch==='Q'){ showFieldBanner('ゲームセンターは まだ じゅんびちゅうみたい…'); return; }   // 発注_町南側と駅：ゲームセンター（新規・タップ反応のみ・内部は作らない）
   if(ch==='V'){   // 発注_村1：むらへの入口（3年生＝カンサイ・シコク到達で解禁）
