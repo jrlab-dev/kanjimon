@@ -13,19 +13,24 @@
  const video=host.querySelector('video'),start=host.querySelector('.opening-start'),play=host.querySelector('[data-play]'),mute=host.querySelector('[data-sound]'),skip=host.querySelector('[data-skip]'),app=document.getElementById('app');
  const oldOverflow=document.body.style.overflow;
  const background=Array.from(document.body.children).filter(el=>el!==host).map(el=>[el,el.inert]);
- let active=true,state='ready',attempt=0,resumeAfterHidden=false,lastTime=0,lastProgress=performance.now();
+ let active=true,state='ready',attempt=0,resumeAfterHidden=false,lastTime=0,lastProgress=performance.now(),titleTimer=null;
  function setState(s){state=s;host.dataset.state=s;}
  function syncSound(){video.muted=!soundOn;mute.textContent=soundOn?L.mute:L.unmute;}
  function finish(reason,restoreTitle=true){
+  if(!restoreTitle&&titleTimer!==null){clearTimeout(titleTimer);titleTimer=null;}
   if(!active)return;
   active=false;attempt++;setState('finished');clearInterval(watchdog);
   document.removeEventListener('visibilitychange',visibility);document.removeEventListener('keydown',key,true);
   video.pause();video.removeAttribute('src');video.load();host.hidden=true;background.forEach(([el,inert])=>{el.inert=inert;});document.body.style.overflow=oldOverflow;
   if(restoreTitle){
-   // 動画の曲を引き継がず、タイトル・初回登録用の曲へ接続。
-   bgmOpeningTitleActive=true;bgmOpeningFinished=true;_bgmTitle();
    const button=document.querySelector('#screen-title .title-btns button[onclick="goField()"]');button?.focus({preventScroll:true});
-   continueAfterOpeningMovie();
+   // 画面が切り替わってから一拍置き、動画と次の曲を分ける。
+   titleTimer=setTimeout(()=>{
+    titleTimer=null;
+    if(!document.getElementById('screen-title')?.classList.contains('active'))return;
+    bgmOpeningTitleActive=true;bgmOpeningFinished=true;_bgmTitle();
+    continueAfterOpeningMovie();
+   },600);
   }
   host.dataset.finishReason=reason;
  }
@@ -69,6 +74,6 @@
  video.addEventListener('error',()=>{if(active&&video.getAttribute('src'))failed();});
  document.addEventListener('visibilitychange',visibility);document.addEventListener('keydown',key,true);
  const watchdog=setInterval(()=>{if(active&&!document.hidden&&state!=='ready'&&performance.now()-lastProgress>15000)failed();},1000);
- window.OpeningMovie={isActive:()=>active,skip:()=>finish('skip'),cancel:()=>finish('navigation',false),syncSound};
+ window.OpeningMovie={isActive:()=>active||titleTimer!==null,skip:()=>finish('skip'),cancel:()=>finish('navigation',false),syncSound};
  background.forEach(([el])=>{el.inert=true;});document.body.style.overflow='hidden';bgmPause();syncSound();setState('ready');play.focus({preventScroll:true});
 })();

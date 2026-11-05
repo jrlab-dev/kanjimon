@@ -41,13 +41,26 @@
   };
   Object.values(TIMING).forEach(t=>{t.soundCues.forEach(Object.freeze);Object.freeze(t.soundCues);Object.freeze(t);});Object.freeze(TIMING);
   const FIRE_TIMING={
-    mid:{duration:2000,impact:850,hitDelay:490,soundCues:[{level:'max',at:0,volume:.4},{sound:'magic-hi-burst',at:850,volume:.65}]},
-    max:{duration:4000,impact:3150,hitDelay:2790,flashAt:3150,soundCues:[{level:'mid',at:0,volume:.22},{level:'max',at:1000,volume:.45},{sound:'magic-hi-vortex',at:1800,volume:.5},{sound:'magic-hi-burst',at:3150,volume:.85}]}
+    mid:{duration:2000,impact:850,hitDelay:490,soundCues:[{level:'max',at:0,volume:.4}]},
+    max:{duration:4000,impact:3150,hitDelay:2790,flashAt:3150,soundCues:[{level:'mid',at:0,volume:.22},{level:'max',at:1000,volume:.45},{sound:'magic-hi-vortex',at:1800,volume:.5}]}
   };
   Object.values(FIRE_TIMING).forEach(t=>{t.soundCues.forEach(Object.freeze);Object.freeze(t.soundCues);Object.freeze(t);});Object.freeze(FIRE_TIMING);
-  const EARTH_MAX={duration:4000,impact:3150,hitDelay:2790,flashAt:3150,soundCues:[{level:'mid',at:0,volume:.22},{sound:'magic-hi-burst',at:1100,volume:.25},{sound:'magic-hi-burst',at:1800,volume:.35},{sound:'magic-hi-burst',at:2500,volume:.45},{sound:'magic-hi-burst',at:3150,volume:.8}]};
+  const EARTH_MAX={duration:4000,impact:3150,hitDelay:2790,flashAt:3150,soundCues:[{level:'mid',at:0,volume:.22}]};
   EARTH_MAX.soundCues.forEach(Object.freeze);Object.freeze(EARTH_MAX.soundCues);Object.freeze(EARTH_MAX);
-  const timing=(level,type)=>type==='ひ'&&FIRE_TIMING[level]||type==='岩'&&level==='max'&&EARTH_MAX||TIMING[level]||TIMING.mid;
+  const IMPACT_LAYERS={
+    'ひ':[{sound:'magic-impact-explosion-double',at:3150,volume:1}],
+    '岩':[{sound:'magic-impact-rock',at:1100,volume:.32},{sound:'magic-impact-rock',at:1800,volume:.39},{sound:'magic-impact-rock',at:2500,volume:.46},{sound:'magic-impact-big-double',at:2600,volume:1}],
+    'かみなり':[{sound:'magic-impact-thunder-double',at:950,volume:1}]
+  };
+  const layeredMax={};
+  Object.keys(IMPACT_LAYERS).forEach(type=>{
+    const base=type==='ひ'?FIRE_TIMING.max:type==='岩'?EARTH_MAX:TIMING.max;
+    const cues=base.soundCues.concat(IMPACT_LAYERS[type]).sort((a,b)=>a.at-b.at);
+    cues.forEach(Object.freeze);Object.freeze(cues);
+    layeredMax[type]=Object.freeze(Object.assign({},base,{soundCues:cues,visualDuration:4000,duration:{'ひ':4380,'岩':4670,'かみなり':5450}[type]}));
+  });
+  Object.freeze(layeredMax);
+  const timing=(level,type)=>level==='max'&&layeredMax[type]||type==='ひ'&&FIRE_TIMING[level]||type==='岩'&&level==='max'&&EARTH_MAX||TIMING[level]||TIMING.mid;
   function play(scene,type,level){
     if(active) active.stop();
     const screen=document.getElementById('screen-battle'), enemy=document.getElementById('enemyChar');
@@ -58,7 +71,7 @@
     const effectH=Math.max(150,Math.min(h,(mr&&mr.top>sr.top+150?mr.top-sr.top-8:h*.65)));
     if(w<1||h<1) return;
     // 新弱＝旧中、新中＝旧最強。legacyの数式と経過時刻をそのまま保持する。
-    const ultimate=level==='max',rank=level==='weak'?1:2,spec=timing(level,type),duration=spec.duration;
+    const ultimate=level==='max',rank=level==='weak'?1:2,spec=timing(level,type),duration=spec.visualDuration||spec.duration;
     const impact=spec.impact,S=[.52,.78,1.18][rank];
     const targetX=er&&er.width?er.left+er.width*.5-sr.left:w*.78;
     const x=targetX;
@@ -80,7 +93,7 @@
     const partyRects=partyRow&&partyRow.querySelectorAll?Array.from(partyRow.querySelectorAll('.pbtn.pfield .pc,.hero-back img')).map(el=>{const r=el.getBoundingClientRect();return {left:r.left-sr.left,top:r.top-sr.top,width:r.width,height:r.height,bottom:r.bottom-sr.top,hero:el.tagName==='IMG'};}).filter(r=>r.width>0&&r.height>0):[];
     const firstAlly=partyRects.find(r=>!r.hero),departureX=Math.min(targetX-w*.18,firstAlly?firstAlly.left+firstAlly.width*.5:w*.30),departureY=Math.max(floor+Math.min(90,w*.24),Math.min(firstAlly?firstAlly.bottom-20:floor+w*.30,h*.65));
     if(partyLayer){partyRow.style.zIndex='5';if(window.getComputedStyle&&window.getComputedStyle(partyRow).position==='static')partyRow.style.position='relative';box.magicPartyProtection={originalZ:partyLayer.z,activeZ:'5',rects:partyRects,restored:false};}
-    function stop(){if(stopped)return;stopped=true;cancelAnimationFrame(raf);clearTimeout(cleanup);clearTimeout(shakeTimer);box.remove();if(partyLayer){partyRow.style.zIndex=partyLayer.z;partyRow.style.position=partyLayer.position;box.magicPartyProtection.restored=true;}if(shook&&app)app.classList.remove('shake');if(active&&active.box===box)active=null;}
+    function stop(completed=false){if(stopped)return;stopped=true;box.magicCompleted=completed;cancelAnimationFrame(raf);clearTimeout(cleanup);clearTimeout(shakeTimer);box.remove();if(partyLayer){partyRow.style.zIndex=partyLayer.z;partyRow.style.position=partyLayer.position;box.magicPartyProtection.restored=true;}if(shook&&app)app.classList.remove('shake');if(active&&active.box===box)active=null;}
     function path(points){c.beginPath();points.forEach((p,i)=>i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1]));}
     function stroke(col,width,a=1){c.globalAlpha=clamp(a);c.strokeStyle=col;c.lineWidth=width;c.stroke();c.globalAlpha=1;}
     function glow(col,cx,cy,rx,ry,a=1){if(rx<=0||ry<=0||a<=0)return;c.save();c.translate(cx,cy);c.scale(1,ry/rx);const g=c.createRadialGradient(0,0,0,0,0,rx);g.addColorStop(0,col);g.addColorStop(.3,col);g.addColorStop(1,'transparent');c.globalAlpha=clamp(a);c.fillStyle=g;c.beginPath();c.arc(0,0,rx,0,TAU);c.fill();c.restore();}
@@ -698,7 +711,7 @@
     function frame(now){
       if(stopped)return;
       if(!box.isConnected||!screen.classList.contains('active')||(seq!==null&&seq!==spawnSeq)){stop();return;}
-      const t=now-started;if(t>=duration){stop();return;}
+      const t=now-started;if(t>=duration){stop(true);return;}
       render(t);
       if(rank===2&&!shook&&t>=impact){shook=true;if(app)app.classList.add('shake');shakeTimer=setTimeout(()=>{if(app)app.classList.remove('shake');},280);}
       raf=requestAnimationFrame(frame);
@@ -706,8 +719,8 @@
     // 検品は実描画を同じ関数で任意時点へ進める。ゲーム中は自動で再生。
     box.magicSeek=ms=>{cancelAnimationFrame(raf);clearTimeout(cleanup);render(ms);};
     box.magicStop=stop;box.dataset.duration=duration;box.dataset.targetX=targetX.toFixed(1);box.dataset.targetY=floor.toFixed(1);
-    active={box,stop};render(0);raf=requestAnimationFrame(frame);cleanup=setTimeout(stop,duration+80);
+    active={box,stop};render(0);raf=requestAnimationFrame(frame);cleanup=setTimeout(()=>stop(true),duration+80);
     return box;
   }
-  window.KanjimonMagic={play,timing,stop:()=>{if(active)active.stop();},loadedTextures:()=>Object.keys(textures),loadedThunderTextures:()=>Object.keys(thunderTextures),loadedUltimateTextures:()=>Object.keys(ultimateTextures)};
+  window.KanjimonMagic={play,timing,stop:()=>{if(active)active.stop();if(typeof stopMagicSound==='function')stopMagicSound();},loadedTextures:()=>Object.keys(textures),loadedThunderTextures:()=>Object.keys(thunderTextures),loadedUltimateTextures:()=>Object.keys(ultimateTextures)};
 })();

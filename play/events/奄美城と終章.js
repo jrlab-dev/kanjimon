@@ -9,7 +9,7 @@
  });
  const FINAL_LINE='だいじょうぶ。なにも おぼえなくて いいよ。たのしむだけで いいんだ。イージーだよ';
  function createView(episode){
-  const basic=AmamiLate.createView(episode),s=basic.scene,c=AmamiLate.config[episode];let finalAudio=null,disposed=false,glimpseId=0;
+  const basic=AmamiLate.createView(episode),s=basic.scene,c=AmamiLate.config[episode];let finalAudio=null,disposed=false,glimpseId=0,comic=null;
   const state=()=>amamiFinal['episode'+episode];
   const add=(id,html,cls='')=>{const el=document.createElement('div');el.id=id;el.className=cls;el.innerHTML=html;$('amamiLateRoot').appendChild(el);return el;};
   const heroSheet=()=>heroSheetUrl();
@@ -22,7 +22,13 @@
    else s.later(()=>s.talk(global.AmamiStoryUI.rows(episode,'entry',c.entry),done),1700);
   }
   function afterWord(done){
-   if(episode===10){s.base();decor();$('ayGear').classList.add('answer-turn');s.later(()=>s.finish(done),1100);return;}
+   if(episode===10){
+    s.base();const cut=add('ayGearCut','<div class="ay-gear-result"><div class="ay-gear-wheel" role="img" aria-label="軽やかに回る歯車"></div><p></p></div>');
+    cut.dataset.beat='waiting';cut.querySelector('p').textContent=AMAMI_LATE_WORDS[10][Math.max(0,state().mainIndex-1)];
+    s.later(()=>{cut.dataset.beat='turning';cut.querySelector('.ay-gear-wheel').getAnimations().forEach(a=>a.updatePlaybackRate(14));},650);
+    s.later(()=>{cut.dataset.beat='settled';cut.querySelector('.ay-gear-wheel').getAnimations().forEach(a=>a.updatePlaybackRate(1));},2050);
+    s.later(()=>{cut.remove();s.finish(done);},2450);return;
+   }
    if(episode!==9){done();return;}s.base();const step=state().mainIndex;
    const cut=global.AmamiBlocks.create($('amamiLateRoot'),{step:Math.max(0,step-1),later:s.later});cut.focus();
    const ids=global.AmamiBlocks.parts.filter(p=>p.step===step).map(p=>p.id);
@@ -55,31 +61,27 @@
    if(episode===9){
     document.querySelector('.acb-field')?.remove();
     const cut=global.AmamiBlocks.create($('amamiLateRoot'),{step:5,roof:state().castleRoofPlaced,later:s.later});cut.focus();
-    const linger=()=>{cut.setWide();s.later(()=>s.talk(global.AmamiStoryUI.rows(9,'after'),()=>{cut.close();decor();afterWords();}),2000);};
+    const linger=()=>{cut.setWide().then(()=>{if(!cut.root.isConnected)return;s.later(()=>s.talk(global.AmamiStoryUI.rows(9,'after'),()=>{cut.close();decor();afterWords();}),2000);});};
     if(state().castleRoofPlaced){linger();return;}
     s.later(()=>{cut.suggestRoof();s.talk(rows,()=>cut.place(['C2'],linger,()=>{state().castleRoofPlaced=true;save();}));},900);
    }else s.later(()=>s.talk(rows,afterWords),900);
   }
-  async function epilogue(done){
-   s.base();const owner=$('amamiLateRoot'),id=++glimpseId;
+  function epilogue(done){
+   comic?.stop();comic=null;s.base();const owner=$('amamiLateRoot'),id=++glimpseId;
    const hero=$('fieldHero'),easy=$('amamiEasy'),heroVisibility=hero.style.visibility,easyVisibility=easy.style.visibility;
-   const panels=[['amami-toy-castle-floor4.webp',null],['zone47.webp','traveler'],['zone78.webp','historian'],['amami-toy-castle-floor3.webp','inventor'],['amami-main-03-naze-town.webp','older']];
-   const sheet=heroSheetUrl(),peer='images/easy-motion/easy_15_walk_down/stand.png';
-   const split=add('aySplit',panels.map((p,i)=>'<section class="ay-pane" style="background-image:url(images/fullart/'+p[0]+')">'+(i===0?'<span class="ay-main-child" role="img" aria-label="主人公の後ろ姿" style="background-image:url('+sheet+')"></span>':'<span class="ay-new-child" role="img" aria-label="見知らぬ人物の後ろ姿" style="background-image:url(images/amami-cast/'+p[1]+'.png)"></span>')+'<img class="ay-copy-easy" src="'+peer+'" alt="向き合うイージー"></section>').join(''));
-   split.dataset.beat='loading';split.setAttribute('aria-hidden','true');
-   const alive=()=>!disposed&&id===glimpseId&&owner.isConnected&&split.isConnected;
-   let finished=false,timeout;
-   const finish=()=>{if(finished||!alive())return;finished=true;split.remove();owner.classList.remove('final-stage');hero.style.visibility=heroVisibility;easy.style.visibility=easyVisibility;done();};
-   try{
-    const urls=[sheet,peer,...panels.map(p=>'images/fullart/'+p[0]),...panels.filter(p=>p[1]).map(p=>'images/amami-cast/'+p[1]+'.png')];
-    await Promise.race([Promise.all([...new Set(urls)].map(src=>{const image=new Image();image.src=src;return image.decode();})),new Promise((_,reject)=>{timeout=setTimeout(()=>reject(Error('glimpse images')),4000);})]);
-    if(!alive())return;
-    AmamiMotion.stop();owner.classList.add('final-stage');hero.style.visibility='hidden';easy.style.visibility='hidden';
-    split.dataset.beat='glimpse';split.removeAttribute('aria-hidden');
-    s.later(finish,1800);
-   }catch(e){finish();}finally{clearTimeout(timeout);}
+   const alive=()=>!disposed&&id===glimpseId&&owner.isConnected;
+   let finished=false;
+   const finish=()=>{if(finished||!alive())return;finished=true;comic=null;owner.classList.remove('final-stage');hero.style.visibility=heroVisibility;easy.style.visibility=easyVisibility;done();};
+   if(!global.AmamiComic){finish();return;}
+   const costume=costumeSuffix(),character=heroChar==='girl'?'girl':'boy';
+   comic=global.AmamiComic.play({host:owner,
+    heroBack:'images/battle-tate/hero-back-'+character+costume+'.webp',
+    heroReady:'images/battle-tate/hero-ready-'+character+costume+'.webp',
+    onReady(){if(!alive())return;AmamiMotion.stop();owner.classList.add('final-stage');hero.style.visibility='hidden';easy.style.visibility='hidden';},
+    onDone:finish
+   });
   }
-  function destroy(){disposed=true;glimpseId++;AmamiMotion.stop();if(finalAudio){finalAudio.pause();finalAudio=null;endingAudio=null;}const h=$('fieldHero');if(h)h.style.visibility='';basic.destroy();}
+  function destroy(){disposed=true;glimpseId++;comic?.stop();comic=null;AmamiMotion.stop();if(finalAudio){finalAudio.pause();finalAudio=null;endingAudio=null;}const h=$('fieldHero');if(h)h.style.visibility='';basic.destroy();}
   return {entry:AmamiMotion.fieldEvent(entry),encounter:AmamiMotion.fieldEvent(encounter),mid:AmamiMotion.fieldEvent(mid),ending:AmamiMotion.fieldEvent(ending),afterWord:AmamiMotion.fieldEvent(afterWord),epilogue:AmamiMotion.fieldEvent(epilogue),retry:basic.retry,hide:basic.hide,destroy};
  }
  global.AmamiCastle={createView,finalLine:FINAL_LINE,onSoundToggle(){global.AmamiVoice.onSoundToggle();if(endingAudio){if(!soundOn)endingAudio.pause();else endingAudio.play().catch(()=>{});}}};

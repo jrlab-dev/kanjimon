@@ -1,7 +1,16 @@
 #aySteps{position:absolute;left:calc(var(--stack-x)*var(--tile));top:calc(var(--stack-y)*var(--tile));width:calc(1.35*var(--tile));transform:translate(-50%,-100%);z-index:10;display:flex;flex-direction:column-reverse;align-items:center;gap:2px;pointer-events:none}#aySteps i{display:block;width:100%;height:5px;background:linear-gradient(#fff1b3,#ce982b);border:1px solid #a7792a;border-radius:3px;opacity:1;transform:none}#aySteps i:nth-child(2){width:85%}#aySteps i:nth-child(3){width:70%}#aySteps i:nth-child(4){width:55%}#aySteps i:nth-child(5){width:40%}
 #aySteps i.ay-shared-block{width:28%;height:6px;background:linear-gradient(#ffe7a9,#e56c40);border-color:#aa512f;opacity:1;transform:translate(-75px,38px) rotate(-15deg);transition:transform .65s cubic-bezier(.2,.8,.2,1),opacity .65s;box-shadow:0 3px 4px #0004}
 #aySteps i.ay-shared-block.placed{transform:translate(0,0) rotate(0)}
-#ayGear{position:absolute;right:8%;top:26%;font-size:64px;color:#967030b0;animation:ayGear 12s linear infinite;pointer-events:none}#ayGear.slow{animation-duration:35s}@keyframes ayGear{to{transform:rotate(360deg)}}
+#ayGear{position:absolute;right:8%;top:26%;width:64px;height:64px;animation:ayGear 35s linear infinite;pointer-events:none}@keyframes ayGear{to{transform:rotate(360deg)}}
+#ayGear,#ayBattleGear,.ay-gear-wheel{font-size:0;background:url('../images/amami-blocks/brass-gear.svg') center/contain no-repeat}
+#ayBattleGear{width:40px;height:40px}
+#ayGearCut{position:absolute;inset:72px 0 0;z-index:8;container-type:size;display:grid;place-items:center;background:url('../images/fullart/amami-toy-castle-floor2.webp') center/cover;pointer-events:none}
+.ay-gear-result{width:92%;display:flex;flex-direction:column;align-items:center;gap:24px;padding-bottom:8cqh}
+.ay-gear-wheel{width:min(68cqw,48cqh,280px);aspect-ratio:1;animation:ayGear 35s linear infinite;filter:drop-shadow(0 8px 5px #63391966);transition:filter .2s}
+#ayGearCut[data-beat=turning] .ay-gear-wheel,#ayGearCut[data-beat=settled] .ay-gear-wheel{filter:drop-shadow(0 0 14px #fff2af) drop-shadow(0 8px 5px #63391966)}
+.ay-gear-result p{margin:0;padding:8px 22px;border:2px solid #d6ac63;border-radius:16px;background:#fff8e9f2;color:#654019;font-size:clamp(22px,7cqw,32px);font-weight:900;letter-spacing:.12em;box-shadow:0 4px 12px #70461930}
+@media(max-height:650px){#ayGearCut{top:58px}.ay-gear-result{gap:12px;padding-bottom:0}}
+@media(prefers-reduced-motion:reduce){#ayBattleGear,.ay-gear-wheel{animation:none}.ay-gear-wheel{transition:none}}
 #ayAlmost{position:absolute;left:62%;top:39%;padding:5px 12px;background:#fff;color:#3b4e68;border-radius:14px;font-weight:900}
 #ayDoorWrap{position:absolute;left:50%;top:25%;transform:translateX(-50%);pointer-events:auto}#ayDoor{border:2px solid #fff;border-radius:14px;background:#204565e8;color:#fff;font-size:1rem;font-weight:900;padding:12px 20px;white-space:nowrap;cursor:pointer}
 #ayCastlePan{position:absolute;inset:0;z-index:8;background:url('../images/fullart/amami-castle-pan-v2.webp') center bottom/auto 145% no-repeat;opacity:1;transition:background-position 5.1s ease-in-out,opacity .9s;pointer-events:none}
@@ -9,7 +18,6 @@
 #ayFocus{position:absolute;left:15%;right:15%;top:21%;height:28%;display:flex;justify-content:center;background:radial-gradient(ellipse,#fff9,transparent 70%);pointer-events:none}#ayFocus .ay-focus-sprite{width:55%;aspect-ratio:1;background-size:300% 200%;background-position:0 0;background-repeat:no-repeat}#ayFocus.both .ay-focus-sprite{width:48%}
 
 .ay-focus-easy{width:35%;object-fit:contain}#ayFocus.both .ay-focus-easy{width:42%}
-#ayGear.answer-turn{animation-duration:2.5s}
 #amamiLateRoot.final-stage{background:#10251e}#amamiLateRoot.beach-stage{background:url('../images/fullart/amami-ending-beach.webp') center/cover}
 #aySplit{position:absolute;top:4%;left:50%;transform:translateX(-50%);width:94%;height:min(82dvh,calc(100dvh - 95px));overflow:hidden;border-radius:12px;background:#13261e;isolation:isolate}
 #aySplit .ay-pane{position:absolute;inset:0;background-size:200% 200%;background-position:50% 100%;color:white}
@@ -36,11 +44,15 @@ body.amami-late-mode .amami-easy .interior-npc-visual{filter:none}
 @media(max-height:620px){#ayFinalChoices{padding:6px;bottom:1%}#ayFinalChoices button{margin:2px 0}#aySplit{top:2%;height:min(82dvh,calc(100dvh - 85px))}#ayLastFrame{top:8%}}
 @media(prefers-reduced-motion:reduce){#ayGear,#aySteps.rebuild i{animation:none}#aySmile{transition:none}}
 
-/* 次回作の伏線：素材が揃うまでは本編の二人を表示。 */
+/* 次回作の伏線：素材が揃うまでは本編の二人を表示。説明・順番の紹介なし。 */
 #aySplit[data-beat=loading]{visibility:hidden}
 #amamiLateRoot.final-stage #ayChapter,#amamiLateRoot.final-stage #ayProgress{visibility:hidden}
-
 #aySplit{container-type:size}
 #aySplit .ay-main-child{width:min(12cqw,15cqh)}
 #aySplit .ay-new-child{width:min(9cqw,9cqh)}
 #aySplit .ay-copy-easy{width:min(10cqw,15cqh)}
+
+/* 採用4段。縦の原構図を全画面内に収め、横画面でも人物を伸ばさない。 */
+#ayComic{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#101916;z-index:20;overflow:hidden;pointer-events:none}
+#ayComic[data-beat=loading]{visibility:hidden}
+#ayComic canvas{display:block;width:min(100vw,65dvh);height:auto;max-width:100%;max-height:100%;aspect-ratio:390/600;object-fit:contain}

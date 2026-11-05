@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<script src="pwa/game-storage.js"></script>
-<script src="i18n/game-runtime.js?v=en-20261025"></script>
-<link rel="stylesheet" href="i18n/game.css?v=en-20261025">
+<script src="pwa/game-storage.js?v=20261105-sync"></script>
+<script src="i18n/game-runtime.js?v=20261105-sync"></script>
+<link rel="stylesheet" href="i18n/game.css?v=20261105-sync">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>かんじモンRPG｜小1の かんじを あそんで おぼえる むりょうゲーム</title>
@@ -620,6 +620,7 @@
   .dash-char-clone{position:fixed;margin:0!important;z-index:90;pointer-events:none;
     transition:none;animation:none;will-change:transform;font-size:2.1rem;
     filter:drop-shadow(0 3px 6px rgba(0,0,0,.3))}
+  /* 氷の城だけ：本人補正で正面の字と顔を保ち、二度跳んで攻撃する。 */
   .dash-char-clone.icd-attack-root{inset:0;filter:none;will-change:auto}
   .icd-attack-mover,.icd-attack-shadow{position:absolute;left:0;top:0;will-change:transform}
   .icd-attack-mover{transform-origin:50% 100%;filter:drop-shadow(0 2px 2px #03182466)}
@@ -1637,6 +1638,10 @@
   .battle-hakase-face.has-img{background-size:cover;background-position:center top;font-size:0}
   .battle-hakase-text{font-weight:900;font-size:.92rem;line-height:1.35;text-align:left}
   .hakase-talk-text{font-weight:900;font-size:1.148rem;line-height:1.4;text-align:left}   /* .82rem*1.4＝1.148rem（§3：文字1.4倍） */
+  /* 1年の会話：短い意味のまとまりは次行へ送る。画面より長いものだけ内部で折り返す。 */
+  .talk-phrase{display:inline-block;width:max-content;max-width:100%;vertical-align:top;
+    white-space:normal;word-break:normal;overflow-wrap:anywhere;text-indent:0}
+  .hakase-talk-text:has(.talk-phrase),.battle-hakase-text:has(.talk-phrase){min-width:0}
   /* 第5弾§1：十字ボタンはマップ右下に半透明オーバーレイ（マップのタイルが透けて見える） */
   .dpad{position:absolute;right:6px;bottom:6px;z-index:50;
     display:grid;grid-template-columns:repeat(3,44px);grid-template-rows:repeat(3,44px);gap:4px;
@@ -2003,17 +2008,22 @@
   /* ★S0・S7と同じく、画面の高さ基準にそろえる（8回目の直しがS0・S7だけで止まっていた。
      幅基準のままだと 320×568 で28px・480×900 で23px、キャラが敷居から浮く）。
      390×780 での見え方は今までとまったく同じになる値にしてある。 */
-  #spBgPier{position:absolute;top:0;height:100.5%;aspect-ratio:2/3;left:50%;transform:translateX(-50%);
+  #spBgPier,#spPierRail{position:absolute;top:0;height:100.5%;aspect-ratio:2/3;left:50%;transform:translateX(-50%);
     z-index:1;opacity:0;transition:opacity .5s ease}
-  #spBgPier.show{opacity:1}
-  #spBgPier img{height:100%;width:auto;display:block}
+  #spBgPier.show,#spPierRail.show{opacity:1}
+  #spBgPier img,#spPierRail svg{height:100%;width:auto;display:block}
   /* S6 函館到着（縦長1024×1536・奥行き）
      この絵はタラップが画面の左寄りにあるので、left を少し右へずらして左側を多めに見せる */
   /* S6も同じ。left:-10% は中央より絵幅の5.22%ぶん右にずれているので、その分だけ足す */
-  #spBgArrive{position:absolute;top:0;height:100.5%;aspect-ratio:2/3;left:50%;transform:translateX(-44.78%);
+  #spBgArrive,#spArriveRail{position:absolute;top:0;height:100.5%;aspect-ratio:2/3;left:50%;transform:translateX(-44.78%);
     z-index:1;opacity:0;transition:opacity .5s ease}
-  #spBgArrive.show{opacity:1}
-  #spBgArrive img{height:100%;width:auto;display:block}
+  #spBgArrive.show,#spArriveRail.show{opacity:1}
+  #spBgArrive img,#spArriveRail svg{height:100%;width:auto;display:block}
+  /* 原背景の手前側の手すり・支柱だけを同じ変換で再表示する。床や海は主人公を隠さない。 */
+  #spPierRail,#spArriveRail{z-index:7;pointer-events:none}
+  /* 入口左壁も元背景を同じ親の原寸で重ねる。出入り中だけ遮蔽し、手すりの形は保つ。 */
+  #spPierRail .sp-door-wall,#spArriveRail .sp-door-wall{position:absolute;left:0;top:0;opacity:0;pointer-events:none}
+  #spPierRail .sp-door-wall.show,#spArriveRail .sp-door-wall.show{opacity:1}
 
   /* S2 決めカット：超横長にして左へ舐める（新幹線の #tsHeroCut と同じ） */
   /* ★批判エージェントの指摘（1回目）＝390×780のときだけ、決めカットの最初の1.25秒に
@@ -3230,12 +3240,15 @@
   .sj-paper.in{transform:translateY(0);opacity:1}
   .sj-title{font-size:26px;font-weight:800;letter-spacing:.4em;color:#8a6d1f;
     margin-bottom:14px;text-indent:.4em}
+  #sjOverlay.grade1-readable .sj-title{white-space:nowrap;letter-spacing:.25em;text-indent:.25em}
   /* 弾EV-2：100%（かみさま）のときだけタイトルの下に出す★。既定は非表示（HTML側でdisplay:none） */
   .sj-star{font-size:20px;color:#d4a017;margin:-10px 0 12px;font-weight:900}
   /* 2026-08-14：17pxだと「1ねんせいの ぼうけんを やりとげま／した」と改行が割れて読みにくかった。
      1行に収まる大きさに下げた（賞状は親も読む紙なので、変な位置で切れないこと） */
   .sj-body{font-size:15px;font-weight:700;line-height:1.7;color:#3b3226;margin-bottom:14px;
     white-space:normal}
+  /* 1年は小さいスマホでも全文を読めるよう、意味のまとまりで折り返す。 */
+  .sj-body:has(.talk-phrase){white-space:normal}
   /* 弾EV-2：しょうごう＝いちばん目立たせる（発注書§2のCSSをそのまま採用） */
   .sj-rank{font-size:21px;font-weight:900;color:#8a6d1f;letter-spacing:.06em;margin:2px 0 10px}
   .sj-paper.kami .sj-rank{color:#a67c00}
@@ -3748,74 +3761,74 @@ body.ice-dungeon #fieldInfo{display:none}
 #evOverlay.dazaifu92.aso97 .ev-chara{width:calc(44% * var(--sz,1));max-width:calc(196px * var(--sz,1))}
 
 </style>
-<link rel="stylesheet" href="events/全国協力.css?walk=20261003d">
-<link rel="stylesheet" href="events/奄美入口.css?v=amami78-20260930">
-<link rel="stylesheet" href="events/奄美第1話.css?assets=20261025-lossless">
-<link rel="stylesheet" href="events/奄美第2話.css?assets=20261025-lossless">
-<script src="events/全国協力.js?walk=20261003d&music=20261004-release&assets=20261025-lossless&v=en-20261025" defer></script>
-<link rel="stylesheet" href="events/イージー演技.css">
-<script src="events/奄美音声台帳.js?v=ending-20261101" defer></script>
-<script src="events/奄美音声.js" defer></script>
-<script src="events/奄美物語台本.js?v=ending-20261101" defer></script>
-<script src="events/奄美会話.js?v=ending-20261101" defer></script>
-<script src="events/イージー演技.js?walk=20261003d" defer></script>
-<script src="events/奄美入口.js?walk=20261003d&music=20261004-release&assets=20261025-lossless&v=en-20261025" defer></script>
-<script src="events/奄美第1話.js?music=20261004-release&assets=20261025-lossless&v=en-20261025" defer></script>
-<script src="events/奄美第2話.js?music=20261004-release&assets=20261025-lossless&v=en-20261025" defer></script>
-<link rel="stylesheet" href="events/奄美第3話.css?assets=20261025-lossless">
-<script src="events/奄美第3話.js?music=20261004-release&assets=20261025-lossless&v=en-20261025" defer></script>
-<link rel="stylesheet" href="events/日本橋会話.css">
-<script src="events/日本橋会話.js" defer></script>
-<link rel="stylesheet" href="events/1年重要会話.css">
-<script src="events/1年重要会話.js" defer></script>
-<link rel="stylesheet" href="events/宇都宮会話.css">
-<script src="events/宇都宮会話.js" defer></script>
-<link rel="stylesheet" href="events/鋸山会話.css">
-<script src="events/鋸山会話.js?walk=20261003d&music=20261004-release" defer></script>
-<link rel="stylesheet" href="events/みやこあと会話.css?walk=20261003d">
-<script src="events/みやこあと会話.js?walk=20261003d&music=20261004-release" defer></script>
-<link rel="stylesheet" href="events/奄美第4話.css?assets=20261025-lossless">
-<script src="events/奄美第4話.js?music=20261004-release&assets=20261025-lossless&v=en-20261025" defer></script>
-<link rel="stylesheet" href="events/奄美第5-8話.css?v=amami78-20260930&assets=20261025-lossless">
-<script src="events/奄美第5-8話.js?v=story-20261016&assets=20261025-lossless&v=en-20261025" defer></script>
-<link rel="stylesheet" href="events/奄美城と終章.css?v=amami1112-20261001&assets=20261025-lossless">
-<link rel="stylesheet" href="events/奄美積み木.css?assets=20261025-lossless">
-<script src="events/奄美積み木.js" defer></script>
-<script src="events/奄美城と終章.js?walk=20261003d&assets=20261025-lossless" defer></script>
-<link rel="stylesheet" href="events/終章の暮らし.css?v=ending-20261101">
-<script src="events/終章の暮らし.js?v=ending-20261101" defer></script>
-<link rel="stylesheet" href="events/奄美終章.css?v=ending-20261101">
-<script src="events/奄美終章.js?v=ending-20261101" defer></script>
-<link rel="stylesheet" href="events/奄美歩行.css">
-<script src="events/奄美通行データ.js?assets=20261025-lossless" defer></script>
-<script src="events/奄美歩行.js?walk=20261003d" defer></script>
-<script src="events/相性魔法.js?v=20261003-adopted" defer></script>
-<link rel="stylesheet" href="events/つくば会話.css?v=events-20261003">
-<script defer src="events/つくば会話.js?v=events-20261003"></script>
-<link rel="stylesheet" href="events/琵琶湖会話.css?v=events-20261003">
-<script defer src="events/琵琶湖会話.js?walk=20261003d&music=20261004-release"></script>
-<link rel="stylesheet" href="events/祭り会話.css?v=events-20261003">
-<script defer src="events/祭り会話.js?walk=20261003d&music=20261004-release"></script>
-<link rel="stylesheet" href="events/2年フィナーレ.css?v=events-20261003">
-<script defer src="events/2年フィナーレ.js?v=events-20261003"></script>
-<link rel="stylesheet" href="events/4年会話.css?v=events-20261003">
-<script defer src="events/4年会話.js?walk=20261003d"></script>
-<link rel="stylesheet" href="events/南国会話.css?v=events-20261003">
-<script defer src="events/南国会話.js?walk=20261003d&music=20261004-release"></script>
-<link rel="stylesheet" href="events/くろしお会話.css?v=events-20261003">
-<script defer src="events/くろしお会話.js?walk=20261003d&music=20261004-release"></script>
-<link rel="stylesheet" href="events/金沢会話.css?v=events-20261003">
-<script defer src="events/金沢会話.js?walk=20261003d&music=20261004-release"></script>
-<link rel="stylesheet" href="events/うどんの里会話.css?v=events-20261003">
-<script defer src="events/うどんの里会話.js?walk=20261003d&v=en-20261025"></script>
-<link rel="stylesheet" href="events/opening-movie.css?v=20261008b">
-<script defer src="events/opening-movie.js?v=pwa-20261024&v=en-20261105b-op"></script>
+<link rel="stylesheet" href="events/全国協力.css?v=20261105-sync">
+<script src="events/相性魔法.js?v=20261105-sync" defer></script>
+<link rel="stylesheet" href="events/奄美入口.css?v=20261105-sync">
+<link rel="stylesheet" href="events/奄美第1話.css?v=20261105-sync">
+<link rel="stylesheet" href="events/奄美第2話.css?v=20261105-sync">
+<script src="events/全国協力.js?v=20261105-sync" defer></script>
+<link rel="stylesheet" href="events/イージー演技.css?v=20261105-sync">
+<script src="events/奄美音声台帳.js?v=20261105-sync" defer></script>
+<script src="events/奄美音声.js?v=20261105-sync" defer></script>
+<script src="events/奄美物語台本.js?v=20261105-sync" defer></script>
+<script src="events/奄美会話.js?v=20261105-sync" defer></script>
+<script src="events/イージー演技.js?v=20261105-sync" defer></script>
+<script src="events/出雲同時学習.js?v=20261105-sync" defer></script>
+<script src="events/奄美入口.js?v=20261105-sync" defer></script>
+<script src="events/奄美第1話.js?v=20261105-sync" defer></script>
+<script src="events/奄美第2話.js?v=20261105-sync" defer></script>
+<link rel="stylesheet" href="events/奄美第3話.css?v=20261105-sync">
+<script src="events/奄美第3話.js?v=20261105-sync" defer></script>
+<link rel="stylesheet" href="events/日本橋会話.css?v=20261105-sync">
+<script src="events/日本橋会話.js?v=20261105-sync" defer></script>
+<link rel="stylesheet" href="events/1年重要会話.css?v=20261105-sync">
+<script src="events/1年重要会話.js?v=20261105-sync" defer></script>
+<link rel="stylesheet" href="events/宇都宮会話.css?v=20261105-sync">
+<script src="events/宇都宮会話.js?v=20261105-sync" defer></script>
+<link rel="stylesheet" href="events/つくば会話.css?v=20261105-sync">
+<script src="events/つくば会話.js?v=20261105-sync" defer></script>
+<link rel="stylesheet" href="events/鋸山会話.css?v=20261105-sync">
+<script src="events/鋸山会話.js?v=20261105-sync" defer></script>
+<link rel="stylesheet" href="events/琵琶湖会話.css?v=20261105-sync">
+<link rel="stylesheet" href="events/祭り会話.css?v=20261105-sync">
+<script src="events/琵琶湖会話.js?v=20261105-sync" defer></script>
+<script src="events/祭り会話.js?v=20261105-sync" defer></script>
+<link rel="stylesheet" href="events/みやこあと会話.css?v=20261105-sync">
+<script src="events/みやこあと会話.js?v=20261105-sync" defer></script>
+<link rel="stylesheet" href="events/2年フィナーレ.css?v=20261105-sync">
+<script src="events/2年フィナーレ.js?v=20261105-sync" defer></script>
+<link rel="stylesheet" href="events/奄美第4話.css?v=20261105-sync">
+<script src="events/奄美第4話.js?v=20261105-sync" defer></script>
+<link rel="stylesheet" href="events/奄美第5-8話.css?v=20261105-sync">
+<script src="events/奄美第5-8話.js?v=20261105-sync" defer></script>
+<link rel="stylesheet" href="events/奄美城と終章.css?v=20261105-sync">
+<link rel="stylesheet" href="events/奄美積み木.css?v=20261105-sync">
+<script src="events/奄美積み木.js?v=20261105-sync" defer></script>
+<script src="events/奄美漫画伏線.js?v=20261105-sync" defer></script>
+<script src="events/奄美城と終章.js?v=20261105-sync" defer></script>
+<link rel="stylesheet" href="events/終章の暮らし.css?v=20261105-sync">
+<script src="events/終章の暮らし.js?v=20261105-sync" defer></script>
+<link rel="stylesheet" href="events/奄美終章.css?v=20261105-sync">
+<script src="events/奄美終章.js?v=20261105-sync" defer></script>
+<link rel="stylesheet" href="events/奄美歩行.css?v=20261105-sync">
+<script src="events/奄美通行データ.js?v=20261105-sync" defer></script>
+<script src="events/奄美歩行.js?v=20261105-sync" defer></script>
+<link rel="stylesheet" href="events/4年会話.css?v=20261105-sync">
+<script defer src="events/4年会話.js?v=20261105-sync"></script>
+<link rel="stylesheet" href="events/南国会話.css?v=20261105-sync">
+<script defer src="events/南国会話.js?v=20261105-sync"></script>
+<link rel="stylesheet" href="events/くろしお会話.css?v=20261105-sync">
+<link rel="stylesheet" href="events/金沢会話.css?v=20261105-sync">
+<script defer src="events/くろしお会話.js?v=20261105-sync"></script>
+<script defer src="events/金沢会話.js?v=20261105-sync"></script>
+<link rel="stylesheet" href="events/うどんの里会話.css?v=20261105-sync">
+<script defer src="events/うどんの里会話.js?v=20261105-sync"></script>
+<link rel="stylesheet" href="events/opening-movie.css?v=20261105-sync">
+<script defer src="events/opening-movie.js?v=20261105-op30-en"></script>
 <script defer src="/km-analytics.js?v=20261021"></script>
-<script src="new-game-plus/core.js?v=story-20261016"></script>
-<link rel="stylesheet" href="new-game-plus/ui.css?v=story-20261016">
-<script src="pwa/game-bridge.js" defer></script>
+<!-- battle-responsive-20261010 -->
 <style>
-/* 画面の高さに合わせて人物・仲間・回答を配置。氷の城は既存配置。 */
+/* 2026-10-10 本人採用：窓40%、主人公90%、仲間と回答の配置。氷の城は既存配置。 */
 body:has(#screen-battle.active.battle-responsive) #app{height:100dvh;overflow-y:auto}
 #screen-battle.tate.battle-responsive[id="screen-battle"]{height:100dvh;min-height:488px;padding-top:8px;padding-left:var(--battle-screen-padding,16px);padding-right:var(--battle-screen-padding,16px)}
 #screen-battle.tate.battle-responsive[id="screen-battle"] .scene.battle{padding-top:var(--battle-scene-padding,16px)}
@@ -3863,8 +3876,11 @@ body:has(#screen-battle.active.battle-responsive) #app{height:100dvh;overflow-y:
  #screen-battle.tate.battle-responsive[id="screen-battle"] .pbtn.pfield .pfuda{padding-left:3px;padding-right:3px}
 }
 </style>
-<link rel="stylesheet" href="collection/collection.css?v=20261102">
-<script src="collection/collection.js?v=20261102" defer></script>
+<script src="new-game-plus/core.js?v=20261105-sync"></script>
+<link rel="stylesheet" href="new-game-plus/ui.css?v=20261105-sync">
+<script src="pwa/game-bridge.js?v=20261105-sync" defer></script>
+<link rel="stylesheet" href="collection/collection.css?v=20261105-sync">
+<script src="collection/collection.js?v=20261105-sync" defer></script>
 </head>
 <body>
 <!-- 弾TB-1：タブレットでバトルの絵を画面いっぱいに敷くための層。#app の外（下）に置く。
@@ -4176,6 +4192,38 @@ body:has(#screen-battle.active.battle-responsive) #app{height:100dvh;overflow-y:
       <div id="spBgTerminalH"><img src="images/fullart/ship-terminal-hakodate.webp" alt=""></div>
       <!-- キャラ -->
       <div id="spBoardHero"></div>
+      <!-- S1/S6の手前側手すり。原本733×1100の細い輪郭だけを抜き、背景と同じ位置で重ねる。 -->
+      <div id="spPierRail" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 733 1100">
+          <defs><mask id="spPierRailMask" maskUnits="userSpaceOnUse" x="0" y="0" width="733" height="1100">
+            <g fill="none" stroke="white" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M340 529 L340 460 Q340 452 350 455 L507 559 Q513 563 513 571 L513 648" stroke-width="5"/>
+              <path d="M340 480 L513 600 M340 507 L513 631" stroke-width="3.4"/>
+              <path d="M382.5 479 L382.5 562 M418.5 503 L418.5 589 M480.5 543 L480.5 635" stroke-width="4"/>
+            </g>
+          </mask></defs>
+          <image href="images/fullart/ship-pier-depth.webp" width="733" height="1100" mask="url(#spPierRailMask)"/>
+        </svg>
+        <svg class="sp-door-wall" id="spPierDoorWall" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 733 1100">
+          <defs><clipPath id="spPierDoorWallClip"><path d="M250 365 H340 V522 H250 Z"/></clipPath></defs>
+          <image href="images/fullart/ship-pier-depth.webp" width="733" height="1100" clip-path="url(#spPierDoorWallClip)"/>
+        </svg>
+      </div>
+      <div id="spArriveRail" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 733 1100">
+          <defs><mask id="spArriveRailMask" maskUnits="userSpaceOnUse" x="0" y="0" width="733" height="1100">
+            <g fill="none" stroke="white" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M90 430 L102 430 Q109 430 109 438 L109 445 M103 519 L103 455 Q103 438 113 447 L304 632 Q313 641 310 651 L306 662 L301 664" stroke-width="4.5"/>
+              <path d="M161 493 L161 555 M204 535 L204 599 M251 580 L251 645 M300 629 L300 707" stroke-width="3.5"/>
+            </g>
+          </mask></defs>
+          <image href="images/fullart/ship-arrive-hakodate.webp" width="733" height="1100" mask="url(#spArriveRailMask)"/>
+        </svg>
+        <svg class="sp-door-wall" id="spArriveDoorWall" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 733 1100">
+          <defs><clipPath id="spArriveDoorWallClip"><path d="M0 370 H90 V519 H0 Z"/></clipPath></defs>
+          <image href="images/fullart/ship-arrive-hakodate.webp" width="733" height="1100" clip-path="url(#spArriveDoorWallClip)"/>
+        </svg>
+      </div>
       <!-- ★2026-08-09に修正：試作フォルダのときの相対パス（../../ゲーム/images/）が残っていて、
            本体では読めていなかった（404）。spManaWalk はJS側で src を入れ直すので実害は無かったが、
            spManaBack は入れ直していないため、甲板のカットでマナが表示されていなかった。 -->
@@ -4598,19 +4646,19 @@ body:has(#screen-battle.active.battle-responsive) #app{height:100dvh;overflow-y:
   <div class="ps-talk" id="psTalk"></div>
   <button id="psSkip">とばす ▶</button>
 </div>
-<script src="data/kakitori-strokes.js" defer></script>
-<script src="writing/strokes-extra.js?v=story-20261016" defer></script>
-<script src="writing/recognizer.js?v=story-20261016" defer></script>
-<script src="writing/ink-pad.js?v=story-20261016" defer></script>
-<script src="writing/questions-zone1.js?v=story-20261016" defer></script>
-<script src="writing/questions-zone2.js?v=story-20261016" defer></script>
-<script src="writing/questions-all.js?v=story-20261016" defer></script>
-<script src="writing/story-transaction.js?v=story-20261016" defer></script>
-<script src="writing/story-questions.js?v=story-20261016" defer></script>
-<script src="writing/story-outcome.js?v=pwa-20261024" defer></script>
-<script src="writing/story-battle.js?v=20261019-defeat&v=en-20261025" defer></script>
-<link rel="stylesheet" href="writing/prototype.css?v=story-20261016">
-<link rel="stylesheet" href="writing/story.css?v=20261019-layout">
+<script src="data/kakitori-strokes.js?v=20261105-sync" defer></script>
+<script src="writing/strokes-extra.js?v=20261105-sync" defer></script>
+<script src="writing/recognizer.js?v=20261105-sync" defer></script>
+<script src="writing/ink-pad.js?v=20261105-sync" defer></script>
+<script src="writing/questions-zone1.js?v=20261105-sync" defer></script>
+<script src="writing/questions-zone2.js?v=20261105-sync" defer></script>
+<script src="writing/questions-all.js?v=20261105-sync" defer></script>
+<script src="writing/story-transaction.js?v=20261105-sync" defer></script>
+<script src="writing/story-questions.js?v=20261105-sync" defer></script>
+<script src="writing/story-outcome.js?v=20261105-sync" defer></script>
+<script src="writing/story-battle.js?v=20261105-sync" defer></script>
+<link rel="stylesheet" href="writing/prototype.css?v=20261105-sync">
+<link rel="stylesheet" href="writing/story.css?v=20261105-sync">
 
 
 
@@ -4734,7 +4782,7 @@ body:has(#screen-battle.active.battle-responsive) #app{height:100dvh;overflow-y:
   </div>
 </div>
 
-<script src="events/歩行品質.js?v=20261003b"></script>
+<script src="events/歩行品質.js?v=20261105-sync"></script>
 <script>
 /* ==============================
    かんじもんデータ（素材 K 配列をそのままコピー・読み取り専用）
@@ -7102,6 +7150,36 @@ const TALK_CANONICAL_TEXT={
    引用符は読みを分断しない（例＝「調」べる／電「車」）。「学」「校」のような
    独立した引用どうしはまとめない。図鑑toHiraの語幹推測・既習字のかな化は使わない。 */
 let TALK_LEXICON=null;
+/* 既存の分かち書き・句読点を改行候補にする。本文・HTMLタグ・指定brは保持。
+   1年だけに適用し、他学年の漢字/ruby出力には触れない。 */
+function talkPhraseWrap(html){
+  return html.split(/(<ruby\b[^>]*>[\s\S]*?<\/ruby>|<[^>]*>)/g).map(part=>{
+    if(!part||part[0]==='<')return part;
+    const pieces=part.match(/\s+|[^\s、。！？]+[、。！？]*|[、。！？]+/g)||[];
+    const groups=[];
+    for(let i=0;i<pieces.length;i++){
+      let piece=pieces[i];
+      if(/^\s+$/.test(piece)){groups.push(piece);continue;}
+      // 開き括弧だけを行末へ残さず、閉じ括弧/句読点だけを次行へ送らない。
+      if(/^[」』）”’、。！？]+$/.test(piece)&&groups.length){
+        let gap='';while(groups.length&&/^\s+$/.test(groups[groups.length-1]))gap=groups.pop()+gap;
+        if(groups.length){groups[groups.length-1]+=gap+piece;continue;}
+        if(gap)groups.push(gap);
+      }
+      while(/^[「『（“‘]+\s*$/.test(piece)&&i+1<pieces.length)piece+=pieces[++i];
+      groups.push(piece);
+    }
+    return groups.map(piece=>{
+      if(/^\s+$/.test(piece))return piece;
+      // 引用が連続する案内札や、引用前の説明語を一つの長い塊にしない。
+      const natural={'やどっているでしょ？':['やどっている','でしょ？'],
+        'しょどうきょうしつ。':['しょどう','きょうしつ。']};
+      const parts=natural[piece]||piece.replace(/([^「」]{3,})(?=「)/g,'$1\u0000')
+        .replace(/」(?=「|……[^」])/g,'」\u0000').split('\u0000');
+      return parts.map(word=>'<span class="talk-phrase">'+word+'</span>').join('');
+    }).join('');
+  }).join('');
+}
 function talkText(text,zone,quoted=false,completedPrimary=false){
   if(window.KanjimonGameI18n?.active)return window.KanjimonGameI18n.textHTML(text);
   const grade=completedPrimary?7:talkGradeForZone(zone),raw=String(text==null?'':text),source=TALK_CANONICAL_TEXT[raw]||raw;
@@ -7140,7 +7218,8 @@ function talkText(text,zone,quoted=false,completedPrimary=false){
     }
     if(!matched){output+=source[i];i++;}
   }
-  return output;
+  if(quoted)output='「'+output+'」';
+  return grade===1?talkPhraseWrap(output):output;
 }
 
 
@@ -12223,7 +12302,7 @@ function snd(name){
 }
 function toggleSound(){
   soundOn=!soundOn;
-  if(!soundOn){seStop('ice-hop');seStop('ice-impact');}
+  if(!soundOn){seStop('ice-hop');seStop('ice-impact');stopMagicSound();}
   if(window.AmamiCastle)AmamiCastle.onSoundToggle();
   $('soundBtn').textContent=soundOn?'🔊':'🔇';
   if(soundOn){ ensureAudio(); }
@@ -13144,9 +13223,9 @@ COSTUMES.filter(cs=>cs.suffix).forEach(cs=>['boy','girl'].filter(ch=>costumeUsab
 ================================ */
 const $=id=>document.getElementById(id);
 function showScreen(id){
-  if(id!=='screen-title'){window.openingMovieDismissed=true;window.OpeningMovie?.cancel();}
   if(id!=='screen-battle')window.KanjimonStoryBattle?.cancel();
   sceneImages.cancel();
+  if(id!=='screen-title'){window.openingMovieDismissed=true;window.OpeningMovie?.cancel();}
   if(id!=='screen-title'){
     const ownedTitle=bgmOpeningTitleActive&&(bgmWanted==='title'||bgmWanted==='opening'||(bgmOpeningFinished&&bgmWanted==='hero'));
     _bgmCancelOpening();if(ownedTitle){_bgmPauseAll();bgmWanted=null;}
@@ -13161,6 +13240,7 @@ function showScreen(id){
   window.TsukubaStory?.beforeScreen(id);
   window.UdonStory?.beforeScreen(id);
   window.GradeFourStory?.beforeScreen(id);
+  window.IzumoLearning?.beforeScreen(id);
   window.KuroshioStory?.beforeScreen(id);
   window.KanazawaStory?.beforeScreen(id);
   window.NangokuStory?.beforeScreen(id);
@@ -13497,18 +13577,15 @@ const MURA_SEICHI_YEN=20000;      // 整地代
 const MURA_MORI_TOTAL_YEN=MURA_MORI_YEN+MURA_KIRIKATA_YEN+MURA_SEICHI_YEN;   // 森の合計＝150,000円
 function muraYenFmt(yenAmount){ return yenAmount.toLocaleString('ja-JP'); }   // 円の数字部分だけ（「円」は呼び出し側で付ける）
 function muraCoinsFor(yenAmount){ return Math.round(yenAmount/YEN_PER_COIN); }   // 円→コインの換算（実際に払わせる額はこちらを必ず経由）
-/* ---- もらえるお金＝学年レベル×○円（作者の裁定 7/25）----
-   バトルは「いま戦っている場所の学年」、町のミニゲーム（学校・かきとり・おてつだい）は
-   「いちばん進んだ学年」で計算する。数値はすべてここだけ直せばよい。 */
-const YEN_WIN_PER_GRADE=20;        // ふつうのバトル勝利＝学年×20円
-const YEN_BOSS_PER_GRADE=30;       // ボス級勝利＝学年×30円
+/* 戦闘報酬は敵のレベル・種類・難易度で決める。
+   町の学習報酬は到達学年と難易度で決める。 */
+const YEN_WIN_BASE=20;            // 通常戦の基本額。敵レベルと難易度の倍率を別途適用。
+const YEN_BOSS_BASE=YEN_WIN_BASE*3; // ボスは通常の3倍。漢字別の倍率とは重ねない。
 const YEN_SCHOOL_PERFECT_PER_GRADE=100;  // 学校のテスト 全問正解
 const YEN_SCHOOL_PARTIAL_PER_GRADE=20;   // 学校のテスト まちがいあり
 const YEN_KAKITORI_PER_GRADE=20;         // かきとりテスト 1字せいかい
 const YEN_KAKITORI_BONUS_PER_GRADE=100;  // かきとり 5問ぜんぶ正解ボーナス
 const OMAKE_RATE=0.1;              // 買い物の計算クイズ正解＝代金の1わりが もどる
-const YEN_WIN_BASE=20;
-const YEN_BOSS_BASE=60;
 function battleYen(isBoss,idx=enemyIdx){
   if(isBoss) return YEN_BOSS_BASE;
   const char=K[idx]?.c;
@@ -14041,7 +14118,7 @@ function jukugoBossDefeated(att){
   setTimeout(()=>{
     if(seq!==spawnSeq) return;
     triggerHeroVictoryPose();   // 弾R-2：勝利メッセージが出るこの瞬間に後ろ姿→勝利ポーズへ
-    const coinHtml=awardCoinsHtml(battleYen(true));   // 弾3-12§4→手直し_お金(7/25)：ボス級＝学年×30円
+    const coinHtml=awardCoinsHtml(battleYen(true));   // ボスの基本額へ敵レベルと難易度の倍率を適用。
     setMsg('『'+(jw?jw.w:'')+'』を たおした！<span class="meaning">『'+K[att].c+'』が つよくなった！</span>'+coinHtml);
     snd('get');
     const evo=planLevelUp(att);
@@ -14344,7 +14421,7 @@ function twinBossDefeatedBoth(att){
       if(b!==undefined)jukugo.add(JUKUGO[b].w);
       eventBossDone.add(102); save();
     }
-    const coinHtml=awardCoinsHtml(battleYen(true));   // 弾3-12§4→手直し_お金(7/25)：ツインボスもボス級＝学年×30円
+    const coinHtml=awardCoinsHtml(battleYen(true));   // 双子ボスも敵レベルと難易度で報酬を決める。
     setMsg('『'+yj.first+'』『'+yj.second+'』を たおした！<span class="meaning">『'+K[att].c+'』が つよくなった！</span>'+coinHtml);
     snd('get');
     const evo=planLevelUp(att);
@@ -14662,18 +14739,20 @@ function renderParty(){
 }
 /* 弾R-2：勝利ふり向き演出。heroVictoryPose中はhero-back画像を前向き勝利ポーズへ差し替える（無ければ従来どおり後ろ姿）。
    renderParty()が呼ばれるたびにも一貫して同じ画像を選ぶための共通口 */
+/* 雪ドレスの1枚絵だけ新版を読む。採用歩行シートは維持。 */
+function heroPoseImgVersion(url){ return /-girl-snow\.webp$/.test(url) ? url+'?body=20261005a' : url; }
 function heroBackImgSrc(hbChar){
   /* 手直し_着替え第1弾：きている服の画像があればそれを、無ければ標準衣装に倒す（2段のフォールバック） */
   const sf=costumeSuffix();
   if(heroVictoryPose && heroVictoryOK.has(hbChar)) return heroVictoryImgSrc(hbChar);
-  if(sf && heroBackOK.has(hbChar+sf)) return 'images/battle-tate/hero-back-'+hbChar+sf+'.webp';
+  if(sf && heroBackOK.has(hbChar+sf)) return heroPoseImgVersion('images/battle-tate/hero-back-'+hbChar+sf+'.webp');
   return 'images/battle-tate/hero-back-'+hbChar+'.webp';
 }
 /* 手直し_着替え第1弾：勝利ポーズ画像の共通口。バトル画面だけでなく新幹線シーン（乗車前のふり向き）
    からも同じ口を通す＝着替えの反映漏れが起きないようにする */
 function heroVictoryImgSrc(hbChar){
   const sf=costumeSuffix();
-  if(sf && heroVictoryOK.has(hbChar+sf)) return 'images/battle-tate/hero-victory-'+hbChar+sf+'.webp';
+  if(sf && heroVictoryOK.has(hbChar+sf)) return heroPoseImgVersion('images/battle-tate/hero-victory-'+hbChar+sf+'.webp');
   return 'images/battle-tate/hero-victory-'+hbChar+'.webp';
 }
 let heroVictoryPose=false;   // 勝利メッセージ表示中〜次の敵が出るまでtrue
@@ -14784,6 +14863,7 @@ function spawnEnemy(){
   if(battleMode==='party' && !allPartyUsable()){ sendHomeAllTired(); return; }
   resetHeroVictoryPose();   // 弾R-2：新しい敵が出るので後ろ姿へ戻す
   const seq=++spawnSeq;
+  autoPickArmed=false; autoPickSeq++; // AUTO待機も新敵の世代へ切り替え、旧待機を持ち越さない
   playEncounterSe(seq);   // 手直し(2026-07-04)：敵が出現した瞬間の効果音（くさむら/すみか/色違い/乱入すべて共通）
   const idx=queue[enemyPos]; enemyIdx=idx;
   const k=K[idx]; enemyType=typeOf(idx);
@@ -14905,12 +14985,14 @@ function spawnEnemy(){
       buildOptions(idx);
     }
     answering=false;
+    maybeAutoPickAttacker(); // AUTO：登場ロック解除後にも既存ガード付き判定を再評価する
   }, enterMs);
 }
 /* 第16弾：ふくしゅうのらんにゅうの敵出現（spawnEnemyとほぼ同じだが、メッセージが異なる） */
 function spawnReviewIntrudeEnemy(){
   battleRewardDifficulty=normalizeDifficulty(difficulty);
   const seq=++spawnSeq;
+  autoPickArmed=false; autoPickSeq++; // 復習乱入でも旧敵のAUTO待機を無効化する
   playEncounterSe(seq);
   const idx=queue[enemyPos]; enemyIdx=idx;
   const k=K[idx]; enemyType=typeOf(idx);
@@ -14969,6 +15051,7 @@ function spawnReviewIntrudeEnemy(){
       buildOptions(idx);
     }
     answering=false;
+    maybeAutoPickAttacker(); // AUTO：復習乱入も登場ロック解除後に再評価する
   }, ENTRY_MS);
 }
 
@@ -15744,22 +15827,39 @@ function magicLevelOf(attackerIdx, defenderIdx, defenderIsBoss){
   const relation=levelRelOf(selfLv,enemyLv);
   return relation==='yuri'?'max':relation==='furi'?'weak':'mid';
 }
+let magicSoundSession=null;
+function stopMagicSound(){
+  if(!magicSoundSession)return;
+  const session=magicSoundSession;magicSoundSession=null;
+  session.timers.forEach(clearTimeout);cancelAnimationFrame(session.raf);
+  session.names.forEach(seStop);
+}
 /* 敵のいるあたりに、属性のまほうを出す。演出だけで、ダメージ計算には一切関与しない。 */
 function playMagicFx(type, level){
   const scene = document.querySelector("#screen-battle .scene.battle") || document.getElementById("screen-battle");
   if(!scene) return;
+  stopMagicSound();
   const isWeak=level==="weak", isMax=level==="max";
   if(window.KanjimonMagic) window.KanjimonMagic.play(scene,type,isWeak?"weak":isMax?"max":"mid");
   const timing=window.KanjimonMagic&&window.KanjimonMagic.timing?window.KanjimonMagic.timing(level,type):null;
   const cues=timing&&timing.soundCues||[{level:isWeak?'mid':'max',at:0,volume:isMax?0.55:0.45}];
   const seq=spawnSeq, effect=document.querySelector('#screen-battle .magic-fx');
+  const session={timers:[],names:new Set(),raf:0};magicSoundSession=session;
+  const valid=()=>magicSoundSession===session&&soundOn&&seq===spawnSeq&&$('screen-battle').classList.contains('active')&&(!effect||effect.isConnected||effect.magicCompleted===true);
   cues.forEach(cue=>{
+    const name=cue.sound||('magic-'+(MAGIC_ART_KEY[type]||'kaminari')+'-'+cue.level);
+    // 遅れて鳴らす音も先に読み込み、着弾時の取得待ちを減らす。
+    if(cue.sound&&cue.sound.indexOf('magic-impact-')===0)_seEl(name);
     const play=()=>{
-      if(seq!==spawnSeq||!$('screen-battle').classList.contains('active')||(cue.at&&effect&&!effect.isConnected)) return;
-      seFx(cue.sound||('magic-'+(MAGIC_ART_KEY[type]||'kaminari')+'-'+cue.level),cue.volume,isMax&&cue.level==='max'?(()=>snd('magicmax')):null);
+      if(!valid()) return;
+      session.names.add(name);
+      seFx(name,cue.volume,isMax&&cue.level==='max'?(()=>{if(valid())snd('magicmax');}):null);
     };
-    if(cue.at) setTimeout(play,cue.at); else play();
+    if(cue.at) session.timers.push(setTimeout(play,cue.at)); else play();
   });
+  const watch=()=>{if(magicSoundSession!==session)return;if(!valid()){stopMagicSound();return;}session.raf=requestAnimationFrame(watch);};
+  session.raf=requestAnimationFrame(watch);
+  session.timers.push(setTimeout(()=>{if(magicSoundSession===session)stopMagicSound();},timing?timing.duration:4000));
 }
 /* ===== 手直し_打撃の演出（2026-07-25・改善メモ4番の後半）=====
    まほうが出ない攻撃（相性ふつう・にがて／熟語ボス／ふたごボス）は、毎回まったく同じ揺れだけで
@@ -15853,7 +15953,7 @@ function onEnemyDefeated(att){
     // onCorrectSimple専用だった撃破カウントをここにも追加（tallyZone1AutoDefeat()に共通化）
     tallyZone1AutoDefeat();
     triggerHeroVictoryPose();   // 弾R-2：勝利メッセージが出るこの瞬間に後ろ姿→勝利ポーズへ
-    const coinHtml=awardCoinsHtml(battleYen(enemyIsBoss));   // 弾3-12§4→手直し_お金(7/25)：通常＝学年×20円・ボス＝学年×30円（乱入も通常あつかい）
+    const coinHtml=awardCoinsHtml(battleYen(enemyIsBoss));   // 乱入は通常戦の基本額。敵レベルと難易度で報酬を決める。
     // 手直し(7/18朝)：はかせの手引き済みフラグはフィールドで1回勝った時点で立てる（onCorrectSimple側と同じ直し）
     const firstFieldWin=(!firstFieldBattleHelped && battleSource==='field');
     if(firstFieldWin){ firstFieldBattleHelped=true; save(); }
@@ -16968,7 +17068,7 @@ function showZukanDetail(i){
   }else if(caught.has(i)){
     html+='<div class="do">📝 '+(window.KanjimonGameI18n?.active&&window.KanjimonGameI18n.note(k)?window.KanjimonGameI18n.escape(window.KanjimonGameI18n.note(k)):toHira(k.o, progressGrade()))+'</div>';
   }
-  if(window.KanjimonGameI18n?.active)html+='<p class="language-sources"><a href="i18n/sources.html?v=en-20261025" target="_blank" rel="noopener">Dictionary sources &amp; licenses</a></p>';
+  if(window.KanjimonGameI18n?.active)html+='<p class="language-sources"><a href="i18n/sources.html?v=20261105-sync" target="_blank" rel="noopener">Dictionary sources &amp; licenses</a></p>';
   if(caught.has(i)){
     if(inP) html+='<button class="btn btn-ghost" onclick="toggleParty('+i+')">てもちから はずす</button>';
     else html+='<button class="btn btn-yellow" onclick="toggleParty('+i+')"'+(party.length>=4?' disabled':'')+'>てもちに いれる'+(party.length>=4?'（いっぱい）':'')+'</button>';
@@ -16978,7 +17078,10 @@ function showZukanDetail(i){
   $('zukanOverlay').classList.add('show');
 }
 function toggleParty(i){
-  if(party.includes(i)){ party=party.filter(p=>p!==i); }
+  if(party.includes(i)){
+    if(party.length<=1){ showToast('さいごの 1たいは はずせないよ'); return; }
+    party=party.filter(p=>p!==i);
+  }
   else{ if(party.length>=4) return; party.push(i); }
   save();
   showZukanDetail(i);
@@ -26986,9 +27089,10 @@ function nagoya63Route(){
 const NAGOYA63_VISUAL_WAYPOINTS=[
   /* 旧城外経路を背景と一緒に48行下へ移動。門のあとも石垣・階段・城正面まで続く。 */
   [16,95],[15,92],[18,89],[15.5,86],[18.5,83],[15.5,80],[18,77],
-  [15,75],[18,72],[15,69],[18,66],[16.2,64],[14.8,62],[14,60],
+  /* 階段の右壁から余裕を取る。主人公の通行盤には触らず隊列の足元だけを道の内側へ寄せる。 */
+  [15,75],[16.8,72],[15,69],[16,66],[15,64],[13,62],[12.5,60],
   /* 城正面で暗転して、この城内入口へ切り替える。 */
-  [17,31],[18,29],[14,26],[18,22],[16,17],[14,13],[18,9],[16,3]
+  [17,31],[18,29],[14,26],[18,22],[16,17],[16,13]
 ];
 function nagoya63VisualRoute(){
   const out=[];
@@ -28178,7 +28282,8 @@ const EV_SCENES = {
     { who:'manaK', dark:false, snd:'ev85in3', text:"でも、「諸」国の 神さまの 名札から 字が 抜けて、どの「郷」の 席か 分からない。" },
     { who:'mana', dark:false, snd:'ev85in4', text:"「家内」「安全」も 暴れてる。みんなを 静めて、席を 決められるように しよう。" },
     { who:'manaK', dark:false, snd:'ev85in5', text:'……神さまも ね、一度に 一つの 所にしか いられないの。だから、ここに 集まるの。' },
-    { who:'mana', dark:false, snd:'ev85in6', text:'……あの子は、ちがった。' }
+    { who:'mana', dark:false, snd:'ev85in6', text:'……あの子は、ちがった。' },
+    { camera:'izumoLearning' }
   ],
 
   83: [
@@ -30189,7 +30294,7 @@ function gfAdvance(){
         d.className='gf-clue';
         /* 手がかりも会話本文。引用した鍵の字を未習字の例外にはしない。 */
         const clueRaw=String(s.list[i]||'');
-        d.innerHTML=window.KanjimonGameI18n?.active?gfWrapKeyword(talkText(clueRaw,fieldZone),s.kw,clueRaw):'「'+gfWrapKeyword(talkText(clueRaw,fieldZone),s.kw)+'」';
+        d.innerHTML=gfWrapKeyword(talkText(clueRaw,fieldZone,true),s.kw,clueRaw);
         box.appendChild(d);
         requestAnimationFrame(()=>d.classList.add('in'));
         i++;
@@ -31867,11 +31972,19 @@ function layoutDazaifu92(){if($('evOverlay').classList.contains('dazaifu92'))$('
 window.addEventListener('resize',layoutDazaifu92);
 
 function evAdvance(){
-  if(!evActive || window.UdonStory?.busy() || window.GradeFourStory?.busy()) return;
+  if(!evActive || window.UdonStory?.busy() || window.GradeFourStory?.busy() || window.IzumoLearning?.busy()) return;
   if(window.KanjimonGameI18n?.advanceStory($('evBox')))return;
   evStep++;
   if(evStep>=evScript.length){ evFinish(); return; }
   const s=evScript[evStep];
+  if(s && s.camera==='izumoLearning'){
+    const back=evSeq;
+    stopBattleHakaseVoice();
+    const valid=()=>evActive&&evZone===85&&back===fieldSeq&&back===evSeq&&$('screen-field').classList.contains('active');
+    if(!window.IzumoLearning){evAdvance();return;}
+    window.IzumoLearning.open({valid,onDone:()=>{if(valid())evAdvance();},onAbort:()=>{if(evActive&&evZone===85)evFinish(false);}});
+    return;
+  }
   const theme=bgmThemeForScene(evZone,evPhase,evStep);
   if(theme)evMusicToken=bgmSceneBegin('zone-event',theme);
   /* ★2026-08-23：{ scene:'fuji52' } の行＝ここでイベントシーンに入る。
@@ -31955,7 +32068,7 @@ function evAdvance(){
   else stopBattleHakaseVoice(); // 無言の場面では直前の声も止める
   if(window.KanjimonGameI18n?.active){
     const sequence=evSeq,script=evScript,step=evStep;
-    KanjimonGameI18n.story($('evBox'),$('evText'),evAdvance,()=>evActive&&evSeq===sequence&&fieldSeq===sequence&&evScript===script&&evStep===step,()=>!window.UdonStory?.busy()&&!window.GradeFourStory?.busy());
+    KanjimonGameI18n.story($('evBox'),$('evText'),evAdvance,()=>evActive&&evSeq===sequence&&fieldSeq===sequence&&evScript===script&&evStep===step,()=>!window.UdonStory?.busy()&&!window.GradeFourStory?.busy()&&!window.IzumoLearning?.busy());
   }
 }
 
@@ -31969,6 +32082,7 @@ function evFinish(completed=true){
   window.TsukubaStory?.finishEvent();
   window.UdonStory?.finishEvent();
   window.GradeFourStory?.finishEvent();
+  window.IzumoLearning?.close();
   evActive=false;
   if(fuji52StoryCameraState) cancelFuji52StoryCamera();
   if(nagoya63StoryState) cancelNagoya63StoryCamera();
@@ -32042,7 +32156,11 @@ function showBattleHakase(msg,sndId){
   const face=document.createElement('div'); face.className='battle-hakase-face'+(hakaseFaceImgOK?' has-img':'');
   if(hakaseFaceImgOK) face.style.backgroundImage="url('images/sprites/hakase-face.webp')";
   else face.textContent='🧑‍🔬';
-  const text=document.createElement('div'); text.className='battle-hakase-text'; text.textContent=window.KanjimonGameI18n?.active?window.KanjimonGameI18n.t(msg):msg;
+  const text=document.createElement('div'); text.className='battle-hakase-text';
+  // ヒントは従来どおり文字列として扱い、1年だけ折返しのまとまりを追加する。
+  if(window.KanjimonGameI18n?.active)text.textContent=window.KanjimonGameI18n.t(msg);
+  else if(talkGradeForZone()===1)text.innerHTML=talkPhraseWrap(String(msg).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'));
+  else text.textContent=msg;
   box.appendChild(face); box.appendChild(text);
   box.classList.add('show');
   /* 改善メモ_0725（Fableが実物確認で発見）：はかせカードは通常メッセージ(.msg)とほぼ同じ位置に出るため、
@@ -33655,7 +33773,8 @@ function iceDungeonBuildWorld(){
   }
   const hero=document.createElement('div');hero.id='icdHero';hero.className='icd-actor';hero.innerHTML='<i></i><img class="icd-ready-art" alt="構える主人公">';w.appendChild(hero);
   const art=hero.lastChild,c=heroChar==='girl'?'girl':'boy',base='images/battle-tate/herofld-ready-'+c;
-  art.onload=()=>hero.classList.toggle('icd-ready',!!iceDungeonBattle);art.onerror=()=>{art.onerror=null;art.src=base+'.webp';};art.src=base+costumeSuffix()+'.webp';
+  art.onload=()=>hero.classList.toggle('icd-ready',!!iceDungeonBattle);art.onerror=()=>{art.onerror=null;art.src=base+'.webp';};art.src=heroPoseImgVersion(base+costumeSuffix()+'.webp');
+  if(c==='girl'&&costumeSuffix()==='-snow'){ art.style.height='78.776634%'; art.style.bottom='6.395597%'; }
   hero.firstChild.style.backgroundImage="url('"+heroSheetUrl()+"')";
   const mana=document.createElement('div');mana.id='icdMana';mana.className='icd-actor icd-mana';mana.innerHTML='<i></i>';w.appendChild(mana);
   iceDungeonPlaceParty(false);
@@ -33858,7 +33977,7 @@ async function iceDungeonWin(att){
   const first=b.floor===4?!iceDungeon.bossWon:!iceDungeon.won.includes(b.key);
   if(first){
     if(b.floor===4){iceDungeon.bossWon=true;eventBossDone.add(83);}else iceDungeon.won.push(b.key);
-    words.forEach(w=>jukugo.add(w));b.rewardHtml=awardCoinsHtml(battleYen(b.floor===4));
+    words.forEach(w=>jukugo.add(w));b.rewardHtml=awardCoinsHtml(battleYen(true));
     const evo=planLevelUp(att);if(evo&&evo.to){ // 既存の進化を次の画面へ持ち越さず完了させる。
       await new Promise(resolve=>playEvolution(evo.from,evo.to,resolve));
     }else if(evo)sfxLevelup();save();
@@ -36307,6 +36426,7 @@ function sjShowSkip(on){ const b=$('sjSkipBtn'); if(b) b.classList.toggle('show'
 /* 学年gradeのしゅうりょうしきを再生し、「とじる」が押されたら onClose を呼ぶ */
 function startGradeCeremony(grade, onClose){
   if(sjActive) return;   // オーバーレイが画面をふさぐため通常は二重発火しないが、念のための番人
+  $('sjOverlay').classList.toggle('grade1-readable',grade===1);
   sjActive=true;
   sjMusicToken=bgmSceneBegin('grade-achievement','hero');
   sjCloseCallback=onClose;
@@ -36324,7 +36444,10 @@ function startGradeCeremony(grade, onClose){
   const rankInfo=sjRankInfo(grade);
   const inds=gradeIndices(grade);
   $('sjRank').textContent=rankInfo.rankText;
-  $('sjBody').textContent=window.KanjimonGameI18n?.active?'Completed the Grade '+grade+' adventure':grade+'ねんせいの ぼうけんを やりとげました';
+  const ceremonyBody=grade+'ねんせいの ぼうけんを やりとげました';
+  if(window.KanjimonGameI18n?.active)$('sjBody').textContent='Completed the Grade '+grade+' adventure';
+  else if(grade===1)$('sjBody').innerHTML=talkPhraseWrap(ceremonyBody);
+  else $('sjBody').textContent=ceremonyBody;
   $('sjCount').textContent='なかまに なった かんじ　'+rankInfo.count+'／'+rankInfo.total;
   $('sjChars').innerHTML=inds.map(sjCharCellHtml).join('');
   $('sjDate').textContent=sjFormatDate(dateStr);
@@ -36782,7 +36905,7 @@ function op1PlayS0(){
   $('op1KanjiFaceText').style.color=K[PARTNER_IDX].cl;
   setTimeout(()=>{
     if(seq!==op1Seq || advanced) return;
-    $('op1Voice').innerHTML='だいじょうぶ。なにも おぼえなくて いいよ。たのしむだけで いいんだ。<span class="op1-key">イージーだよ</span>';
+    $('op1Voice').innerHTML=talkPhraseWrap('だいじょうぶ。なにも おぼえなくて いいよ。たのしむだけで いいんだ。<span class="op1-key">イージーだよ</span>');
     $('op1Voice').classList.add('show');
     op1PlaySnd('s0');   // OP-1b§3：台詞表示と同時にイージーの声を再生
   },300);
@@ -36869,7 +36992,7 @@ function op1PlayS4Setup(){
   op1EndMusic();
   op1AnswerLock=false;
   $('op1BgShodo').classList.add('show');   // 弾OP-4：チュートリアルバトルの背景を白から書道教室に差し替え
-  $('op1ManaText').textContent='よみを こたえて あげて！';
+  $('op1ManaText').innerHTML=talkPhraseWrap('よみを こたえて あげて！');
   op1PlaySnd('s4a');   // OP-1b§3：出題の台詞表示と同時にマナの声を再生
   op1BuildAnswers();
 }
@@ -36910,7 +37033,7 @@ function op1OnAnswer(btn,text,correct){
     btn.classList.add('wrong');
     document.querySelectorAll('#op1Answers .opt').forEach(b=>{ if(b.textContent===correct) b.classList.add('correct'); });
     ensureAudio(); sfxWrong();
-    $('op1ManaText').textContent='だいじょうぶ。もういちど こたえてみて！';
+    $('op1ManaText').innerHTML=talkPhraseWrap('だいじょうぶ。もういちど こたえてみて！');
     setTimeout(()=>{
       if(seq!==op1Seq) return;
       op1AnswerLock=false;
@@ -36932,7 +37055,7 @@ function op1PlayS4Success(){
     soul.classList.remove('return'); soul.style.opacity='0';
     $('op1CharImg').src='images/op/op1-ichi-mouth.webp';   // OP-1b§1：たましいが戻った瞬間ににこっと（口つき）
     $('op1CharWrap').classList.add('op1-brush-hop');
-    $('op1ManaText').textContent='すごい……！ きみの こえが とどいたのよ';
+    $('op1ManaText').innerHTML=talkPhraseWrap('すごい……！ きみの こえが とどいたのよ');
     op1PlaySnd('s4b');   // OP-1b§3：正解の台詞表示と同時にマナの声を再生
   },900);
   setTimeout(()=>{   // OP-1b§2：にこっとしてから一呼吸おいて標準のかんじモン表示へクロスフェード
@@ -37585,6 +37708,62 @@ function shipSceneStopWalkAnims(){
   if(bh && !bh.classList.contains('pose')) bh.style.transform='none';
 }
 
+/* 船の階段：画面幅で体を伸縮させず、背景原寸の足元と描画身長から枠を逆算する。
+   歩行12シート×6コマのalpha>=32は身長224/256、足裏239/256で共通。 */
+const SP_STAIR_BODY_HEIGHT=112;
+const SP_VICTORY_GEOMETRY={
+  'hero-victory-boy.webp':[781/900,829/900],
+  'hero-victory-boy-robo.webp':[1215/1392,1286/1392],
+  'hero-victory-boy-rpg.webp':[846/969,894/969],
+  'hero-victory-boy-space.webp':[1268/1452,1341/1452],
+  'hero-victory-boy-suit.webp':[1148/1315,1214/1315],
+  'hero-victory-boy-wafuku.webp':[1310/1502,1386/1502],
+  'hero-victory-girl.webp':[1263/1272,1267/1272],
+  'hero-victory-girl-pink.webp':[1280/1289,1285/1289],
+  'hero-victory-girl-rpg.webp':[1262/1272,1267/1272],
+  'hero-victory-girl-snow.webp':[1342/1350,1346/1350],
+  'hero-victory-girl-suit.webp':[1337/1347,1342/1347],
+  'hero-victory-girl-wafuku.webp':[1445/1455,1450/1455]
+};
+function spHeroImageGeometry(){
+  const bh=$('spBoardHero');
+  if(bh.classList.contains('pose')){
+    const file=(bh.style.backgroundImage.match(/(hero-victory-[a-z-]+\.webp)/)||[])[1];
+    return SP_VICTORY_GEOMETRY[file]||[224/256,239/256];
+  }
+  return [224/256,239/256];
+}
+function spPlaceHeroFoot(bgId,x,y,bodyHeight,dur){
+  const bh=$('spBoardHero'),stage=$('shipSceneStage').getBoundingClientRect();
+  const image=$(bgId).querySelector('img').getBoundingClientRect(),scale=image.height/1100;
+  const [body,foot]=spHeroImageGeometry(),width=bodyHeight*scale/body;
+  bh.style.transitionDuration=dur+'s,'+dur+'s,'+dur+'s,.35s';
+  bh.style.left=(image.left-stage.left+x*scale-width/2)+'px';
+  bh.style.top=(image.top-stage.top+y*scale-width*foot)+'px';
+  bh.style.width=width+'px';
+  bh.dataset.spBodyHeight=String(bodyHeight);
+}
+function spSnapHeroFoot(bgId,x,y,bodyHeight){
+  const bh=$('spBoardHero'); bh.style.transition='none';
+  spPlaceHeroFoot(bgId,x,y,bodyHeight,0); void bh.offsetWidth; bh.style.transition='';
+}
+function spWatchStairDepth(bgId,railId,nearX,nearY,farX,farY){
+  const seq=shipSceneSeq,bh=$('spBoardHero'),rail=$(railId); let raf=0;
+  const step=()=>{
+    if(seq!==shipSceneSeq||!shipSceneActive) return;
+    if(Number(bh.style.opacity)>0){
+      const image=$(bgId).querySelector('img').getBoundingClientRect(),r=bh.getBoundingClientRect();
+      const scale=image.height/1100,foot=spHeroImageGeometry()[1];
+      const x=(r.left+r.width/2-image.left)/scale,y=(r.top+r.height*foot-image.top)/scale;
+      const floorY=nearY+(x-nearX)*(farY-nearY)/(farX-nearX);
+      const inside=x<=farX+2&&y<=floorY;
+      rail.style.zIndex=inside?'7':'4'; rail.dataset.spDepth=inside?'stairs':'pier';
+    }
+    raf=requestAnimationFrame(step);
+  };
+  step(); shipSceneWalkHandles.push({stop(){cancelAnimationFrame(raf);}});
+}
+
 /* ---------------- 音（すべて合成・専用バス spBus 経由） ---------------- */
 let spBus=null, spLoopNodes=[];
 function spBusGet(){
@@ -37794,10 +37973,16 @@ function spGullFly(leftPct,topPct,scale,dur,gx,gy,delay){
 
 /* ---------------- レイヤーの初期化 ---------------- */
 function shipSceneResetLayers(){
-  ['spBgTerminal','spBgTerminalH','spBgPier','spBgArrive','spHeroCut','spBgSky','spBgMt','spDeck','spFog','spFogDrift','spManaWalk','spManaBack','spSnow','spDeckLand']
+  ['spPierDoorWall','spArriveDoorWall'].forEach(id=>$(id).classList.remove('show'));
+  // とばす直後の再開始で、前回の手すりのフェードが次の背景に残らないよう即時初期化する。
+  ['spPierRail','spArriveRail'].forEach(id=>{
+    const rail=$(id); rail.style.transition='none'; rail.classList.remove('show');
+    void rail.offsetWidth; rail.style.transition=''; rail.style.zIndex=''; delete rail.dataset.spDepth;
+  });
+  ['spBgTerminal','spBgTerminalH','spBgPier','spBgArrive','spPierRail','spArriveRail','spHeroCut','spBgSky','spBgMt','spDeck','spFog','spFogDrift','spManaWalk','spManaBack','spSnow','spDeckLand']
     .forEach(id=>{ const el=$(id); if(el) el.classList.remove('show','pan','run'); });
   ['spBgMt','spClouds','spSeaFar','spWavesFar','spWavesMid','spWaves','spSeaFill','spShipSide'].forEach(id=>{ const el=$(id); if(el) el.classList.remove('run'); });
-  const bh=$('spBoardHero'); if(bh){ bh.classList.remove('pose'); bh.removeAttribute('style'); }
+  const bh=$('spBoardHero'); if(bh){ bh.classList.remove('pose'); bh.removeAttribute('style'); delete bh.dataset.spBodyHeight; }
   const mw=$('spManaWalk'); if(mw){ mw.removeAttribute('style'); mw.src=MANA_BACK_A; }
   const hc=$('spHeroCut'); if(hc){ hc.removeAttribute('style'); }
   const ss=$('spShipSide'); if(ss){ ss.style.transition=''; ss.style.left=''; }
@@ -37927,6 +38112,9 @@ function shipScenePlayS0(){
 function shipScenePlayS1(){
   const seq=shipSceneSeq;
   $('spBgPier').classList.add('show');
+  $('spPierRail').classList.add('show');
+  $('spPierRail').style.zIndex='4';       // 岸壁では主人公の後ろ。初段の足元で前後を切り替える。
+  $('spPierDoorWall').classList.remove('show');
   $('spSnow').classList.add('show');      // ここから屋外＝雪を降らせる（S0は屋内なので降らせない）
   $('spManaBack').classList.add('show');
   setTimeout(()=>{ if(seq!==shipSceneSeq) return; $('spBgTerminal').classList.remove('show'); },550);
@@ -37945,6 +38133,7 @@ function shipScenePlayS1(){
      足元の高さ ≒ top + width×0.43 ／ 体の中心 ≒ left + width/2 になる。 */
   put(27,66.5,50,0);          // 黄色いラインの上（手前）に立つ
   bh.style.opacity='1';
+  spWatchStairDepth('spBgPier','spPierRail',519,664,555,632);
   let bhRow=false;
   bh.style.backgroundPosition='50% 0%';
   setTimeout(()=>{
@@ -37957,9 +38146,9 @@ function shipScenePlayS1(){
          ⑤⑥で階段を上る。こうしないと、斜めに突っ切って階段の中腹に乗ってしまう。 */
       put(46,58.8,40,.8);                                                          // ① 黄色いラインに沿って奥へ
       setTimeout(()=>{ if(seq!==shipSceneSeq) return; put(69,51.1,30,.8); },800);  // ② 階段の下端の「真横」（まだ地面）
-      setTimeout(()=>{ if(seq!==shipSceneSeq) return; put(61,47.8,26,.6); },1600); // ③ ★横へ寄って階段の一段目
-      setTimeout(()=>{ if(seq!==shipSceneSeq) return; put(52,41.4,20,.7); },2200); // ④ 階段の中ほど
-      setTimeout(()=>{ if(seq!==shipSceneSeq) return; put(42.5,37.6,15,.7); },2900);
+      setTimeout(()=>{ if(seq!==shipSceneSeq) return; spPlaceHeroFoot('spBgPier',550,675,SP_STAIR_BODY_HEIGHT,.6); },1600); // 初段直前の岸壁で身長を揃える
+      setTimeout(()=>{ if(seq!==shipSceneSeq) return; spPlaceHeroFoot('spBgPier',451,583,SP_STAIR_BODY_HEIGHT,.7); },2200);
+      setTimeout(()=>{ if(seq!==shipSceneSeq) return; spPlaceHeroFoot('spBgPier',368,521,SP_STAIR_BODY_HEIGHT,.7); },2900);
       /* ★批判エージェント（2回目）の指摘＝勝利ポーズが「壁の上」から「手すりの上」に移っただけで、
          まだ床に立っていなかった。乗降口の実測（絵のx46.5〜52.1% / 敷居y46.4%）から、
          明るいドアの中（敷居の上）に立たせる。新幹線もドアの中で振り向いており、手すりとも重ならない。 */
@@ -37971,6 +38160,7 @@ function shipScenePlayS1(){
         bh.style.backgroundImage=`url('${heroVictoryImgSrc((typeof heroChar!=='undefined'&&heroChar==='girl')?'girl':'boy')}')`;
         bh.style.backgroundSize='contain';
         bh.style.backgroundPosition='center bottom';
+        spSnapHeroFoot('spBgPier',368,521,SP_STAIR_BODY_HEIGHT); // 透明余白が異なるポーズも描画身長と足裏を保持。
         bh.style.animation='spHop .5s ease 2';
         spTone(784,0,.12,'sine',.1); spTone(1047,.12,.2,'sine',.1);
       },3600);
@@ -37982,12 +38172,15 @@ function shipScenePlayS1(){
         bh.style.backgroundImage=`url('${heroSheetUrl()}')`;
         bh.style.backgroundSize='300% 200%';
         bh.style.backgroundPosition='100% 0%';       // 100%=よこ向き
+        bh.style.transform='scaleX(-1)';             // 左の船内へ向く。歩行コマ更新でも反転を保持。
+        $('spPierDoorWall').classList.add('show');
         let r2=false;
-        const t2=setInterval(()=>{ r2=!r2; bh.style.backgroundPosition='100% '+(r2?'100%':'0%'); spWalkFrame(bh,r2,'100%'); },150);
+        const t2=setInterval(()=>{ r2=!r2; bh.style.backgroundPosition='100% '+(r2?'100%':'0%'); spWalkFrame(bh,r2,'100%'); bh.style.transform+=' scaleX(-1)'; },150);
         shipSceneWalkHandles.push({stop(){ clearInterval(t2); }});
-        put(45,41,13,.6);                            // ドアの奥へ
+        spSnapHeroFoot('spBgPier',368,521,SP_STAIR_BODY_HEIGHT);
+        spPlaceHeroFoot('spBgPier',295,506,SP_STAIR_BODY_HEIGHT,.6); // 左壁の裏へ。全身を壁で隠してから消す。
       },4400);
-      setTimeout(()=>{ if(seq!==shipSceneSeq) return; bh.style.transition='opacity .4s ease'; bh.style.opacity='0'; },5100);
+      setTimeout(()=>{ if(seq!==shipSceneSeq) return; bh.style.transition='none'; bh.style.opacity='0'; },5100);
       // 汽笛1回目（出航の合図）
       setTimeout(()=>{ if(seq!==shipSceneSeq) return; spHorn(0,2.6,.30,false); },4800);
       setTimeout(()=>{ if(seq!==shipSceneSeq) return; shipSceneStopWalkAnims(); shipScenePlayS2(); },5900);
@@ -38017,6 +38210,7 @@ function shipScenePlayS2(){
   setTimeout(()=>{
     if(seq!==shipSceneSeq) return;
     $('spBgPier').classList.remove('show');
+    $('spPierRail').classList.remove('show');
     const bh=$('spBoardHero'); if(bh){ bh.classList.remove('pose'); bh.removeAttribute('style'); }
   },550);
   // カメラワーク4区分（新幹線と同じ流儀＝だんだん速く・大きく）
@@ -38111,6 +38305,9 @@ function shipScenePlayS6(){
   $('spFog').classList.remove('peak');
   $('shipSceneStage').classList.remove('sp-roll');
   $('spBgArrive').classList.add('show');
+  $('spArriveRail').classList.add('show');
+  $('spArriveRail').style.zIndex='7';     // 下船は階段内から始まり、下端を抜けたら主人公の後ろへ。
+  $('spArriveDoorWall').classList.add('show');
   spCreak(.2);
   spFadeOut('engine',1.2);       // 着いたので機関の唸りを止める
   spFadeOut('waves',1.6);        // 接岸したので波の音も引かせる（S7の屋内まで鳴り続けていた）
@@ -38118,7 +38315,6 @@ function shipScenePlayS6(){
   // 霧が晴れる（黒ワイプが抜ける新幹線に対して、白が引いていく）
   setTimeout(()=>{ if(seq!==shipSceneSeq) return; $('spFog').classList.remove('show'); $('spFogDrift').classList.remove('show'); spChime(); },400);
   const bh=$('spBoardHero');
-  const put=(x,y,w,dur)=>{ bh.style.transitionDuration=dur+'s,'+dur+'s,'+dur+'s,.35s'; bh.style.left=x+'%'; bh.style.top=y+'%'; bh.style.width=w+'%'; };
   let row=false, col='100%';             // 100%=よこ向き（降りる一歩目）
   setTimeout(()=>{
     if(seq!==shipSceneSeq) return;
@@ -38135,15 +38331,18 @@ function shipScenePlayS6(){
          下端（岸壁に着く）  ＝画面の x≈56% / y≈64%
        つまり**画面の左**から右下へ降りている。その線に足元を乗せる。
        put(left,top,width)：足元 ≒ top + width×0.43 ／ 体の中心 ≒ left + width/2 */
-    put(11,40,11,0); bh.style.opacity='1';
+    spSnapHeroFoot('spBgArrive',40,499,SP_STAIR_BODY_HEIGHT);
+    bh.style.transition='none'; bh.style.opacity='1'; void bh.offsetWidth; bh.style.transition='';
+    spPlaceHeroFoot('spBgArrive',131,514,SP_STAIR_BODY_HEIGHT,.6); // 左壁の裏から右へ歩いて敷居に出る。
+    spWatchStairDepth('spBgArrive','spArriveRail',310,721,374,679);
     const tick=setInterval(()=>{ row=!row; bh.style.backgroundPosition=col+' '+(row?'100%':'0%'); spWalkFrame(bh,row,col); },150);
     shipSceneWalkHandles.push({stop(){ clearInterval(tick); }});
   },1400);
-  setTimeout(()=>{ if(seq!==shipSceneSeq) return; put(25,47,16,.5); },2000);   // 階段の中ほど
-  setTimeout(()=>{ if(seq!==shipSceneSeq) return; col='0%'; bh.style.backgroundPosition='0% 0%'; put(45,55,22,.55); },2500);   // 岸壁に降りて正面を向く
-  setTimeout(()=>{ if(seq!==shipSceneSeq) return; put(46,56,36,.55); },3050);
-  setTimeout(()=>{ if(seq!==shipSceneSeq) return; put(30,63,48,.55); },3600);
-  setTimeout(()=>{ if(seq!==shipSceneSeq) return; put(13,69,62,.55); },4150);
+  setTimeout(()=>{ if(seq!==shipSceneSeq) return; spPlaceHeroFoot('spBgArrive',225,597,SP_STAIR_BODY_HEIGHT,.5); },2000);
+  setTimeout(()=>{ if(seq!==shipSceneSeq) return; spPlaceHeroFoot('spBgArrive',337,704,SP_STAIR_BODY_HEIGHT,.55); },2500);
+  setTimeout(()=>{ if(seq!==shipSceneSeq) return; col='0%'; bh.style.backgroundPosition='0% 0%'; spPlaceHeroFoot('spBgArrive',418,829,203,.55); },3050);
+  setTimeout(()=>{ if(seq!==shipSceneSeq) return; spPlaceHeroFoot('spBgArrive',354,978,270,.55); },3600);
+  setTimeout(()=>{ if(seq!==shipSceneSeq) return; spPlaceHeroFoot('spBgArrive',290,1127,349,.55); },4150);
   setTimeout(()=>{ if(seq!==shipSceneSeq) return; shipSceneStopWalkAnims(); shipScenePlayS7(); },SHIP_SCENE_MS.s6);
 }
 
@@ -38154,6 +38353,7 @@ function shipScenePlayS6(){
 function shipScenePlayS7(){
   const seq=shipSceneSeq;
   $('spBgTerminalH').classList.add('show');
+  $('spArriveRail').classList.remove('show'); // 新背景の.5秒フェードと同時に消し、ターミナルに残さない。
   $('spSnow').classList.remove('show');   // 建物の中に入ったので雪をやめる
   setTimeout(()=>{ if(seq!==shipSceneSeq) return; $('spBgArrive').classList.remove('show'); },550);
   const bh=$('spBoardHero');
@@ -38317,6 +38517,7 @@ function continueAfterOpeningMovie(){
   openingBootContinued=true;
   if(needsInitialOpening()){ nmOpen(startOp1Event); }
 }
+// PVの終了後に従来の初回登録。動画用スクリプトが読めなくても開始を妨げない。
 document.addEventListener('DOMContentLoaded',()=>{
   if(!window.OpeningMovie?.isActive())continueAfterOpeningMovie();
 },{once:true});
@@ -42715,7 +42916,7 @@ var YojiFieldScene = (function(){
     'girl': { back:{w:0.565,h:0.979}, lookup:{w:0.562,h:0.979}, surprise:{w:0.624,h:0.921}, ready:{w:0.921,h:0.842}, down:{w:0.979,h:0.781} },
     'girl-pink': { back:{w:0.666,h:0.984}, lookup:{w:0.769,h:0.984}, surprise:{w:0.677,h:0.925}, ready:{w:0.819,h:0.846}, down:{w:0.984,h:0.750} },
     'girl-rpg': { back:{w:0.522,h:1.114}, lookup:{w:0.559,h:1.114}, surprise:{w:0.546,h:1.047}, ready:{w:0.763,h:0.958}, down:{w:1.114,h:0.847} },
-    'girl-snow': { back:{w:0.785,h:1.087}, lookup:{w:0.736,h:1.087}, surprise:{w:0.837,h:1.022}, ready:{w:1.024,h:0.935}, down:{w:1.087,h:0.649} },
+    'girl-snow': { back:{w:0.562441,h:0.988819}, lookup:{w:0.511502,h:0.848734}, surprise:{w:0.721483,h:1.023570}, ready:{w:0.685436,h:0.905931}, down:{w:0.840310,h:0.749381} },
     'girl-suit': { back:{w:0.410,h:1.006}, lookup:{w:0.517,h:1.007}, surprise:{w:0.602,h:0.945}, ready:{w:0.486,h:0.865}, down:{w:1.006,h:0.791} },
     'girl-wafuku': { back:{w:0.524,h:1.042}, lookup:{w:0.588,h:1.042}, surprise:{w:0.616,h:0.980}, ready:{w:0.957,h:0.896}, down:{w:1.042,h:0.812} }
   };
@@ -43294,6 +43495,10 @@ var YojiFieldScene = (function(){
           art.style.opacity='1';
           art.style.width=(fit.w*TILE).toFixed(1)+'px';
           art.style.height=(fit.h*TILE).toFixed(1)+'px';
+          /* 歩行の足裏239/256にポーズの足裏も合わせる（新雪ドレスだけ）。 */
+          var snowFit=c0==='girl'&&sf0==='-snow';
+          var snowPad=snowFit ? (4/(((h.art==='back')?1359:(h.art==='lookup')?1276:(h.art==='surprise')?1335:(h.art==='ready')?1286:956)))*(fit.h*TILE) : 0;
+          art.style.bottom=(snowFit ? size*17/256-snowPad : 0).toFixed(3)+'px';
           art.style.transform='translateX(-50%) scaleX('+h.sx.toFixed(3)+')';
           sp.style.opacity='0';
         }else{
@@ -43395,8 +43600,8 @@ var YojiFieldScene = (function(){
     artNow=pose;
     var c=yfChar(), sf=yfSuffix();
     var key=pose+'-'+c+sf;
-    el.src = (sf && costOK[key]) ? (TATE+ARTPRE+pose+'-'+c+sf+'.webp')
-                                 : (TATE+ARTPRE+pose+'-'+c+'.webp');
+    el.src = heroPoseImgVersion((sf && costOK[key]) ? (TATE+ARTPRE+pose+'-'+c+sf+'.webp')
+                                 : (TATE+ARTPRE+pose+'-'+c+'.webp'));
   }
   function bindImages(){
     var map=$('yfMap');
@@ -43422,7 +43627,7 @@ var YojiFieldScene = (function(){
           var im2=new Image();
           im2.onload=function(){ costOK[key]=true; };
           im2.onerror=function(){};              /* 無いのが普通＝コンソールを汚さない */
-          im2.src=TATE+ARTPRE+p+'-'+c+sf+'.webp';
+          im2.src=heroPoseImgVersion(TATE+ARTPRE+p+'-'+c+sf+'.webp');
         }
       }
     });
@@ -43435,8 +43640,9 @@ var YojiFieldScene = (function(){
     var host=$('yfTalkHost'); if(!host) return;
     if(show && !talkShown){
       talkShown=true;
+      var talkFace=TALK_MSG.indexOf('うわさに きく 四字熟語モン')>=0?'images/bust/mana_kiri.webp':MANA_FACE;
       host.innerHTML='<div class="hakase-talk at-bottom" id="yfTalkWin">'+
-        '<div class="hakase-talk-face has-img" style="background-image:url(\''+MANA_FACE+'\')"></div>'+
+        '<div class="hakase-talk-face has-img" style="background-image:url(\''+talkFace+'\')"></div>'+
         '<div class="hakase-talk-text"></div></div>';
       host.querySelector('.hakase-talk-text').innerHTML=talkText(TALK_MSG,fieldZone);
       host.querySelector('.hakase-talk').onclick=function(ev){ ev.stopPropagation(); jumpTo(M.talkOut); };

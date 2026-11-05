@@ -7,10 +7,11 @@
 .acb-piece.carried .acb-sprite{translate:0 -9px;filter:drop-shadow(0 13px 4px #63482345)}
 .acb-piece[data-placed=false]:before,.acb-piece.grounded:before{content:'';position:absolute;left:-5%;bottom:-3%;width:110%;height:9%;border-radius:50%;background:#71502660;filter:blur(2px)}
 .acb-piece.carried:before{opacity:0}
-.acb-friends{position:absolute;inset:0;z-index:800;pointer-events:none}
-.acb-child{position:absolute;left:8%;top:60%;width:22%;height:23%;display:flex;align-items:flex-end;justify-content:center;filter:drop-shadow(0 3px 2px #64482455)}
-.acb-child-sprite{display:block;transform:scale(3.8);transform-origin:50% 100%;image-rendering:auto}
-.acb-easy{position:absolute;right:-10%;top:43%;width:52%;height:52%;object-fit:contain;filter:drop-shadow(0 3px 2px #64482455)}
+.acb-friends{position:absolute;inset:0;z-index:800;pointer-events:none;container-type:size;--friend-unit:28cqh;--hero-height:calc(var(--friend-unit) / var(--hero-fill,1));--easy-height:calc(var(--friend-unit) * 1.25 / var(--easy-fill,1));opacity:0}
+.acb-friends.ready{opacity:1}
+.acb-child{position:absolute;left:14%;bottom:calc(7cqh - var(--hero-height) * var(--hero-pad,0));width:var(--hero-height);height:var(--hero-height);transform:translateX(-50%);filter:drop-shadow(0 3px 2px #64482455)}
+.acb-child-sprite{display:block;width:100%;height:100%;background-size:300% 200%;background-position:50% 0%;background-repeat:no-repeat}
+.acb-easy{position:absolute;left:85%;bottom:calc(7cqh - var(--easy-height) * var(--easy-pad,0));width:var(--easy-height);height:var(--easy-height);transform:translateX(-50%);object-fit:contain;filter:drop-shadow(0 3px 2px #64482455)}
 .acb-hand{position:absolute;width:95%;aspect-ratio:1.38;bottom:-58%;background-image:url('../images/amami-blocks/hands.png');background-repeat:no-repeat;z-index:2;transition:opacity .35s,translate .35s;pointer-events:none}
 .acb-hand.hero{left:-52%;background-size:351.68% 246.67%;background-position:26.75% 55.87%;clip-path:polygon(20% 0,100% 0,100% 100%,30% 100%,0 65%,0 30%)}
 .acb-hand.easy{right:-52%;background-size:301.02% 197.33%;background-position:81.79% 67.81%}
