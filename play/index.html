@@ -27603,11 +27603,42 @@ function tryFineStep(dx,dy,def){
 /* ★2026-11-04：町・建物の中に立っている人（INTERIOR_ACTORS）は、すり抜けないよう通せんぼにする。
    話しかける店員さん（M・U・Nなど特別なマスの上に立つ人）は今までどおり踏んで話しかけられるよう、
    ただの床（.）に立っている人だけを対象にする。絵が読めず表示されていない人は通せんぼしない。 */
-function fieldActorBlocks(zone,x,y){
-  if(zone>0) return false;
+function fieldActorAt(zone,x,y){
+  if(zone>0) return null;
   const g=zoneGridOf(zone);
-  if(!g[y]||g[y][x]!=='.') return false;
-  return INTERIOR_ACTORS.some(a=>a.zone===zone&&a.x===x&&a.y===y&&(interiorActorSheetOK.has(a.key)||interiorActorImgOK.has(a.key)));
+  if(!g[y]||g[y][x]!=='.') return null;
+  return INTERIOR_ACTORS.find(a=>a.zone===zone&&a.x===x&&a.y===y&&(interiorActorSheetOK.has(a.key)||interiorActorImgOK.has(a.key)))||null;
+}
+function fieldActorBlocks(zone,x,y){ return !!fieldActorAt(zone,x,y); }
+/* ★2026-11-04：ぶつかった町の人と会話する。話しかけるたびに次の1行へ（記録はしない）。
+   文言は依頼時の例（イージー・かんじモン）と町の案内以外は仮案。
+   顔は立ち絵（images/bust/mob_*_表情.webp）。 */
+const MOB_TALK={
+  mobOtonaFA:{face:'mob_otona_f_a',lines:[['この まえ AIの イージーを つかったけど、とっても よかったわ。なんでも すぐ こたえて くれるの','ureshii'],['イージーが いれば、もう じを おぼえなくても いいのかしらね','normal'],['とけいとうで おてつだいが できるわよ。おだちんも もらえるの','ureshii']]},
+  mobObaaA:{face:'mob_obaa_a',lines:[['さいきん まちの そとで かんじモンが あばれてるよ。きを つけて おいき','komatta'],['よまれなく なった じは、よみを わすれて あばれるんだって','normal'],['つかれたら じぶんの いえで やすむと いいよ。むりょうだからね','ureshii']]},
+  mobOtonaFB:{face:'mob_otona_f_b',lines:[['にくやさんの おてつだいを すると、おだちんが もらえるのよ','ureshii'],['ふくやさんで きがえも できるわよ','normal']]},
+  mobKodomoFA:{face:'mob_kodomo_f_a',lines:[['おつかいに きたの。でも メモの じが よめなくて こまってるんだ','komatta'],['イージーに きけば すぐ わかるって、おにいちゃんが いってた','normal']]},
+  mobKodomoMB:{face:'mob_kodomo_m_b',lines:[['しゅくだい、イージーに きいたら すぐ おわっちゃった。でも なんにも おぼえてないや','odoroki'],['せんせいの テスト、ぜんぶ できたら ほめて もらえるんだ','ureshii']]},
+  mobKodomoFB:{face:'mob_kodomo_f_b',lines:[['せんせいに はなしかけると、かんじの テストが うけられるよ','normal'],['じを よんで あげると、かんじモンが よろこぶんだって','ureshii']]},
+  mobOtonaMB:{face:'mob_otona_m_b',lines:[['さいきん しんかんせんの レールの うえで かんじモンが あばれてて、でんしゃが はっしゃ できないんだ','komatta','beforeKanto'],['かいさつを とおると、しんかんせんに のれるよ','normal','afterKanto'],['しごとの メールも ぜんぶ イージーが かいて くれるんだ。べんりな じだいだよ','ureshii']]},
+  mobOjiiA:{face:'mob_ojii_a',lines:[['わしが こどもの ころは、えきの なまえを ぜんぶ よめたもんじゃ','normal'],['さいきんは かんばんの じも よめない ひとが ふえたらしい。こまったのう','komatta']]},
+  mobOjiiB:{face:'mob_ojii_b',lines:[['この むらも、もっと にぎやかに なると いいのう','normal'],['ふどうさんやさんで もりの はなしを きいて ごらん','ureshii']]},
+  mobObaaB:{face:'mob_obaa_b',lines:[['だいくの きょうだいは うでが いいんだよ','ureshii'],['はたけしごとの あいまに、ちょっと ひとやすみ','normal']]}
+};
+const mobTalkTurn={};
+/* ★2026-11-04 設定：新幹線に乗れるのは関東（2年・ゾーン9〜24）をクリアした後。
+   それまでは「レールの上で かんじモンが あばれて 発車できない」。判定は村の入口と同じ unlocked>=STAGE2_COUNT+1。 */
+function shinkansenOpen(){ return unlocked>=STAGE2_COUNT+1; }
+function openMobTalk(a){
+  const t=a&&MOB_TALK[a.key]; if(!t) return false;
+  const kanto=shinkansenOpen();   // 3つ目の値＝関東クリア前だけ／後だけのセリフ
+  const lines=t.lines.filter(l=>!l[2]||(l[2]==='afterKanto')===kanto);
+  const n=mobTalkTurn[a.key]||0; mobTalkTurn[a.key]=n+1;
+  const [line,mood]=lines[n%lines.length];
+  const face='<div class="interior-card-face has-img" style="background-image:url(\'images/bust/'+t.face+'_'+mood+'.webp\')"></div>';
+  $('interiorCardBody').innerHTML=face+'<div class="interior-card-msg">'+line+'</div><button class="btn btn-primary" onclick="closeInteriorCard()">とじる</button>';
+  $('interiorCardOverlay').classList.add('show');
+  return true;
 }
 function tryStep(dx,dy){
   if(isAmamiEventField())return;
@@ -27626,7 +27657,13 @@ function tryStep(dx,dy){
   const ch=g[ny][nx];
   // 斜め先が床でも、両隣の縦横マスのどちらかが壁なら進めない（岩角のすり抜け防止）。
   const cornerBlocked=diagonal&&(!isPassableTile(g[fieldHy][nx],fieldZone)||!isPassableTile(g[ny][fieldHx],fieldZone));
-  if(!isPassableTile(ch,fieldZone)||cornerBlocked||fieldActorBlocks(fieldZone,nx,ny)){
+  const blocker=fieldActorAt(fieldZone,nx,ny);
+  if(blocker){   // ★2026-11-04：人にぶつかったら会話（表示中は重ねて開かない）
+    if($('interiorCardOverlay').classList.contains('show')) return;
+    setHeroFacing(dx,dy);
+    if(openMobTalk(blocker)) return;
+  }
+  if(!isPassableTile(ch,fieldZone)||cornerBlocked||blocker){
     const grid=$('fieldGrid');            // 壁：ぷるっ
     grid.classList.add('shake');
     ensureAudio(); sfxWrong();
@@ -34021,7 +34058,7 @@ function warpInterior(zone){
   showScreen('screen-field'); renderField();
   // 手直し_駅構内(7/25)：初めて駅に入ったときだけ、マナに連れられてホームへ行く一連のシーンを自動再生
   // （作者の指示「初めて乗るときはフィールドを歩くのも自動で」。2回目以降は改札Kを踏んだときだけ）
-  if(zone===STATION_ZONE && !stationSceneSeen && !trainSceneActive){
+  if(zone===STATION_ZONE && !stationSceneSeen && !trainSceneActive && shinkansenOpen()){   // ★2026-11-04 関東クリア前は自動で乗らない
     stationSceneSeen=true; save();
     setTimeout(()=>{ if(!trainSceneActive) startTrainSceneEvent(); },600);
   }
@@ -34058,7 +34095,10 @@ function onArriveInteriorTile(ch){
   if(fieldZone===MURA_ZONE&&ch==='F'){ muraOpenFudousan(); return; }   // 発注_村1：不動産屋
   if(fieldZone===MURA_ZONE&&ch==='C'){ muraOpenDaiku(); return; }      // 発注_村1：大工兄弟
   // 手直し_駅構内(7/25)：改札(K)を踏む→新幹線乗車シーン再生（完走/とばす後は駅構内に戻ってくる）
-  if(fieldZone===STATION_ZONE&&ch==='K'){ if(!trainSceneActive) startTrainSceneEvent(); return; }
+  if(fieldZone===STATION_ZONE&&ch==='K'){
+    if(!shinkansenOpen()){ showFieldBanner('しんかんせんの レールで かんじモンが あばれていて、はっしゃ できないみたい…'); return; }   // ★2026-11-04 関東クリア前
+    if(!trainSceneActive) startTrainSceneEvent(); return;
+  }
 }
 function openInteriorCard(kind){
   let html='';
