@@ -1584,6 +1584,10 @@
   .boss-jukugo-npc .dk{font-size:calc(var(--tile)*1.6);position:relative;filter:drop-shadow(0 2px 4px rgba(0,0,0,.35));
     animation:efloat 3s ease-in-out infinite}
   #fieldGrid .fuji52-field-boss.entering,#fieldGrid .nagoya63-field-boss.entering{animation:bossEnter 1s ease-out both}
+  /* 天守は奥の床へ横書きで着地。1マス幅による折返しと主人公への重なりを防ぐ。 */
+  #fieldGrid .nagoya63-field-boss{width:calc(var(--tile)*3.6);height:calc(var(--tile)*2);left:calc((var(--hx) - 1.3)*var(--tile));top:calc((var(--hy) - 1)*var(--tile));align-items:flex-end}
+  #fieldGrid .nagoya63-field-boss .dk{white-space:nowrap;line-height:1;animation:none}
+  #fieldGrid .nagoya63-field-boss .boss-jukugo-crown{top:calc(var(--tile)*-.55)}
   .boss-jukugo-crown{position:absolute;top:calc(var(--tile)*-0.62);left:50%;transform:translateX(-50%);
     font-size:calc(var(--tile)*0.72);filter:drop-shadow(0 2px 3px rgba(0,0,0,.3));pointer-events:none}
   /* 手直し 会話テンプレート統一：ナレーション系バナーは顔なしのまま、横幅を画面いっぱいに拡大（読みやすさ優先） */
@@ -1841,6 +1845,13 @@
    /* 境界は「先にいる列を見る」カット。主人公を同じ列へ重ねず、戻った瞬間に追跡へ復帰する。 */
    #fieldWrap.nagoya63-segment-view #fieldHero{visibility:hidden}
    #fieldWrap.nagoya63-entry-view #fieldGrid{clip-path:inset(50% 0 0 0)}
+
+   /* 城正面の扉だけを背景と同じ座標で開く。人物より奥、元の壁/柱は保持。 */
+   #fieldGrid .nagoya63-door{position:absolute;left:calc(var(--tile)*15.3125);top:calc(var(--tile)*57.53125);width:calc(var(--tile)*.8125);height:calc(var(--tile)*1.21875);z-index:5;pointer-events:none;perspective:100px;background:linear-gradient(#100e09 0%,#19180f 72%,#383024 100%);overflow:hidden}
+   #fieldGrid .nagoya63-door-leaf{position:absolute;top:0;width:50%;height:100%;transform-style:preserve-3d;backface-visibility:hidden}
+   #fieldGrid .nagoya63-door-leaf.left{left:0;transform-origin:left center;transform:rotateY(calc(var(--door-open,0)*85deg))}
+   #fieldGrid .nagoya63-door-leaf.right{right:0;transform-origin:right center;transform:rotateY(calc(var(--door-open,0)*-85deg))}
+   #fieldGrid .nagoya63-door-leaf svg{display:block;width:100%;height:100%}
    #fieldGrid .nagoya63-story-maros,#fieldGrid .nagoya63-segment-maros{position:absolute;
      left:calc(var(--mx)*var(--tile));top:calc(var(--my)*var(--tile));pointer-events:none;
      background-repeat:no-repeat;background-size:300% 200%;background-position:50% 0%;
@@ -10304,19 +10315,19 @@ const ZONES=[
   ]},
   /* §42：1024×3072背景と同じ1:3。旧城外48行をそのまま下へ48行移し、上48行へ縦長の城内を追加。 */
   { name:'なごやじょうの しろ', scene:'s-gold', grid:[
-   "TTTTTTTTTTTTTT.....TTTTTTTTTTTTT",
+   "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+   "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+   "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+   "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+   "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+   "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+   "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+   "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+   "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+   "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+   "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+   "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
    "TTTTTTTTTTTTTT..>..TTTTTTTTTTTTT",
-   "TTTTTTTTTTTTTT.....TTTTTTTTTTTTT",
-   "TTTTTTTTTTTTTT.....TTTTTTTTTTTTT",
-   "TTTTTTTTTTTTTT.....TTTTTTTTTTTTT",
-   "TTTTTTTTTTTTTT.....TTTTTTTTTTTTT",
-   "TTTTTTTTTTTTT.......TTTTTTTTTTTT",
-   "TTTTTTTTTTTTT.......TTTTTTTTTTTT",
-   "TTTTTTTTTTTTT.......TTTTTTTTTTTT",
-   "TTTTTTTTTTTTT.......TTTTTTTTTTTT",
-   "TTTTTTTTTTTTT.......TTTTTTTTTTTT",
-   "TTTTTTTTTTTTT.......TTTTTTTTTTTT",
-   "TTTTTTTTTTTT.........TTTTTTTTTTT",
    "TTTTTTTTTTTT.........TTTTTTTTTTT",
    "TTTTTTTTTTTT.........TTTTTTTTTTT",
    "TTTTTTTTTTTT.........TTTTTTTTTTT",
@@ -11696,7 +11707,7 @@ let pendingTravelContinueBanner3=false;  // セッション値：load()で判定
 // 第4弾セーブ項目（後方互換：旧セーブは全て初期値で壊れない）
 let fieldPos=null;      // {zone,x,y} ヒーローのフィールド位置
 let fieldMapRev52=4;    // 富士山scale=4精密通行盤。rev3は精密位置へ移行、rev2以前はSへ安全に戻す。
-let fieldMapRev63=3;    // 名古屋城rev3＝旧城外48行を保ち、上へ縦長城内48行を追加した96行版。
+let fieldMapRev63=4;    // rev4＝城内の屋根/奥壁を閉じ、床上の出口・天守へ移動。城外48行は維持。
 let introSeen=false;    // はかせのさいしょ説明を見たか
 let zoneVisited=[];     // バナー済みゾーン番号（1-8）の配列
 // 第4.5弾セーブ項目（後方互換：旧セーブは空 → cleared から自動解禁）
@@ -11914,12 +11925,14 @@ function load(){
              rev2の短い城内は中央へ、城外は旧画像と同じ地点へ移す。
              rev1以前も城内・城外を判別し、現在の同じ場面へ安全に移す。 */
           let ny=fp.y;
-          if(d.fieldMapRev63!==3){
+          if(d.fieldMapRev63!==3&&d.fieldMapRev63!==4){
             if(d.fieldMapRev63===2) ny+=ny<16?16:32;                 // 64行版：短い城内／16行下へ移した城外
             else if(typeof d.nagoya63ChaseReady==='boolean') ny+=ny<16?16:48; // 48行v3：城内／未移動の城外
             else ny+=48;                                           // 旧城外48行版
           }
-          if(gz && ny>=0&&ny<gz.length && fp.x>=0&&fp.x<gz[0].length && isPassableTile(gz[ny][fp.x],63)) fieldPos={zone:63,x:fp.x,y:ny};
+          // 旧版で屋根/奥壁に保存された位置は、城内の床へ復帰する。
+          if(ny<13&&ny>=0){ fieldPos={zone:63,x:16,y:14}; }
+          else if(gz && ny>=0&&ny<gz.length && fp.x>=0&&fp.x<gz[0].length && isPassableTile(gz[ny][fp.x],63)) fieldPos={zone:63,x:fp.x,y:ny};
           else { const s=zoneStartOf(63); fieldPos={zone:63,x:s.x,y:s.y}; }
         }else if(gz && fp.y>=0&&fp.y<gz.length && fp.x>=0&&fp.x<gz[0].length && isPassableTile(gz[fp.y][fp.x],zz)){
           fieldPos={zone:zz,x:fp.x,y:fp.y};
@@ -26359,6 +26372,7 @@ function renderField(){
     }
   }
   grid.innerHTML='';
+  if(fieldZone===63) nagoya63SetDoor((nagoya63SegmentSeen&2)?1:0);
   const g=zoneGridOf(fieldZone);              // 弾3-12§5-2：町対応のアクセサ経由
   const FW=g[0].length, FH=g.length;          // 第7弾§1：ゾーン実寸（可変サイズ）
   grid.style.setProperty('--fw',FW);
@@ -27092,9 +27106,19 @@ function startNagoya63InteriorTransition(){
   return true;
 }
 
+function nagoya63SetDoor(amount){
+  const grid=$('fieldGrid');if(fieldZone!==63||!grid)return;
+  let door=grid.querySelector('.nagoya63-door');
+  if(!door){
+    door=document.createElement('div');door.className='nagoya63-door';door.setAttribute('aria-hidden','true');
+    door.innerHTML=['left','right'].map((side,i)=>'<span class="nagoya63-door-leaf '+side+'"><svg xmlns="http://www.w3.org/2000/svg" viewBox="'+(490+i*13)+' 1841 13 39" preserveAspectRatio="none"><image href="images/fullart/zone63-nagoya-v4.png" x="0" y="0" width="1024" height="3072"/></svg></span>').join('');
+    grid.appendChild(door);
+  }
+  door.style.setProperty('--door-open',String(Math.max(0,Math.min(1,amount))));
+}
 function finishNagoya63SegmentScene(runAuto){
   const st=nagoya63SegmentState;
-  if(st)bgmSceneEnd(st.musicToken);
+  if(st){nagoya63SetDoor(1);bgmSceneEnd(st.musicToken);}
   if(nagoya63SegmentRaf){ cancelAnimationFrame(nagoya63SegmentRaf); nagoya63SegmentRaf=null; }
   nagoya63SegmentState=null;
   const grid=$('fieldGrid'),wrap=$('fieldWrap'),skip=$('fieldPanSkip');
@@ -27108,7 +27132,7 @@ function startNagoya63SegmentScene(i){
   route.push([14.5,59],[15,58]);
   if(!seg||nagoya63SegmentState||fieldZone!==63||fieldHy<48||!nagoya63ChaseReady||!screen||!screen.classList.contains('active')||!cam||!grid||!route) return false;
   const leader=nagoya63RouteIndexAtY(route,seg.targetY),leaderEnd=route.length-1+16*.46,seq=fieldSeq,own=++nagoya63SegmentSeq,tile=parseFloat(grid.style.getPropertyValue('--tile'))||12;
-  nagoya63SegmentPending=-1;nagoya63SegmentSeen|=seg.bit;save();
+  nagoya63SegmentPending=-1;nagoya63SegmentSeen|=seg.bit;save();nagoya63SetDoor(0);
   const maros=document.createElement('div');maros.className='nagoya63-segment-maros';maros.style.backgroundImage="url('images/sprites/maro_walk.webp?walk=20261003d')";nagoya63PlaceOnRoute(maros,route,leader);grid.appendChild(maros);
   grid.classList.add('nagoya63-queue-view');const queue=nagoya63AddQueue(grid,route,leader,'nagoya63-segment-kanjimon',.46);
   heroLock=true;if(wrap)wrap.classList.add('nagoya63-segment-view','nagoya63-entry-view');
@@ -27118,6 +27142,7 @@ function startNagoya63SegmentScene(i){
   const frame=now=>{
     const st=nagoya63SegmentState;if(!st||st.own!==own||st.seq!==fieldSeq||fieldZone!==63||!screen.classList.contains('active')){finishNagoya63SegmentScene(false);return;}
     const t=now-started,walkStart=T.lead+T.pan,walkEnd=walkStart+T.walk;let x=cam.x,y=cam.y,lead=leader,scale=1;
+    nagoya63SetDoor(fuji52StoryEase(Math.max(0,Math.min(1,(t-(walkStart-300))/650))));
     if(t<T.lead){st.phase='lead';}
     else if(t<walkStart){st.phase='pan';const p=fuji52StoryEase((t-T.lead)/T.pan);x=cam.x+(tx-cam.x)*p;y=cam.y+(ty-cam.y)*p;scale=1+(sceneScale-1)*p;}
     else if(t<walkEnd+T.look){st.phase=t<walkEnd?'walk':'look';x=tx;y=ty;scale=sceneScale;lead=leader+(leaderEnd-leader)*Math.min(1,(t-walkStart)/T.walk);}
@@ -27136,13 +27161,13 @@ function maybeStartNagoya63Segment(){const i=nagoya63SegmentPending>=0?nagoya63S
 
 const NAGOYA63_FIELD_BOSS_HOLD_MS=650;
 function finishNagoya63FieldBossArrival(runBattle){
-  const st=nagoya63FieldBossState;if(!st)return;if(st.timer)clearTimeout(st.timer);if(st.shakeTimer)clearTimeout(st.shakeTimer);if(st.shakeClearTimer)clearTimeout(st.shakeClearTimer);if(st.node)st.node.remove();nagoya63FieldBossState=null;
+  const st=nagoya63FieldBossState;if(!st)return;if(st.timer)clearTimeout(st.timer);if(st.shakeTimer)clearTimeout(st.shakeTimer);if(st.shakeClearTimer)clearTimeout(st.shakeClearTimer);if(st.node)st.node.remove();$('app').classList.remove('shake');nagoya63FieldBossState=null;
   const valid=st.seq===fieldSeq&&fieldZone===63&&$('screen-field').classList.contains('active');if(valid)heroLock=false;if(runBattle&&valid)startJukugoBossBattle(63);
 }
 function cancelNagoya63FieldBossArrival(){finishNagoya63FieldBossArrival(false);}
 function startNagoya63FieldBossArrival(){
   if(nagoya63FieldBossState)return true;const grid=$('fieldGrid'),screen=$('screen-field'),bp=findBossMonPos(63);if(!grid||!screen||!screen.classList.contains('active')||fieldZone!==63||!bp)return false;
-  const bj=bossJukugoWordOf(63),seq=fieldSeq,own=++nagoya63FieldBossSeq,node=document.createElement('div');node.className='boss-jukugo-npc nagoya63-field-boss entering';node.style.setProperty('--hx',bp.x);node.style.setProperty('--hy',bp.y);
+  const bj=bossJukugoWordOf(63),seq=fieldSeq,own=++nagoya63FieldBossSeq,node=document.createElement('div');node.className='boss-jukugo-npc nagoya63-field-boss entering';node.style.setProperty('--hx',bp.x);node.style.setProperty('--hy',bp.y-2);
   node.innerHTML='<div class="dk face-host"><span class="fc">'+(bj?bj.w:'')+'</span><span class="face face-jukugo"><span class="eyes"><span class="eye"></span><span class="eye"></span></span><span class="mouth"></span></span></div><span class="boss-jukugo-crown">👑</span>';
   grid.appendChild(node);heroLock=true;const st={seq,own,node,timer:null,shakeTimer:null,shakeClearTimer:null};nagoya63FieldBossState=st;
   st.shakeTimer=setTimeout(()=>{if(nagoya63FieldBossState!==st||st.seq!==fieldSeq)return;$('app').classList.add('shake');st.shakeClearTimer=setTimeout(()=>{if(nagoya63FieldBossState===st)$('app').classList.remove('shake');},500);},BOSS_ENTRY_MS-150);
