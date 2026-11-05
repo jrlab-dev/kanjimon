@@ -1,19 +1,21 @@
-/* OP30 起動PV。ゲーム進行/セーブ/名前入力には触れない。 */
+/* OP30 起動PV。ゲーム進行/セーブ/名前入力には触れない。英語表示では英語画面のOPと英語の文言を使う。 */
 (function(){
  'use strict';
- if(window.KanjimonGameI18n?.active)return;
+ const EN=!!window.KanjimonGameI18n?.active;
+ const L=EN?{label:'KanjiMon opening',video:'Opening movie',title:'KANJIMON RPG',play:'Tap to start',mute:'Mute',unmute:'Sound on',skip:'Skip movie',hint:'Choose sound on or off, then start',retry:'Play again',failed:'The movie could not load. Play again or skip the movie.',src:'videos/opening-20261105-op30-en.mp4'}
+  :{label:'かんじモン オープニング',video:'オープニングムービー',title:'かんじモン RPG',play:'タップして はじめる',mute:'音を消す',unmute:'音を出す',skip:'ムービーを とばす',hint:'音あり・音なしを えらんで はじめよう',retry:'もういちど 再生する',failed:'読みこめませんでした。再生するか、ムービーを とばしてね',src:'videos/opening-20261019-op30.mp4'};
  // 遅い読込み中に既にゲームへ進んだ場合、その画面へPVを割り込ませない。
  if(window.openingMovieDismissed||!document.getElementById('screen-title')?.classList.contains('active')||document.getElementById('worldmapOverlay')?.classList.contains('show'))return;
  const host=document.createElement('div');
- host.id='openingMovie';host.tabIndex=-1;host.setAttribute('role','dialog');host.setAttribute('aria-modal','true');host.setAttribute('aria-label','かんじモン オープニング');
- host.innerHTML='<video playsinline preload="none" poster="videos/opening-20261008-poster.jpg" aria-label="オープニングムービー"></video><div class="opening-start"><p>かんじモン RPG</p><button type="button" data-play>タップして はじめる</button></div><div class="opening-controls"><button type="button" data-sound>音を消す</button><button type="button" data-skip>ムービーを とばす</button></div><p class="opening-hint">音あり・音なしを えらんで はじめよう</p>';
+ host.id='openingMovie';host.tabIndex=-1;host.setAttribute('role','dialog');host.setAttribute('aria-modal','true');host.setAttribute('aria-label',L.label);if(EN)host.setAttribute('data-language-original','');
+ host.innerHTML='<video playsinline preload="none" poster="videos/opening-20261008-poster.jpg" aria-label="'+L.video+'"></video><div class="opening-start"><p>'+L.title+'</p><button type="button" data-play>'+L.play+'</button></div><div class="opening-controls"><button type="button" data-sound>'+L.mute+'</button><button type="button" data-skip>'+L.skip+'</button></div><p class="opening-hint">'+L.hint+'</p>';
  document.body.appendChild(host);
  const video=host.querySelector('video'),start=host.querySelector('.opening-start'),play=host.querySelector('[data-play]'),mute=host.querySelector('[data-sound]'),skip=host.querySelector('[data-skip]'),app=document.getElementById('app');
  const oldOverflow=document.body.style.overflow;
  const background=Array.from(document.body.children).filter(el=>el!==host).map(el=>[el,el.inert]);
  let active=true,state='ready',attempt=0,resumeAfterHidden=false,lastTime=0,lastProgress=performance.now();
  function setState(s){state=s;host.dataset.state=s;}
- function syncSound(){video.muted=!soundOn;mute.textContent=soundOn?'音を消す':'音を出す';}
+ function syncSound(){video.muted=!soundOn;mute.textContent=soundOn?L.mute:L.unmute;}
  function finish(reason,restoreTitle=true){
   if(!active)return;
   active=false;attempt++;setState('finished');clearInterval(watchdog);
@@ -27,17 +29,17 @@
   }
   host.dataset.finishReason=reason;
  }
- function blocked(message='タップして はじめる'){setState('ready');start.hidden=false;play.textContent=message;play.focus({preventScroll:true});}
+ function blocked(message=L.play){setState('ready');start.hidden=false;play.textContent=message;play.focus({preventScroll:true});}
  function failed(){
   if(!active)return;
   attempt++;video.pause();video.removeAttribute('src');video.load();
-  blocked('もういちど 再生する');
-  host.querySelector('.opening-hint').textContent='読みこめませんでした。再生するか、ムービーを とばしてね';
+  blocked(L.retry);
+  host.querySelector('.opening-hint').textContent=L.failed;
  }
  function begin(){
   if(!active||document.hidden||state==='loading'||state==='playing')return;
   const id=++attempt;start.hidden=true;setState('loading');lastProgress=performance.now();syncSound();
-  if(!video.getAttribute('src'))video.src='videos/opening-20261019-op30.mp4';
+  if(!video.getAttribute('src'))video.src=L.src;
   try{
    const p=video.play();
    if(p&&p.catch)p.catch(e=>{
