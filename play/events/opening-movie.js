@@ -2,7 +2,7 @@
 (function(){
  'use strict';
  const EN=!!window.KanjimonGameI18n?.active;
- const L=EN?{label:'KanjiMon opening',video:'Opening movie',title:'KANJIMON RPG',play:'Tap to start',mute:'Mute',unmute:'Sound on',skip:'Skip movie',hint:'Choose sound on or off, then start',retry:'Play again',failed:'The movie could not load. Play again or skip the movie.',src:'videos/opening-20261105-op30-en.mp4'}
+ const L=EN?{label:'KanjiMon opening',video:'Opening movie',title:'KANJIMON RPG',play:'Tap to start',mute:'Mute',unmute:'Sound on',skip:'Skip movie',hint:'Choose sound on or off, then start',retry:'Play again',failed:'The movie could not load. Play again or skip the movie.',src:'videos/opening-20261105b-op30-en.mp4'}
   :{label:'かんじモン オープニング',video:'オープニングムービー',title:'かんじモン RPG',play:'タップして はじめる',mute:'音を消す',unmute:'音を出す',skip:'ムービーを とばす',hint:'音あり・音なしを えらんで はじめよう',retry:'もういちど 再生する',failed:'読みこめませんでした。再生するか、ムービーを とばしてね',src:'videos/opening-20261019-op30.mp4'};
  // 遅い読込み中に既にゲームへ進んだ場合、その画面へPVを割り込ませない。
  if(window.openingMovieDismissed||!document.getElementById('screen-title')?.classList.contains('active')||document.getElementById('worldmapOverlay')?.classList.contains('show'))return;
