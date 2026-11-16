@@ -1,0 +1,33 @@
+:root{--ink:#213b36;--green:#356b56;--paper:#f7f5ee;--line:#e2ddd0;--accent:#e03131;--yellow:#ffe078}
+*{box-sizing:border-box}body{margin:0;color:var(--ink);background:var(--paper);font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic",Meiryo,sans-serif;line-height:1.75}
+a{color:var(--green)}main{max-width:760px;margin:0 auto;padding:16px 16px 48px}
+.crumb{font-size:.82rem;margin:4px 0 14px}.crumb a{text-decoration:none}
+.hero{display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:20px;padding:18px}
+.mon{width:150px;height:150px;border-radius:22px;display:grid;place-items:center;box-shadow:inset 0 -6px 0 rgba(0,0,0,.08)}
+.face-host{position:relative;display:inline-block;line-height:1;font-size:104px}
+.face-host .fc{font-family:"Zen Maru Gothic",sans-serif;font-weight:900;line-height:1;display:inline-block;-webkit-text-stroke:.02em rgba(0,0,0,.25)}
+.face{position:absolute;inset:0;pointer-events:none}
+.face .eyes{display:flex;gap:.16em;position:absolute;top:36%;left:50%;transform:translateX(-50%)}
+.face .eye{width:.13em;height:.16em;background:#1a1a1a;border-radius:50%;position:relative;box-shadow:0 0 0 .028em #fff}
+.face .eye::after{content:'';position:absolute;width:.05em;height:.05em;background:#fff;border-radius:50%;top:.025em;right:.015em}
+.face .mouth{position:absolute;top:54%;left:50%;transform:translateX(-50%);width:.18em;height:.11em;background:#f06d7d;border:.022em solid #1a1a1a;border-top-width:.018em;border-radius:.02em .02em .12em .12em;box-shadow:0 0 0 .018em #fff}
+h1{font-size:1.7rem;line-height:1.3;margin:0 0 6px}h1 small{display:block;font-size:.9rem;color:#5b6f69;font-weight:normal}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 0;padding:0;list-style:none}.tags li{background:#f1efe6;border-radius:999px;padding:2px 10px;font-size:.82rem}
+section{background:#fff;border:1px solid var(--line);border-radius:20px;padding:16px 18px;margin-top:14px}
+h2{font-size:1.1rem;margin:0 0 10px;padding-left:10px;border-left:5px solid var(--yellow)}
+dl.yomi{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:0}dl.yomi dt{font-weight:bold;color:#5b6f69}dl.yomi dd{margin:0;font-size:1.15rem}
+ol.order{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:8px}
+ol.order li{text-align:center;font-size:.8rem;color:#5b6f69}ol.order svg{width:100%;aspect-ratio:1;background:#fffdf6;border:1px solid var(--line);border-radius:10px;display:block}
+.guide{stroke:#e8e2d2;stroke-width:1;stroke-dasharray:3 3;fill:none}.done{stroke:#b8b8b8;stroke-width:5;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.now{stroke:var(--accent);stroke-width:6;fill:none;stroke-linecap:round;stroke-linejoin:round}.start{fill:var(--accent)}
+.note{font-size:.82rem;color:#5b6f69;margin:8px 0 0}
+ul.words{list-style:none;padding:0;margin:0;display:grid;gap:8px}ul.words li{border-bottom:1px dashed var(--line);padding-bottom:6px}
+ul.words b{font-size:1.15rem}ul.words b a{text-decoration:none}ul.words span{color:#5b6f69;font-size:.9rem;display:block}
+.game p{margin:0 0 6px}
+.cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}.button{display:inline-block;padding:10px 18px;border-radius:999px;background:var(--yellow);color:var(--ink);font-weight:bold;text-decoration:none}.button.outline{background:#fff;border:2px solid var(--ink)}
+.pager{display:flex;justify-content:space-between;gap:10px;margin-top:16px;font-weight:bold}
+.grid{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px}
+.grid a{display:block;text-align:center;font-size:1.9rem;line-height:1;padding:12px 0 6px;background:#fff;border:1px solid var(--line);border-radius:14px;text-decoration:none;color:var(--ink)}
+.grid small{display:block;font-size:.68rem;color:#5b6f69;margin-top:6px}
+footer{font-size:.75rem;color:#5b6f69;margin-top:24px}
+@media(max-width:520px){.hero{grid-template-columns:1fr;justify-items:center;text-align:center}.tags{justify-content:center}h1{font-size:1.5rem}}
