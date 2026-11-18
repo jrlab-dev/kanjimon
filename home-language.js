@@ -6,7 +6,7 @@
   let stored=null,confirmed=false;
   try{stored=localStorage.getItem(key);confirmed=localStorage.getItem(ack)==='1';}catch(e){}
   const valid=x=>x==='ja'||x==='en';
-  const chosen=valid(explicit)?explicit:page==='en'?'en':valid(stored)?stored:/^ja(?:-|$)/i.test(navigator.language||'ja')?'ja':'en';
+  const chosen=valid(explicit)?explicit:page==='en'?'en':valid(stored)?stored:page;
   if(valid(explicit)){try{localStorage.setItem(key,explicit);}catch(e){}}
   if(chosen!==page){
     const next=new URL(chosen==='en'?'/en/':'/',location.origin);
