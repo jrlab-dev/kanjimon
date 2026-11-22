@@ -23,9 +23,9 @@ ol.order li{text-align:center;font-size:.8rem;color:#5b6f69}ol.order svg{width:1
 .note{font-size:.82rem;color:#5b6f69;margin:8px 0 0}
 ul.words{list-style:none;padding:0;margin:0;display:grid;gap:8px}ul.words li{border-bottom:1px dashed var(--line);padding-bottom:6px}
 ul.words b{font-size:1.15rem}ul.words b a{text-decoration:none}ul.words span{color:#5b6f69;font-size:.9rem;display:block}
-.game p{margin:0 0 6px}
+.game p{margin:0 0 6px}.game p a{text-decoration:none;font-weight:bold;background:#e6f2ea;border:1px solid #c9dfd0;border-radius:6px;padding:0 .3em;margin:0 .1em}
 .cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}.button{display:inline-block;padding:10px 18px;border-radius:999px;background:var(--yellow);color:var(--ink);font-weight:bold;text-decoration:none}.button.outline{background:#fff;border:2px solid var(--ink)}
-.pager{display:flex;justify-content:space-between;gap:10px;margin-top:16px;font-weight:bold}
+.pager{display:flex;justify-content:space-between;gap:10px;margin-top:16px;font-weight:bold}.pager a{text-decoration:none}
 .grid{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px}
 .grid a{display:block;text-align:center;font-size:1.9rem;line-height:1;padding:12px 0 6px;background:#fff;border:1px solid var(--line);border-radius:14px;text-decoration:none;color:var(--ink)}
 .grid small{display:block;font-size:.68rem;color:#5b6f69;margin-top:6px}
