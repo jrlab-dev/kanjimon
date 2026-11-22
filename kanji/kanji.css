@@ -20,6 +20,9 @@ ol.order{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:r
 ol.order li{text-align:center;font-size:.8rem;color:#5b6f69}ol.order svg{width:100%;aspect-ratio:1;background:#fffdf6;border:1px solid var(--line);border-radius:10px;display:block}
 .guide{stroke:#e8e2d2;stroke-width:1;stroke-dasharray:3 3;fill:none}.done{stroke:#b8b8b8;stroke-width:5;fill:none;stroke-linecap:round;stroke-linejoin:round}
 .now{stroke:var(--accent);stroke-width:6;fill:none;stroke-linecap:round;stroke-linejoin:round}.start{fill:var(--accent)}
+.anim{display:flex;flex-direction:column;align-items:center;gap:8px;margin:0 0 16px}.anim-svg{width:min(240px,72vw);aspect-ratio:1;background:#fffdf6;border:1px solid var(--line);border-radius:16px;display:block}
+.ghost path{stroke:#ece7da;stroke-width:6;fill:none;stroke-linecap:round;stroke-linejoin:round}.ink path{stroke:var(--ink);stroke-width:6;fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1 2}.ink path.cur{stroke:var(--accent)}
+.anim-ctl{display:flex;align-items:center;gap:12px}.play{min-height:44px;padding:8px 20px;border-radius:999px;border:2px solid var(--ink);background:var(--yellow);color:var(--ink);font:inherit;font-weight:bold;cursor:pointer}.anim-n{min-width:4.5em;font-size:.9rem;color:#5b6f69}
 .note{font-size:.82rem;color:#5b6f69;margin:8px 0 0}
 ul.words{list-style:none;padding:0;margin:0;display:grid;gap:8px}ul.words li{border-bottom:1px dashed var(--line);padding-bottom:6px}
 ul.words b{font-size:1.15rem}ul.words b a{text-decoration:none}ul.words span{color:#5b6f69;font-size:.9rem;display:block}
