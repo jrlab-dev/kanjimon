@@ -195,7 +195,7 @@
       p.battles = nBattle > 10 ? '11+' : String(nBattle);
       p.wrong = nWrong;
       p.sec = Math.round((Date.now() - t0) / 1000);
-      p.kanji = g(function () { return caught.size; }, 0);
+      p.kanji_n = g(function () { return caught.size; }, 0);
       p.transport_type = 'beacon';
       send('leave', p);
     }
