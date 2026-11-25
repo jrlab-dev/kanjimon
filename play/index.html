@@ -918,6 +918,12 @@
     font-weight:900;font-size:.95rem;cursor:pointer;font-family:inherit;box-shadow:0 3px 0 rgba(0,0,0,.12);
     align-self:center;-webkit-tap-highlight-color:transparent}
   .genki-item-btn:active{transform:translateY(2px)}
+  /* 序盤改善(2026-11-25) B5：げんきだまの案内。押す場所を光らせ、指の絵を動かす */
+  .genki-item-btn.tut-glow,.pbtn.tut-glow .pfuda{position:relative;animation:tutGlow 1s ease-in-out infinite;z-index:3}
+  .pbtn.tut-glow{position:relative;z-index:3;opacity:1;filter:none}   /* ヘトヘトで薄くなった子も、案内中ははっきり見せる */
+  @keyframes tutGlow{0%,100%{box-shadow:0 0 0 3px #ffd54a,0 0 10px 4px rgba(255,213,74,.7)}50%{box-shadow:0 0 0 5px #ff9f1a,0 0 22px 10px rgba(255,159,26,.85)}}
+  .tut-finger{position:absolute;left:50%;top:-50px;font-size:42px;line-height:1;pointer-events:none;transform:translateX(-50%);animation:tutFinger .8s ease-in-out infinite;filter:drop-shadow(0 2px 2px rgba(0,0,0,.35))}
+  @keyframes tutFinger{0%,100%{transform:translate(-50%,0)}50%{transform:translate(-50%,10px)}}
   .genki-item-btn.arming{background:#fffbe6;box-shadow:0 0 0 3px var(--yellow),0 3px 0 rgba(0,0,0,.12)}
   @media(max-width:374px){
     .field-h .map-btn{padding:7px 8px;font-size:.85rem}
@@ -3825,7 +3831,7 @@ body.ice-dungeon #fieldInfo{display:none}
 <link rel="stylesheet" href="events/うどんの里会話.css?v=20261105-sync">
 <script defer src="events/うどんの里会話.js?v=20261105-sync"></script>
 <link rel="stylesheet" href="events/opening-movie.css?v=20261105-sync">
-<script defer src="events/opening-movie.js?v=20261105-op30-en"></script>
+<script defer src="events/opening-movie.js?v=20261125-start"></script>
 <script defer src="/km-analytics.js?v=20261125"></script>
 <!-- battle-responsive-20261010 -->
 <style>
@@ -3879,7 +3885,7 @@ body:has(#screen-battle.active.battle-responsive) #app{height:100dvh;overflow-y:
  #screen-battle.tate.battle-responsive[id="screen-battle"] .pbtn.pfield .pfuda{padding-left:3px;padding-right:3px}
 }
 </style>
-<script src="new-game-plus/core.js?v=20261105-sync"></script>
+<script src="new-game-plus/core.js?v=20261125-start"></script>
 <link rel="stylesheet" href="new-game-plus/ui.css?v=20261105-sync">
 <script src="pwa/game-bridge.js?v=20261105-sync" defer></script>
 <link rel="stylesheet" href="collection/collection.css?v=20261105-sync">
@@ -4576,6 +4582,7 @@ body:has(#screen-battle.active.battle-responsive) #app{height:100dvh;overflow-y:
       <button class="btn btn-ghost" onclick="closeHome()">やめる</button>
     </div>
     <div id="homeDone" style="display:none">
+      <button class="btn btn-primary" id="homeReturnBtn" style="display:none" onclick="homeReturnToAdventure()">ぼうけんに もどる</button>
       <button class="btn btn-primary" onclick="closeHome()">とじる</button>
     </div>
   </div>
@@ -12563,6 +12570,12 @@ let jukugoLoreSeen=false;
 let jukugoFuseUnlocked=false;
 let reviewIntrudeFirstSeen=false; // 第16弾：ふくしゅうのらんにゅうの初回体験を見たか（はかせのセリフ1回だけ）
 let firstFieldBattleHelped=false; // §7-1：最初のフィールドバトルで はかせの手引きをしたか
+let tutTamaCount=0;               // 序盤改善(2026-11-25) B2/B3：にほんばしのオート探検で出した「たましい」チュートリアルで仲間になった数（0〜2）
+let tutTamaSteps=0;               // 同：戦いから戻ってオートで歩いた歩数（セッション値）
+let tutTamaActive=false;          // 同：いまのたましい戦がチュートリアルのものか（セッション値）
+let genkidamaTutDone=false;       // 序盤改善 B5：🍙げんきだまのチュートリアルを済ませたか
+let gdGuide=null;                 // 序盤改善 B5：げんきだまの案内中 {seq,step:'btn'|'pick',full}
+let homeReturnZone=0;             // 序盤改善 B8：げんき切れで家に帰される前にいた地域（0＝なし・セッション値）
 let firstBodyIdx=null;            // §7-2：最初にゲットしたからだのKインデックス（強制たましい置き換え用）
 let forceTamashiiNext=false;      // §7-2：次のくさむらエンカウントを強制的にたましいにする（1回だけ）
 // 発注_初回チュートリアル：ゾーン1・オートたんけん中に3体撃破 → 次のくさむらエンカウントを確定色違いに（初回のみ）
@@ -12791,6 +12804,7 @@ function getSaveData(){
       reviewIntrudeFirstSeen:reviewIntrudeFirstSeen,
       firstFieldBattleHelped:firstFieldBattleHelped,
       firstBodyIdx:firstBodyIdx,forceTamashiiNext:forceTamashiiNext,
+      tutTamaCount:tutTamaCount,genkidamaTutDone:genkidamaTutDone,   // 序盤改善(2026-11-25)：にほんばしのチュートリアル
       zone1AutoDefeatCount:zone1AutoDefeatCount,   // 発注_初回チュートリアル
       tutorialForceShinyNext:tutorialForceShinyNext,
       tutorialShinySeen:tutorialShinySeen,
@@ -12992,6 +13006,9 @@ function load(){
     firstFieldBattleHelped = (d.firstFieldBattleHelped===true);
     firstBodyIdx = (Number.isInteger(d.firstBodyIdx)&&d.firstBodyIdx>=0&&d.firstBodyIdx<K.length) ? d.firstBodyIdx : null;
     forceTamashiiNext = (d.forceTamashiiNext===true);
+    // 序盤改善(2026-11-25)：旧セーブには無い＝0回・未実施あつかい（条件がそろったときだけ出る）
+    tutTamaCount = (Number.isInteger(d.tutTamaCount)&&d.tutTamaCount>=0&&d.tutTamaCount<=2) ? d.tutTamaCount : 0;
+    genkidamaTutDone = (d.genkidamaTutDone===true);
     // 発注_初回チュートリアル：旧セーブ（このカウンター登場前）はカウント0・未発生あつかいに倒す
     zone1AutoDefeatCount = (Number.isInteger(d.zone1AutoDefeatCount)&&d.zone1AutoDefeatCount>=0&&d.zone1AutoDefeatCount<=3) ? d.zone1AutoDefeatCount : 0;
     tutorialForceShinyNext = (d.tutorialForceShinyNext===true);
@@ -14464,6 +14481,7 @@ const REVIEW_INTRUDE_RATE=0.25; // 第16弾：クリア済みゾーンのくさ�
    - simpleモード（onWrongSimple・共有HPの hp/faint）は無変更で残す＝このブロックからは一切触らない。
 ================================ */
 // 弾3-11 ユーザー調整用
+const WRONG_READING_SHOW_MS=3000;   // 序盤改善(2026-11-25) C1：まちがえた時に正しい読みを見せる時間（旧2.3秒）
 const GENKI_BASE=6;          // Lv1のげんき最大値
 const GENKI_PER_2LV=1;       // レベル2ごとに最大値+1（Lv9で GENKI_BASE+4 = 10）
 const GENKI_COST_ATTACK=1;   // 攻撃（正解）で減る量
@@ -14621,6 +14639,8 @@ function playSoulSeparation(idx, seq){
 function handleTiredAfterRound(seq){
   if(seq!==spawnSeq) return true;
   if(selectedAttacker===null || genkiOf(selectedAttacker)>GENKI_TIRED) return false;
+  // 序盤改善(2026-11-25) B5：にほんばしで はじめて仲間がヘトヘトになったら、🍙げんきだまの使い方を教える（1回だけ）
+  if(!genkidamaTutDone && gdGuideAvailable()){ startGenkidamaGuide(true); return true; }
   if(!allPartyUsable()){ sendHomeAllTired(); return true; }
   const wasGenkiGuideSeen=genkiGuideSeen;
   if(!genkiGuideSeen){
@@ -14650,6 +14670,17 @@ function handleTiredAfterRound(seq){
    プレイヤーが「やすむ」を押して回復（鉄則9＝やって見せる導線。「やめる」で逃げてもいつでも入り直せる・詰みなし）。
    フィールド発・クイックバトル発のどちらも同じく町へ。呼び出しは必ずこの1点を経由すること。 */
 function sendHomeAllTired(source){
+  if(zone1TiredRescue(source)) return;   // 序盤改善 B5/B7：にほんばしでは家に帰さない
+  // 序盤改善 B8：戦いの画面から帰すときは、帰る前に理由を1行見せる（英語版は従来どおり）
+  //   計測(km-analytics)が包んでいる名前のまま、少し待ってからもう一度この関数を呼ぶ＝2回目で実際に帰る
+  if(!window.KanjimonGameI18n?.active && $('screen-battle').classList.contains('active') && sendHomeReasonSeq!==spawnSeq){
+    sendHomeReasonSeq=spawnSeq; const rseq=spawnSeq;
+    answering=true; itemUseMode=false; gdGuide=null; hideBattleHakase();
+    $('bOptions').innerHTML='';
+    setMsg('みんな げんきが なくなった… いえで やすもう');
+    setTimeout(()=>{ if(rseq!==spawnSeq) return; sendHomeAllTired(source); },1900);
+    return;
+  }
   if(sceneImages.gate(TOWN_ZONE,()=>sendHomeAllTired(source)))return;
   save();
   spawnSeq++;   // 送還は演出タイマーの中から呼ばれるため、既存のexitBattleと同じ流儀で世代を進めて残タイマーを無効化
@@ -14671,6 +14702,7 @@ function sendHomeAllTired(source){
   battleSource='quick';
   // 町のやど前（Yの1マス手前）へワープ（fieldPosは書かない＝町の位置はセーブされない）
   if(fieldZone>=1) townPrevZone=fieldZone;
+  homeReturnZone=(fieldZone>=1&&fieldZone<=STAGE_COUNT)?fieldZone:0;   // 序盤改善 B8：休んだあと「ぼうけんに もどる」で戻る先
   fieldZone=TOWN_ZONE;
   const f=townInnFront();
   fieldHx=f.x; fieldHy=f.y;
@@ -14686,6 +14718,33 @@ function sendHomeAllTired(source){
     if(!scr || !scr.classList.contains('active')) return;
     openHome();
   },2300);
+}
+let sendHomeReasonSeq=-1;   // 序盤改善 B8：理由の1行を見せた戦い（spawnSeq）。同じ戦いでは2回目に実際に帰る
+/* 序盤改善(2026-11-25) B5/B7：にほんばし（ゾーン1）では家に帰さない。
+   🍙があれば使い方を案内し、無ければマナが みんなの げんきを もどして その場で続ける。かく・英語版は従来どおり。 */
+function zone1TiredRescue(source){
+  if(window.KanjimonGameI18n?.active || difficulty==='writing') return false;
+  const inBattle=$('screen-battle').classList.contains('active');
+  if((inBattle?curStage:fieldZone)!==1) return false;
+  if(inBattle && battleMode!=='party') return false;
+  if(inBattle && gdGuideAvailable()){ startGenkidamaGuide(!genkidamaTutDone); return true; }
+  party.forEach(i=>{ genki[i]=genkiMaxOf(i); });
+  save();
+  const line='みんな つかれたね。マナが げんきを あげる！';
+  if(inBattle){
+    const seq=spawnSeq;
+    answering=true; itemUseMode=false; autoPickArmed=false; autoPickSeq++;
+    $('bOptions').innerHTML='';
+    showBattleHakase(line);
+    ensureAudio(); sfxLevelup();
+    renderParty(); updateBattleHud();
+    setTimeout(()=>{ if(seq!==spawnSeq) return; hideBattleHakase(); answering=false; phase='select'; $('bOptions').innerHTML=''; renderParty(); updateBattleHud(); },2600);
+  }else{
+    showFieldBanner(talkUi(line));
+    const fs=fieldSeq;
+    setTimeout(()=>{ if(fs!==fieldSeq||fieldZone!==1) return; if(isAutoZone(fieldZone)) startAutoExplore(); },2400);
+  }
+  return true;
 }
 function genkiSelfTest(){
   let monotonic=true, prev=0;
@@ -15021,7 +15080,7 @@ function jukugoBossOnWrong(btn){
     setMsg('もういちど ちょうせん！<br>かんじもんを えらぼう');
     $('bOptions').innerHTML='';
     renderParty();
-  },2300,seq,true);
+  },WRONG_READING_SHOW_MS,seq,true);
 }
 /* 勝利：とどめを刺した味方にレベルアップ／しんか判定（既存planLevelUp/playEvolutionをそのまま使用）→じゅくご発見へ */
 function jukugoBossDefeated(att){
@@ -15288,7 +15347,7 @@ function twinBossOnWrong(btn){
     setMsg('もういちど ちょうせん！<br>かんじもんを えらぼう');
     $('bOptions').innerHTML='';
     renderParty();
-  },2300,seq,true);
+  },WRONG_READING_SHOW_MS,seq,true);
 }
 /* §4-2：ターン開始時の共通処理。出題対象=twinTurn。HPが0なら「ふんばった」復活演出（該当キャラにrevive
    アニメクラス一瞬付与）→HPを1に戻して出題続行。クイズの選択肢はonTwinBossPartyTapで初めて作る＝
@@ -15498,6 +15557,7 @@ function exitBattle(){ if(evoLock||window.KanjimonStoryOutcome?.locked||window.K
   if(amamiEpisodeOneBattle){amamiEpisodeOneAbortBattle();return;}
   if(iceDungeonBattle){iceDungeonAbortTrial();return;}
   spawnSeq++;   // 手直し(2026-07-04・積み残し解消①)：世代を進め、正解演出中の残タイマー（seq比較）を「おわる」後は無効にする
+  gdGuide=null; tutTamaActive=false;   // 序盤改善：案内・たましいチュートリアルの途中で「おわる」→残さない
   isTamashii=false; tamashiiIdx=null;   // 第15弾：たましい中に「おわる」→次のsetupBattleCommon前でも状態を残さない
   tamashiiQuizIdx=null; tamashiiQuizMiss=0;   // 第15弾：たましいクイズ中の「おわる」→にげられた扱い・フラグ残留なし
   isReviewIntruder=false;                 // 第16弾：ふくしゅうのらんにゅう中に「おわる」→次のsetupBattleCommon前でも状態を残さない
@@ -15620,6 +15680,7 @@ function renderParty(){
     hb.innerHTML='<img src="'+heroBackImgSrc(hbChar)+'" alt="">';
     row.appendChild(hb);
   }
+  const gdOn=!!(gdGuide&&gdGuide.seq===spawnSeq);   // 序盤改善 B5：げんきだまの案内中
   party.forEach(idx=>{
     const k=K[idx];
     const tired=genkiOf(idx)<=GENKI_TIRED;   // 弾3-11§5
@@ -15647,6 +15708,7 @@ function renderParty(){
                   '<span class="pfuda-bar"><span class="pfuda-fill'+(gCur<=GENKI_TIRED?' low':'')+'" style="width:'+gPct+'%"></span></span>'+
                 '</span>';
     b.onclick=()=>onPartyTap(idx);
+    if(gdOn && gdGuide.step==='pick' && gCur<gMax){ b.classList.add('tut-glow'); if(!row.querySelector('.tut-finger')) b.insertAdjacentHTML('beforeend','<span class="tut-finger" aria-hidden="true">👇</span>'); }
     row.appendChild(b);
   });
   // 弾3-12§8：バトル中げんきだまボタン（選択フェーズ・所持1個以上のときだけ表示。もんばん・ツインボスでも使える）
@@ -15655,6 +15717,7 @@ function renderParty(){
     ib.className='genki-item-btn'+(itemUseMode?' arming':'');
     ib.textContent='🍙×'+items.genkidama;
     ib.onclick=onGenkidamaBtnTap;
+    if(gdOn && gdGuide.step==='btn'){ ib.classList.add('tut-glow'); ib.insertAdjacentHTML('beforeend','<span class="tut-finger" aria-hidden="true">👇</span>'); }
     row.appendChild(ib);
   }
   // 発注_OP3 作業2：AUTOえらび。renderParty()が呼ばれるたび毎回チェックし、条件が揃った時だけ実行する
@@ -15750,6 +15813,11 @@ function resetHeroVictoryPose(){ heroVictoryPose=false; }
 function onGenkidamaBtnTap(){
   if(answering||evoLock) return;
   if(items.genkidama<=0) return;
+  if(gdGuide){   // 序盤改善 B5：案内中。押したら「だれに つかう？」へ進む（もう一度押しても取り消さない）
+    if(gdGuide.step==='btn'){ gdGuide.step='pick'; itemUseMode=true; autoPickArmed=false; autoPickSeq++;
+      showBattleHakase('げんきを あげたい こを おしてね'); renderParty(); }
+    return;
+  }
   itemUseMode=!itemUseMode;
   autoPickArmed=false; autoPickSeq++;   // 発注_OP3 作業2：げんきだまボタンを押した＝AUTOの待機演出があれば中断（手動操作を優先）
   if(itemUseMode) setMsg('🍙 だれに つかう？');
@@ -15769,7 +15837,36 @@ function useGenkidamaOn(idx){
   setMsg('🍙 『'+K[idx].c+'』の げんきが まんたんに なった！');
   phase='select';
   $('bOptions').innerHTML='';
+  if(gdGuide){   // 序盤改善 B5：案内の締め「やったね！」→ 少し見せてから自動の戦いに戻る
+    const g=gdGuide, seq=spawnSeq; gdGuide=null;
+    if(g.full){ genkidamaTutDone=true; save(); }
+    answering=true;
+    showBattleHakase('やったね！ げんきが もどったよ');
+    renderParty(); updateBattleHud();
+    setTimeout(()=>{ if(seq!==spawnSeq) return; hideBattleHakase(); answering=false; phase='select'; renderParty(); updateBattleHud(); },1800);
+    return;
+  }
   renderParty(); updateBattleHud();
+}
+/* 序盤改善(2026-11-25) B5：🍙げんきだまの案内（にほんばし）。full=はじめての説明（1回だけ・保存）／false=短い声かけ */
+function gdGuideAvailable(){
+  return !window.KanjimonGameI18n?.active && difficulty!=='writing' && battleMode==='party'
+    && curStage===1 && items.genkidama>0 && !isJukugoBoss && !isTwinBoss && !isTamashii
+    && $('screen-battle').classList.contains('active');
+}
+function startGenkidamaGuide(full){
+  const seq=spawnSeq;
+  autoPickArmed=false; autoPickSeq++;
+  itemUseMode=false; answering=false; phase='select';
+  $('bOptions').innerHTML='';
+  gdGuide={seq,step:'btn',full:!!full};
+  showBattleHakase(full?'げんきが へったら 🍙げんきだまで かいふく できるよ。ここを おしてみて':'🍙げんきだまで かいふく しよう！ ここを おしてね');
+  renderParty(); updateBattleHud();
+  return true;
+}
+function gdGuideNudge(){   // 押す場所以外を押したとき：指を大きく動かして教える
+  const f=document.querySelector('.genki-item-btn .tut-finger');
+  if(f){ f.animate([{transform:'translate(-50%,0) scale(1)'},{transform:'translate(-50%,8px) scale(1.4)'},{transform:'translate(-50%,0) scale(1)'}],{duration:500}); }
 }
 /* てもちボタン(味方)の顔を一時的に変える。msec後に選択状態へ戻す */
 function cheerParty(idx,expr,msec){
@@ -15781,6 +15878,7 @@ function cheerParty(idx,expr,msec){
 
 let spawnSeq=0;   // 登場演出中に「おわる」→別ステージ開始した際、古いタイマーが新しい敵のUIを壊さないためのガード
 function spawnEnemy(){
+  gdGuide=null;   // 序盤改善 B5：案内は敵ごと（持ち越さない）
   battleRewardDifficulty=normalizeDifficulty(difficulty);
   // 弾3-11§4-1：連戦中のガード。Lv9頭打ちでレベルアップ回復が止まり、連戦中に全員ヘトヘトが起こりうるため、
   //   次の敵を出す直前にも確認する（バトル開始前ガードとは別・こちらは既に始まっているバトルの継続時点）
@@ -15979,26 +16077,45 @@ function spawnReviewIntrudeEnemy(){
   }, ENTRY_MS);
 }
 
+/* 序盤改善(2026-11-25) C2：常用漢字表の音訓（小学1〜6年・ひらがなにそろえたもの）。
+   出典＝字ページ生成と同じ ツール/ドリル生成/all-grades-data.json の on/kun。はずれ選択肢の除外にだけ使う。 */
+const KANJI_ONKUN_SRC='一:いち,いつ,ひと,ひとつ;二:に,ふた,ふたつ;三:さん,み,みつ,みっつ;四:し,よ,よつ,よっつ,よん;五:ご,いつ,いつつ;六:ろく,む,むつ,むっつ,むい;七:しち,なな,ななつ,なの;八:はち,や,やつ,やっつ,よう;九:きゅう,く,ここの,ここのつ;十:じゅう,じっ,とお,と;百:ひゃく;千:せん,ち;木:ぼく,もく,き,こ;林:りん,はやし;森:しん,もり;草:そう,くさ;花:か,はな;竹:ちく,たけ;田:でん,た;虫:ちゅう,むし;犬:けん,いぬ;空:くう,そら,あく,あける,から;天:てん,あめ,あま;月:げつ,がつ,つき;日:にち,じつ,ひ,か;夕:せき,ゆう;水:すい,みず;川:せん,かわ;雨:う,あめ,あま;貝:かい;青:せい,しょう,あお,あおい;山:さん,やま;土:ど,と,つち;石:せき,しゃく,こく,いし;火:か,ひ,ほ;赤:せき,しゃく,あか,あかい,あからむ,あからめる;力:りょく,りき,ちから;金:きん,こん,かね,かな;玉:ぎょく,たま;人:じん,にん,ひと;男:だん,なん,おとこ;女:じょ,にょ,にょう,おんな,め;子:し,す,こ;王:おう;目:もく,ぼく,め,ま;耳:じ,みみ;口:こう,く,くち;手:しゅ,て,た;名:めい,みょう,な;足:そく,あし,たりる,たる,たす;町:ちょう,まち;村:そん,むら;学:がく,まなぶ;校:こう;字:じ,あざ;文:ぶん,もん,ふみ;音:おん,いん,おと,ね;見:けん,みる,みえる,みせる;円:えん,まるい;本:ほん,もと;車:しゃ,くるま;上:じょう,しょう,うえ,うわ,かみ,あげる,あがる,のぼる,のぼせる,のぼす;下:か,げ,した,しも,もと,さげる,さがる,くだる,くだす,くださる,おろす,おりる;左:さ,ひだり;右:う,ゆう,みぎ;中:ちゅう,じゅう,なか;大:だい,たい,おお,おおきい,おおいに;小:しょう,ちいさい,こ,お;白:はく,びゃく,しろ,しら,しろい;糸:し,いと;年:ねん,とし;生:せい,しょう,いきる,いかす,いける,うまれる,うむ,おう,はえる,はやす,き,なま;先:せん,さき;正:せい,しょう,ただしい,ただす,まさ;早:そう,さっ,はやい,はやまる,はやめる;立:りつ,りゅう,たつ,たてる;出:しゅつ,すい,でる,だす;入:にゅう,いる,いれる,はいる;休:きゅう,やすむ,やすまる,やすめる;気:き,け;父:ふ,ちち;母:ぼ,はは;兄:けい,きょう,あに;弟:てい,だい,で,おとうと;姉:し,あね;妹:まい,いもうと;親:しん,おや,したしい,したしむ;友:ゆう,とも;家:か,け,いえ,や;内:ない,だい,うち;教:きょう,おしえる,おそわる;室:しつ,むろ;図:ず,と,はかる;書:しょ,かく;算:さん;数:すう,す,かず,かぞえる;国:こく,くに;語:ご,かたる,かたらう;科:か;答:とう,こたえる,こたえ;岩:がん,いわ;原:げん,はら;高:こう,たかい,たか,たかまる,たかめる;台:だい,たい;地:ち,じ;里:り,さと;広:こう,ひろい,ひろまる,ひろめる,ひろがる,ひろげる;丸:がん,まる,まるい,まるめる;角:かく,かど,つの;野:や,の;谷:こく,たに;毛:もう,け;牛:ぎゅう,うし;馬:ば,うま,ま;鳥:ちょう,とり;羽:う,は,はね;鳴:めい,なく,なる,ならす;肉:にく;麦:ばく,むぎ;米:べい,まい,こめ;茶:ちゃ,さ;園:えん,その;寺:じ,てら;社:しゃ,やしろ;門:もん,かど;戸:こ,と;古:こ,ふるい,ふるす;今:こん,きん,いま;新:しん,あたらしい,あらた,にい;明:めい,みょう,あかり,あかるい,あかるむ,あからむ,あきらか,あける,あく,あくる,あかす;京:きょう,けい;光:こう,ひかる,ひかり;当:とう,あたる,あてる;時:じ,とき;間:かん,けん,あいだ,ま;分:ぶん,ふん,ぶ,わける,わかれる,わかる,わかつ;半:はん,なかば;午:ご;前:ぜん,まえ;後:ご,こう,のち,うしろ,あと,おくれる;毎:まい;週:しゅう;曜:よう;色:しょく,しき,いろ;黒:こく,くろ,くろい;黄:こう,おう,き,こ;形:けい,ぎょう,かた,かたち;点:てん;線:せん;細:さい,ほそい,ほそる,こまか,こまかい;太:たい,た,ふとい,ふとる;画:が,かく;絵:かい,え;海:かい,うみ;魚:ぎょ,うお,さかな;船:せん,ふね,ふな;汽:き;池:ち,いけ;外:がい,げ,そと,ほか,はずす,はずれる;遠:えん,おん,とおい;近:きん,ちかい;帰:き,かえる,かえす;回:かい,え,まわる,まわす;電:でん;工:こう,く;計:けい,はかる,はからう;知:ち,しる;才:さい;考:こう,かんがえる;理:り;作:さく,さ,つくる;用:よう,もちいる;活:かつ;東:とう,ひがし;西:せい,さい,にし;南:なん,な,みなみ;北:ほく,きた;方:ほう,かた;道:どう,とう,みち;歩:ほ,ぶ,ふ,あるく,あゆむ;通:つう,つ,とおる,とおす,かよう;行:こう,ぎょう,あん,いく,ゆく,おこなう;来:らい,くる,きたる,きたす;春:しゅん,はる;夏:か,げ,なつ;秋:しゅう,あき;冬:とう,ふゆ;雪:せつ,ゆき;晴:せい,はれる,はらす;雲:うん,くも;星:せい,しょう,ほし;夜:や,よ,よる;昼:ちゅう,ひる;歌:か,うた,うたう;声:せい,しょう,こえ,こわ;楽:がく,らく,たのしい,たのしむ;聞:ぶん,もん,きく,きこえる;言:げん,ごん,いう,こと;話:わ,はなす,はなし;読:どく,とく,とう,よむ;記:き,しるす;心:しん,こころ;思:し,おもう;強:きょう,ごう,つよい,つよまる,つよめる,しいる;弱:じゃく,よわい,よわる,よわまる,よわめる;引:いん,ひく,ひける;切:せつ,さい,きる,きれる;刀:とう,かたな;矢:し,や;弓:きゅう,ゆみ;走:そう,はしる;止:し,とまる,とめる;直:ちょく,じき,ただちに,なおす,なおる;店:てん,みせ;売:ばい,うる,うれる;買:ばい,かう;市:し,いち;場:じょう,ば;多:た,おおい;少:しょう,すくない,すこし;万:まん,ばん;番:ばん;組:そ,くむ,くみ;会:かい,え,あう;合:ごう,がっ,かっ,あう,あわす,あわせる;交:こう,まじわる,まじえる,まじる,まざる,まぜる,かう,かわす;公:こう,おおやけ;同:どう,おなじ;元:げん,がん,もと;長:ちょう,ながい;朝:ちょう,あさ;風:ふう,ふ,かぜ,かざ;何:か,なに,なん;自:じ,し,みずから;顔:がん,かお;首:しゅ,くび;体:たい,てい,からだ;頭:とう,ず,と,あたま,かしら;食:しょく,じき,くう,くらう,たべる;紙:し,かみ;神:しん,じん,かみ,かん,こう;宮:きゅう,ぐう,く,みや;祭:さい,まつる,まつり;礼:れい,らい;客:きゃく,かく;幸:こう,さいわい,さち,しあわせ;命:めい,みょう,いのち;式:しき;和:わ,お,やわらぐ,やわらげる,なごむ,なごやか;全:ぜん,まったく,すべて;打:だ,うつ;投:とう,なげる;反:はん,ほん,たん,そる,そらす;転:てん,ころがる,ころげる,ころがす,ころぶ;血:けつ,ち;対:たい,つい;決:けつ,きめる,きまる;速:そく,はやい,はやめる,はやまる,すみやか;追:つい,おう;死:し,しぬ;湖:こ,みずうみ;岸:がん,きし;波:は,なみ;港:こう,みなと;泳:えい,およぐ;深:しん,ふかい,ふかまる,ふかめる;流:りゅう,る,ながれる,ながす;島:とう,しま;氷:ひょう,こおり,ひ;温:おん,あたたか,あたたかい,あたたまる,あたためる;昔:せき,しゃく,むかし;世:せい,せ,よ;真:しん,ま;感:かん;界:かい;起:き,おきる,おこる,おこす;期:き,ご;事:じ,ず,こと;央:おう;号:ごう;庭:てい,にわ;落:らく,おちる,おとす;葉:よう,は;緑:りょく,ろく,みどり;陽:よう;様:よう,さま;美:び,うつくしい;坂:はん,さか;橋:きょう,はし;湯:とう,ゆ;具:ぐ;筆:ひつ,ふで;皿:さら;板:はん,ばん,いた;業:ぎょう,ごう,わざ;銀:ぎん;柱:ちゅう,はしら;帳:ちょう;章:しょう;曲:きょく,まがる,まげる;商:しょう,あきなう;品:ひん,しな;局:きょく;区:く;員:いん;庫:こ,く;倍:ばい;負:ふ,まける,まかす,おう;受:じゅ,うける,うかる;送:そう,おくる;守:しゅ,す,まもる,もり;族:ぞく;者:しゃ,もの;主:しゅ,す,ぬし,おも;代:だい,たい,かわる,かえる,よ,しろ;去:きょ,こ,さる;級:きゅう;他:た,ほか;重:じゅう,ちょう,え,おもい,かさねる,かさなる;悪:あく,お,わるい;集:しゅう,あつまる,あつめる,つどう;拾:しゅう,じゅう,ひろう;住:じゅう,すむ,すまう;助:じょ,たすける,たすかる,すけ;昭:しょう;消:しょう,きえる,けす;笛:てき,ふえ;登:とう,と,のぼる;暑:しょ,あつい;苦:く,くるしい,くるしむ,くるしめる,にがい,にがる;階:かい;館:かん,やかた;屋:おく,や;皮:ひ,かわ;表:ひょう,おもて,あらわす,あらわれる;面:めん,おも,おもて,つら;問:もん,とう,とい,とん;役:やく,えき;由:ゆ,ゆう,ゆい,よし;油:ゆ,あぶら;着:ちゃく,じゃく,きる,きせる,つく,つける;荷:か,に;運:うん,はこぶ;県:けん;漢:かん;寒:かん,さむい;開:かい,ひらく,ひらける,あく,あける;度:ど,と,たく,たび;化:か,け,ばける,ばかす;悲:ひ,かなしい,かなしむ;仕:し,じ,つかえる;写:しゃ,うつす,うつる;実:じつ,み,みのる;身:しん,み;進:しん,すすむ,すすめる;相:そう,しょう,あい;想:そう,そ;持:じ,もつ;次:じ,し,つぐ,つぎ;始:し,はじめる,はじまる;研:けん,とぐ;究:きゅう,きわめる;係:けい,かかる,かかり;向:こう,むく,むける,むかう,むこう;根:こん,ね;所:しょ,ところ;勝:しょう,かつ,まさる;申:しん,もうす;整:せい,ととのえる,ととのう;待:たい,まつ;農:のう;畑:はた,はたけ;豆:とう,ず,まめ;配:はい,くばる;発:はつ,ほつ;植:しょく,うえる,うわる;路:ろ,じ;旅:りょ,たび;等:とう,ひとしい;動:どう,うごく,うごかす;安:あん,やすい;暗:あん,くらい;鉄:てつ;調:ちょう,しらべる,ととのう,ととのえる;丁:ちょう,てい;駅:えき;横:おう,よこ;急:きゅう,いそぐ;終:しゅう,おわる,おえる;取:しゅ,とる;味:み,あじ,あじわう;酒:しゅ,さけ,さか;習:しゅう,ならう;勉:べん;詩:し;歯:し,は;指:し,ゆび,さす;使:し,つかう;州:しゅう,す;童:どう,わらべ;医:い;委:い,ゆだねる;意:い;育:いく,そだつ,そだてる,はぐくむ;院:いん;飲:いん,のむ;球:きゅう,たま;君:くん,きみ;鼻:び,はな;軽:けい,かるい,かろやか;宿:しゅく,やど,やどる,やどす;定:てい,じょう,さだめる,さだまる,さだか;炭:たん,すみ;短:たん,みじかい;談:だん;注:ちゅう,そそぐ;題:だい;都:と,つ,みやこ;箱:はこ;秒:びょう;乗:じょう,のる,のせる;息:そく,いき;第:だい;病:びょう,へい,やむ,やまい;部:ぶ;服:ふく;福:ふく;物:ぶつ,もつ,もの;平:へい,びょう,たいら,ひら;返:へん,かえす,かえる;放:ほう,はなす,はなつ,はなれる,ほうる;薬:やく,くすり;有:ゆう,う,ある;遊:ゆう,ゆ,あそぶ;予:よ;羊:よう,ひつじ;洋:よう;両:りょう;列:れつ;練:れん,ねる;菜:さい,な;産:さん,うむ,うまれる,うぶ;種:しゅ,たね;養:よう,やしなう;栄:えい,さかえる,はえ,はえる;牧:ぼく,まき;末:まつ,ばつ,すえ;満:まん,みちる,みたす;望:ぼう,もう,のぞむ;然:ぜん,ねん;冷:れい,つめたい,ひえる,ひや,ひやす,ひやかす,さめる,さます;静:せい,じょう,しず,しずか,しずまる,しずめる;倉:そう,くら;固:こ,かためる,かたまる,かたい;積:せき,つむ,つもる;兆:ちょう,きざす,きざし;節:せつ,せち,ふし;標:ひょう;票:ひょう;令:れい;器:き,うつわ;材:ざい;置:ち,おく;巣:そう,す;飛:ひ,とぶ,とばす;良:りょう,よい;老:ろう,おいる,ふける;孫:そん,まご;連:れん,つらなる,つらねる,つれる;民:みん,たみ;径:けい;景:けい;照:しょう,てる,てらす,てれる;輪:りん,わ;陸:りく;類:るい,たぐい;関:かん,せき,かかわる;極:きょく,ごく,きわめる,きわまる,きわみ;願:がん,ねがう;軍:ぐん;街:がい,かい,まち;各:かく,おのおの;官:かん;司:し;治:じ,ち,おさめる,おさまる,なおる,なおす;例:れい,たとえる;案:あん;以:い;位:い,くらい;府:ふ;械:かい;折:せつ,おる,おり,おれる;刷:さつ,する;旗:き,はた;鏡:きょう,かがみ;課:か;覚:かく,おぼえる,さます,さめる;芽:が,め;賀:が;改:かい,あらためる,あらたまる;試:し,こころみる,ためす;察:さつ;機:き,はた;児:じ,に;残:ざん,のこる,のこす;失:しつ,うしなう;未:み;無:む,ぶ,ない;念:ねん;氏:し,うじ;挙:きょ,あげる,あがる;達:たつ;徒:と;健:けん,すこやか;康:こう;努:ど,つとめる;伝:でん,つたわる,つたえる,つたう;隊:たい;単:たん;欠:けつ,かける,かく;果:か,はたす,はてる,はて;梅:ばい,うめ;敗:はい,やぶれる;候:こう,そうろう;季:き;熱:ねつ,あつい;成:せい,じょう,なる,なす;差:さ,さす;好:こう,このむ,すく;愛:あい;梨:なし;群:ぐん,むれる,むれ,むら;続:ぞく,つづく,つづける;競:きょう,けい,きそう,せる;共:きょう,とも;協:きょう;訓:くん;郡:ぐん;束:そく,たば;側:そく,がわ;帯:たい,おびる,おび;笑:しょう,わらう,えむ;初:しょ,はじめ,はじめて,はつ,うい,そめる;順:じゅん;祝:しゅく,しゅう,いわう;松:しょう,まつ;昨:さく;参:さん,まいる;散:さん,ちる,ちらす,ちらかす,ちらかる;唱:しょう,となえる;周:しゅう,まわり;億:おく;最:さい,もっとも;給:きゅう;泣:きゅう,なく;信:しん;結:けつ,むすぶ,ゆう,ゆわえる;完:かん;熊:くま;要:よう,かなめ,いる;必:ひつ,かならず;城:じょう,しろ;臣:しん,じん;兵:へい,ひょう;争:そう,あらそう;戦:せん,いくさ,たたかう;漁:ぎょ,りょう;清:せい,しょう,きよい,きよまる,きよめる;選:せん,えらぶ;的:てき,まと;灯:とう,ひ;阜:ふ;建:けん,こん,たてる,たつ;井:せい,しょう,い;辺:へん,あたり,べ;勇:ゆう,いさむ;芸:げい;省:せい,しょう,かえりみる,はぶく;席:せき;説:せつ,ぜい,とく;浅:せん,あさい;仲:ちゅう,なか;香:こう,きょう,か,かおり,かおる;付:ふ,つける,つく;夫:ふ,ふう,おっと;希:き;管:かん,くだ;富:ふ,ふう,とむ,とみ;低:てい,ひくい,ひくめる,ひくまる;底:てい,そこ;典:てん;岡:おか;包:ほう,つつむ;茨:いばら;貨:か;害:がい;求:きゅう,もとめる;観:かん;功:こう,く;議:ぎ;加:か,くわえる,くわわる;印:いん,しるし;焼:しょう,やく,やける;労:ろう;浴:よく,あびる,あびせる;利:り,きく;料:りょう;量:りょう,はかる;録:ろく;飯:はん,めし;約:やく;便:べん,びん,たより;働:どう,はたらく;験:けん,げん;特:とく;徳:とく;副:ふく;別:べつ,わかれる;変:へん,かわる,かえる;法:ほう,はっ,ほっ;不:ふ,ぶ;博:はく,ばく;衣:い,ころも;英:えい;縄:じょう,なわ;阪:はん;卒:そつ;辞:じ,やめる;借:しゃく,かりる;佐:さ;奈:な;滋:じ;媛:えん;塩:えん,しお;潟:かた;岐:き;埼:さい;崎:さき;札:さつ,ふだ;鹿:しか,か;沖:ちゅう,おき;栃:とち;武:ぶ,む;士:し;志:し,こころざす,こころざし;義:ぎ;師:し;修:しゅう,しゅ,おさめる,おさまる;授:じゅ,さずける,さずかる;講:こう;史:し;潔:けつ,いさぎよい;殺:さつ,さい,せつ,ころす;枝:し,えだ;接:せつ,つぐ;因:いん,よる;述:じゅつ,のべる;識:しき;能:のう;再:さい,さ,ふたたび;逆:ぎゃく,さか,さからう;久:きゅう,く,ひさしい;非:ひ;営:えい,いとなむ;経:けい,きょう,へる;価:か,あたい;財:ざい,さい;費:ひ,ついやす,ついえる;損:そん,そこなう,そこねる;貸:たい,かす;得:とく,える,うる;益:えき,やく;刊:かん;版:はん;往:おう;航:こう;絶:ぜつ,たえる,たやす,たつ;仏:ぶつ,ほとけ;堂:どう;句:く;紀:き;祖:そ;墓:ぼ,はか;常:じょう,つね,とこ;桜:おう,さくら;採:さい,とる;個:こ;快:かい,こころよい;在:ざい,ある;素:そ,す;余:よ,あまる,あます;容:よう;効:こう,きく;謝:しゃ,あやまる;耕:こう,たがやす;肥:ひ,こえる,こえ,こやす,こやし;貯:ちょ;増:ぞう,ます,ふえる,ふやす;豊:ほう,ゆたか;織:しょく,しき,おる;績:せき;布:ふ,ぬの;編:へん,あむ;綿:めん,わた;仮:か,け,かり;眼:がん,げん,まなこ;災:さい,わざわい;妻:さい,つま;居:きょ,いる;囲:い,かこむ,かこう;現:げん,あらわれる,あらわす;罪:ざい,つみ;慣:かん,なれる,ならす;破:は,やぶる,やぶれる;支:し,ささえる;技:ぎ,わざ;均:きん;張:ちょう,はる;提:てい,さげる;演:えん;率:そつ,りつ,ひきいる;序:じょ;態:たい;総:そう;鉱:こう;型:けい,かた;銅:どう;属:ぞく;圧:あつ;術:じゅつ;職:しょく;検:けん;確:かく,たしか,たしかめる;格:かく,こう;質:しつ,しち,ち;険:けん,けわしい;防:ぼう,ふせぐ;測:そく,はかる;救:きゅう,すくう;導:どう,みちびく;備:び,そなえる,そなわる;復:ふく;衛:えい;報:ほう,むくいる;適:てき;燃:ねん,もえる,もやす,もす;喜:き,よろこぶ;興:こう,きょう,おこる,おこす;勢:せい,いきおい;団:だん,とん;応:おう,こたえる;雑:ざつ,ぞう;設:せつ,もうける;構:こう,かまえる,かまう;招:しょう,まねく;永:えい,ながい;寄:き,よる,よせる;過:か,すぎる,すごす,あやまつ,あやまち;境:きょう,けい,さかい;限:げん,かぎる;故:こ,ゆえ;情:じょう,せい,なさけ;断:だん,たつ,ことわる;程:てい,ほど;独:どく,ひとり;貿:ぼう;輸:ゆ;領:りょう;際:さい,きわ;額:がく,ひたい;旧:きゅう;築:ちく,きずく;停:てい;歴:れき;易:えき,い,やさしい;造:ぞう,つくる;像:ぞう;賞:しょう;状:じょう;比:ひ,くらべる;評:ひょう;迷:めい,まよう;準:じゅん;複:ふく;条:じょう;政:せい,しょう,まつりごと;制:せい;税:ぜい;規:き;則:そく;判:はん,ばん;許:きょ,ゆるす;禁:きん;犯:はん,おかす;弁:べん;飼:し,かう;酸:さん,すい;製:せい;舎:しゃ;任:にん,まかせる,まかす;責:せき,せめる;証:しょう;基:き,もと,もとい;可:か;貧:ひん,びん,まずしい;移:い,うつる,うつす;河:か,かわ;混:こん,まじる,まざる,まぜる,こむ;粉:ふん,こ,こな;夢:む,ゆめ;幹:かん,みき;婦:ふ;件:けん;告:こく,つげる;査:さ;保:ほ,たもつ;護:ご;毒:どく;性:せい,しょう;略:りゃく;賛:さん;示:じ,し,しめす;似:じ,にる;脈:みゃく;資:し;解:かい,げ,とく,とかす,とける;液:えき;厚:こう,あつい;象:しょう,ぞう;減:げん,へる,へらす;精:せい,しょう;統:とう,すべる;暴:ぼう,ばく,あばく,あばれる;留:りゅう,る,とめる,とまる;務:む,つとめる,つとまる;砂:さ,しゃ,すな;暮:ぼ,くれる,くらす;背:はい,せ,せい,そむく,そむける;段:だん;延:えん,のびる,のべる,のばす;創:そう,つくる;展:てん;沿:えん,そう;覧:らん;否:ひ,いな;宗:しゅう,そう;拝:はい,おがむ;聖:せい;善:ぜん,よい;純:じゅん;仁:じん,に;誤:ご,あやまる;存:そん,ぞん;諸:しょ;郷:きょう,ごう;供:きょう,く,そなえる,とも;敵:てき,かたき;討:とう,うつ;誕:たん;棒:ぼう;奮:ふん,ふるう;将:しょう;退:たい,しりぞく,しりぞける;衆:しゅう,しゅ;劇:げき;蔵:ぞう,くら;染:せん,そめる,そまる,しみる,しみ;絹:けん,きぬ;蚕:さん,かいこ;革:かく,かわ;装:そう,しょう,よそおう;株:かぶ;縮:しゅく,ちぢむ,ちぢまる,ちぢめる,ちぢれる,ちぢらす;縦:じゅう,たて;針:しん,はり;潮:ちょう,しお;映:えい,うつる,うつす,はえる;厳:げん,ごん,おごそか,きびしい;納:のう,なっ,な,なん,とう,おさめる,おさまる;奏:そう,かなでる;巻:かん,まく,まき;姿:し,すがた;貴:き,たっとい,とうとい,たっとぶ,とうとぶ;至:し,いたる;朗:ろう,ほがらか;憲:けん;律:りつ,りち;権:けん,ごん;宣:せん;盟:めい;認:にん,みとめる;異:い,こと;承:しょう,うけたまわる;忘:ぼう,わすれる;私:し,わたくし,わたし;穴:けつ,あな;探:たん,さぐる,さがす;秘:ひ,ひめる;垂:すい,たれる,たらす;密:みつ;層:そう;寸:すん;吸:きゅう,すう;裏:り,うら;難:なん,かたい,むずかしい;呼:こ,よぶ;値:ち,ね,あたい;盛:せい,じょう,もる,さかる,さかん;並:へい,なみ,ならべる,ならぶ,ならびに;党:とう;収:しゅう,おさめる,おさまる;勤:きん,ごん,つとめる,つとまる;従:じゅう,しょう,じゅ,したがう,したがえる;賃:ちん;券:けん;論:ろん;冊:さつ,さく;著:ちょ,あらわす,いちじるしい;優:ゆう,やさしい,すぐれる;誌:し;詞:し;批:ひ;疑:ぎ,うたがう;机:き,つくえ;派:は;遺:い,ゆい;域:いき;穀:こく;俵:ひょう,たわら;尺:しゃく;刻:こく,きざむ;班:はん;推:すい,おす;捨:しゃ,すてる;亡:ぼう,もう,ない;胃:い;腸:ちょう;肺:はい;脳:のう;臓:ぞう;筋:きん,すじ;骨:こつ,ほね;胸:きょう,むね,むな;腹:ふく,はら;舌:ぜつ,した;痛:つう,いたい,いたむ,いためる;訳:やく,わけ;郵:ゆう;届:とどける,とどく;銭:せん,ぜに;片:へん,かた;簡:かん;済:さい,すむ,すます;専:せん,もっぱら;拡:かく;障:しょう,さわる;閣:かく;策:さく;割:かつ,わる,わり,われる,さく;忠:ちゅう;幕:まく,ばく;担:たん,かつぐ,になう;補:ほ,おぎなう;臨:りん,のぞむ;困:こん,こまる;鋼:こう,はがね;源:げん,みなもと;激:げき,はげしい;警:けい;乳:にゅう,ちち,ち;頂:ちょう,いただく,いただき;熟:じゅく,うれる;視:し;幼:よう,おさない;欲:よく,ほっする,ほしい;晩:ばん;泉:せん,いずみ;蒸:じょう,むす,むれる,むらす;看:かん;卵:らん,たまご;洗:せん,あらう;傷:しょう,きず,いたむ,いためる;処:しょ;訪:ほう,おとずれる,たずねる;俳:はい;預:よ,あずける,あずかる;皇:こう,おう;后:こう;尊:そん,たっとい,とうとい,たっとぶ,とうとぶ;降:こう,おりる,おろす,ふる;樹:じゅ;若:じゃく,にゃく,わかい,もしくは;陛:へい;宝:ほう,たから;閉:へい,とじる,とざす,しめる,しまる;裁:さい,たつ,さばく;灰:かい,はい;危:き,あぶない,あやうい,あやぶむ;除:じょ,じ,のぞく;干:かん,ほす,ひる;宅:たく;庁:ちょう;署:しょ;乱:らん,みだれる,みだす;翌:よく;枚:まい;宇:う;宙:ちゅう;射:しゃ,いる;揮:き;磁:じ;系:けい;模:も,ぼ;操:そう,みさお,あやつる;座:ざ,すわる;窓:そう,まど;暖:だん,あたたか,あたたかい,あたたまる,あたためる;恩:おん;敬:けい,うやまう;孝:こう;就:しゅう,じゅ,つく,つける;誠:せい,まこと;紅:こう,く,べに,くれない;己:こ,き,おのれ;我:が,われ,わ;糖:とう';
+let _kanjiOnkun=null;
+function kanjiOnkunOf(c){
+  if(!_kanjiOnkun){ _kanjiOnkun=new Map(); KANJI_ONKUN_SRC.split(';').forEach(p=>{ const i=p.indexOf(':'); if(i>0) _kanjiOnkun.set(p.slice(0,i),p.slice(i+1).split(',')); }); }
+  return _kanjiOnkun.get(c)||[];
+}
+function kata2hira(s){ return String(s).replace(/[ァ-ヶ]/g,c=>String.fromCharCode(c.charCodeAt(0)-0x60)); }
+let _grade1Idx=null;
+function grade1KanjiIdx(){   // ゾーン1〜8（1年生）の字
+  if(!_grade1Idx){ _grade1Idx=[]; for(let z=1;z<=AUTO_SWAP_MAX_ZONE;z++) (STAGE_DEFS[z-1]?.indices||[]).forEach(i=>{ if(!_grade1Idx.includes(i)) _grade1Idx.push(i); }); }
+  return _grade1Idx;
+}
+/* はずれの読みを2つ選ぶ。①読みはひらがなにそろえて比べる（カタカナ正解のときだけカタカナで見せる）
+   ②1年生の問題（ゾーン1〜8）は、1年生の字の読みからだけ取る ③その字の正しい音訓に一致するものは出さない */
+function pickWrongReadings(idx,targetReadings,stage,n){
+  const correctIsKata=isKata(targetReadings[0]);
+  const ng=new Set([...targetReadings.map(kata2hira),...kanjiOnkunOf(K[idx].c),...K[idx].y.split('／').map(kata2hira)]);
+  const pool=(stage>=1&&stage<=AUTO_SWAP_MAX_ZONE)?grade1KanjiIdx():null;
+  const wrongs=[]; const usedH=new Set(ng);
+  let guard=0;
+  while(wrongs.length<n && guard++<2000){
+    const ri=pool ? pool[Math.floor(Math.random()*pool.length)] : Math.floor(Math.random()*K.length);
+    if(ri===idx||!K[ri]) continue;
+    const rr=K[ri].y.split('／');
+    const h=kata2hira(rr[Math.floor(Math.random()*rr.length)]);
+    if(!h||usedH.has(h)) continue;
+    usedH.add(h); wrongs.push(correctIsKata ? hira2kata(h) : h);
+  }
+  return wrongs;
+}
 function buildOptions(idx){
   const k=K[idx];
   // 色違い（オンヨミフォーム）のときは ALTよみ が正解。カタカナ正解ならハズレもカタカナに変換
   const targetReadings = (enemyShiny && enemyAlt) ? [enemyAlt] : k.y.split('／');
   curCorrectSet=new Set(targetReadings);
   const correctText=targetReadings[0];            // 表示は最初の読み
-  const correctIsKata = isKata(correctText);
-  const used=new Set(targetReadings);             // 正解の全読みと重複しない
-  const wrongs=[];
-  let guard=0;
-  while(wrongs.length<2 && guard++<1000){
-    const ri=Math.floor(Math.random()*K.length);
-    if(ri===idx) continue;
-    const rr=K[ri].y.split('／');
-    const pick=rr[Math.floor(Math.random()*rr.length)];
-    if(used.has(pick)) continue;                  // 正解読みと重複禁止
-    const shown = correctIsKata ? hira2kata(pick) : pick;   // カタカナ正解→ハズレもカタカナ
-    if(used.has(shown)) continue;
-    used.add(pick); used.add(shown); wrongs.push(shown);
-  }
+  const wrongs=pickWrongReadings(idx,targetReadings,curStage,2);   // 序盤改善 C2
   const opts=[correctText,...wrongs];
   for(let i=opts.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[opts[i],opts[j]]=[opts[j],opts[i]];}  // 選択肢シャッフル
   const ow=$('bOptions'); ow.innerHTML='';
@@ -16012,6 +16129,7 @@ function buildOptions(idx){
 function disableOptions(){ document.querySelectorAll('#bOptions .opt').forEach(b=>b.disabled=true); }
 
 function onPartyTap(idx){
+  if(gdGuide && gdGuide.step==='btn'){ gdGuideNudge(); return; }   // 序盤改善 B5：案内中は 🍙 以外を押しても進まない
   if(itemUseMode){ useGenkidamaOn(idx); return; }          // 弾3-12§8：げんきだま使用モード＝タップは回復（ボス各種の分岐より先＝全バトル共通で効く）
   if(isJukugoBoss){ onJukugoBossPartyTap(idx); return; }   // 弾3-6§5：ボス熟語モン戦はK配列に依存しない専用フローへ
   if(isTwinBoss){ onTwinBossPartyTap(idx); return; }       // 弾3-8§4：ツインボス戦もK配列に依存しない専用フローへ
@@ -16133,7 +16251,7 @@ function onWrongSimple(btn){
     $('dmgFlash').classList.remove('on');
     if(hp<=0) faint();
     else spawnEnemy();
-  },2300,seq,true);
+  },WRONG_READING_SHOW_MS,seq,true);
 }
 
 /* ==============================
@@ -16425,6 +16543,7 @@ function autoPickBestIdx(){
    ボス戦以外・操作ブロック中でない」ときだけ。多重発火はautoPickArmedで防ぐ */
 function maybeAutoPickAttacker(){
   if(difficulty==='writing')return;
+  if(gdGuide) return;   // 序盤改善 B5：げんきだまの案内中は自動で選ばない（子どもが押すまで待つ）
   if(!autoPick || battleMode!=='party' || phase!=='select') return;
   if(answering || evoLock || itemUseMode) return;
   if(isJukugoBoss || isTwinBoss) return;
@@ -17060,6 +17179,8 @@ function planLevelUp(att,opts){
   const oldLv=levelOf(att);
   const cap=trainingCapOfZone(curStage);   // ★弾LV-1：いまのゾーンの学年上限
   if(oldLv>=cap){
+    // 序盤改善(2026-11-25) B6：1年生（ゾーン1〜8）は学年の上限Lvでも、勝った子のげんきを満タンに戻す（上限前のレベルアップと同じ）
+    if(curStage>=1 && curStage<=AUTO_SWAP_MAX_ZONE && party.includes(att)){ genki[att]=genkiMaxOf(att); save(); }
     // 手直し(7/18)§3・案A：上限でも進化条件を満たしていれば進化のみ行う（Lvはcapのまま）
     // 手直し(7/18朝)：進化先がすでにてもちにいる場合は発火しない（party[pi]=toで同じ字が
     // てもちに2体並ぶ破綻と、進化演出の繰り返し再生を防ぐガード。下の通常進化にも同じガード）
@@ -17171,8 +17292,35 @@ function afterIntruder(){
   else spawnEnemy();
 }
 /* フィールド：バトル勝利後に同じ位置へ戻る */
+/* 序盤改善(2026-11-25) B2/B3：にほんばし（ゾーン1・オート探検・1周目）では、からだを取ったあとの
+   オート移動の途中（3歩あるいたところ）で、その子の たましいを出す（くさむら不要）。仲間が「一」＋2体になるまで2回。
+   1回目は既存の たましいクイズの はじめての説明（マナの2行）がそのまま出る。2回目は説明なし。 */
+const TUT_TAMA_AFTER_STEPS=3;
+function tutorialTamashiiCandidate(){
+  if(fieldZone!==1 || newGamePlus.cycle!==0 || tutTamaCount>=2 || party.length>=3) return null;
+  if(!isFieldAutoZone(1) || cleared.has(1)) return null;
+  const inds=STAGE_DEFS[0].indices;
+  const ok=i=>bodies.has(i) && !caught.has(i) && inds.includes(i);
+  if(firstBodyIdx!==null && ok(firstBodyIdx)) return firstBodyIdx;
+  return inds.find(ok) ?? null;
+}
+function maybeStartTutorialTamashii(){
+  if(tutTamaSteps<TUT_TAMA_AFTER_STEPS) return false;
+  const idx=tutorialTamashiiCandidate();
+  if(idx===null) return false;
+  stopAutoExplore(); heroLock=true; forceTamashiiNext=false; tutTamaSteps=0;
+  const seq=fieldSeq;
+  if(!window.KanjimonGameI18n?.active) showFieldBanner(talkUi(tutTamaCount===0?'あっ！ さっきの かんじの たましいが でてきた！':'あっ！ また たましいだ！'));
+  setTimeout(()=>{
+    if(seq!==fieldSeq || fieldZone!==1 || !$('screen-field').classList.contains('active')){ return; }
+    tutTamaActive=true;
+    startTamashiiBattle(1, idx);
+  },1500);
+  return true;
+}
 function fieldReturn(){
   if(sceneImages.gate(fieldZone,fieldReturn))return;
+  tutTamaSteps=0; tutTamaActive=false;   // 序盤改善 B2：戦いから戻ったら歩数を数えなおす
   resetHeroVictoryPose();   // 弾R-2：バトル画面を離れたら勝利ポーズ状態を持ち越さない（次バトルの保険は既にsetupBattleCommon側にもあり）
   tutorialShinyBattle=false;   // 発注_初回チュートリアル：勝利で戻る際も必ず消費（持ち越さない）
   battleSource='quick';
@@ -17565,10 +17713,11 @@ function onWrongParty(btn){
     if(willSeparate){ playSoulSeparation(att, seq); return; }   // 弾3-11§6：魂分離演出へ
     if(handleTiredAfterRound(seq)) return;                     // 弾3-11§4-2：ヘトヘトになっていたら送還/こうたい分岐へ
     answering=false; phase='select';
-    setMsg('もういちど ちょうせん！<br>かんじもんを えらぼう');
+    // 序盤改善 C1：AUTOでは「えらぶ」操作が無いので、読みなおしを促す文にする（英語版は従来どおり）
+    setMsg((autoPick&&!window.KanjimonGameI18n?.active)?'もういちど よんでみよう！':'もういちど ちょうせん！<br>かんじもんを えらぼう');
     $('bOptions').innerHTML='';
     renderParty();
-  },2300,seq,true);
+  },WRONG_READING_SHOW_MS,seq,true);
 }
 function faint(){
   const seq=spawnSeq;   // 手直し(2026-07-04・積み残し解消①)
@@ -17772,6 +17921,10 @@ function onTamashiiCorrect(btn, idx, seq, onDone){
       caught.add(idx); save();
       if(wasSeparated){ separated.delete(idx); delete soulZone[idx]; save(); }   // げんきはgenkiOfの遅延初期化で自動的に満タン
       autoJoinParty(idx);   // 弾3-0：なかまの自動てもち入り
+      // 序盤改善 B3/B4：チュートリアルの たましいで仲間が増えた回数。仲間が3体そろったら、自動こうたいを1行で伝える
+      let tutSwapLine=false;
+      if(tutTamaActive && fieldZone===1){ tutTamaActive=false; tutTamaCount=Math.min(2,tutTamaCount+1); save();
+        tutSwapLine=party.length>=3 && !window.KanjimonGameI18n?.active; }
       showCryBubble(idx, false, true, null);   // めを覚ました瞬間の名乗り
       const readings=k.y.split('／').map(r=>'『'+r+'』').join('か');
       if(wasSeparated){
@@ -17782,6 +17935,11 @@ function onTamashiiCorrect(btn, idx, seq, onDone){
       if(window.KanjimonGameI18n?.active)setMsg(KanjimonGameI18n.battleMessage(wasSeparated?'restored':'friend',k));
       snd('get');
       tamashiiQuizIdx=null; tamashiiQuizMiss=0;
+      if(tutSwapLine){
+        battleResultAdvance(()=>{ showBattleHakase('げんきが へったら、ほかの こが じどうで こうたい するよ');
+          battleResultAdvance(()=>{ hideBattleHakase(); onDone(); },3800,seq); },TAMASHII_GET_MS,seq);
+        return;
+      }
       battleResultAdvance(onDone,TAMASHII_GET_MS,seq);
     });
   },500);
@@ -26594,6 +26752,7 @@ const HAKASE_MSG_MS_PER_CHAR=350;    // 文字数×0.35秒
 const HAKASE_MSG_MS_BASE=1000;       // 文字数式の基礎（+1.0秒）
 const HAKASE_MSG_MS_MIN=4000;        // 最低表示時間（4秒）
 const HAKASE_MSG_TTS_GRACE_MS=800;   // 読み上げ終了後の余韻（+0.8秒）
+const HAKASE_VOICE_MS={zt01i1:5448};   // 序盤改善(2026-11-25)：声の実測の長さ(ms)。ここに載せた台詞だけ「声の長さ＋0.7秒」で進む
 const HAKASE_MAX_MS=10000;           // 手直し はかせみため§4：セリフ表示時間の上限（ユーザー調整用・既定10秒＝読み上げが長引いても上限で次へ進む）
 let dpadTimer=null, dpadRepeat=null;
 /* 第4.5弾：オートたんけん */
@@ -27271,6 +27430,7 @@ const FIELD_INTRO_HOLD_MS=1800;   // 「ゾーン全体」を静止して見せ�
 const FIELD_INTRO_MS=3000;        // 自分の位置へズーム/パンする所要時間（実装判断／OP2V1でゆっくり化→今回さらにゆっくり化）
 const FIELD_PAN_MS=4200;          // 横長ゾーンの横パン所要時間（改善メモ_0725 指摘1でさらにゆっくり化）
                                    // （HOLD1200+PAN1400+ZOOM1800=4400ms＝発注書の目安「トータル3〜4.5秒程度」に収まる。実機確認で選定）
+let fieldIntroQuickOnce=false;   // 序盤改善(2026-11-25)：導入(op1)直後の最初の入場だけ、ズーム演出を短くする（1回で消費・保存しない）
 let fieldZoomLastZone=null;      // 直前にこの演出の判定対象にした(=renderFieldした)ゾーン。同じ値なら「入場」扱いしない
 let fieldIntro={playing:false,finish:null,queue:[]};   // 演出の再生状態＋演出終了を待つ処理のキュー
 /* 演出中でなければ即実行、演出中ならキューして終了後にまとめて実行する（renderField自身の続きにも外部呼び出しにも使う） */
@@ -27367,6 +27527,10 @@ function playFieldZoomIntro(plan){
     }
     startY=panY; panEndY=panY;
   }
+  // 序盤改善(2026-11-25)：導入(op1)の直後の最初の入場だけは、全体を見せる演出を出さずにすぐ歩き出す
+  //   （ゾーン名は上の帯、漢字のテーマは入場のバナーで伝わる。2回目以降の入場は従来どおり）
+  if(fieldIntroQuickOnce) return;
+  const HOLD_MS=FIELD_INTRO_HOLD_MS, PAN_MS=FIELD_PAN_MS, ZOOM_MS=FIELD_INTRO_MS;
   fieldIntro.playing=true;
   heroLock=true;   // 演出中は移動・オートたんけん・当たり判定を止める（tryStep/autoTickが見る既存のロック）
   const introSeq=fieldSeq;   // 演出中に別ゾーンへ離脱済みなら、終了時のheroLock解除を行わないためのガード
@@ -27403,7 +27567,7 @@ function playFieldZoomIntro(plan){
   void grid.offsetWidth;   // reflow強制（この後のtransition指定を次の変化から効かせるため）
   // 発注_ズーム横パン：段階を区別する変数（'pan'＝横パン中／'zoom'＝自分の位置へズーム中）。onEnd/fallbackがどちらの完了か判定するのに使う
   let stage=needPan?'pan':'zoom';
-  grid.style.transition='transform '+(needPan?FIELD_PAN_MS:FIELD_INTRO_MS)+'ms cubic-bezier(.2,.8,.2,1)';
+  grid.style.transition='transform '+(needPan?PAN_MS:ZOOM_MS)+'ms cubic-bezier(.2,.8,.2,1)';
   syncIntroLayers();   // 手直し(2026-07-29)：ここから背景の層を毎コマ追随させる（finish()で止まる）
   let done=false, fallback=null;
   let cardTimer=null;   // 手直し_ゾーンの名前カード：ズーム段階に入ってからカードを消すまでのタイマー
@@ -27429,9 +27593,9 @@ function playFieldZoomIntro(plan){
        横パンが無いゾーン（静止1.8秒だけ）でも2行を読み切れる時間を確保するため。 */
     clearTimeout(cardTimer);
     cardTimer=setTimeout(hideZoneCard, ZONE_CARD_OUT_MS);
-    grid.style.transition='transform '+FIELD_INTRO_MS+'ms cubic-bezier(.2,.8,.2,1)';
+    grid.style.transition='transform '+ZOOM_MS+'ms cubic-bezier(.2,.8,.2,1)';
     grid.style.transform='translate('+endX+'px,'+endY+'px) scale(1)';
-    fallback=setTimeout(finish, FIELD_INTRO_MS+500);   // 保険（ズーム段階のtransitionendが来ない環境向け）
+    fallback=setTimeout(finish, ZOOM_MS+500);   // 保険（ズーム段階のtransitionendが来ない環境向け）
   };
   const onEnd=e=>{
     if(e.target!==grid || e.propertyName!=='transform') return;
@@ -27442,11 +27606,11 @@ function playFieldZoomIntro(plan){
   const holdTimer=setTimeout(()=>{
     if(needPan){
       grid.style.transform='translate('+panEndX+'px,'+panEndY+'px) scale('+startScale+')';   // armed済みのtransitionでなめらかに動く
-      fallback=setTimeout(startZoomStage, FIELD_PAN_MS+500);   // 保険（パン段階のtransitionendが来ない環境向け）
+      fallback=setTimeout(startZoomStage, PAN_MS+500);   // 保険（パン段階のtransitionendが来ない環境向け）
     }else{
       startZoomStage();
     }
-  }, FIELD_INTRO_HOLD_MS);
+  }, HOLD_MS);
 }
 
 function renderField(){
@@ -27976,6 +28140,7 @@ function renderField(){
   // 従来どおり即座に、演出がある場合は終了後に、afterFieldRender/旧セーブバナーを実行する
   const fieldZoomPlan=computeFieldZoomIntro();
   if(fieldZoomPlan) playFieldZoomIntro(fieldZoomPlan);
+  fieldIntroQuickOnce=false;   // 序盤改善：導入直後の短縮は最初の1回の描画だけ
   afterFieldZoomIntro(()=>{
     afterFieldRender();   // オートたんけんか 自由移動か を切替
     maybeShowTravelContinueBanner();   // 弾3-6§6-3：旧セーブ移行「たびの つづき」通知（1回だけ）
@@ -28379,6 +28544,7 @@ function afterFieldRender(){
   if(isIceDungeon(fieldZone)){iceDungeonSchedule();return;}
   const badge=$('autoBadge'), dpad=document.querySelector('.dpad');
   if(dpad) dpad.classList.toggle('fuji52-diagonal',!!finePassOf(fieldZone));
+  setFieldTipForAuto(isFieldAutoZone(fieldZone));   // 序盤改善 A4
   if(isFieldAutoZone(fieldZone)){
     if(badge) badge.classList.add('show');
     if(dpad) dpad.classList.add('dim');
@@ -28392,6 +28558,15 @@ function afterFieldRender(){
     if(dpad) dpad.classList.remove('dim');
     stopAutoExplore();
   }
+}
+/* 序盤改善(2026-11-25) A4：オート探検のあいだは、下の案内を「かってに あるくよ。みててね」にする（自分で歩けるゾーンは従来どおり・英語版は触らない） */
+let fieldTipOriginal=null;
+function setFieldTipForAuto(isAuto){
+  if(window.KanjimonGameI18n?.active) return;
+  const tip=document.querySelector('#screen-field .field-tip'); if(!tip) return;
+  if(fieldTipOriginal===null) fieldTipOriginal=tip.textContent;
+  const want=isAuto?'かってに あるくよ。みててね':fieldTipOriginal;
+  if(tip.textContent!==want) tip.textContent=want;
 }
 function startAutoExplore(){
   if(isAmamiEventField()){stopAutoExplore();return;}
@@ -28454,6 +28629,7 @@ function autoTick(){
   if(heroLock){ autoTimer=setTimeout(autoTick,250); return; }   // バナー中などは待つ
   if(isFuji52PrecisionAuto(fieldZone)){ if(maybeStartFuji52Segment()) return; fuji52PrecisionAutoTick(); return; }
   if(fieldZone===63 && maybeStartNagoya63Segment()) return;
+  if(maybeStartTutorialTamashii()) return;   // 序盤改善 B2/B3：にほんばしのオート探検の途中で、からだを取った子の たましいを出す
   const target=pickAutoTarget();
   if(!target) return;                      // 全すみか制覇済み（通常オート対象外）
   if(fieldHx===target.x && fieldHy===target.y){
@@ -28499,6 +28675,7 @@ function autoTick(){
 }
 function doAutoMove(dx,dy){
   const seq=fieldSeq,fromY=fieldHy;
+  tutTamaSteps++;   // 序盤改善 B2：戦いから戻って何歩あるいたか
   setHeroFacing(dx,dy);
   setFieldStandardPosition(fieldZone,fieldHx+dx,fieldHy+dy); save();
   const grid=$('fieldGrid'), hero=$('fieldHero');
@@ -33332,7 +33509,9 @@ function scheduleHakaseAdvance(msg, fseq, isLast, onFinish, sndId){
     return;
   }
   const tryAdvance=()=>{ if(mseq!==hakaseMsgSeq || done) return; if(charDone && ttsDone) finish(); };
-  const charMs=Math.max(msg.length*HAKASE_MSG_MS_PER_CHAR + HAKASE_MSG_MS_BASE, HAKASE_MSG_MS_MIN);
+  let charMs=Math.max(msg.length*HAKASE_MSG_MS_PER_CHAR + HAKASE_MSG_MS_BASE, HAKASE_MSG_MS_MIN);
+  // 序盤改善(2026-11-25) A3：はじめての にほんばしの台詞は「声の長さ＋0.7秒」で進める（音を消しているときは従来の文字数式）
+  if(sndId && soundOn && HAKASE_VOICE_MS[sndId]) charMs=Math.max(HAKASE_VOICE_MS[sndId]+700, HAKASE_MSG_MS_MIN);
   setTimeout(()=>{ if(mseq!==hakaseMsgSeq) return; charDone=true; tryAdvance(); },charMs);
   // 2026-09-22 音声仕上げ：初クリア説明bh23は実音声11.2秒。末尾を切らず0.4秒待つ。
   const recordedMaxMs=sndId==='bh23'?11600:Math.max(HAKASE_MAX_MS,(STORY_BOND_LINES.find(line=>line.snd===sndId)?.ms||0)+800);
@@ -37004,6 +37183,12 @@ function openHome(){
   $('homeDone').style.display='none';
   $('homeOverlay').classList.add('show');
 }
+/* 序盤改善(2026-11-25) B8：帰される前の地域の入口へ戻る */
+function homeReturnToAdventure(){
+  const z=homeReturnZone; homeReturnZone=0;
+  closeHome();
+  if(z>=1 && z<=unlocked) warpZone(z);
+}
 function closeHome(){
   homeSeq++;
   $('homeOverlay').classList.remove('show');
@@ -37022,6 +37207,9 @@ function homeRest(){
     if(dark) dark.classList.remove('on');
     $('homeMsg').textContent='ぐっすり やすんだ！ みんな げんき モリモリ！';
     $('homeDone').style.display='';
+    // 序盤改善 B8：げんき切れで帰ってきたときは「ぼうけんに もどる」を出す（英語版は従来どおり）
+    const rb=$('homeReturnBtn');
+    if(rb){ const show=homeReturnZone>=1 && !window.KanjimonGameI18n?.active; rb.style.display=show?'':'none'; if(show) rb.nextElementSibling.className='btn btn-ghost'; else rb.nextElementSibling.className='btn btn-primary'; }
   },700);
 }
 
@@ -37782,7 +37970,7 @@ let op1AnswerLock=false;  // S4：クイズ回答の連打防止
    （設計書§6.6-3：台詞表示と同期して再生。台詞の文言そのものは一切変更していない）。
    既存のsePlay/seFxと同じ流儀＝Audio要素をキャッシュ・soundOnで無効化・読込失敗は握りつぶして無音のまま進行
    （音声が無くても文字だけで完走できる＝既存speakJaフォールバック思想と同じ）。 */
-const OP1_VOICE_MS={ s0:7400, s3:4900, s3b:2688, s3c:4896, s4a:1800, s4b:3100, s5:9500 };
+const OP1_VOICE_MS={ s0:5808, s3:4368, s3b:2736, s3c:4944, s4a:1560, s4b:2616, s5:7824 };   // 序盤改善(2026-11-25)：音声ファイルの実測の長さにそろえた（旧値は長めの見積りだった）
 const OP1_VOICE_PAUSE_MS=700;   // 台詞を言い切ってから次のシーンへ移るまでの一呼吸（子ども向けの間）
 let op1SndCache={};   // key -> HTMLAudioElement|null
 let op1SndFailed={};  // key -> true（読込失敗が確定済み。以後は無音のまま・再試行しない）
@@ -37831,7 +38019,7 @@ const OP5_LAYOUT={
     solo:{ u:0.490, v:0.9700 }   // 弾OP5c§4：1人構図の退室座標（目安値）
   },
   jumpMs:500,          // 作業3-1「0.5秒程度」
-  walkDurationMs:2600, // 作業3-2「合計2〜3秒」（ジャンプ0.5s+これで合計3.1s＝「3〜4秒以内」を満たす）
+  walkDurationMs:1200, // 作業3-2「合計2〜3秒」→序盤改善(2026-11-25)で短縮（ジャンプ0.5s+1.2s＝1.7s）
   walkFrameMs:150      // 作業3-2「コマ間隔150ms前後」
 };
 /* 背景(#op1BgInterior)のbackground-size:coverが実際にどう描画されているかをJS側で再現する。
@@ -37908,6 +38096,7 @@ function startOp1Event(){
     return;
   }
   op1Active=true;
+  $('op1Stage').onclick=op1StageTap;   // 序盤改善 A3：どの場面もタップで先へ
   bgmStop();   // 開始時は無音。2026-10-04採用のマナ名乗りS3b/cだけ人物曲を入れる（タイトル曲は止める）
   $('op1Overlay').classList.add('show');
   op1PlayGate();   // OP-1b§3：ブラウザの自動再生制限対応＝本編(S0)の前に1回だけタップしてもらう入口を挟む
@@ -37921,7 +38110,34 @@ function op1PlayGate(){
   $('op1Mana').classList.remove('show');
   $('op1Answers').innerHTML='';
   $('op1Voice').innerHTML=''; $('op1Voice').classList.remove('show');
+  // 序盤改善(2026-11-25) A2：名前入力などで既にタップ済みなら、音声は解禁済み＝2回目の「タップして はじめる」は出さずに進む
+  if(navigator.userActivation && navigator.userActivation.hasBeenActive){ op1EnterFromGate(); return; }
   $('op1GateBtn').classList.add('show');
+}
+/* 序盤改善(2026-11-25) A3：op1の全場面をタップで先へ送れるようにする共通の仕組み。
+   場面ごとに op1Arm(seq, 次の処理, 自動で進むまでのms) を呼ぶ＝時間切れかタップのどちらか早い方で1回だけ進む。
+   答えのボタンを押したタップは先送りに使わない（同じタップで正解の場面を飛ばさないため）。 */
+let op1TapNext=null;
+function op1Arm(seq,fn,ms){
+  let done=false;
+  const go=()=>{ if(done||seq!==op1Seq||!op1Active) return; done=true; if(op1TapNext===go) op1TapNext=null; fn(); };
+  op1TapNext=go;
+  setTimeout(go,ms);
+}
+function op1StageTap(e){
+  if(e && e.target && e.target.closest && e.target.closest('#op1Answers,#op1GateBtn')) return;
+  const f=op1TapNext; if(f){ op1StopAllSnd(); f(); }
+}
+/* 台詞の表示時間：声があれば「声の長さ＋0.7秒」、声が無い（音を消している等）なら「文字数×0.25秒＋1秒」 */
+function op1LineMs(text,voiceMs){
+  const plain=String(text||'').replace(/<[^>]*>/g,'');
+  if(soundOn && voiceMs>0) return voiceMs+OP1_VOICE_PAUSE_MS;
+  return Math.round(plain.length*250+1000);
+}
+/* S5で読む台詞（日本語版の導入だけ短くする。英語版は従来どおりstoryBondLines全行）。
+   たましい／からだの詳しい説明は、にほんばしのチュートリアルの実際の場面で行う。 */
+function op1IntroLines(){
+  return storyBondLines().filter(line=>line.key==='read'||line.key==='write'||line.key==='invite');
 }
 function op1EnterFromGate(){
   if(!op1Active) return;
@@ -37943,7 +38159,7 @@ function op1Finish(){
   op1EndMusic();
   op1Seq++;              // 残っている古いシーンのsetTimeoutを無効化
   op1Active=false;
-  $('op1Stage').onclick=null;
+  $('op1Stage').onclick=null; op1TapNext=null;
   op1StopAllSnd();       // OP-1b§3：とばす等で途中終了したとき、鳴っているセリフ音声を確実に止める（次画面へ音を持ち越さない）
   op1StopWalkAnims();    // 弾OP-5：とばす等で退室演出の途中に終了したとき、歩行コマ送りのintervalを確実に止める
   $('op1GateBtn').classList.remove('show');
@@ -37951,6 +38167,7 @@ function op1Finish(){
   // 設計書に無い暗黙の分岐：既存の「zone1初回のみのはかせ説明」(introSeen)は本イベントと同じ
   // 歓迎・「一」を渡す・たましいの世界観を語る内容で丸ごと重複するため、二重に流れないようここで済み扱いにする
   introSeen=true;
+  fieldIntroQuickOnce=true;   // 序盤改善 A3：導入の直後の最初の入場だけ、全体を見せる演出を短くする
   warpZone(1);           // ゾーン1のS地点から開始（既存のはじまりズーム演出もそのまま続けて再生される）
   // 弾NM-2：なまえ・せいべつの画面はop1より前へ移した（起動時トリガー側でnmOpen(startOp1Event)として呼ぶ）ので、
   // ここでは何も呼ばない。
@@ -37963,12 +38180,6 @@ function op1SetManaFace(){
 /* ---- S0：声（暗転・約5秒）。確定文言は一字も変えない（設計書§2 S0・検品項目7） ---- */
 function op1PlayS0(){
   const seq=op1Seq;
-  let advanced=false;
-  const advance=()=>{
-    if(advanced || seq!==op1Seq || !op1Active) return;
-    advanced=true; $('op1Stage').onclick=null; op1StopAllSnd(); op1PlayS05();
-  };
-  $('op1Stage').onclick=advance;   // 黒画面のせりふはタップでも一度だけ先へ進む
   $('op1Stage').className='op1-stage op1-bg-black';
   $('op1CharWrap').style.display='none';
   $('op1Mana').classList.remove('show');
@@ -37995,13 +38206,12 @@ function op1PlayS0(){
   });
   $('op1KanjiFaceText').textContent=K[PARTNER_IDX].c;
   $('op1KanjiFaceText').style.color=K[PARTNER_IDX].cl;
-  setTimeout(()=>{
-    if(seq!==op1Seq || advanced) return;
-    $('op1Voice').innerHTML=talkPhraseWrap('だいじょうぶ。なにも おぼえなくて いいよ。たのしむだけで いいんだ。<span class="op1-key">イージーだよ</span>');
-    $('op1Voice').classList.add('show');
-    op1PlaySnd('s0');   // OP-1b§3：台詞表示と同時にイージーの声を再生
-  },300);
-  setTimeout(advance,300+OP1_VOICE_MS.s0+OP1_VOICE_PAUSE_MS);
+  const s0Text='だいじょうぶ。なにも おぼえなくて いいよ。たのしむだけで いいんだ。<span class="op1-key">イージーだよ</span>';
+  // 序盤改善 A3：台詞はすぐ出し、声の長さ＋0.7秒（声なしは文字数）で次へ。タップでも先へ進む
+  $('op1Voice').innerHTML=talkPhraseWrap(s0Text);
+  $('op1Voice').classList.add('show');
+  op1PlaySnd('s0');   // OP-1b§3：台詞表示と同時にイージーの声を再生
+  op1Arm(seq,op1PlayS05,op1LineMs(s0Text,OP1_VOICE_MS.s0));
 }
 /* ---- S0.5：モニター起動（約2秒・CSSのみ）。白フラッシュ＋走査線→そのままS1の白画面へ ---- */
 function op1PlayS05(){
@@ -38014,8 +38224,9 @@ function op1PlayS05(){
     $('op1Flash').style.opacity='1';
     $('op1Scan').classList.add('run');
     setTimeout(()=>{ if(seq!==op1Seq) return; $('op1Flash').style.opacity='0'; },140);
-  },300);
-  setTimeout(()=>{ if(seq!==op1Seq) return; $('op1Scan').classList.remove('run'); op1PlayS1(); },2000);
+  },100);
+  // 序盤改善 A3：文字なしの演出を短く（約2秒→0.6秒）・タップでも次へ
+  op1Arm(seq,()=>{ $('op1Flash').style.opacity='0'; $('op1Scan').classList.remove('run'); op1PlayS1(); },600);
 }
 /* ---- S1：掴み＝筆の「一」（約5秒）。素材A→左から右へマスクで書かれる→目あき(素材B)→ぴょこん ---- */
 function op1PlayS1(){
@@ -38026,15 +38237,16 @@ function op1PlayS1(){
   const clip=$('op1BrushClip');
   clip.classList.remove('reveal');
   void clip.offsetWidth;   // 強制リフロー：直後にrevealを付けたときop1BrushRevealアニメを確実に最初から発火させる
+  clip.style.animationDuration='1s';   // 序盤改善 A3：筆の「一」を短く（2.6秒→1.3秒・緩急の形はそのまま）
   requestAnimationFrame(()=>{ clip.classList.add('reveal'); });
   setTimeout(()=>{   // 書き終わり→ぱちっと目が開く→ぴょこん
     if(seq!==op1Seq) return;
     $('op1CharImg').src='images/op/op1-ichi-eyes.webp';
     $('op1CharWrap').classList.add('op1-brush-hop');
-  },2800);
+  },1000);
   // OP-1b§1：目が開いたあと一呼吸おいてから口が出てにこっと（設計書§6.6-1＝base→目あき→目口の段階演出）
-  setTimeout(()=>{ if(seq!==op1Seq) return; $('op1CharImg').src='images/op/op1-ichi-mouth.webp'; },3500);
-  setTimeout(()=>{ if(seq!==op1Seq) return; op1PlayS2(); },5000);
+  setTimeout(()=>{ if(seq!==op1Seq) return; $('op1CharImg').src='images/op/op1-ichi-mouth.webp'; },1300);
+  op1Arm(seq,()=>{ clip.classList.remove('reveal'); clip.style.width='100%'; $('op1CharImg').src='images/op/op1-ichi-mouth.webp'; op1PlayS2(); },1700);
 }
 /* ---- S2：異変（約5秒）。たましい（光の玉）がふわっと抜ける→からだだけがガタガタ暴れ出す ---- */
 function op1PlayS2(){
@@ -38047,9 +38259,10 @@ function op1PlayS2(){
   $('op1CharWrap').classList.add('op1-shaking');
   const soul=$('op1Soul');
   soul.classList.remove('return','hover'); soul.style.opacity='';
+  soul.style.animationDuration='.9s';   // 序盤改善 A3：たましいが抜ける演出を短く（1.6秒→1秒）
   soul.classList.add('rise');
-  setTimeout(()=>{ if(seq!==op1Seq) return; soul.classList.remove('rise'); soul.classList.add('hover'); },1600);
-  setTimeout(()=>{ if(seq!==op1Seq) return; op1PlayS3(); },5000);
+  setTimeout(()=>{ if(seq!==op1Seq) return; soul.style.animationDuration=''; soul.classList.remove('rise'); soul.classList.add('hover'); },900);
+  op1Arm(seq,()=>{ soul.style.animationDuration=''; soul.classList.remove('rise'); soul.classList.add('hover'); op1PlayS3(); },1400);
 }
 /* ---- S3：マナ登場（約5秒）。一言だけ（設計書§2 S3・確定文言。1文字も変えない＝弾NM-2） ---- */
 function op1PlayS3(){
@@ -38058,7 +38271,7 @@ function op1PlayS3(){
   $('op1Mana').classList.add('show');
   $('op1ManaText').innerHTML=talkText('みつけた。きみの目には、この字が “おもしろい絵” に 見えているのね',1);
   op1PlaySnd('s3');   // OP-1b§3：台詞表示と同時にマナの声を再生
-  setTimeout(()=>{ if(seq!==op1Seq) return; op1PlayS3b(); },OP1_VOICE_MS.s3+OP1_VOICE_PAUSE_MS);
+  op1Arm(seq,op1PlayS3b,op1LineMs('みつけた。きみの目には、この字が “おもしろい絵” に 見えているのね',OP1_VOICE_MS.s3));
 }
 /* ---- S3b（弾NM-2新設）：マナの名乗り①。弾VO-1で声をつけた（四国めたん・op1_s3b_mana.mp3）。
    op1Seqの世代チェックはS3等の既存シーンと同じ形。 ---- */
@@ -38069,7 +38282,8 @@ function op1PlayS3b(){
   const msg='わたしは マナ。アンドロイドの はかせだよ';
   $('op1ManaText').innerHTML=talkText(msg,1);
   op1PlaySnd('s3b');   // 弾VO-1：台詞表示と同時にマナの声（S3等と同じ流儀）
-  setTimeout(()=>{ if(seq!==op1Seq) return; op1PlayS3c(); },OP1_VOICE_MS.s3b+OP1_VOICE_PAUSE_MS);
+  // 序盤改善(2026-11-25) A3：最初の戦いまでを短くするため、名乗り②(S3c)は導入では読まずにクイズへ進む（関数は残す）
+  op1Arm(seq,op1PlayS4Setup,op1LineMs(msg,OP1_VOICE_MS.s3b));
 }
 /* ---- S3c（弾NM-2新設）：マナの名乗り②。弾VO-1で声をつけた（四国めたん・op1_s3c_mana.mp3）。 ---- */
 function op1PlayS3c(){
@@ -38077,10 +38291,11 @@ function op1PlayS3c(){
   const msg='なんでも けんきゅうして、ぜんぶの はかせに なったの。いまは かんじに むちゅう！';
   $('op1ManaText').innerHTML=talkText(msg,1);
   op1PlaySnd('s3c');   // 弾VO-1：台詞表示と同時にマナの声（S3等と同じ流儀）
-  setTimeout(()=>{ if(seq!==op1Seq) return; op1PlayS4Setup(); },OP1_VOICE_MS.s3c+OP1_VOICE_PAUSE_MS);
+  op1Arm(seq,op1PlayS4Setup,op1LineMs(msg,OP1_VOICE_MS.s3c));
 }
 /* ---- S4：即バトル＝チュートリアル（プレイヤー操作）。必要正解1・敗北なし・正解で終了へ ---- */
 function op1PlayS4Setup(){
+  op1TapNext=null;   // 序盤改善 A3：こたえる場面はタップで飛ばさない
   op1EndMusic();
   op1AnswerLock=false;
   $('op1BgShodo').classList.add('show');   // 弾OP-4：チュートリアルバトルの背景を白から書道教室に差し替え
@@ -38091,16 +38306,7 @@ function op1PlayS4Setup(){
 /* 「一」の よみ3択（正解＋K配列からランダムに2つ・重複回避）。K配列は読み取りのみ＝既存データを汚さない */
 function op1BuildAnswers(){
   const correct=K[PARTNER_IDX].y.split('／')[0];
-  const used=new Set([correct]);
-  const wrongs=[];
-  let guard=0;
-  while(wrongs.length<2 && guard++<500){
-    const ri=Math.floor(Math.random()*K.length);
-    if(ri===PARTNER_IDX) continue;
-    const cand=K[ri].y.split('／')[0];
-    if(used.has(cand)) continue;
-    used.add(cand); wrongs.push(cand);
-  }
+  const wrongs=pickWrongReadings(PARTNER_IDX,[correct],1,2);   // 序盤改善 C2：1年生の字の読み・ひらがな・「一」の音訓は出さない
   const opts=[correct,...wrongs];
   for(let i=opts.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [opts[i],opts[j]]=[opts[j],opts[i]]; }
   const wrap=$('op1Answers'); wrap.innerHTML='';
@@ -38149,7 +38355,11 @@ function op1PlayS4Success(){
     $('op1CharWrap').classList.add('op1-brush-hop');
     $('op1ManaText').innerHTML=talkPhraseWrap('すごい……！ きみの こえが とどいたのよ');
     op1PlaySnd('s4b');   // OP-1b§3：正解の台詞表示と同時にマナの声を再生
-  },900);
+    // 序盤改善 A3：ここからはタップでS5へ進める（教室の全景へ一気に切り替える）
+    op1TapNext=()=>{ if(seq!==op1Seq||!op1Active) return; op1TapNext=null; op1Seq++; const s2=op1Seq;
+      $('op1BrushClip').style.opacity='0'; $('op1KanjiFace').classList.add('show'); $('op1BgInterior').classList.add('show');
+      op1RevealOp5Scene(600); setTimeout(()=>{ if(s2===op1Seq) op1PlayS5(); },650); };
+  },600);
   setTimeout(()=>{   // OP-1b§2：にこっとしてから一呼吸おいて標準のかんじモン表示へクロスフェード
     if(seq!==op1Seq) return;
     $('op1BrushClip').style.opacity='0';
@@ -38163,20 +38373,20 @@ function op1PlayS4Success(){
     $('op1BgInterior').classList.add('show');
     op1RevealOp5Scene(2400);   // 弾OP-5：同じ2.4sで「一」を机上へ縮小移動＋男の子/女の子/マナをフェードイン
   },1600+OP1_VOICE_PAUSE_MS);
-  setTimeout(()=>{ if(seq!==op1Seq) return; op1PlayS5(); },900+OP1_VOICE_MS.s4b+OP1_VOICE_PAUSE_MS);
+  setTimeout(()=>{ if(seq!==op1Seq) return; op1PlayS5(); },600+OP1_VOICE_MS.s4b+OP1_VOICE_PAUSE_MS);   // 序盤改善：声を言い切ったらS5へ（カメラ引きの終わりと重なってよい）
 }
 /* ---- S5：読みと書きの共通設定と、現在の遊び方を伝えて旅立つ ---- */
 function op1PlayS5(){
-  const seq=op1Seq,lines=storyBondLines();
+  const seq=op1Seq,lines=op1IntroLines();   // 序盤改善 A3：6行→3行（よみの えらびかた／いっしょに いこう）
   $('op1CharWrap').classList.remove('op1-brush-hop');
   let i=0;
   const next=()=>{
     if(seq!==op1Seq||!op1Active)return;
-    if(i>=lines.length){op1PlayExit();return;}
+    if(i>=lines.length){op1TapNext=null;op1PlayExit();return;}
     const line=lines[i++];
     $('op1ManaText').innerHTML=talkText(line.text,1);
     op1PlaySnd(line.snd);
-    setTimeout(next,Math.max(line.ms+OP1_VOICE_PAUSE_MS,line.text.length*HAKASE_MSG_MS_PER_CHAR+HAKASE_MSG_MS_BASE));
+    op1Arm(seq,next,op1LineMs(line.text,line.ms));   // 声の長さ＋0.7秒・タップで次の行へ
   };
   next();
 }
@@ -38255,6 +38465,7 @@ window.addEventListener('resize',()=>{
 /* ---- 弾OP-5 作業3：S5終了後の退室演出。1.「一」が机から飛び降り→2.4人で出口へ歩いて退場→3.op1Finish() ---- */
 function op1PlayExit(){
   const seq=op1Seq;
+  op1TapNext=()=>{ if(seq!==op1Seq||!op1Active) return; op1TapNext=null; op1StopWalkAnims(); op1Finish(); };   // 序盤改善 A3：退室もタップで終われる
   op1IchiJumpOff(seq);
 }
 /* 「一」の飛び降り＝小ジャンプの弧（約0.5秒）。机→床のtop/leftの直線移動はtransitionで一括に行い、
@@ -39525,6 +39736,8 @@ function trainingCapOfZone(zone){
 }
 
 load();
+// 序盤改善(2026-11-25) B1：はじめて遊ぶ人（セーブ無し・1周目）は 🍙げんきだまを3こ 持って はじめる（旧セーブには配らない）
+if(!hadSaveAtBoot && newGamePlus.cycle===0 && items.genkidama===0) items.genkidama=3;
 ensurePartnerIchii();   // 第10弾§2：あいぼう「一」を保証（新規=てもち設定・旧セーブ=黙って補完）
 $('soundBtn').textContent=soundOn?'🔊':'🔇';
 (function pickRandomTitleHero(){

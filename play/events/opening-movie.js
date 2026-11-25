@@ -6,6 +6,8 @@
   :{label:'かんじモン オープニング',video:'オープニングムービー',title:'かんじモン RPG',play:'タップして はじめる',mute:'音を消す',unmute:'音を出す',skip:'ムービーを とばす',hint:'音あり・音なしを えらんで はじめよう',retry:'もういちど 再生する',failed:'読みこめませんでした。再生するか、ムービーを とばしてね',src:'videos/opening-20261019-op30.mp4'};
  // 遅い読込み中に既にゲームへ進んだ場合、その画面へPVを割り込ませない。
  if(window.openingMovieDismissed||!document.getElementById('screen-title')?.classList.contains('active')||document.getElementById('worldmapOverlay')?.classList.contains('show'))return;
+ // 2026-11-25 序盤改善 A1：オープニング動画はトップページで見られるので、ゲームでは流さない（新しく始める人も続きの人も）。
+ return;
  const host=document.createElement('div');
  host.id='openingMovie';host.tabIndex=-1;host.setAttribute('role','dialog');host.setAttribute('aria-modal','true');host.setAttribute('aria-label',L.label);if(EN)host.setAttribute('data-language-original','');
  host.innerHTML='<video playsinline preload="none" poster="videos/opening-20261008-poster.jpg" aria-label="'+L.video+'"></video><div class="opening-start"><p>'+L.title+'</p><button type="button" data-play>'+L.play+'</button></div><div class="opening-controls"><button type="button" data-sound>'+L.mute+'</button><button type="button" data-skip>'+L.skip+'</button></div><p class="opening-hint">'+L.hint+'</p>';
