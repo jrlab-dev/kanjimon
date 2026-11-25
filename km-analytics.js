@@ -69,7 +69,7 @@
         mode: g(function () { return difficulty; }, ''),
         boss: g(function () { return field && fieldIsBoss; }, false) ? 1 : 0
       };
-    }, function (ctx) { if (ctx) send('battle_win', ctx); });
+    }, function (ctx) { nWin++; if (ctx) send('battle_win', ctx); });
 
     // 4：漢字ゲット（セーブのたびに、なかまが増えたかを比べる）
     var known = new Set(g(function () { return Array.from(caught); }, []));
@@ -109,6 +109,99 @@
       if (grade != null) send('grade_clear', { grade: grade });
     });
 
+    // 7〜10（2026-11-25追加）：どこでやめたかを見るための記録
+    var t0 = Date.now(), nBattle = 0, nWin = 0, nWrong = 0;
+    function zinfo(zone) {
+      return { zone: zone, zone_name: g(function () { return zoneNameOf(zone); }, '') };
+    }
+    function bossNow() {
+      return g(function () { return (fieldIsBoss || isJukugoBoss || isTwinBoss) ? 1 : 0; }, 0);
+    }
+    function battleStarted(zone) {
+      nBattle++;
+      var p = zinfo(zone);
+      p.boss = bossNow();
+      p.nth = nBattle > 20 ? '21+' : String(nBattle);
+      if (nBattle <= 60) send('battle_start', p);
+    }
+    // 7：戦いが始まった（フィールドの戦い・ボス戦）
+    wrap('launchFieldBattle', null, function () {
+      if (g(function () { return battleSource === 'field' && document.getElementById('screen-battle').classList.contains('active'); }, false)) {
+        battleStarted(g(function () { return curStage; }, 0));
+      }
+    });
+    ['launchJukugoBossBattle', 'launchTwinBossBattle'].forEach(function (fn) {
+      wrap(fn, null, function () {
+        if (g(function () { return document.getElementById('screen-battle').classList.contains('active'); }, false)) {
+          battleStarted(g(function () { return curStage; }, 0));
+        }
+      });
+    });
+    ['onWrongSimple', 'onWrongParty'].forEach(function (fn) { wrap(fn, null, function () { nWrong++; }); });
+    // 8：戦いに負けた（ちからつきた／てもちが全員つかれて家へ帰された）
+    function inBattleScreen() {
+      return g(function () { return document.getElementById('screen-battle').classList.contains('active'); }, false);
+    }
+    function loseInfo(how) {
+      var zone = g(function () { return curStage; }, 0);
+      var p = zinfo(zone);
+      p.boss = bossNow();
+      p.source = g(function () { return battleSource; }, '');
+      p.how = how;
+      return p;
+    }
+    wrap('faint', function () { return loseInfo('faint'); }, function (p) { if (p) send('battle_lose', p); });
+    wrap('sendHomeAllTired', function () { return inBattleScreen() ? loseInfo('tired') : null; },
+      function (p) { if (p && !inBattleScreen()) send('battle_lose', p); });
+    // 9：戦いの途中で「おわる」を押した
+    wrap('exitBattle', function () {
+      var on = g(function () { return document.getElementById('screen-battle').classList.contains('active'); }, false);
+      if (!on) return null;
+      var zone = g(function () { return curStage; }, 0);
+      var p = zinfo(zone);
+      p.boss = bossNow();
+      p.source = g(function () { return battleSource; }, '');
+      return p;
+    }, function (p) {
+      var still = g(function () { return document.getElementById('screen-battle').classList.contains('active'); }, true);
+      if (p && !still) send('battle_quit', p);
+    });
+    // 10：ページを離れた・閉じたときの場面（同じ場面なら2度送らない）
+    function visible(id) {
+      var el = document.getElementById(id);
+      return !!(el && el.offsetWidth > 0 && el.offsetHeight > 0);
+    }
+    function where() {
+      var om = document.getElementById('openingMovie');
+      if (om && !om.dataset.finishReason && visible('openingMovie')) return 'opening';
+      var nm = document.getElementById('nmOverlay'), hs = document.getElementById('heroSelectOverlay');
+      if (nm && nm.classList.contains('show')) return 'name';
+      if (hs && hs.classList.contains('show')) return 'hero';
+      var a = document.querySelector('.screen.active');
+      return a ? a.id.replace('screen-', '') : 'unknown';
+    }
+    var lastLeave = '';
+    function leave() {
+      var w = where();
+      var zone = w === 'battle' ? g(function () { return curStage; }, 0) : w === 'field' ? g(function () { return fieldZone; }, 0) : 0;
+      var key = w + '|' + zone + '|' + nWin + '|' + nBattle;
+      if (key === lastLeave) return;
+      lastLeave = key;
+      var p = zone ? zinfo(zone) : { zone: 0, zone_name: '' };
+      p.where = w;
+      p.boss = w === 'battle' ? bossNow() : 0;
+      if (w === 'battle') p.phase = g(function () { return phase; }, '');
+      p.wins = nWin > 10 ? '11+' : String(nWin);
+      p.battles = nBattle > 10 ? '11+' : String(nBattle);
+      p.wrong = nWrong;
+      p.sec = Math.round((Date.now() - t0) / 1000);
+      p.kanji = g(function () { return caught.size; }, 0);
+      p.transport_type = 'beacon';
+      send('leave', p);
+    }
+    document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') leave(); });
+    window.addEventListener('pagehide', leave);
+
     // 2：ゲーム開始（新しく名前を入れた／セーブがある状態で開いた）
     wrap('nmOk', function () { return g(function () { return nmStep === 'ask' && nmVal.length > 0; }, false); },
       function (ok) { if (ok) send('game_start', { type: 'new' }); });
@@ -143,4 +236,36 @@
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', hookGame);
   else hookGame();
+  // 11（2026-11-25追加）：ゲームの入口（play/pwa.html）。はじめの確認・はじめるボタン・入口で離れた
+  function hookShell() {
+    var start = document.getElementById('start'), playBox = document.getElementById('play');
+    if (!start || !playBox || !document.getElementById('game')) return;
+    var t0 = Date.now(), clicked = false, started = false;
+    var mig = document.getElementById('migration'), box = document.getElementById('closed');
+    var needCheck = false;
+    setTimeout(function () { // 入口の準備（記録の確認）が済んでから、確認が必要かを見る
+      needCheck = !!(mig && !mig.hidden && box && !box.checked);
+      send('shell_open', { need_check: needCheck ? 1 : 0 });
+    }, 1500);
+    if (box) box.addEventListener('change', function () { if (box.checked) send('shell_check', { sec: Math.round((Date.now() - t0) / 1000) }); });
+    start.addEventListener('click', function (e) { if (e.isTrusted) clicked = true; });
+    new MutationObserver(function () {
+      if (started || playBox.hidden) return;
+      started = true;
+      send('shell_start', { auto: clicked ? 0 : 1, need_check: needCheck ? 1 : 0, sec: Math.round((Date.now() - t0) / 1000) });
+    }).observe(playBox, { attributes: true, attributeFilter: ['hidden'] });
+    var sentLeave = '';
+    function leaveShell() {
+      if (!playBox.hidden) return; // ゲーム中はゲーム側が記録する
+      var w = (box && !box.checked && mig && !mig.hidden) ? 'check' : (start.disabled ? 'wait' : 'ready');
+      if (w === sentLeave) return;
+      sentLeave = w;
+      send('leave', { where: 'shell_' + w, sec: Math.round((Date.now() - t0) / 1000), transport_type: 'beacon' });
+    }
+    document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') leaveShell(); });
+    window.addEventListener('pagehide', leaveShell);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', hookShell);
+  else hookShell();
+
 })();
