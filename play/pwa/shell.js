@@ -18,6 +18,13 @@
     try{history.replaceState(history.state,'',clean.href);}catch(e){autoStart=false;}
   }
   try{$('closed').checked=localStorage.getItem(migrationKey)==='1';}catch(e){}
+  // First visit on this device (no game record, no interrupted restore): the migration check is only for
+  // players coming from an older version, so skip it and go straight to the start button.
+  try{
+    if(!$('closed').checked&&B.KEYS.concat(B.JOURNAL).every(k=>localStorage.getItem(k)===null)){
+      $('closed').checked=true;$('migration').dataset.skip='fresh';localStorage.setItem(migrationKey,'1');
+    }
+  }catch(e){}
   $('migration').hidden=$('closed').checked;
   function readyStatus(){
     if(owned&&available&&entryReady&&!languageReady){
@@ -67,6 +74,20 @@
       if(token===epoch&&$('game').contentWindow.KanjimonStoryOutcome?.locked)$('retry-save').textContent=L.t("shell.ec5e9b6327e82bf6",{},"ゲームの保存画面へ もどる");
     },0);
     $('rescue').focus();
+  }
+  // The records/settings bar only appears while the game shows its title screen (the only place it can be used),
+  // so it never covers the field or battle controls.
+  function onTitleScreen(){
+    try{
+      const d=$('game').contentWindow.document;
+      return !!d.getElementById('screen-title')?.classList.contains('active')&&!d.querySelector('.nm-overlay.show,.op1-overlay.show,#openingMovie:not([hidden])');
+    }catch(e){return false;}
+  }
+  let titleTimer=null;
+  function watchTitle(){
+    clearInterval(titleTimer);
+    const tick=()=>{const on=gameActive&&onTitleScreen();if($('play').classList.contains('on-title')!==on)$('play').classList.toggle('on-title',on);};
+    tick();titleTimer=setInterval(tick,300);
   }
   window.KanjimonShell={
     get epoch(){return epoch;},
@@ -144,7 +165,7 @@
   function closeGame(){
     autoStart=false;
     const bridge=$('game').contentWindow.KanjimonPwaGame;
-    bridge?.stop();epoch++;gameActive=false;
+    bridge?.stop();epoch++;gameActive=false;clearInterval(titleTimer);$('play').classList.remove('on-title');
     $('game').src='about:blank';$('play').hidden=true;$('home').hidden=false;
     $('game').inert=false;refresh();
     $('settings').open=true;
@@ -163,7 +184,7 @@
         await KanjimonGamePacks.ensure(Math.max(record?.field?.zone||record?.fieldZone||1,record?.unlocked||1));
         assertOwner(epoch);window.KanjimonGameLanguage=KanjimonGamePacks.bundle;
       }else window.KanjimonGameLanguage=null;
-      epoch++;gameActive=true;$('manage').disabled=true;$('home').hidden=true;$('play').hidden=false;
+      epoch++;gameActive=true;$('manage').disabled=true;$('home').hidden=true;$('play').hidden=false;watchTitle();
       $('game').src=manifest.game+(location.search||'')+(location.hash||'');
       navigator.storage?.persist?.().catch(()=>{});
     }catch(e){notify(e);}finally{busy=false;refresh();}

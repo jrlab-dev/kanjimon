@@ -243,16 +243,19 @@
     var t0 = Date.now(), clicked = false, started = false;
     var mig = document.getElementById('migration'), box = document.getElementById('closed');
     var needCheck = false;
+    // 初めての端末（記録なし）は入口の確認を出さない。そのときは fresh=1 を添える（確認の有無の項目 need_check はそのまま）
+    var fresh = (mig && mig.dataset && mig.dataset.skip === 'fresh') ? 1 : 0;
     setTimeout(function () { // 入口の準備（記録の確認）が済んでから、確認が必要かを見る
       needCheck = !!(mig && !mig.hidden && box && !box.checked);
-      send('shell_open', { need_check: needCheck ? 1 : 0 });
+      send('shell_open', { need_check: needCheck ? 1 : 0, fresh: fresh });
     }, 1500);
     if (box) box.addEventListener('change', function () { if (box.checked) send('shell_check', { sec: Math.round((Date.now() - t0) / 1000) }); });
-    start.addEventListener('click', function (e) { if (e.isTrusted) clicked = true; });
+    // 押したかどうかは、ボタン自身の処理（ゲームの画面を出す）より先に見る（後だと、画面が出た記録が先に送られ auto=1 になっていた）
+    document.addEventListener('click', function (e) { if (e.isTrusted && e.target && e.target.closest && e.target.closest('#start')) clicked = true; }, true);
     new MutationObserver(function () {
       if (started || playBox.hidden) return;
       started = true;
-      send('shell_start', { auto: clicked ? 0 : 1, need_check: needCheck ? 1 : 0, sec: Math.round((Date.now() - t0) / 1000) });
+      send('shell_start', { auto: clicked ? 0 : 1, need_check: needCheck ? 1 : 0, fresh: fresh, sec: Math.round((Date.now() - t0) / 1000) });
     }).observe(playBox, { attributes: true, attributeFilter: ['hidden'] });
     var sentLeave = '';
     function leaveShell() {
