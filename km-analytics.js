@@ -65,7 +65,7 @@
       var field = g(function () { return battleSource === 'field'; }, false);
       return {
         zone: field ? g(function () { return fieldZone; }, 0) : g(function () { return curStage; }, 0),
-        source: g(function () { return battleSource; }, ''),
+        battle_src: g(function () { return battleSource; }, ''),  // GA4では source が「来た経路」の予約語なので別名にする
         mode: g(function () { return difficulty; }, ''),
         boss: g(function () { return field && fieldIsBoss; }, false) ? 1 : 0
       };
@@ -146,7 +146,7 @@
       var zone = g(function () { return curStage; }, 0);
       var p = zinfo(zone);
       p.boss = bossNow();
-      p.source = g(function () { return battleSource; }, '');
+      p.battle_src = g(function () { return battleSource; }, '');
       p.how = how;
       return p;
     }
@@ -160,7 +160,7 @@
       var zone = g(function () { return curStage; }, 0);
       var p = zinfo(zone);
       p.boss = bossNow();
-      p.source = g(function () { return battleSource; }, '');
+      p.battle_src = g(function () { return battleSource; }, '');
       return p;
     }, function (p) {
       var still = g(function () { return document.getElementById('screen-battle').classList.contains('active'); }, true);
